@@ -81,18 +81,25 @@ canvas{
 
 #menu .chickenTitle{
     font-size:75px;
+
     animation:
-        floatChicken 1.2s infinite alternate ease-in-out;
+        floatChicken 1.2s
+        infinite alternate
+        ease-in-out;
 }
 
 @keyframes floatChicken{
 
     from{
-        transform:translateY(0) rotate(-4deg);
+        transform:
+            translateY(0)
+            rotate(-4deg);
     }
 
     to{
-        transform:translateY(-12px) rotate(4deg);
+        transform:
+            translateY(-12px)
+            rotate(4deg);
     }
 
 }
@@ -139,7 +146,6 @@ canvas{
         0 0 25px #ffe900;
 
     cursor:pointer;
-
 }
 
 #start:active{
@@ -168,7 +174,6 @@ canvas{
     gap:25px;
 
     z-index:5;
-
 }
 
 .control{
@@ -198,7 +203,6 @@ canvas{
     box-shadow:
         0 0 15px
         rgba(0,255,255,.3);
-
 }
 
 .control:active{
@@ -217,12 +221,9 @@ canvas{
 </style>
 </head>
 
-
 <body>
 
-
 <canvas id="game"></canvas>
-
 
 <div id="hud">
 
@@ -241,8 +242,6 @@ canvas{
     </div>
 
 </div>
-
-
 
 <div id="menu">
 
@@ -269,43 +268,30 @@ canvas{
 
 </div>
 
-
-
 <div id="controls"
      class="hidden">
 
     <button
         class="control"
         id="left">
-
         ◀
-
     </button>
-
 
     <button
         class="control"
         id="fire">
-
         🐣
-
     </button>
-
 
     <button
         class="control"
         id="right">
-
         ▶
-
     </button>
 
 </div>
 
-
-
 <script>
-
 
 const canvas =
     document.getElementById("game");
@@ -313,13 +299,11 @@ const canvas =
 const ctx =
     canvas.getContext("2d");
 
-
 const scoreText =
     document.getElementById("score");
 
 const livesText =
     document.getElementById("lives");
-
 
 const menu =
     document.getElementById("menu");
@@ -335,7 +319,6 @@ let width;
 let height;
 
 let score = 0;
-
 let lives = 3;
 
 let gameRunning = false;
@@ -347,13 +330,9 @@ let enemyTimer = 0;
 let keys = {};
 
 let bullets = [];
-
 let enemies = [];
-
 let explosions = [];
-
 let stars = [];
-
 
 
 /* =========================
@@ -368,20 +347,17 @@ function resize(){
     height =
         window.innerHeight;
 
-
     const dpr =
         Math.min(
             window.devicePixelRatio || 1,
             2
         );
 
-
     canvas.width =
         width * dpr;
 
     canvas.height =
         height * dpr;
-
 
     ctx.setTransform(
         dpr,
@@ -392,16 +368,14 @@ function resize(){
         0
     );
 
-
     if(chicken){
 
         chicken.y =
-            height - 120;
+            height - 125;
 
     }
 
 }
-
 
 window.addEventListener(
     "resize",
@@ -409,12 +383,11 @@ window.addEventListener(
 );
 
 
-
 /* =========================
    ESTRELLAS
 ========================= */
 
-for(let i=0;i<110;i++){
+for(let i=0;i<120;i++){
 
     stars.push({
 
@@ -426,32 +399,32 @@ for(let i=0;i<110;i++){
             Math.random()*2+.5,
 
         speed:
-            Math.random()*.5+.1
+            Math.random()*.6+.1
 
     });
 
 }
 
 
-
 /* =========================
-   GALLINA
+   GALLINA NAVE
 ========================= */
 
 const chicken = {
 
     x:window.innerWidth/2,
 
-    y:window.innerHeight-120,
+    y:window.innerHeight-125,
 
     speed:430,
 
-    size:65,
+    size:70,
 
-    wing:0
+    wing:0,
+
+    engine:0
 
 };
-
 
 
 /* =========================
@@ -469,23 +442,20 @@ function resetGame(){
     livesText.textContent=lives;
 
     bullets=[];
-
     enemies=[];
-
     explosions=[];
 
-    chicken.x=
+    chicken.x =
         width/2;
 
-    chicken.y=
-        height-120;
+    chicken.y =
+        height-125;
 
 }
 
 
-
 /* =========================
-   DISPARAR
+   DISPARAR POLLITO
 ========================= */
 
 function shoot(){
@@ -493,12 +463,11 @@ function shoot(){
     if(!gameRunning)
         return;
 
-
     bullets.push({
 
         x:chicken.x,
 
-        y:chicken.y-35,
+        y:chicken.y-55,
 
         speed:650,
 
@@ -509,29 +478,17 @@ function shoot(){
 }
 
 
-
 /* =========================
    CREAR MAÍZ
 ========================= */
 
 function createEnemy(){
 
-    /*
-       Probabilidades según
-       la puntuación
-    */
-
     let type="normal";
 
-
-    const roll=
+    const roll =
         Math.random();
 
-
-    /*
-       Al principio solamente
-       maíz normal.
-    */
 
     if(score >= 100){
 
@@ -544,11 +501,6 @@ function createEnemy(){
     }
 
 
-    /*
-       Maíz gigante aparece
-       después de 250 puntos.
-    */
-
     if(score >= 250){
 
         if(roll < .12){
@@ -557,9 +509,7 @@ function createEnemy(){
 
         }
 
-        else if(
-            roll < .32
-        ){
+        else if(roll < .32){
 
             type="fast";
 
@@ -571,9 +521,7 @@ function createEnemy(){
     let enemy;
 
 
-    /*
-       MAÍZ NORMAL
-    */
+    /* MAÍZ NORMAL */
 
     if(type==="normal"){
 
@@ -599,18 +547,14 @@ function createEnemy(){
             points:10,
 
             wave:
-                Math.random()*10,
-
-            rotation:0
+                Math.random()*10
 
         };
 
     }
 
 
-    /*
-       MAÍZ RÁPIDO
-    */
+    /* MAÍZ RÁPIDO */
 
     else if(type==="fast"){
 
@@ -636,18 +580,14 @@ function createEnemy(){
             points:20,
 
             wave:
-                Math.random()*10,
-
-            rotation:0
+                Math.random()*10
 
         };
 
     }
 
 
-    /*
-       MAÍZ GIGANTE
-    */
+    /* MAÍZ GIGANTE */
 
     else{
 
@@ -675,9 +615,7 @@ function createEnemy(){
             points:30,
 
             wave:
-                Math.random()*10,
-
-            rotation:0
+                Math.random()*10
 
         };
 
@@ -689,18 +627,13 @@ function createEnemy(){
 }
 
 
-
 /* =========================
    EXPLOSIÓN
 ========================= */
 
 function explode(x,y){
 
-    for(
-        let i=0;
-        i<18;
-        i++
-    ){
+    for(let i=0;i<18;i++){
 
         explosions.push({
 
@@ -728,16 +661,14 @@ function explode(x,y){
 }
 
 
-
 /* =========================
-   ESTRELLAS
+   FONDO
 ========================= */
 
 function drawStars(delta){
 
-    ctx.fillStyle=
+    ctx.fillStyle =
         "#02051b";
-
 
     ctx.fillRect(
         0,
@@ -750,7 +681,8 @@ function drawStars(delta){
     for(const star of stars){
 
         star.y +=
-            star.speed*delta;
+            star.speed*
+            delta;
 
 
         if(star.y>1){
@@ -760,12 +692,11 @@ function drawStars(delta){
         }
 
 
-        ctx.fillStyle=
+        ctx.fillStyle =
             "rgba(255,255,255,.8)";
 
 
         ctx.beginPath();
-
 
         ctx.arc(
 
@@ -776,11 +707,9 @@ function drawStars(delta){
             star.size,
 
             0,
-
             Math.PI*2
 
         );
-
 
         ctx.fill();
 
@@ -789,20 +718,28 @@ function drawStars(delta){
 }
 
 
-
 /* =========================
-   GALLINA
+   NUEVA GALLINA NAVE 🐔🚀
 ========================= */
 
 function drawChicken(){
 
     chicken.wing += .15;
 
+    chicken.engine += .25;
 
-    const wingMove=
+
+    const wingMove =
         Math.sin(
             chicken.wing
-        )*5;
+        )*4;
+
+
+    const enginePower =
+        15+
+        Math.sin(
+            chicken.engine
+        )*7;
 
 
     ctx.save();
@@ -814,241 +751,332 @@ function drawChicken(){
     );
 
 
-    ctx.shadowColor=
+    /*
+       BRILLO GENERAL
+    */
+
+    ctx.shadowColor =
         "#00ffff";
 
-    ctx.shadowBlur=25;
+    ctx.shadowBlur =
+        28;
 
 
     /*
-       CUERPO
+       LLAMA DEL PROPULSOR
     */
 
-    ctx.fillStyle=
-        "#ffffff";
+    ctx.save();
 
+    ctx.shadowColor =
+        "#00ffff";
+
+    ctx.shadowBlur =
+        25;
+
+    ctx.fillStyle =
+        "#00ffff";
 
     ctx.beginPath();
 
+    ctx.moveTo(
+        -16,
+        38
+    );
+
+    ctx.lineTo(
+        0,
+        62+enginePower
+    );
+
+    ctx.lineTo(
+        16,
+        38
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.fillStyle =
+        "#fff45c";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        -8,
+        39
+    );
+
+    ctx.lineTo(
+        0,
+        52+enginePower*.6
+    );
+
+    ctx.lineTo(
+        8,
+        39
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+    ctx.restore();
+
+
+    /*
+       CUERPO DE NAVE
+    */
+
+    ctx.fillStyle =
+        "#f4f4f4";
+
+    ctx.beginPath();
 
     ctx.ellipse(
         0,
         5,
-        30,
-        35,
+        31,
+        38,
         0,
         0,
         Math.PI*2
     );
 
-
     ctx.fill();
 
+
+    /*
+       PARTE INFERIOR METÁLICA
+    */
+
+    ctx.fillStyle =
+        "#b9c7d6";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        0,
+        22,
+        25,
+        18,
+        0,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
 
 
     /*
        CABEZA
     */
 
-    ctx.beginPath();
+    ctx.fillStyle =
+        "#ffffff";
 
+    ctx.beginPath();
 
     ctx.arc(
         0,
         -28,
-        24,
+        25,
         0,
         Math.PI*2
     );
 
-
     ctx.fill();
-
 
 
     /*
        CRESTA
     */
 
-    ctx.fillStyle=
+    ctx.fillStyle =
         "#ff3b3b";
-
 
     ctx.beginPath();
 
-
     ctx.arc(
-        -12,
-        -49,
+        -13,
+        -50,
         9,
         0,
         Math.PI*2
     );
 
-
     ctx.arc(
         0,
-        -53,
-        10,
+        -54,
+        11,
         0,
         Math.PI*2
     );
 
-
     ctx.arc(
-        12,
-        -49,
+        13,
+        -50,
         9,
         0,
         Math.PI*2
     );
-
 
     ctx.fill();
-
 
 
     /*
-       PICO
+       CABINA / VISOR
     */
 
-    ctx.fillStyle=
-        "#ffb52e";
+    ctx.shadowColor =
+        "#008cff";
 
+    ctx.shadowBlur =
+        12;
+
+    ctx.fillStyle =
+        "#56e8ff";
 
     ctx.beginPath();
 
-
-    ctx.moveTo(
-        20,
-        -27
+    ctx.ellipse(
+        0,
+        -31,
+        15,
+        10,
+        0,
+        0,
+        Math.PI*2
     );
-
-
-    ctx.lineTo(
-        38,
-        -19
-    );
-
-
-    ctx.lineTo(
-        20,
-        -12
-    );
-
-
-    ctx.closePath();
-
 
     ctx.fill();
 
+
+    ctx.shadowBlur=0;
 
 
     /*
        OJO
     */
 
-    ctx.fillStyle=
+    ctx.fillStyle =
         "#111";
-
 
     ctx.beginPath();
 
-
     ctx.arc(
-        8,
-        -33,
+        9,
+        -34,
         4,
         0,
         Math.PI*2
     );
 
-
     ctx.fill();
-
 
 
     /*
-       ALAS
+       PICO
     */
 
-    ctx.fillStyle=
-        "#eeeeee";
-
-
-    ctx.beginPath();
-
-
-    ctx.ellipse(
-        -30,
-        8+wingMove,
-        12,
-        25,
-        -.4,
-        0,
-        Math.PI*2
-    );
-
-
-    ctx.fill();
-
+    ctx.fillStyle =
+        "#ffb52e";
 
     ctx.beginPath();
-
-
-    ctx.ellipse(
-        30,
-        8-wingMove,
-        12,
-        25,
-        .4,
-        0,
-        Math.PI*2
-    );
-
-
-    ctx.fill();
-
-
-
-    /*
-       PROPULSOR
-    */
-
-    ctx.shadowColor=
-        "#00ffff";
-
-    ctx.shadowBlur=20;
-
-
-    ctx.fillStyle=
-        "#00ffff";
-
-
-    ctx.beginPath();
-
 
     ctx.moveTo(
-        -13,
-        35
+        20,
+        -27
     );
-
 
     ctx.lineTo(
-        0,
-        65+
-        Math.random()*12
+        39,
+        -19
     );
-
 
     ctx.lineTo(
-        13,
-        35
+        20,
+        -12
     );
-
 
     ctx.closePath();
 
+    ctx.fill();
+
+
+    /*
+       ALA IZQUIERDA
+    */
+
+    ctx.fillStyle =
+        "#dfe7ef";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        -32,
+        7+wingMove,
+        13,
+        27,
+        -.45,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /*
+       ALA DERECHA
+    */
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        32,
+        7-wingMove,
+        13,
+        27,
+        .45,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /*
+       PEQUEÑAS LUCES DE LA NAVE
+    */
+
+    ctx.shadowColor =
+        "#00ffff";
+
+    ctx.shadowBlur =
+        12;
+
+    ctx.fillStyle =
+        "#00ffff";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        -22,
+        20,
+        3,
+        0,
+        Math.PI*2
+    );
+
+    ctx.arc(
+        22,
+        20,
+        3,
+        0,
+        Math.PI*2
+    );
 
     ctx.fill();
 
@@ -1056,7 +1084,6 @@ function drawChicken(){
     ctx.restore();
 
 }
-
 
 
 /* =========================
@@ -1067,30 +1094,25 @@ function drawBullet(bullet){
 
     ctx.save();
 
-
     ctx.translate(
         bullet.x,
         bullet.y
     );
 
-
-    ctx.shadowColor=
+    ctx.shadowColor =
         "#ffe600";
 
-    ctx.shadowBlur=15;
+    ctx.shadowBlur =
+        15;
 
-
-    ctx.font=
+    ctx.font =
         "24px Arial";
 
-
-    ctx.textAlign=
+    ctx.textAlign =
         "center";
 
-
-    ctx.textBaseline=
+    ctx.textBaseline =
         "middle";
-
 
     ctx.fillText(
         "🐣",
@@ -1098,11 +1120,9 @@ function drawBullet(bullet){
         0
     );
 
-
     ctx.restore();
 
 }
-
 
 
 /* =========================
@@ -1113,17 +1133,11 @@ function drawEnemy(enemy){
 
     ctx.save();
 
-
     ctx.translate(
         enemy.x,
         enemy.y
     );
 
-
-    /*
-       Movimiento diferente
-       para cada tipo
-    */
 
     if(enemy.type==="normal"){
 
@@ -1146,7 +1160,7 @@ function drawEnemy(enemy){
     }
 
 
-    const wobble=
+    const wobble =
         Math.sin(
             enemy.wave
         );
@@ -1157,7 +1171,7 @@ function drawEnemy(enemy){
     );
 
 
-    ctx.shadowColor=
+    ctx.shadowColor =
         enemy.type==="fast"
         ? "#00ffff"
         : enemy.type==="giant"
@@ -1165,30 +1179,22 @@ function drawEnemy(enemy){
         : "#ffe000";
 
 
-    ctx.shadowBlur=18;
+    ctx.shadowBlur =
+        18;
 
 
-    ctx.font=
+    ctx.font =
         enemy.size+
         "px Arial";
 
-
-    ctx.textAlign=
+    ctx.textAlign =
         "center";
 
-
-    ctx.textBaseline=
+    ctx.textBaseline =
         "middle";
 
 
-    /*
-       Emoji diferente según
-       el tipo.
-    */
-
-    if(
-        enemy.type==="normal"
-    ){
+    if(enemy.type==="normal"){
 
         ctx.fillText(
             "🌽",
@@ -1198,10 +1204,7 @@ function drawEnemy(enemy){
 
     }
 
-
-    else if(
-        enemy.type==="fast"
-    ){
+    else if(enemy.type==="fast"){
 
         ctx.fillText(
             "⚡🌽",
@@ -1210,7 +1213,6 @@ function drawEnemy(enemy){
         );
 
     }
-
 
     else{
 
@@ -1224,19 +1226,16 @@ function drawEnemy(enemy){
 
 
     /*
-       Barra de vida del gigante
+       VIDA DEL GIGANTE
     */
 
-    if(
-        enemy.type==="giant"
-    ){
+    if(enemy.type==="giant"){
 
-        const barWidth=65;
+        const barWidth =
+            65;
 
-
-        ctx.fillStyle=
+        ctx.fillStyle =
             "rgba(0,0,0,.7)";
-
 
         ctx.fillRect(
             -barWidth/2,
@@ -1245,10 +1244,8 @@ function drawEnemy(enemy){
             7
         );
 
-
-        ctx.fillStyle=
+        ctx.fillStyle =
             "#ff4444";
-
 
         ctx.fillRect(
             -barWidth/2,
@@ -1267,7 +1264,6 @@ function drawEnemy(enemy){
 }
 
 
-
 /* =========================
    ACTUALIZAR
 ========================= */
@@ -1275,7 +1271,7 @@ function drawEnemy(enemy){
 function update(delta){
 
     /*
-       MOVIMIENTO GALLINA
+       MOVIMIENTO
     */
 
     if(keys.left){
@@ -1296,7 +1292,7 @@ function update(delta){
     }
 
 
-    chicken.x=
+    chicken.x =
         Math.max(
             40,
             Math.min(
@@ -1304,7 +1300,6 @@ function update(delta){
                 chicken.x
             )
         );
-
 
 
     /*
@@ -1317,7 +1312,7 @@ function update(delta){
         i--
     ){
 
-        const bullet=
+        const bullet =
             bullets[i];
 
 
@@ -1327,8 +1322,7 @@ function update(delta){
 
 
         if(
-            bullet.y<
-            -50
+            bullet.y < -50
         ){
 
             bullets.splice(
@@ -1341,7 +1335,6 @@ function update(delta){
     }
 
 
-
     /*
        MAÍCES
     */
@@ -1352,13 +1345,9 @@ function update(delta){
         i--
     ){
 
-        const enemy=
+        const enemy =
             enemies[i];
 
-
-        /*
-           Movimiento lateral
-        */
 
         if(
             enemy.type==="fast"
@@ -1386,670 +1375,4 @@ function update(delta){
 
         }
 
-        else{
-
-            enemy.x +=
-                Math.sin(
-                    enemy.wave
-                )*
-                40*
-                delta;
-
-        }
-
-
-        enemy.y +=
-            enemy.speed*
-            delta;
-
-
-
-        /*
-           Rebote lateral
-        */
-
-        if(
-            enemy.x <
-            enemy.size
-        ){
-
-            enemy.x=
-                enemy.size;
-
-        }
-
-
-        if(
-            enemy.x >
-            width-enemy.size
-        ){
-
-            enemy.x=
-                width-enemy.size;
-
-        }
-
-
-
-        /*
-           MAÍZ QUE ESCAPA
-        */
-
-        if(
-            enemy.y>
-            height+70
-        ){
-
-            enemies.splice(
-                i,
-                1
-            );
-
-
-            lives--;
-
-            livesText.textContent=
-                lives;
-
-
-            if(
-                lives<=0
-            ){
-
-                gameOver();
-
-            }
-
-        }
-
-    }
-
-
-
-    /*
-       COLISIONES
-    */
-
-    for(
-        let i=bullets.length-1;
-        i>=0;
-        i--
-    ){
-
-        const bullet=
-            bullets[i];
-
-
-        for(
-            let j=enemies.length-1;
-            j>=0;
-            j--
-        ){
-
-            const enemy=
-                enemies[j];
-
-
-            const dx=
-                bullet.x-
-                enemy.x;
-
-
-            const dy=
-                bullet.y-
-                enemy.y;
-
-
-            const distance=
-                Math.sqrt(
-                    dx*dx+
-                    dy*dy
-                );
-
-
-            if(
-                distance<
-                enemy.size*.55
-            ){
-
-                /*
-                   Gigante:
-                   necesita 2 impactos
-                */
-
-                if(
-                    enemy.type==="giant"
-                ){
-
-                    enemy.hp--;
-
-
-                    bullets.splice(
-                        i,
-                        1
-                    );
-
-
-                    if(
-                        enemy.hp<=0
-                    ){
-
-                        explode(
-                            enemy.x,
-                            enemy.y
-                        );
-
-
-                        enemies.splice(
-                            j,
-                            1
-                        );
-
-
-                        score+=
-                            enemy.points;
-
-                    }
-
-                    else{
-
-                        /*
-                           Pequeña explosión
-                           cuando recibe
-                           el primer golpe
-                        */
-
-                        explode(
-                            enemy.x,
-                            enemy.y
-                        );
-
-                    }
-
-                }
-
-
-                else{
-
-                    explode(
-                        enemy.x,
-                        enemy.y
-                    );
-
-
-                    bullets.splice(
-                        i,
-                        1
-                    );
-
-
-                    enemies.splice(
-                        j,
-                        1
-                    );
-
-
-                    score+=
-                        enemy.points;
-
-                }
-
-
-                scoreText.textContent=
-                    score;
-
-
-                break;
-
-            }
-
-        }
-
-    }
-
-
-
-    /*
-       EXPLOSIONES
-    */
-
-    for(
-        let i=explosions.length-1;
-        i>=0;
-        i--
-    ){
-
-        const particle=
-            explosions[i];
-
-
-        particle.x +=
-            particle.vx*
-            delta;
-
-
-        particle.y +=
-            particle.vy*
-            delta;
-
-
-        particle.life -=
-            delta*1.8;
-
-
-        if(
-            particle.life<=0
-        ){
-
-            explosions.splice(
-                i,
-                1
-            );
-
-        }
-
-    }
-
-}
-
-
-
-/* =========================
-   EXPLOSIONES
-========================= */
-
-function drawExplosions(){
-
-    for(
-        const p of explosions
-    ){
-
-        ctx.globalAlpha=
-            Math.max(
-                0,
-                p.life
-            );
-
-
-        ctx.fillStyle=
-            "#ffd600";
-
-
-        ctx.beginPath();
-
-
-        ctx.arc(
-            p.x,
-            p.y,
-            p.size,
-            0,
-            Math.PI*2
-        );
-
-
-        ctx.fill();
-
-    }
-
-
-    ctx.globalAlpha=1;
-
-}
-
-
-
-/* =========================
-   LOOP
-========================= */
-
-function gameLoop(time){
-
-    if(
-        !gameRunning
-    ){
-
-        return;
-
-    }
-
-
-    const delta=
-        Math.min(
-            (time-lastTime)/
-            1000,
-            .035
-        );
-
-
-    lastTime=time;
-
-
-    drawStars(delta);
-
-
-    update(delta);
-
-
-
-    /*
-       APARICIÓN DE MAÍCES
-    */
-
-    enemyTimer-=delta;
-
-
-    if(
-        enemyTimer<=0
-    ){
-
-        createEnemy();
-
-
-        /*
-           Aumenta la dificultad
-        */
-
-        enemyTimer=
-            Math.max(
-                .35,
-                1.1-
-                score/1500
-            );
-
-    }
-
-
-
-    /*
-       DIBUJAR
-    */
-
-    for(
-        const enemy of enemies
-    ){
-
-        drawEnemy(enemy);
-
-    }
-
-
-    for(
-        const bullet of bullets
-    ){
-
-        drawBullet(bullet);
-
-    }
-
-
-    drawExplosions();
-
-    drawChicken();
-
-
-    requestAnimationFrame(
-        gameLoop
-    );
-
-}
-
-
-
-/* =========================
-   INICIAR
-========================= */
-
-function startGame(){
-
-    resetGame();
-
-
-    menu.classList.add(
-        "hidden"
-    );
-
-
-    controls.classList.remove(
-        "hidden"
-    );
-
-
-    gameRunning=true;
-
-
-    lastTime=
-        performance.now();
-
-
-    enemyTimer=.5;
-
-
-    requestAnimationFrame(
-        gameLoop
-    );
-
-}
-
-
-
-/* =========================
-   GAME OVER
-========================= */
-
-function gameOver(){
-
-    gameRunning=false;
-
-
-    controls.classList.add(
-        "hidden"
-    );
-
-
-    menu.classList.remove(
-        "hidden"
-    );
-
-
-    menu.querySelector(
-        ".chickenTitle"
-    ).textContent=
-        "💥🌽";
-
-
-    menu.querySelector(
-        "h1"
-    ).textContent=
-        "¡SE ACABÓ EL MAÍZ!";
-
-
-    menu.querySelector(
-        "p"
-    ).innerHTML=
-        "La invasión ganó esta vez.<br><br>"+
-        "Puntaje: "+
-        score+
-        " ⭐";
-
-
-    startButton.textContent=
-        "🐔 ¡REVANCHA!";
-
-}
-
-
-
-/* =========================
-   TECLADO
-========================= */
-
-window.addEventListener(
-    "keydown",
-    function(e){
-
-        if(
-            e.key==="ArrowLeft" ||
-            e.key.toLowerCase()==="a"
-        ){
-
-            keys.left=true;
-
-        }
-
-
-        if(
-            e.key==="ArrowRight" ||
-            e.key.toLowerCase()==="d"
-        ){
-
-            keys.right=true;
-
-        }
-
-
-        if(
-            e.code==="Space"
-        ){
-
-            e.preventDefault();
-
-            shoot();
-
-        }
-
-    }
-);
-
-
-
-window.addEventListener(
-    "keyup",
-    function(e){
-
-        if(
-            e.key==="ArrowLeft" ||
-            e.key.toLowerCase()==="a"
-        ){
-
-            keys.left=false;
-
-        }
-
-
-        if(
-            e.key==="ArrowRight" ||
-            e.key.toLowerCase()==="d"
-        ){
-
-            keys.right=false;
-
-        }
-
-    }
-);
-
-
-
-/* =========================
-   BOTONES CELULAR
-========================= */
-
-function holdButton(
-    button,
-    action
-){
-
-    button.addEventListener(
-        "pointerdown",
-        function(e){
-
-            e.preventDefault();
-
-            action(true);
-
-        }
-    );
-
-
-    button.addEventListener(
-        "pointerup",
-        function(e){
-
-            e.preventDefault();
-
-            action(false);
-
-        }
-    );
-
-
-    button.addEventListener(
-        "pointercancel",
-        function(){
-
-            action(false);
-
-        }
-    );
-
-}
-
-
-
-holdButton(
-
-    document.getElementById(
-        "left"
-    ),
-
-    value=>{
-
-        keys.left=value;
-
-    }
-
-);
-
-
-
-holdButton(
-
-    document.getElementById(
-        "right"
-    ),
-
-    value=>{
-
-        keys.right=value;
-
-    }
-
-);
-
-
-
-document
-    .getElementById("fire")
-    .addEventListener(
-        "pointerdown",
-        function(e){
-
-            e.preventDefault();
-
-            shoot();
-
-        }
-    );
-
-
-
-startButton.addEventListener(
-    "click",
-    startGame
-);
-
-
-</script>
-
-</body>
-</html>
+       
