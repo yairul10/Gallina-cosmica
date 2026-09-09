@@ -1,880 +1,697 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nave Gallina vs Maíces Malvados</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-
-        body {
-            background-color: #020617;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 420px;
-            height: 640px;
-            background: #0f172a;
-            box-shadow: 0 25px 35px -5px rgb(0 0 0 / 0.9);
-            overflow: hidden;
-            border-radius: 20px;
-            border: 3px solid #334155;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            background: #090d16;
-        }
-
-        .ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 16px;
-            pointer-events: none;
-        }
-
-        .header-score {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-            font-weight: 800;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            background: rgba(15, 23, 42, 0.85);
-            padding: 8px 14px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.15);
-        }
-
-        .controls-hud {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            pointer-events: auto;
-            margin-bottom: 5px;
-        }
-
-        .upgrades-panel {
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            border-radius: 12px;
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            max-width: 200px;
-        }
-
-        .upgrade-btn {
-            background: #1e293b;
-            color: #38bdf8;
-            border: 1px solid #38bdf8;
-            padding: 4px 8px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            border-radius: 6px;
-            cursor: pointer;
-            text-align: left;
-            transition: background 0.1s;
-        }
-
-        .upgrade-btn:hover:not(:disabled) {
-            background: #334155;
-        }
-
-        .upgrade-btn:disabled {
-            border-color: #64748b;
-            color: #64748b;
-            cursor: default;
-        }
-
-        .fire-button-container {
-            pointer-events: auto;
-        }
-
-        .btn-fire {
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(135deg, #ef4444, #b91c1c);
-            border: 3px solid #fee2e2;
-            border-radius: 50%;
-            font-size: 1.6rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
-            transition: transform 0.08s;
-        }
-
-        .btn-fire:active {
-            transform: scale(0.9);
-        }
-
-        .screen-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(9, 13, 22, 0.96);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 24px;
-            pointer-events: auto;
-            z-index: 10;
-        }
-
-        .screen-overlay h1 {
-            font-size: 1.6rem;
-            color: #38bdf8;
-            margin-bottom: 8px;
-        }
-
-        .screen-overlay p {
-            color: #94a3b8;
-            font-size: 0.85rem;
-            margin-bottom: 14px;
-            line-height: 1.3;
-        }
-
-        .btn {
-            background-color: #38bdf8;
-            color: #0f172a;
-            border: none;
-            padding: 10px 24px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-            transition: transform 0.1s;
-        }
-
-        .btn:active {
-            transform: scale(0.95);
-        }
-
-        /* Estilos para el Top de Récords */
-        .leaderboard-box {
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            border-radius: 10px;
-            padding: 8px 16px;
-            margin-bottom: 14px;
-            width: 100%;
-            max-width: 260px;
-            text-align: left;
-        }
-
-        .leaderboard-box h3 {
-            font-size: 0.9rem;
-            color: #fbbf24;
-            margin-bottom: 4px;
-            text-align: center;
-        }
-
-        .lb-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: #cbd5e1;
-            padding: 2px 0;
-            border-bottom: 1px dashed rgba(255,255,255,0.05);
-        }
-
-        .initials-input-container {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .initials-input-container input {
-            background: #1e293b;
-            border: 2px solid #38bdf8;
-            color: #fff;
-            font-size: 1.2rem;
-            text-align: center;
-            width: 60px;
-            padding: 6px;
-            border-radius: 8px;
-            text-transform: uppercase;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
-        
-        <div class="ui-layer">
-            <div class="header-score">
-                <div>Pts: <span id="scoreVal">0</span> | 🪙 <span id="coinVal">0</span></div>
-                <div>Vidas: <span id="livesVal">❤️ ❤️ ❤️</span></div>
-            </div>
-
-            <div class="controls-hud">
-                <div class="upgrades-panel" id="upgradesPanel">
-                    <button class="upgrade-btn" id="upgBullets" onclick="buyUpgrade('bullets')">Daño/Disparo (Lv.0)</button>
-                    <button class="upgrade-btn" id="upgSpeed" onclick="buyUpgrade('speed')">Velocidad (Lv.1)</button>
-                    <button class="upgrade-btn" id="upgLife" onclick="buyUpgrade('life')">+1 Vida [🪙15]</button>
-                    <button class="upgrade-btn" id="upgEvolve" onclick="buyUpgrade('evolve')" style="display:none; border-color:#fbbf24; color:#fbbf24;">🌟 Evolucionar</button>
-                </div>
-
-                <div class="fire-button-container">
-                    <button class="btn-fire" id="fireBtn">🚀</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pantalla de Inicio -->
-        <div id="startScreen" class="screen-overlay">
-            <h1>🐔 Granja Espacial Épica</h1>
-            <p>Mejoras a 10 y 15 monedas. ¡Evoluciona hasta la Vaca lechera y compite por entrar al Top 5 de récords!</p>
-            
-            <div class="leaderboard-box">
-                <h3>🏆 Mejores Récords</h3>
-                <div id="startLeaderboardList"></div>
-            </div>
-
-            <button class="btn" id="startBtn">¡Despegar!</button>
-        </div>
-
-        <!-- Pantalla de Game Over -->
-        <div id="gameOverScreen" class="screen-overlay" style="display: none;">
-            <h1>¡Nave Destruida!</h1>
-            <p>Puntuación final: <strong id="finalScore">0</strong></p>
-            
-            <div id="saveScoreSection">
-                <p style="font-size:0.8rem; margin-bottom:4px;">¡Nuevo Récord! Ingresa tus 3 iniciales:</p>
-                <div class="initials-input-container">
-                    <input type="text" id="playerInitials" maxlength="3" value="AAA">
-                    <button class="btn" id="saveScoreBtn" style="padding: 8px 14px; font-size: 0.85rem;">Guardar</button>
-                </div>
-            </div>
-
-            <div class="leaderboard-box">
-                <h3>🏆 Top Puntajes</h3>
-                <div id="endLeaderboardList"></div>
-            </div>
-
-            <button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button>
-        </div>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        canvas.width = 420;
-        canvas.height = 640;
-
-        let score = 0;
-        let coins = 0;
-        let lives = 3;
-        let gameTime = 0;
-        let gameState = 'START';
-        
-        let evolutionStage = 0; 
-        let maxUpgradeLimit = 3; 
-        let nextBossScoreThreshold = 5000;
-
-        let upgrades = {
-            bullets: 0, 
-            speed: 1
-        };
-
-        const player = {
-            x: canvas.width / 2 - 25,
-            y: canvas.height - 110,
-            width: 50,
-            height: 50,
-            baseSpeed: 5.5
-        };
-
-        let bullets = [];
-        let enemies = [];
-        let bossBullets = [];
-        let boss = null;
-        let stars = [];
-
-        // Sistema de Récords (Top 5 guardados en localStorage)
-        let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || [
-            { name: 'PRO', score: 5000 },
-            { name: 'ANA', score: 3000 },
-            { name: 'BOB', score: 1500 }
-        ];
-
-        function saveLeaderboard() {
-            localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard));
-        }
-
-        function renderLeaderboard(elementId) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = '';
-            if (leaderboard.length === 0) {
-                container.innerHTML = '<div class="lb-row"><span>Sin récords aún</span><span></span></div>';
-                return;
-            }
-            leaderboard.forEach((item, index) => {
-                const row = document.createElement('div');
-                row.className = 'lb-row';
-                row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`;
-                container.appendChild(row);
-            });
-        }
-
-        for (let i = 0; i < 40; i++) {
-            stars.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 2 + 1,
-                speed: Math.random() * 0.8 + 0.3
-            });
-        }
-
-        let keys = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false };
-
-        window.addEventListener('keydown', (e) => {
-            if (e.code in keys) keys[e.code] = true;
-            if (e.code === 'Space' && gameState === 'PLAYING') {
-                shootBullet();
-                e.preventDefault();
-            }
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if (e.code in keys) keys[e.code] = false;
-        });
-
-        let isDragging = false;
-        canvas.addEventListener('pointerdown', (e) => {
-            isDragging = true;
-            movePlayerToTouch(e);
-        });
-        canvas.addEventListener('pointermove', (e) => {
-            if (isDragging) movePlayerToTouch(e);
-        });
-        window.addEventListener('pointerup', () => { isDragging = false; });
-
-        function movePlayerToTouch(e) {
-            const rect = canvas.getBoundingClientRect();
-            const touchX = (e.clientX - rect.left) * (canvas.width / rect.width);
-            player.x = touchX - player.width / 2;
-        }
-
-        document.getElementById('fireBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (gameState === 'PLAYING') {
-                shootBullet();
-            }
-        });
-
-        function shootBullet() {
-            let bulletSpeed = 10;
-            let widthSize = 16;
-            let heightSize = 16;
-            let bType = 'chick';
-            if (evolutionStage === 1) bType = 'wool';
-            if (evolutionStage === 2) bType = 'horseshoe';
-            if (evolutionStage === 3) bType = 'milk';
-
-            let bulletDamage = upgrades.bullets === 0 ? 1 : upgrades.bullets;
-
-            if (upgrades.bullets >= 2) {
-                bullets.push({ x: player.x + 4, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -1.2, type: bType, damage: bulletDamage });
-                bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
-                bullets.push({ x: player.x + player.width - 20, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 1.2, type: bType, damage: bulletDamage });
-            } else if (upgrades.bullets === 1) {
-                bullets.push({ x: player.x + 8, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
-                bullets.push({ x: player.x + player.width - 24, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
-            } else {
-                bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
-            }
-        }
-
-        // Costo de mejoras actualizado a 10 monedas (ataque y velocidad) y 15 para vida
-        window.buyUpgrade = function(type) {
-            if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 10) {
-                coins -= 10;
-                upgrades.bullets++;
-            } else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 10) {
-                coins -= 10;
-                upgrades.speed++;
-            } else if (type === 'life' && coins >= 15) {
-                coins -= 15;
-                lives++;
-                updateLivesUI();
-            } else if (type === 'evolve') {
-                if (evolutionStage === 0) {
-                    evolutionStage = 1; 
-                    maxUpgradeLimit = 6; 
-                } else if (evolutionStage === 1) {
-                    evolutionStage = 2; 
-                    maxUpgradeLimit = 10; 
-                } else if (evolutionStage === 2) {
-                    evolutionStage = 3; 
-                    maxUpgradeLimit = 10;
-                }
-                document.getElementById('upgEvolve').style.display = 'none';
-            }
-            updateUpgradesHUD();
-        }
-
-        function updateUpgradesHUD() {
-            document.getElementById('coinVal').textContent = coins;
-            document.getElementById('upgBullets').textContent = upgrades.bullets >= maxUpgradeLimit ? 'Daño Disparos: MÁX' : `Daño/Disparos [🪙10] (Lv.${upgrades.bullets})`;
-            document.getElementById('upgSpeed').textContent = upgrades.speed >= maxUpgradeLimit ? 'Velocidad: MÁX' : `Velocidad [🪙10] (Lv.${upgrades.speed})`;
-            document.getElementById('upgLife').textContent = `+1 Vida [🪙15]`;
-
-            let evolveBtn = document.getElementById('upgEvolve');
-            if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) {
-                if (evolutionStage === 0) {
-                    evolveBtn.style.display = 'block';
-                    evolveBtn.textContent = '🌟 Evolucionar a Oveja';
-                } else if (evolutionStage === 1) {
-                    evolveBtn.style.display = 'block';
-                    evolveBtn.textContent = '🌟 Evolucionar a Caballo';
-                } else if (evolutionStage === 2) {
-                    evolveBtn.style.display = 'block';
-                    evolveBtn.textContent = '🌟 Evolucionar a Vaca';
-                } else {
-                    evolveBtn.style.display = 'none';
-                }
-            } else {
-                evolveBtn.style.display = 'none';
-            }
-        }
-
-        function spawnEnemy() {
-            if (boss) return;
-            const size = 48;
-            const x = Math.random() * (canvas.width - size - 20) + 10;
-            let speedMultiplier = 1 + (gameTime / 30); 
-
-            let baseCornHp = evolutionStage >= 3 ? 3 : 1;
-
-            enemies.push({
-                x: x,
-                y: -60,
-                width: size,
-                height: size,
-                hp: baseCornHp,
-                maxHp: baseCornHp,
-                speed: (1.5 + Math.random() * 1.5) * speedMultiplier,
-                wobble: Math.random() * Math.PI
-            });
-        }
-
-        function spawnBoss() {
-            let bossLevel = Math.floor(score / 5000);
-            let bossHp = 60 + (bossLevel * 45);
-
-            boss = {
-                x: canvas.width / 2 - 60,
-                y: -100,
-                width: 120,
-                height: 100,
-                maxHp: bossHp,
-                hp: bossHp,
-                speed: 1.5 + (bossLevel * 0.1),
-                direction: 1,
-                shootCooldown: 0
-            };
-        }
-
-        document.getElementById('startBtn').addEventListener('click', startGame);
-        document.getElementById('restartBtn').addEventListener('click', startGame);
-
-        document.getElementById('saveScoreBtn').addEventListener('click', () => {
-            let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3);
-            if (!initials) initials = 'ABC';
-            leaderboard.push({ name: initials, score: score });
-            leaderboard.sort((a, b) => b.score - a.score);
-            if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5);
-            saveLeaderboard();
-            document.getElementById('saveScoreSection').style.display = 'none';
-            renderLeaderboard('endLeaderboardList');
-        });
-
-        function startGame() {
-            score = 0;
-            coins = 0;
-            lives = 3;
-            gameTime = 0;
-            bullets = [];
-            enemies = [];
-            bossBullets = [];
-            boss = null;
-            evolutionStage = 0;
-            maxUpgradeLimit = 3;
-            nextBossScoreThreshold = 5000;
-            upgrades.bullets = 0;
-            upgrades.speed = 1;
-            player.x = canvas.width / 2 - player.width / 2;
-            
-            document.getElementById('scoreVal').textContent = score;
-            document.getElementById('upgEvolve').style.display = 'none';
-            document.getElementById('saveScoreSection').style.display = 'block';
-            document.getElementById('playerInitials').value = 'AAA';
-            
-            updateLivesUI();
-            updateUpgradesHUD();
-
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameOverScreen').style.display = 'none';
-            gameState = 'PLAYING';
-
-            if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
-            window.gameTimerInterval = setInterval(() => {
-                if (gameState === 'PLAYING') {
-                    gameTime++;
-                }
-            }, 1000);
-        }
-
-        function gameOver() {
-            gameState = 'GAMEOVER';
-            clearInterval(window.gameTimerInterval);
-            document.getElementById('finalScore').textContent = score;
-            renderLeaderboard('endLeaderboardList');
-            document.getElementById('gameOverScreen').style.display = 'flex';
-        }
-
-        let enemySpawnInterval = 0;
-        function update() {
-            if (gameState !== 'PLAYING') return;
-
-            if (score >= nextBossScoreThreshold && !boss) {
-                spawnBoss();
-                nextBossScoreThreshold += 5000;
-            }
-
-            let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
-            if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed;
-            if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
-
-            if (player.x < 10) player.x = 10;
-            if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
-
-            for (let s of stars) {
-                s.y += s.speed;
-                if (s.y > canvas.height) s.y = 0;
-            }
-
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                bullets[i].y -= bullets[i].speed;
-                if (bullets[i].dx) bullets[i].x += bullets[i].dx;
-                if (bullets[i].y < -20) bullets.splice(i, 1);
-            }
-
-            for (let i = bossBullets.length - 1; i >= 0; i--) {
-                bossBullets[i].y += bossBullets[i].speed;
-                if (bossBullets[i].y > canvas.height + 20) {
-                    bossBullets.splice(i, 1);
-                    continue;
-                }
-                if (
-                    player.x < bossBullets[i].x + bossBullets[i].width &&
-                    player.x + player.width > bossBullets[i].x &&
-                    player.y < bossBullets[i].y + bossBullets[i].height &&
-                    player.y + player.height > bossBullets[i].y
-                ) {
-                    bossBullets.splice(i, 1);
-                    lives--;
-                    updateLivesUI();
-                    if (lives <= 0) gameOver();
-                }
-            }
-
-            if (!boss) {
-                enemySpawnInterval++;
-                let spawnLimit = Math.max(20, 45 - Math.floor(gameTime / 10));
-                if (enemySpawnInterval > spawnLimit) {
-                    spawnEnemy();
-                    enemySpawnInterval = 0;
-                }
-            }
-
-            if (boss) {
-                if (boss.y < 50) boss.y += 1;
-                boss.x += boss.speed * boss.direction;
-                if (boss.x < 10 || boss.x + boss.width > canvas.width - 10) {
-                    boss.direction *= -1;
-                }
-
-                boss.shootCooldown++;
-                if (boss.shootCooldown >= 35) {
-                    boss.shootCooldown = 0;
-                    bossBullets.push({
-                        x: boss.x + boss.width / 2 - 6,
-                        y: boss.y + boss.height,
-                        width: 12,
-                        height: 12,
-                        speed: 5.5
-                    });
-                }
-            }
-
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                enemies[i].y += enemies[i].speed;
-                enemies[i].wobble += 0.05;
-                enemies[i].x += Math.sin(enemies[i].wobble) * 0.8;
-
-                if (enemies[i].y > canvas.height) {
-                    enemies.splice(i, 1);
-                    lives--;
-                    updateLivesUI();
-                    if (lives <= 0) gameOver();
-                    continue;
-                }
-
-                if (
-                    player.x < enemies[i].x + enemies[i].width &&
-                    player.x + player.width > enemies[i].x &&
-                    player.y < enemies[i].y + enemies[i].height &&
-                    player.y + player.height > enemies[i].y
-                ) {
-                    enemies.splice(i, 1);
-                    lives--;
-                    updateLivesUI();
-                    if (lives <= 0) gameOver();
-                    continue;
-                }
-
-                for (let j = bullets.length - 1; j >= 0; j--) {
-                    if (
-                        bullets[j] &&
-                        bullets[j].x < enemies[i].x + enemies[i].width &&
-                        bullets[j].x + bullets[j].width > enemies[i].x &&
-                        bullets[j].y < enemies[i].y + enemies[i].height &&
-                        bullets[j].y + bullets[j].height > enemies[i].y
-                    ) {
-                        enemies[i].hp -= bullets[j].damage;
-                        bullets.splice(j, 1);
-
-                        if (enemies[i].hp <= 0) {
-                            score += 100;
-                            coins += 1;
-                            document.getElementById('scoreVal').textContent = score;
-                            updateUpgradesHUD();
-                            enemies.splice(i, 1);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            if (boss) {
-                for (let j = bullets.length - 1; j >= 0; j--) {
-                    if (
-                        bullets[j] &&
-                        bullets[j].x < boss.x + boss.width &&
-                        bullets[j].x + bullets[j].width > boss.x &&
-                        bullets[j].y < boss.y + boss.height &&
-                        bullets[j].y + bullets[j].height > boss.y
-                    ) {
-                        boss.hp -= bullets[j].damage;
-                        bullets.splice(j, 1);
-                        if (boss.hp <= 0) {
-                            score += 1500;
-                            coins += 15;
-                            document.getElementById('scoreVal').textContent = score;
-                            updateUpgradesHUD();
-                            boss = null;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        function updateLivesUI() {
-            let hearts = '';
-            for (let i = 0; i < lives; i++) hearts += '❤️ ';
-            document.getElementById('livesVal').textContent = hearts.trim();
-        }
-
-        function drawPlayerShip(x, y) {
-            ctx.save();
-            ctx.translate(x, y);
-
-            if (evolutionStage === 3) {
-                ctx.fillStyle = '#f1f5f9';
-                ctx.beginPath();
-                ctx.ellipse(25, 26, 22, 18, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(15, 20, 8, 8);
-                ctx.fillRect(30, 28, 6, 6);
-            } else if (evolutionStage === 2) {
-                ctx.fillStyle = '#a855f7';
-                ctx.beginPath();
-                ctx.ellipse(25, 26, 18, 22, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#c084fc';
-                ctx.fillRect(20, -4, 10, 16);
-            } else if (evolutionStage === 1) {
-                ctx.fillStyle = '#f8fafc';
-                ctx.beginPath();
-                ctx.ellipse(25, 26, 20, 16, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(25, 10, 10, 0, Math.PI * 2);
-                ctx.fill();
-            } else {
-                ctx.fillStyle = '#38bdf8';
-                ctx.fillRect(16, 42, 6, 10);
-                
-                ctx.fillStyle = '#f8fafc';
-                ctx.beginPath();
-                ctx.ellipse(25, 26, 16, 20, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = '#cbd5e1';
-                ctx.stroke();
-
-                ctx.fillStyle = '#38bdf8';
-                ctx.beginPath();
-                ctx.arc(25, 17, 9, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = '#f97316';
-                ctx.beginPath();
-                ctx.moveTo(21, 8); ctx.lineTo(29, 8); ctx.lineTo(25, 0);
-                ctx.fill();
-
-                ctx.fillStyle = '#ef4444';
-                ctx.beginPath();
-                ctx.arc(22, 2, 3.5, 0, Math.PI * 2);
-                ctx.arc(27, 1, 4.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            ctx.restore();
-        }
-
-        function drawEvilCorn(e) {
-            ctx.save();
-            ctx.translate(e.x, e.y);
-
-            ctx.fillStyle = '#eab308';
+function drawPlayerShip(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // SOMBRA GENERAL
+    ctx.shadowColor = 'rgba(0,0,0,0.55)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 4;
+
+    // =========================
+    // 🐄 EVOLUCIÓN 3 — VACA
+    // =========================
+    if (evolutionStage === 3) {
+
+        // Propulsores
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(10, 38);
+        ctx.lineTo(17, 38);
+        ctx.lineTo(14, 53);
+        ctx.lineTo(9, 45);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(33, 38);
+        ctx.lineTo(40, 38);
+        ctx.lineTo(41, 45);
+        ctx.lineTo(36, 53);
+        ctx.closePath();
+        ctx.fill();
+
+        // Llama
+        ctx.fillStyle = '#fb923c';
+        ctx.beginPath();
+        ctx.moveTo(11, 48);
+        ctx.lineTo(14, 57);
+        ctx.lineTo(17, 48);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(35, 48);
+        ctx.lineTo(38, 57);
+        ctx.lineTo(41, 48);
+        ctx.fill();
+
+        ctx.shadowColor = 'rgba(0,0,0,0.55)';
+        ctx.shadowBlur = 8;
+
+        // Cuerpo de vaca
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.ellipse(25, 29, 22, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.stroke();
+
+        // Manchas
+        ctx.fillStyle = '#334155';
+
+        ctx.beginPath();
+        ctx.ellipse(13, 25, 7, 5, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.ellipse(34, 34, 7, 5, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.ellipse(28, 20, 5, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cabeza
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.ellipse(25, 12, 13, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Orejas
+        ctx.fillStyle = '#94a3b8';
+
+        ctx.beginPath();
+        ctx.ellipse(13, 7, 6, 4, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.ellipse(37, 7, 6, 4, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cuernos
+        ctx.fillStyle = '#fbbf24';
+
+        ctx.beginPath();
+        ctx.moveTo(17, 3);
+        ctx.lineTo(14, -5);
+        ctx.lineTo(21, 1);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(33, 3);
+        ctx.lineTo(36, -5);
+        ctx.lineTo(29, 1);
+        ctx.closePath();
+        ctx.fill();
+
+        // Ojos
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(20, 10, 2.2, 0, Math.PI * 2);
+        ctx.arc(30, 10, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Hocico
+        ctx.fillStyle = '#fca5a5';
+        ctx.beginPath();
+        ctx.ellipse(25, 17, 7, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#7f1d1d';
+        ctx.beginPath();
+        ctx.arc(22, 17, 1.3, 0, Math.PI * 2);
+        ctx.arc(28, 17, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ventana/energía central
+        ctx.fillStyle = '#22d3ee';
+        ctx.beginPath();
+        ctx.ellipse(25, 30, 7, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+    // =========================
+    // 🐎 EVOLUCIÓN 2 — CABALLO
+    // =========================
+    } else if (evolutionStage === 2) {
+
+        ctx.shadowBlur = 0;
+
+        // Propulsores
+        ctx.fillStyle = '#38bdf8';
+
+        ctx.beginPath();
+        ctx.moveTo(8, 39);
+        ctx.lineTo(17, 39);
+        ctx.lineTo(14, 54);
+        ctx.lineTo(9, 47);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(33, 39);
+        ctx.lineTo(42, 39);
+        ctx.lineTo(41, 47);
+        ctx.lineTo(36, 54);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cuerpo aerodinámico
+        ctx.shadowColor = 'rgba(0,0,0,0.55)';
+        ctx.shadowBlur = 8;
+
+        ctx.fillStyle = '#a855f7';
+        ctx.beginPath();
+        ctx.moveTo(25, -2);
+        ctx.quadraticCurveTo(43, 16, 43, 34);
+        ctx.quadraticCurveTo(39, 46, 25, 48);
+        ctx.quadraticCurveTo(11, 46, 7, 34);
+        ctx.quadraticCurveTo(7, 16, 25, -2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#e9d5ff';
+        ctx.stroke();
+
+        // Alas
+        ctx.fillStyle = '#7e22ce';
+
+        ctx.beginPath();
+        ctx.moveTo(9, 25);
+        ctx.lineTo(-3, 36);
+        ctx.lineTo(12, 39);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(41, 25);
+        ctx.lineTo(53, 36);
+        ctx.lineTo(38, 39);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cuello
+        ctx.fillStyle = '#c084fc';
+        ctx.beginPath();
+        ctx.roundRect(20, -7, 10, 19, 5);
+        ctx.fill();
+
+        // Cabeza de caballo
+        ctx.fillStyle = '#d8b4fe';
+        ctx.beginPath();
+        ctx.ellipse(25, 7, 11, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Orejas
+        ctx.fillStyle = '#c084fc';
+
+        ctx.beginPath();
+        ctx.moveTo(18, 0);
+        ctx.lineTo(15, -8);
+        ctx.lineTo(22, -3);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(32, 0);
+        ctx.lineTo(35, -8);
+        ctx.lineTo(28, -3);
+        ctx.closePath();
+        ctx.fill();
+
+        // Crin
+        ctx.fillStyle = '#f0abfc';
+        ctx.beginPath();
+        ctx.moveTo(19, 0);
+        ctx.lineTo(15, 5);
+        ctx.lineTo(19, 8);
+        ctx.lineTo(16, 13);
+        ctx.lineTo(21, 12);
+        ctx.lineTo(25, 17);
+        ctx.lineTo(29, 12);
+        ctx.lineTo(34, 13);
+        ctx.lineTo(31, 7);
+        ctx.lineTo(35, 3);
+        ctx.closePath();
+        ctx.fill();
+
+        // Ojos
+        ctx.fillStyle = '#111827';
+        ctx.beginPath();
+        ctx.arc(21, 7, 2, 0, Math.PI * 2);
+        ctx.arc(29, 7, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Hocico
+        ctx.fillStyle = '#f5d0fe';
+        ctx.beginPath();
+        ctx.ellipse(25, 14, 6, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+    // =========================
+    // 🐑 EVOLUCIÓN 1 — OVEJA
+    // =========================
+    } else if (evolutionStage === 1) {
+
+        ctx.shadowBlur = 0;
+
+        // Propulsores
+        ctx.fillStyle = '#38bdf8';
+
+        ctx.beginPath();
+        ctx.moveTo(9, 39);
+        ctx.lineTo(17, 39);
+        ctx.lineTo(14, 54);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(33, 39);
+        ctx.lineTo(41, 39);
+        ctx.lineTo(38, 54);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.shadowColor = 'rgba(0,0,0,0.55)';
+        ctx.shadowBlur = 8;
+
+        // Lana principal
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+
+        ctx.arc(12, 28, 10, 0, Math.PI * 2);
+        ctx.arc(20, 22, 11, 0, Math.PI * 2);
+        ctx.arc(30, 22, 11, 0, Math.PI * 2);
+        ctx.arc(38, 28, 10, 0, Math.PI * 2);
+        ctx.arc(31, 34, 12, 0, Math.PI * 2);
+        ctx.arc(19, 34, 12, 0, Math.PI * 2);
+
+        ctx.fill();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.stroke();
+
+        // Cabeza
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.ellipse(25, 10, 10, 11, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Orejas
+        ctx.beginPath();
+        ctx.ellipse(16, 8, 5, 3, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.ellipse(34, 8, 5, 3, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ojos
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.arc(21, 9, 2.5, 0, Math.PI * 2);
+        ctx.arc(29, 9, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#020617';
+        ctx.beginPath();
+        ctx.arc(21, 9, 1, 0, Math.PI * 2);
+        ctx.arc(29, 9, 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Nariz
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.ellipse(25, 15, 5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Detalle tecnológico
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(25, 34, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+    // =========================
+    // 🐔 ETAPA 0 — GALLINA
+    // =========================
+    } else {
+
+        ctx.shadowBlur = 0;
+
+        // Propulsores
+        ctx.fillStyle = '#38bdf8';
+
+        ctx.beginPath();
+        ctx.moveTo(9, 40);
+        ctx.lineTo(18, 40);
+        ctx.lineTo(15, 54);
+        ctx.lineTo(11, 48);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(32, 40);
+        ctx.lineTo(41, 40);
+        ctx.lineTo(39, 48);
+        ctx.lineTo(35, 54);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cuerpo de nave
+        ctx.shadowColor = 'rgba(0,0,0,0.55)';
+        ctx.shadowBlur = 8;
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.moveTo(25, 4);
+        ctx.quadraticCurveTo(43, 17, 43, 35);
+        ctx.quadraticCurveTo(40, 46, 25, 49);
+        ctx.quadraticCurveTo(10, 46, 7, 35);
+        ctx.quadraticCurveTo(7, 17, 25, 4);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#94a3b8';
+        ctx.stroke();
+
+        // Alas
+        ctx.fillStyle = '#cbd5e1';
+
+        ctx.beginPath();
+        ctx.moveTo(9, 27);
+        ctx.lineTo(-2, 39);
+        ctx.lineTo(12, 42);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(41, 27);
+        ctx.lineTo(52, 39);
+        ctx.lineTo(38, 42);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cabeza
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(25, 13, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.stroke();
+
+        // Cresta
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(20, 3, 4, 0, Math.PI * 2);
+        ctx.arc(25, 0, 5, 0, Math.PI * 2);
+        ctx.arc(30, 3, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ojos
+        ctx.fillStyle = '#111827';
+        ctx.beginPath();
+        ctx.arc(21, 12, 2.5, 0, Math.PI * 2);
+        ctx.arc(29, 12, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Pico
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.moveTo(21, 17);
+        ctx.lineTo(29, 17);
+        ctx.lineTo(25, 23);
+        ctx.closePath();
+        ctx.fill();
+
+        // Barbillas
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(23, 21, 2.5, 0, Math.PI * 2);
+        ctx.arc(27, 21, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ventana espacial
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.ellipse(25, 32, 8, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#0ea5e9';
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+
+function drawEvilCorn(e) {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+
+    // Sombra
+    ctx.shadowColor = 'rgba(0,0,0,0.55)';
+    ctx.shadowBlur = 7;
+    ctx.shadowOffsetY = 3;
+
+    // Hojas
+    ctx.fillStyle = '#15803d';
+
+    ctx.beginPath();
+    ctx.moveTo(24, 8);
+    ctx.quadraticCurveTo(12, -4, 7, 2);
+    ctx.lineTo(16, 16);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(25, 8);
+    ctx.quadraticCurveTo(37, -4, 43, 2);
+    ctx.lineTo(34, 16);
+    ctx.closePath();
+    ctx.fill();
+
+    // Mazorca
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.ellipse(25, 27, 19, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#854d0e';
+    ctx.stroke();
+
+    // Granos
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#eab308';
+
+    for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 3; col++) {
             ctx.beginPath();
-            ctx.roundRect(4, 6, 40, 42, [12, 12, 18, 18]);
+            ctx.arc(
+                17 + col * 8 + (row % 2) * 2,
+                16 + row * 9,
+                3,
+                0,
+                Math.PI * 2
+            );
             ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#854d0e';
-            ctx.stroke();
-
-            if (e.maxHp > 1) {
-                ctx.fillStyle = '#b91c1c';
-                ctx.beginPath();
-                ctx.arc(24, 10, 16, Math.PI, 0, false);
-                ctx.fill();
-            }
-
-            ctx.fillStyle = '#dc2626';
-            ctx.fillRect(11, 16, 9, 6);
-            ctx.fillRect(28, 16, 9, 6);
-
-            ctx.restore();
         }
+    }
 
-        function drawBoss(b) {
-            ctx.save();
-            ctx.translate(b.x, b.y);
+    // Máscara/cejas malvadas
+    ctx.fillStyle = '#7f1d1d';
 
-            ctx.fillStyle = '#ca8a04';
+    ctx.beginPath();
+    ctx.moveTo(11, 15);
+    ctx.lineTo(22, 19);
+    ctx.lineTo(21, 23);
+    ctx.lineTo(11, 20);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(39, 15);
+    ctx.lineTo(28, 19);
+    ctx.lineTo(29, 23);
+    ctx.lineTo(39, 20);
+    ctx.closePath();
+    ctx.fill();
+
+    // Ojos
+    ctx.fillStyle = '#fee2e2';
+
+    ctx.beginPath();
+    ctx.arc(17, 21, 3.5, 0, Math.PI * 2);
+    ctx.arc(33, 21, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#450a0a';
+
+    ctx.beginPath();
+    ctx.arc(18, 22, 1.5, 0, Math.PI * 2);
+    ctx.arc(32, 22, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Boca
+    ctx.fillStyle = '#450a0a';
+    ctx.beginPath();
+    ctx.arc(25, 33, 8, 0, Math.PI);
+    ctx.fill();
+
+    // Dientes
+    ctx.fillStyle = '#f8fafc';
+
+    ctx.beginPath();
+    ctx.moveTo(20, 34);
+    ctx.lineTo(23, 38);
+    ctx.lineTo(25, 34);
+    ctx.lineTo(27, 38);
+    ctx.lineTo(30, 34);
+    ctx.closePath();
+    ctx.fill();
+
+    // Barra de vida si tiene más de 1 HP
+    if (e.maxHp > 1) {
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(5, -8, 40, 5);
+
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(5, -8, 40 * (e.hp / e.maxHp), 5);
+    }
+
+    ctx.restore();
+}
+
+
+function drawBoss(b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 5;
+
+    // Hojas gigantes
+    ctx.fillStyle = '#166534';
+
+    ctx.beginPath();
+    ctx.moveTo(60, 18);
+    ctx.lineTo(15, -10);
+    ctx.lineTo(28, 35);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(60, 18);
+    ctx.lineTo(105, -10);
+    ctx.lineTo(92, 35);
+    ctx.closePath();
+    ctx.fill();
+
+    // Cuerpo principal
+    ctx.fillStyle = '#ca8a04';
+    ctx.beginPath();
+    ctx.ellipse(60, 52, 57, 48, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#713f12';
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // Granos grandes
+    ctx.fillStyle = '#eab308';
+
+    for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 5; col++) {
             ctx.beginPath();
-            ctx.roundRect(0, 0, b.width, b.height, [20, 20, 30, 30]);
+            ctx.arc(
+                25 + col * 18 + (row % 2) * 8,
+                20 + row * 18,
+                6,
+                0,
+                Math.PI * 2
+            );
             ctx.fill();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#713f12';
-            ctx.stroke();
-
-            ctx.fillStyle = '#991b1b';
-            ctx.fillRect(30, 30, 20, 15);
-            ctx.fillRect(70, 30, 20, 15);
-
-            ctx.fillStyle = '#334155';
-            ctx.fillRect(10, -15, b.width - 20, 8);
-            ctx.fillStyle = '#22c55e';
-            ctx.fillRect(10, -15, (b.width - 20) * (b.hp / b.maxHp), 8);
-
-            ctx.restore();
         }
+    }
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Cejas
+    ctx.fillStyle = '#451a03';
 
-            ctx.fillStyle = '#334155';
-            for (let s of stars) {
-                ctx.fillRect(s.x, s.y, s.size, s.size);
-            }
+    ctx.beginPath();
+    ctx.moveTo(22, 30);
+    ctx.lineTo(50, 38);
+    ctx.lineTo(48, 45);
+    ctx.lineTo(20, 37);
+    ctx.closePath();
+    ctx.fill();
 
-            if (boss) drawBoss(boss);
+    ctx.beginPath();
+    ctx.moveTo(98, 30);
+    ctx.lineTo(70, 38);
+    ctx.lineTo(72, 45);
+    ctx.lineTo(100, 37);
+    ctx.closePath();
+    ctx.fill();
 
-            drawPlayerShip(player.x, player.y);
+    // Ojos
+    ctx.fillStyle = '#fee2e2';
 
-            for (let b of bullets) {
-                ctx.font = '22px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                let icon = '🐥';
-                if (b.type === 'wool') icon = '🧶';
-                if (b.type === 'horseshoe') icon = '🧲';
-                if (b.type === 'milk') icon = '🥛';
-                ctx.fillText(icon, b.x + b.width / 2, b.y + b.height / 2);
-            }
+    ctx.beginPath();
+    ctx.ellipse(38, 43, 10, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(82, 43, 10, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-            for (let bb of bossBullets) {
-                ctx.font = '16px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('🌽', bb.x + bb.width / 2, bb.y + bb.height / 2);
-            }
+    ctx.fillStyle = '#7f1d1d';
 
-            for (let e of enemies) {
-                drawEvilCorn(e);
-            }
-        }
+    ctx.beginPath();
+    ctx.arc(40, 44, 4, 0, Math.PI * 2);
+    ctx.arc(80, 44, 4, 0, Math.PI * 2);
+    ctx.fill();
 
-        function loop() {
-            update();
-            draw();
-            requestAnimationFrame(loop);
-        }
+    // Boca
+    ctx.fillStyle = '#450a0a';
+    ctx.beginPath();
+    ctx.arc(60, 68, 22, 0, Math.PI);
+    ctx.fill();
 
-        // Renderizar tabla de clasificación al cargar la página
-        renderLeaderboard('startLeaderboardList');
-        loop();
-    </script>
-</body>
-</html>
+    // Dientes
+    ctx.fillStyle = '#f8fafc';
+
+    for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(43 + i * 8, 68);
+        ctx.lineTo(47 + i * 8, 78);
+        ctx.lineTo(51 + i * 8, 68);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    // Barra de vida
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(10, -15, b.width - 20, 8);
+
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(
+        10,
+        -15,
+        (b.width - 20) * Math.max(0, b.hp / b.maxHp),
+        8
+    );
+
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(10, -15, b.width - 20, 8);
+
+    ctx.restore();
+}
