@@ -2,188 +2,235 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Gallina Cósmica 🚀🐔</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>🐔 Gallina Cósmica V4.1</title>
 
 <style>
-* {
-    box-sizing: border-box;
-    user-select: none;
-    -webkit-user-select: none;
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
 }
 
-body {
-    margin: 0;
-    overflow: hidden;
-    background: #050518;
-    font-family: Arial, sans-serif;
-    color: white;
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#050817;
+  font-family:Arial,sans-serif;
+  color:white;
+  touch-action:none;
 }
 
-canvas {
-    display: block;
-    width: 100vw;
-    height: 100vh;
-    background: radial-gradient(circle at center, #10104a 0%, #050518 70%);
+canvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
 }
 
-#hud {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 5;
-    font-size: 17px;
-    font-weight: bold;
-    text-shadow: 0 2px 4px #000;
-    pointer-events: none;
+#hud{
+  position:fixed;
+  top:10px;
+  left:10px;
+  right:10px;
+  z-index:5;
+  display:flex;
+  justify-content:space-between;
+  pointer-events:none;
+  font-weight:bold;
+  font-size:15px;
+  text-shadow:0 2px 4px #000;
 }
 
-.hudBox {
-    background: rgba(0,0,0,.45);
-    padding: 7px 10px;
-    border-radius: 12px;
-    margin: 2px;
+.hudBox{
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:12px;
+  padding:7px 10px;
+  backdrop-filter:blur(4px);
 }
 
-#status {
-    position: fixed;
-    top: 58px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 5;
-    font-size: 14px;
-    text-align: center;
-    text-shadow: 0 2px 4px #000;
-    pointer-events: none;
+#animalHud{
+  position:fixed;
+  top:58px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:5;
+  background:rgba(0,0,0,.45);
+  padding:6px 14px;
+  border-radius:20px;
+  font-weight:bold;
+  pointer-events:none;
 }
 
-#menu,
-#gameOver,
-#evolutionMenu {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,20,.88);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 20;
-    text-align: center;
-    padding: 20px;
+.overlay{
+  position:fixed;
+  inset:0;
+  z-index:20;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(3,5,18,.88);
+  padding:20px;
 }
 
-#gameOver,
-#evolutionMenu {
-    display: none;
+.panel{
+  width:min(440px,94vw);
+  max-height:90vh;
+  overflow:auto;
+  background:linear-gradient(180deg,#182454,#0c1027);
+  border:2px solid rgba(255,255,255,.18);
+  border-radius:24px;
+  padding:24px;
+  text-align:center;
+  box-shadow:0 20px 70px rgba(0,0,0,.6);
 }
 
-h1 {
-    font-size: 42px;
-    margin: 10px 0;
+h1{
+  margin:0 0 8px;
+  font-size:34px;
 }
 
-h2 {
-    font-size: 30px;
-    margin: 10px 0;
+h2{
+  margin:8px 0;
 }
 
-p {
-    max-width: 500px;
-    line-height: 1.5;
+.subtitle{
+  opacity:.8;
+  margin-bottom:18px;
 }
 
-button {
-    border: none;
-    border-radius: 15px;
-    padding: 13px 20px;
-    margin: 7px;
-    font-size: 17px;
-    font-weight: bold;
-    background: #ffd83d;
-    color: #191900;
-    box-shadow: 0 4px 0 #a27d00;
-    cursor: pointer;
+button{
+  border:0;
+  border-radius:14px;
+  padding:13px 18px;
+  margin:6px;
+  font-size:16px;
+  font-weight:bold;
+  color:white;
+  background:linear-gradient(180deg,#3f7cff,#2351c8);
+  box-shadow:0 5px 0 #17368d;
+  cursor:pointer;
 }
 
-button:active {
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 #a27d00;
+button:active{
+  transform:translateY(3px);
+  box-shadow:0 2px 0 #17368d;
 }
 
-button:disabled {
-    opacity: .45;
-    cursor: not-allowed;
+button:disabled{
+  opacity:.45;
+  cursor:not-allowed;
 }
 
-#startBtn {
-    font-size: 22px;
-    padding: 15px 35px;
+#startBtn{
+  font-size:20px;
+  padding:15px 35px;
+  margin-top:15px;
 }
 
-#shop {
-    margin-top: 12px;
-    max-width: 600px;
-    max-height: 50vh;
-    overflow-y: auto;
+.shop{
+  margin-top:15px;
+  text-align:left;
 }
 
-.shopTitle {
-    font-size: 22px;
-    margin-bottom: 8px;
+.shopItem{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:10px;
+  margin:7px 0;
+  border-radius:13px;
+  background:rgba(255,255,255,.07);
 }
 
-#evolveBtn {
-    background: #a96cff;
-    color: white;
-    box-shadow: 0 4px 0 #5e2a9e;
-    font-size: 21px;
+.shopInfo{
+  flex:1;
 }
 
-.evolutionAnimal {
-    font-size: 100px;
-    margin: 5px;
+.shopName{
+  font-weight:bold;
 }
 
-.evolutionArrow {
-    font-size: 45px;
+.shopLevel{
+  font-size:12px;
+  opacity:.7;
 }
 
-#touchControls {
-    position: fixed;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    gap: 18px;
-    z-index: 10;
+.shop button{
+  margin:0;
+  padding:9px 11px;
+  font-size:13px;
 }
 
-.touchBtn {
-    width: 70px;
-    height: 60px;
-    border-radius: 18px;
-    background: rgba(255,255,255,.18);
-    color: white;
-    border: 2px solid rgba(255,255,255,.35);
-    box-shadow: none;
-    font-size: 27px;
-    margin: 0;
+#evolveBtn{
+  background:linear-gradient(180deg,#b34cff,#7021b5);
+  box-shadow:0 5px 0 #481579;
 }
 
-#instructions {
-    font-size: 14px;
-    opacity: .8;
+#message{
+  position:fixed;
+  left:50%;
+  top:86px;
+  transform:translateX(-50%);
+  z-index:8;
+  font-weight:bold;
+  font-size:18px;
+  text-shadow:0 2px 5px #000;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .2s;
 }
 
-@media (min-width: 800px) {
-    #touchControls {
-        opacity: .35;
-    }
+#touchControls{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:15px;
+  z-index:6;
+  display:flex;
+  justify-content:space-between;
+  padding:0 20px;
+  pointer-events:none;
+}
+
+.touchSide{
+  display:flex;
+  gap:12px;
+  pointer-events:auto;
+}
+
+.touchBtn{
+  width:65px;
+  height:65px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.14);
+  border:2px solid rgba(255,255,255,.25);
+  font-size:27px;
+  user-select:none;
+}
+
+.hidden{
+  display:none !important;
+}
+
+.evolution{
+  font-size:60px;
+  margin:12px;
+}
+
+.requirement{
+  background:rgba(255,255,255,.07);
+  padding:12px;
+  border-radius:14px;
+  margin:12px 0;
 }
 </style>
 </head>
@@ -192,134 +239,258 @@ button:disabled {
 
 <canvas id="game"></canvas>
 
-<div id="hud">
-    <div class="hudBox">🏆 <span id="score">0</span></div>
-    <div class="hudBox">❤️ <span id="lives">3</span></div>
-    <div class="hudBox">🪙 <span id="coins">0</span></div>
+<div id="hud" class="hidden">
+  <div class="hudBox">⭐ <span id="score">0</span></div>
+  <div class="hudBox">❤️ <span id="lives">3</span></div>
+  <div class="hudBox">🪙 <span id="coins">0</span></div>
 </div>
 
-<div id="status"></div>
+<div id="animalHud" class="hidden">
+  🐔 GALLINA
+</div>
 
-<div id="menu">
+<div id="message"></div>
+
+<div id="touchControls" class="hidden">
+  <div class="touchSide">
+    <div class="touchBtn" id="leftBtn">⬅️</div>
+    <div class="touchBtn" id="rightBtn">➡️</div>
+  </div>
+
+  <div class="touchSide">
+    <div class="touchBtn" id="fireBtn">🐣</div>
+  </div>
+</div>
+
+<!-- MENÚ PRINCIPAL -->
+<div id="menu" class="overlay">
+  <div class="panel">
     <h1>🐔🚀</h1>
-    <h1>Gallina Cósmica</h1>
+    <h1>GALLINA CÓSMICA</h1>
+    <div class="subtitle">
+      ¡Defiende la galaxia de los maíces invasores! 🌽
+    </div>
+
+    <div>
+      🐔 → 🐑 → 🐴 → 🐄
+    </div>
 
     <p>
-        ¡Defiende el espacio de los maíces invasores! 🌽
-        <br>
-        Mejora tu nave y llévala hasta su próxima evolución.
+      Dispara, consigue monedas, mejora tu nave
+      y desbloquea nuevas evoluciones.
     </p>
 
     <button id="startBtn">🚀 COMENZAR</button>
-
-    <div id="instructions">
-        PC: ← → o A/D para moverte · ESPACIO para disparar
-        <br>
-        Móvil: usa los botones inferiores
-    </div>
+  </div>
 </div>
 
-<div id="gameOver">
+<!-- GAME OVER -->
+<div id="gameOver" class="overlay hidden">
+  <div class="panel">
 
-    <h2>💥 FIN DE LA PARTIDA</h2>
+    <h1>💥 FIN DEL VUELO</h1>
 
-    <div>🏆 Puntuación: <span id="finalScore">0</span></div>
-    <div>🪙 Monedas: <span id="finalCoins">0</span></div>
+    <h2>
+      Puntuación: <span id="finalScore">0</span>
+    </h2>
 
-    <div id="shop">
-        <div class="shopTitle">🛒 MEJORAS</div>
+    <p>
+      🪙 Monedas: <span id="finalCoins">0</span>
+    </p>
 
-        <button id="fireUpgrade"></button>
-        <button id="speedUpgrade"></button>
-        <button id="shieldUpgrade"></button>
-        <button id="lifeUpgrade"></button>
+    <div class="shop">
 
-        <br>
+      <h2>🛒 MEJORAS</h2>
 
-        <button id="evolveBtn" style="display:none;">
-            🧬 EVOLUCIONAR
-        </button>
+      <div class="shopItem">
+        <div class="shopInfo">
+          <div class="shopName">🐣 Disparo</div>
+          <div class="shopLevel">
+            Nivel <span id="fireLevel">0</span>/3
+          </div>
+        </div>
+        <button id="fireUpgrade">MEJORAR</button>
+      </div>
+
+      <div class="shopItem">
+        <div class="shopInfo">
+          <div class="shopName">⚡ Velocidad</div>
+          <div class="shopLevel">
+            Nivel <span id="speedLevel">0</span>/3
+          </div>
+        </div>
+        <button id="speedUpgrade">MEJORAR</button>
+      </div>
+
+      <div class="shopItem">
+        <div class="shopInfo">
+          <div class="shopName">🛡️ Escudo</div>
+          <div class="shopLevel">
+            Nivel <span id="shieldLevel">0</span>/3
+          </div>
+        </div>
+        <button id="shieldUpgrade">MEJORAR</button>
+      </div>
+
+      <div class="shopItem">
+        <div class="shopInfo">
+          <div class="shopName">❤️ Vida extra</div>
+          <div class="shopLevel">
+            Nivel <span id="lifeLevel">0</span>/3
+          </div>
+        </div>
+        <button id="lifeUpgrade">MEJORAR</button>
+      </div>
+
     </div>
 
-    <button id="restartBtn">🔄 JUGAR DE NUEVO</button>
-</div>
+    <div id="evolutionArea" class="hidden">
 
-<div id="evolutionMenu">
+      <div class="requirement">
+        🧬 <b>¡NAVE AL MÁXIMO!</b><br>
+        Has alcanzado el máximo de todas las mejoras.
+      </div>
 
-    <div class="evolutionAnimal" id="oldAnimal">🐔</div>
+      <button id="evolveBtn">
+        🐔 → 🐑 EVOLUCIONAR
+      </button>
 
-    <div class="evolutionArrow">⬇️</div>
+    </div>
 
-    <div class="evolutionAnimal" id="newAnimal">🐑</div>
+    <br>
 
-    <h2>🧬 ¡EVOLUCIÓN!</h2>
-
-    <p id="evolutionText"></p>
-
-    <button id="confirmEvolution">
-        ✨ EVOLUCIONAR
+    <button id="restartBtn">
+      🚀 VOLVER A JUGAR
     </button>
 
+  </div>
 </div>
 
-<div id="touchControls">
-    <button class="touchBtn" id="leftBtn">⬅️</button>
-    <button class="touchBtn" id="shootBtn">🔥</button>
-    <button class="touchBtn" id="rightBtn">➡️</button>
+<!-- EVOLUCIÓN -->
+<div id="evolutionScreen" class="overlay hidden">
+  <div class="panel">
+
+    <h1>🧬 ¡EVOLUCIÓN!</h1>
+
+    <div class="evolution">
+      🐔 ➡️ 🐑
+    </div>
+
+    <h2>¡GALLINA → OVEJA!</h2>
+
+    <p>
+      Tu nave ha evolucionado.
+    </p>
+
+    <p>
+      Ahora disparará 🧶 <b>bolas de lana</b>
+      en lugar de pollitos.
+    </p>
+
+    <p>
+      La nueva nave tendrá un diseño completamente diferente.
+    </p>
+
+    <button id="confirmEvolution">
+      🐑 ¡EVOLUCIONAR!
+    </button>
+
+  </div>
 </div>
 
 <script>
+"use strict";
+
+/* =========================
+   CANVAS
+========================= */
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let W = 0;
-let H = 0;
+let W = window.innerWidth;
+let H = window.innerHeight;
+let DPR = Math.min(window.devicePixelRatio || 1,2);
 
-function resize() {
-    W = canvas.width = window.innerWidth * devicePixelRatio;
-    H = canvas.height = window.innerHeight * devicePixelRatio;
+function resizeCanvas(){
+  W = window.innerWidth;
+  H = window.innerHeight;
 
-    canvas.style.width = window.innerWidth + "px";
-    canvas.style.height = window.innerHeight + "px";
+  DPR = Math.min(window.devicePixelRatio || 1,2);
 
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+
+  ctx.setTransform(DPR,0,0,DPR,0,0);
 }
 
-window.addEventListener("resize", resize);
-resize();
+window.addEventListener("resize",resizeCanvas);
+resizeCanvas();
 
 
-// =====================================================
-// PROGRESO
-// =====================================================
+/* =========================
+   ELEMENTOS
+========================= */
 
-let evolution = localStorage.getItem("galacticaEvolution") || "chicken";
+const menu = document.getElementById("menu");
+const gameOver = document.getElementById("gameOver");
+const evolutionScreen = document.getElementById("evolutionScreen");
 
-let coins = Number(localStorage.getItem("galacticaCoins")) || 0;
+const hud = document.getElementById("hud");
+const animalHud = document.getElementById("animalHud");
+const touchControls = document.getElementById("touchControls");
+
+const scoreEl = document.getElementById("score");
+const livesEl = document.getElementById("lives");
+const coinsEl = document.getElementById("coins");
+
+const finalScoreEl = document.getElementById("finalScore");
+const finalCoinsEl = document.getElementById("finalCoins");
+
+const messageEl = document.getElementById("message");
+
+
+/* =========================
+   DATOS GUARDADOS
+========================= */
+
+function loadNumber(key, fallback){
+  try{
+    const value = Number(localStorage.getItem(key));
+    return Number.isFinite(value) ? value : fallback;
+  }catch(e){
+    return fallback;
+  }
+}
+
+function saveNumber(key,value){
+  try{
+    localStorage.setItem(key,String(value));
+  }catch(e){}
+}
+
+let coins = loadNumber("galacticaCoins",0);
 
 let upgrades = {
-    fire: Number(localStorage.getItem("galacticaFire")) || 0,
-    speed: Number(localStorage.getItem("galacticaSpeed")) || 0,
-    shield: Number(localStorage.getItem("galacticaShield")) || 0,
-    life: Number(localStorage.getItem("galacticaLife")) || 0
+  fire:loadNumber("galacticaFire",0),
+  speed:loadNumber("galacticaSpeed",0),
+  shield:loadNumber("galacticaShield",0),
+  life:loadNumber("galacticaLife",0)
 };
 
-function saveProgress() {
+let evolution = "chicken";
 
-    localStorage.setItem("galacticaEvolution", evolution);
-    localStorage.setItem("galacticaCoins", coins);
-
-    localStorage.setItem("galacticaFire", upgrades.fire);
-    localStorage.setItem("galacticaSpeed", upgrades.speed);
-    localStorage.setItem("galacticaShield", upgrades.shield);
-    localStorage.setItem("galacticaLife", upgrades.life);
-}
+try{
+  evolution = localStorage.getItem("galacticaEvolution") || "chicken";
+}catch(e){}
 
 
-// =====================================================
-// ESTADO DEL JUEGO
-// =====================================================
+/* =========================
+   ESTADO DEL JUEGO
+========================= */
 
 let running = false;
 
@@ -327,11 +498,12 @@ let score = 0;
 let lives = 3;
 
 let player = {
-    x: 0,
-    y: 0,
-    speed: 7,
-    cooldown: 0,
-    shield: false
+  x:W/2,
+  y:H-115,
+  width:76,
+  height:72,
+  speed:330,
+  shieldCharges:0
 };
 
 let bullets = [];
@@ -339,1231 +511,1750 @@ let enemies = [];
 let particles = [];
 let stars = [];
 
-let keys = {};
+let keys = {
+  left:false,
+  right:false,
+  fire:false
+};
 
-let bossSpawned1000 = false;
-let bossSpawned2000 = false;
+let lastTime = 0;
+let spawnTimer = 0;
+let fireTimer = 0;
+
+let boss1000Defeated = false;
+let boss2000Defeated = false;
+
+let messageTimer = 0;
 
 
-// =====================================================
-// ESTRELLAS
-// =====================================================
+/* =========================
+   ESTRELLAS
+========================= */
 
-function createStars() {
+function createStars(){
 
-    stars = [];
+  stars=[];
 
-    for(let i = 0; i < 100; i++) {
+  for(let i=0;i<100;i++){
 
-        stars.push({
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
-            size: Math.random() * 2 + 0.5,
-            speed: Math.random() * 1.5 + .3
-        });
+    stars.push({
+      x:Math.random()*W,
+      y:Math.random()*H,
+      size:Math.random()*2+0.5,
+      speed:Math.random()*35+10,
+      alpha:Math.random()*.7+.2
+    });
 
-    }
+  }
 }
 
 createStars();
 
 
-// =====================================================
-// INICIO
-// =====================================================
+/* =========================
+   UTILIDADES
+========================= */
 
-function resetGame() {
+function clamp(value,min,max){
+  return Math.max(min,Math.min(max,value));
+}
 
-    score = 0;
+function random(min,max){
+  return Math.random()*(max-min)+min;
+}
 
-    lives = 3 + upgrades.life;
+function circleCollision(a,b){
 
-    bullets = [];
-    enemies = [];
-    particles = [];
+  const dx=a.x-b.x;
+  const dy=a.y-b.y;
 
-    bossSpawned1000 = false;
-    bossSpawned2000 = false;
+  return Math.sqrt(dx*dx+dy*dy) < a.radius+b.radius;
+}
 
-    player.x = window.innerWidth / 2;
-    player.y = window.innerHeight - 100;
+function showMessage(text){
 
-    player.speed = 6 + upgrades.speed * .8;
+  messageEl.textContent=text;
+  messageEl.style.opacity="1";
 
-    player.cooldown = 0;
-    player.shield = false;
-
-    updateHUD();
-
+  messageTimer=1.5;
 }
 
 
-// =====================================================
-// HUD
-// =====================================================
+/* =========================
+   DIBUJAR FONDO
+========================= */
 
-function updateHUD() {
+function drawBackground(){
 
-    document.getElementById("score").textContent = score;
-    document.getElementById("lives").textContent = lives;
-    document.getElementById("coins").textContent = coins;
+  ctx.fillStyle="#050817";
+  ctx.fillRect(0,0,W,H);
 
+  for(const star of stars){
+
+    ctx.globalAlpha=star.alpha;
+
+    ctx.fillStyle="#fff";
+
+    ctx.beginPath();
+    ctx.arc(star.x,star.y,star.size,0,Math.PI*2);
+    ctx.fill();
+
+  }
+
+  ctx.globalAlpha=1;
 }
 
 
-// =====================================================
-// ANIMAL ACTUAL
-// =====================================================
+/* =========================
+   NAVE GALLINA
+========================= */
 
-function getAnimalEmoji() {
+function drawChickenShip(x,y,scale=1){
 
-    if(evolution === "sheep") return "🐑";
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(scale,scale);
 
-    if(evolution === "horse") return "🐴";
+  /* Llama del motor */
 
-    if(evolution === "cow") return "🐄";
+  const flameSize=10+Math.random()*8;
 
-    return "🐔";
+  ctx.fillStyle="#ff9d00";
+
+  ctx.beginPath();
+  ctx.moveTo(-13,32);
+  ctx.lineTo(0,32+flameSize);
+  ctx.lineTo(13,32);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle="#fff2a6";
+
+  ctx.beginPath();
+  ctx.moveTo(-6,31);
+  ctx.lineTo(0,31+flameSize*.65);
+  ctx.lineTo(6,31);
+  ctx.closePath();
+  ctx.fill();
+
+
+  /* Alas */
+
+  ctx.fillStyle="#d8dce8";
+
+  ctx.beginPath();
+  ctx.moveTo(-27,-2);
+  ctx.lineTo(-52,19);
+  ctx.lineTo(-25,24);
+  ctx.lineTo(-12,8);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(27,-2);
+  ctx.lineTo(52,19);
+  ctx.lineTo(25,24);
+  ctx.lineTo(12,8);
+  ctx.closePath();
+  ctx.fill();
+
+
+  /* Cola */
+
+  ctx.fillStyle="#f4f1e8";
+
+  ctx.beginPath();
+  ctx.moveTo(-17,20);
+  ctx.lineTo(-31,30);
+  ctx.lineTo(-16,28);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(17,20);
+  ctx.lineTo(31,30);
+  ctx.lineTo(16,28);
+  ctx.closePath();
+  ctx.fill();
+
+
+  /* Cuerpo */
+
+  ctx.fillStyle="#f7f3e8";
+
+  ctx.beginPath();
+  ctx.ellipse(0,5,28,34,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle="#bfc5d1";
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+
+  /* Cabina */
+
+  ctx.fillStyle="#65d9ff";
+
+  ctx.beginPath();
+  ctx.ellipse(0,-12,19,15,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle="#d9f7ff";
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+
+  /* Cresta */
+
+  ctx.fillStyle="#ef3e4f";
+
+  ctx.beginPath();
+  ctx.arc(-7,-38,7,0,Math.PI*2);
+  ctx.arc(3,-41,7,0,Math.PI*2);
+  ctx.arc(12,-36,6,0,Math.PI*2);
+  ctx.fill();
+
+
+  /* Pico */
+
+  ctx.fillStyle="#ff9d28";
+
+  ctx.beginPath();
+  ctx.moveTo(20,-18);
+  ctx.lineTo(35,-12);
+  ctx.lineTo(20,-7);
+  ctx.closePath();
+  ctx.fill();
+
+
+  /* Ojos */
+
+  ctx.fillStyle="#111";
+
+  ctx.beginPath();
+  ctx.arc(9,-23,3,0,Math.PI*2);
+  ctx.fill();
+
+
+  /* Luces */
+
+  ctx.fillStyle="#7cff91";
+
+  ctx.beginPath();
+  ctx.arc(-24,9,3,0,Math.PI*2);
+  ctx.arc(24,9,3,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
 }
 
 
-function getProjectileEmoji() {
+/* =========================
+   NAVE OVEJA
+========================= */
 
-    if(evolution === "sheep") return "🧶";
+function drawSheepShip(x,y,scale=1){
 
-    if(evolution === "horse") return "🧲";
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(scale,scale);
 
-    if(evolution === "cow") return "🥛";
+  /* Motor */
 
-    return "🐣";
+  const flameSize=10+Math.random()*8;
+
+  ctx.fillStyle="#ff9d00";
+
+  ctx.beginPath();
+  ctx.moveTo(-12,32);
+  ctx.lineTo(0,32+flameSize);
+  ctx.lineTo(12,32);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle="#fff";
+
+  ctx.beginPath();
+  ctx.moveTo(-6,31);
+  ctx.lineTo(0,31+flameSize*.65);
+  ctx.lineTo(6,31);
+  ctx.closePath();
+  ctx.fill();
+
+
+  /* Alas */
+
+  ctx.fillStyle="#bfc7d4";
+
+  ctx.beginPath();
+  ctx.moveTo(-25,0);
+  ctx.lineTo(-53,18);
+  ctx.lineTo(-23,25);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(25,0);
+  ctx.lineTo(53,18);
+  ctx.lineTo(23,25);
+  ctx.closePath();
+  ctx.fill();
+
+
+  /* Cuerpo lanudo */
+
+  ctx.fillStyle="#fff";
+
+  for(let i=0;i<7;i++){
+
+    const a=i*Math.PI*2/7;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      Math.cos(a)*18,
+      Math.sin(a)*15,
+      17,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+  }
+
+  ctx.beginPath();
+  ctx.ellipse(0,5,29,28,0,0,Math.PI*2);
+  ctx.fill();
+
+
+  /* Cara */
+
+  ctx.fillStyle="#30333b";
+
+  ctx.beginPath();
+  ctx.ellipse(0,-14,18,22,0,0,Math.PI*2);
+  ctx.fill();
+
+
+  /* Orejas */
+
+  ctx.beginPath();
+  ctx.ellipse(-21,-18,9,5,-.4,0,Math.PI*2);
+  ctx.ellipse(21,-18,9,5,.4,0,Math.PI*2);
+  ctx.fill();
+
+
+  /* Ojos */
+
+  ctx.fillStyle="#fff";
+
+  ctx.beginPath();
+  ctx.arc(-6,-18,4,0,Math.PI*2);
+  ctx.arc(6,-18,4,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#111";
+
+  ctx.beginPath();
+  ctx.arc(-6,-18,2,0,Math.PI*2);
+  ctx.arc(6,-18,2,0,Math.PI*2);
+  ctx.fill();
+
+
+  /* Nariz */
+
+  ctx.fillStyle="#f09aaf";
+
+  ctx.beginPath();
+  ctx.ellipse(0,-7,7,5,0,0,Math.PI*2);
+  ctx.fill();
+
+
+  /* Antena */
+
+  ctx.strokeStyle="#aaa";
+  ctx.lineWidth=2;
+
+  ctx.beginPath();
+  ctx.moveTo(0,-35);
+  ctx.lineTo(0,-47);
+  ctx.stroke();
+
+  ctx.fillStyle="#ff6680";
+
+  ctx.beginPath();
+  ctx.arc(0,-49,4,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
 }
 
 
-// =====================================================
-// DIBUJAR JUGADOR
-// =====================================================
+/* =========================
+   DIBUJAR NAVE
+========================= */
 
-function drawPlayer() {
+function drawPlayer(){
+
+  if(evolution==="sheep"){
+    drawSheepShip(player.x,player.y,1);
+  }else{
+    drawChickenShip(player.x,player.y,1);
+  }
+
+  if(player.shieldCharges>0){
 
     ctx.save();
 
-    ctx.translate(player.x, player.y);
+    ctx.strokeStyle="rgba(100,220,255,.55)";
+    ctx.lineWidth=3;
 
-    // Escudo
-    if(player.shield || upgrades.shield > 0) {
+    ctx.beginPath();
 
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            0,
-            42,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.strokeStyle = "rgba(80,220,255,.8)";
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "#00ccff";
-
-        ctx.stroke();
-
-    }
-
-    ctx.font = "55px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    ctx.fillText(
-        getAnimalEmoji(),
-        0,
-        0
+    ctx.arc(
+      player.x,
+      player.y,
+      52,
+      0,
+      Math.PI*2
     );
 
-    // Motor
-    ctx.font = "25px Arial";
-
-    ctx.fillText(
-        "🔥",
-        0,
-        34
-    );
+    ctx.stroke();
 
     ctx.restore();
-
+  }
 }
 
 
-// =====================================================
-// DISPARO
-// =====================================================
+/* =========================
+   PROYECTILES
+========================= */
 
-function shoot() {
+function shoot(){
 
-    if(!running) return;
+  const amount=1+Math.min(upgrades.fire,3);
 
-    if(player.cooldown > 0) return;
+  const spread=18;
 
-    let amount =
-        1 + Math.min(upgrades.fire, 3);
+  for(let i=0;i<amount;i++){
 
-    for(let i = 0; i < amount; i++) {
+    const offset=(i-(amount-1)/2)*spread;
 
-        let spread =
-            (i - (amount - 1) / 2) * 18;
-
-        bullets.push({
-
-            x: player.x + spread,
-
-            y: player.y - 35,
-
-            speed: 10,
-
-            damage:
-                evolution === "horse"
-                ? 2
-                : 1,
-
-            emoji: getProjectileEmoji()
-
-        });
-
-    }
-
-    player.cooldown =
-        Math.max(
-            7 - upgrades.fire,
-            3
-        );
-
+    bullets.push({
+      x:player.x+offset,
+      y:player.y-42,
+      radius:evolution==="sheep"?10:7,
+      speed:evolution==="sheep"?470:560,
+      damage:1,
+      type:evolution
+    });
+  }
 }
 
 
-// =====================================================
-// CREAR ENEMIGOS
-// =====================================================
+/* =========================
+   DIBUJAR POLLITO
+========================= */
 
-function createEnemy() {
+function drawChickBullet(b){
 
-    let r = Math.random();
+  ctx.save();
 
-    let type;
+  ctx.translate(b.x,b.y);
 
-    if(r < .65) {
-        type = "normal";
-    }
-    else if(r < .88) {
-        type = "fast";
-    }
-    else {
-        type = "giant";
-    }
+  ctx.fillStyle="#ffe45c";
 
-    let enemy = {
+  ctx.beginPath();
+  ctx.arc(0,0,7,0,Math.PI*2);
+  ctx.fill();
 
-        type: type,
+  ctx.fillStyle="#ff9d28";
 
-        x: Math.random() * (window.innerWidth - 50) + 25,
+  ctx.beginPath();
+  ctx.moveTo(5,-1);
+  ctx.lineTo(12,2);
+  ctx.lineTo(5,4);
+  ctx.closePath();
+  ctx.fill();
 
-        y: -50,
+  ctx.fillStyle="#111";
 
-        speed:
-            type === "fast"
-            ? 4 + Math.random() * 2
-            : type === "giant"
-            ? 1.5 + Math.random()
-            : 2 + Math.random() * 1.5,
+  ctx.beginPath();
+  ctx.arc(3,-3,1.5,0,Math.PI*2);
+  ctx.fill();
 
-        hp:
-            type === "giant"
-            ? 2
-            : 1,
-
-        points:
-            type === "giant"
-            ? 30
-            : type === "fast"
-            ? 20
-            : 10,
-
-        coins:
-            type === "giant"
-            ? 7
-            : type === "fast"
-            ? 4
-            : 2,
-
-        size:
-            type === "giant"
-            ? 65
-            : 45
-
-    };
-
-    enemies.push(enemy);
-
+  ctx.restore();
 }
 
 
-// =====================================================
-// JEFE
-// =====================================================
+/* =========================
+   DIBUJAR LANA
+========================= */
 
-function createBoss() {
+function drawWoolBullet(b){
 
-    enemies.push({
+  ctx.save();
 
-        type: "boss",
+  ctx.translate(b.x,b.y);
 
-        x: window.innerWidth / 2,
+  ctx.fillStyle="#fff";
 
-        y: 100,
+  ctx.beginPath();
+  ctx.arc(0,0,10,0,Math.PI*2);
+  ctx.fill();
 
-        speed: 2,
+  ctx.strokeStyle="#c8c8c8";
+  ctx.lineWidth=2;
 
-        hp: 12,
+  ctx.beginPath();
 
-        maxHp: 12,
+  for(let i=0;i<20;i++){
 
-        points: 250,
+    const a=i*.7;
+    const r=3+Math.sin(i*1.5)*3;
 
-        coins: 50,
+    const px=Math.cos(a)*r;
+    const py=Math.sin(a)*r;
 
-        size: 100,
+    if(i===0){
+      ctx.moveTo(px,py);
+    }else{
+      ctx.lineTo(px,py);
+    }
+  }
 
-        direction: 1
+  ctx.stroke();
 
+  ctx.restore();
+}
+
+
+function drawBullets(){
+
+  for(const b of bullets){
+
+    if(b.type==="sheep"){
+      drawWoolBullet(b);
+    }else{
+      drawChickBullet(b);
+    }
+
+  }
+}
+
+
+/* =========================
+   ENEMIGOS
+========================= */
+
+function createEnemy(){
+
+  const roll=Math.random();
+
+  let type="normal";
+
+  if(roll<.12){
+    type="giant";
+  }else if(roll<.28){
+    type="fast";
+  }
+
+  let enemy={
+    x:random(45,W-45),
+    y:-50,
+    radius:25,
+    speed:100,
+    hp:1,
+    maxHp:1,
+    points:10,
+    coins:2,
+    type:type,
+    wave:Math.random()*Math.PI*2
+  };
+
+  if(type==="fast"){
+
+    enemy.radius=21;
+    enemy.speed=180;
+    enemy.points=20;
+    enemy.coins=4;
+
+  }
+
+  if(type==="giant"){
+
+    enemy.radius=34;
+    enemy.speed=75;
+    enemy.hp=3;
+    enemy.maxHp=3;
+    enemy.points=30;
+    enemy.coins=7;
+
+  }
+
+  enemies.push(enemy);
+}
+
+
+/* =========================
+   BOSS
+========================= */
+
+function createBoss(){
+
+  enemies.push({
+    x:W/2,
+    y:-100,
+    radius:53,
+    speed:45,
+    hp:12,
+    maxHp:12,
+    points:250,
+    coins:50,
+    type:"boss",
+    wave:0,
+    direction:1
+  });
+
+  showMessage("👑🌽 ¡JEFE DE MAÍZ!");
+}
+
+
+/* =========================
+   DIBUJAR MAÍZ
+========================= */
+
+function drawCorn(e){
+
+  ctx.save();
+
+  ctx.translate(e.x,e.y);
+
+  const s=e.radius/25;
+
+  ctx.scale(s,s);
+
+
+  /* Hojas */
+
+  ctx.fillStyle="#49b85b";
+
+  ctx.beginPath();
+  ctx.moveTo(-15,15);
+  ctx.quadraticCurveTo(-30,30,-9,20);
+  ctx.lineTo(-3,5);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(15,15);
+  ctx.quadraticCurveTo(30,30,9,20);
+  ctx.lineTo(3,5);
+  ctx.closePath();
+  ctx.fill();
+
+
+  /* Mazorca */
+
+  ctx.fillStyle="#ffd83d";
+
+  ctx.beginPath();
+
+  ctx.roundRect(
+    -17,
+    -25,
+    34,
+    52,
+    15
+  );
+
+  ctx.fill();
+
+
+  /* Granos */
+
+  ctx.fillStyle="#f4bd27";
+
+  for(let row=0;row<5;row++){
+
+    for(let col=0;col<3;col++){
+
+      const gx=-9+col*9;
+      const gy=-15+row*9;
+
+      ctx.beginPath();
+
+      ctx.arc(
+        gx+(row%2)*2,
+        gy,
+        3,
+        0,
+        Math.PI*2
+      );
+
+      ctx.fill();
+    }
+  }
+
+
+  /* Ojos */
+
+  ctx.fillStyle="#111";
+
+  ctx.beginPath();
+  ctx.arc(-7,-3,3,0,Math.PI*2);
+  ctx.arc(7,-3,3,0,Math.PI*2);
+  ctx.fill();
+
+
+  /* Cara */
+
+  ctx.strokeStyle="#111";
+  ctx.lineWidth=3;
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    5,
+    8,
+    0,
+    Math.PI
+  );
+
+  ctx.stroke();
+
+
+  /* Variante rápida */
+
+  if(e.type==="fast"){
+
+    ctx.strokeStyle="#9d5cff";
+    ctx.lineWidth=4;
+
+    ctx.beginPath();
+    ctx.moveTo(-28,-10);
+    ctx.lineTo(-37,-3);
+    ctx.moveTo(-28,4);
+    ctx.lineTo(-38,10);
+    ctx.stroke();
+
+  }
+
+
+  /* Gigante */
+
+  if(e.type==="giant"){
+
+    ctx.strokeStyle="#ff704d";
+    ctx.lineWidth=4;
+
+    ctx.beginPath();
+    ctx.arc(0,0,29,0,Math.PI*2);
+    ctx.stroke();
+
+  }
+
+  ctx.restore();
+}
+
+
+/* =========================
+   DIBUJAR BOSS
+========================= */
+
+function drawBoss(e){
+
+  ctx.save();
+
+  ctx.translate(e.x,e.y);
+
+  /* Corona */
+
+  ctx.fillStyle="#ffd633";
+
+  ctx.beginPath();
+
+  ctx.moveTo(-35,-50);
+  ctx.lineTo(-28,-76);
+  ctx.lineTo(-10,-58);
+  ctx.lineTo(0,-80);
+  ctx.lineTo(11,-58);
+  ctx.lineTo(29,-76);
+  ctx.lineTo(35,-50);
+  ctx.closePath();
+
+  ctx.fill();
+
+  /* Maíz */
+
+  ctx.fillStyle="#ffcb35";
+
+  ctx.beginPath();
+
+  ctx.roundRect(
+    -40,
+    -40,
+    80,
+    80,
+    30
+  );
+
+  ctx.fill();
+
+
+  /* Hojas */
+
+  ctx.fillStyle="#3eaa52";
+
+  ctx.beginPath();
+  ctx.moveTo(-20,30);
+  ctx.lineTo(-45,52);
+  ctx.lineTo(-7,39);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(20,30);
+  ctx.lineTo(45,52);
+  ctx.lineTo(7,39);
+  ctx.closePath();
+  ctx.fill();
+
+
+  /* Ojos */
+
+  ctx.fillStyle="#111";
+
+  ctx.beginPath();
+
+  ctx.arc(-13,-6,5,0,Math.PI*2);
+  ctx.arc(13,-6,5,0,Math.PI*2);
+
+  ctx.fill();
+
+
+  /* Boca */
+
+  ctx.strokeStyle="#111";
+  ctx.lineWidth=5;
+
+  ctx.beginPath();
+
+  ctx.moveTo(-17,15);
+  ctx.quadraticCurveTo(0,30,17,15);
+
+  ctx.stroke();
+
+
+  /* Barra de vida */
+
+  const barW=90;
+  const hpRatio=e.hp/e.maxHp;
+
+  ctx.fillStyle="rgba(0,0,0,.7)";
+  ctx.fillRect(-barW/2,-94,barW,9);
+
+  ctx.fillStyle="#ff3f57";
+  ctx.fillRect(-barW/2,-94,barW*hpRatio,9);
+
+  ctx.restore();
+}
+
+
+function drawEnemies(){
+
+  for(const e of enemies){
+
+    if(e.type==="boss"){
+      drawBoss(e);
+    }else{
+      drawCorn(e);
+    }
+
+  }
+}
+
+
+/* =========================
+   PARTÍCULAS
+========================= */
+
+function explode(x,y){
+
+  for(let i=0;i<14;i++){
+
+    particles.push({
+      x:x,
+      y:y,
+      vx:random(-150,150),
+      vy:random(-150,150),
+      life:random(.35,.8),
+      maxLife:.8,
+      size:random(2,6)
     });
 
+  }
 }
 
 
-// =====================================================
-// DIBUJAR ENEMIGO
-// =====================================================
+function updateParticles(dt){
 
-function drawEnemy(e) {
+  for(let i=particles.length-1;i>=0;i--){
 
-    ctx.save();
+    const p=particles[i];
 
-    ctx.translate(e.x, e.y);
+    p.x+=p.vx*dt;
+    p.y+=p.vy*dt;
 
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    p.vx*=.98;
+    p.vy*=.98;
 
-    if(e.type === "boss") {
+    p.life-=dt;
 
-        ctx.font = "75px Arial";
+    if(p.life<=0){
+      particles.splice(i,1);
+    }
 
-        ctx.fillText(
-            "👑🌽",
-            0,
-            0
-        );
+  }
+}
 
-        // barra de vida
 
-        ctx.fillStyle = "rgba(0,0,0,.6)";
-        ctx.fillRect(
-            -55,
-            -65,
-            110,
-            9
-        );
+function drawParticles(){
 
-        ctx.fillStyle = "#ff4444";
+  for(const p of particles){
 
-        ctx.fillRect(
-            -55,
-            -65,
-            110 * (e.hp / e.maxHp),
-            9
-        );
+    ctx.globalAlpha=p.life/p.maxLife;
+
+    ctx.fillStyle="#ffd85a";
+
+    ctx.beginPath();
+
+    ctx.arc(
+      p.x,
+      p.y,
+      p.size,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+  }
+
+  ctx.globalAlpha=1;
+}
+
+
+/* =========================
+   ACTUALIZAR ESTRELLAS
+========================= */
+
+function updateStars(dt){
+
+  for(const star of stars){
+
+    star.y+=star.speed*dt;
+
+    if(star.y>H){
+      star.y=-5;
+      star.x=Math.random()*W;
+    }
+
+  }
+}
+
+
+/* =========================
+   ACTUALIZAR JUGADOR
+========================= */
+
+function updatePlayer(dt){
+
+  const speed=player.speed*(1+upgrades.speed*.18);
+
+  if(keys.left){
+    player.x-=speed*dt;
+  }
+
+  if(keys.right){
+    player.x+=speed*dt;
+  }
+
+  player.x=clamp(
+    player.x,
+    45,
+    W-45
+  );
+
+  if(keys.fire){
+
+    fireTimer-=dt;
+
+    if(fireTimer<=0){
+
+      shoot();
+
+      fireTimer=Math.max(
+        .18,
+        .42-upgrades.fire*.035
+      );
+    }
+  }
+}
+
+
+/* =========================
+   ACTUALIZAR BALAS
+========================= */
+
+function updateBullets(dt){
+
+  for(let i=bullets.length-1;i>=0;i--){
+
+    const b=bullets[i];
+
+    b.y-=b.speed*dt;
+
+    if(b.y<-50){
+      bullets.splice(i,1);
+    }
+
+  }
+}
+
+
+/* =========================
+   ACTUALIZAR ENEMIGOS
+========================= */
+
+function updateEnemies(dt){
+
+  for(let i=enemies.length-1;i>=0;i--){
+
+    const e=enemies[i];
+
+    if(e.type==="boss"){
+
+      e.y+=e.speed*dt;
+
+      e.x+=e.direction*e.speed*.7*dt;
+
+      if(e.x<70 || e.x>W-70){
+        e.direction*=-1;
+      }
+
+      if(e.y>H*.32){
+        e.y=H*.32;
+      }
+
+    }else{
+
+      e.y+=e.speed*dt;
+
+      e.x+=Math.sin(
+        e.y*.015+e.wave
+      )*25*dt;
 
     }
-    else {
 
-        ctx.font = e.size + "px Arial";
 
-        ctx.fillText(
-            "🌽",
-            0,
-            0
-        );
+    /* enemigo llegó abajo */
 
-        if(e.type === "fast") {
+    if(e.y>H+70){
 
-            ctx.font = "18px Arial";
+      enemies.splice(i,1);
 
-            ctx.fillText(
-                "⚡",
-                25,
-                -20
+      if(player.shieldCharges>0){
+
+        player.shieldCharges--;
+
+        showMessage("🛡️ ¡Escudo absorbió el impacto!");
+
+      }else{
+
+        loseLife();
+
+      }
+
+    }
+
+  }
+}
+
+
+/* =========================
+   COLISIONES
+========================= */
+
+function updateCollisions(){
+
+  for(let bi=bullets.length-1;bi>=0;bi--){
+
+    const b=bullets[bi];
+
+    let hit=false;
+
+    for(let ei=enemies.length-1;ei>=0;ei--){
+
+      const e=enemies[ei];
+
+      const dx=b.x-e.x;
+      const dy=b.y-e.y;
+
+      const distance=Math.sqrt(
+        dx*dx+dy*dy
+      );
+
+      if(distance<b.radius+e.radius){
+
+        e.hp-=b.damage;
+
+        bullets.splice(bi,1);
+
+        explode(b.x,b.y);
+
+        hit=true;
+
+        if(e.hp<=0){
+
+          score+=e.points;
+          coins+=e.coins;
+
+          saveNumber(
+            "galacticaCoins",
+            coins
+          );
+
+          if(e.type==="boss"){
+
+            if(score>=1900){
+              boss2000Defeated=true;
+            }else{
+              boss1000Defeated=true;
+            }
+
+            showMessage(
+              "👑🌽 ¡JEFE DERROTADO! +" +
+              e.coins +
+              " 🪙"
             );
 
-        }
+          }
 
-        if(e.type === "giant") {
-
-            ctx.font = "18px Arial";
-
-            ctx.fillText(
-                "💪",
-                30,
-                -25
-            );
+          enemies.splice(ei,1);
 
         }
+
+        break;
+      }
 
     }
 
-    ctx.restore();
+    if(hit) continue;
+
+  }
 
 }
 
 
-// =====================================================
-// PARTÍCULAS
-// =====================================================
+/* =========================
+   VIDA
+========================= */
 
-function explosion(x, y) {
+function loseLife(){
 
-    for(let i = 0; i < 10; i++) {
+  lives--;
 
-        particles.push({
+  if(lives<=0){
 
-            x: x,
-            y: y,
+    lives=0;
 
-            vx:
-                (Math.random() - .5) * 6,
+    endGame();
 
-            vy:
-                (Math.random() - .5) * 6,
+  }else{
 
-            life: 30
+    showMessage("💥 ¡Cuidado! ❤️ -1");
 
-        });
-
-    }
+  }
 
 }
 
 
-function updateParticles() {
+/* =========================
+   BOSS SPAWN
+========================= */
 
-    for(let i = particles.length - 1; i >= 0; i--) {
+function checkBosses(){
 
-        let p = particles[i];
+  const hasBoss=enemies.some(
+    e=>e.type==="boss"
+  );
 
-        p.x += p.vx;
-        p.y += p.vy;
+  if(
+    score>=1000 &&
+    score<2000 &&
+    !boss1000Defeated &&
+    !hasBoss
+  ){
 
-        p.life--;
+    createBoss();
 
-        ctx.fillStyle =
-            "rgba(255,220,80," +
-            (p.life / 30) +
-            ")";
+  }
 
-        ctx.beginPath();
+  if(
+    score>=2000 &&
+    !boss2000Defeated &&
+    !hasBoss
+  ){
 
-        ctx.arc(
-            p.x,
-            p.y,
-            3,
-            0,
-            Math.PI * 2
-        );
+    createBoss();
 
-        ctx.fill();
-
-        if(p.life <= 0) {
-
-            particles.splice(i,1);
-
-        }
-
-    }
+  }
 
 }
 
 
-// =====================================================
-// COLISIÓN
-// =====================================================
+/* =========================
+   DIBUJAR TODO
+========================= */
 
-function distance(a,b) {
+function draw(){
 
-    return Math.hypot(
-        a.x - b.x,
-        a.y - b.y
+  drawBackground();
+  drawEnemies();
+  drawBullets();
+  drawParticles();
+
+  if(running){
+    drawPlayer();
+  }
+
+}
+
+
+/* =========================
+   UPDATE
+========================= */
+
+function update(dt){
+
+  if(!running){
+    return;
+  }
+
+  updateStars(dt);
+  updatePlayer(dt);
+  updateBullets(dt);
+  updateEnemies(dt);
+  updateParticles(dt);
+  updateCollisions();
+
+  spawnTimer-=dt;
+
+  if(spawnTimer<=0){
+
+    createEnemy();
+
+    const difficulty=
+      Math.min(score/2500,.75);
+
+    spawnTimer=
+      Math.max(.25,.85-difficulty*.5);
+
+  }
+
+  checkBosses();
+
+  if(messageTimer>0){
+
+    messageTimer-=dt;
+
+    if(messageTimer<=0){
+      messageEl.style.opacity="0";
+    }
+
+  }
+
+  updateHUD();
+
+}
+
+
+/* =========================
+   LOOP
+========================= */
+
+function gameLoop(timestamp){
+
+  if(!lastTime){
+    lastTime=timestamp;
+  }
+
+  let dt=(timestamp-lastTime)/1000;
+
+  lastTime=timestamp;
+
+  dt=Math.min(dt,.05);
+
+  update(dt);
+  draw();
+
+  requestAnimationFrame(gameLoop);
+}
+
+requestAnimationFrame(gameLoop);
+
+
+/* =========================
+   HUD
+========================= */
+
+function updateHUD(){
+
+  scoreEl.textContent=score;
+  livesEl.textContent=lives;
+  coinsEl.textContent=coins;
+
+  if(evolution==="sheep"){
+    animalHud.textContent="🐑 OVEJA";
+  }else{
+    animalHud.textContent="🐔 GALLINA";
+  }
+
+}
+
+
+/* =========================
+   RESET
+========================= */
+
+function resetGame(){
+
+  score=0;
+
+  lives=3+upgrades.life;
+
+  bullets=[];
+  enemies=[];
+  particles=[];
+
+  boss1000Defeated=false;
+  boss2000Defeated=false;
+
+  player.x=W/2;
+  player.y=H-115;
+
+  player.shieldCharges=upgrades.shield;
+
+  spawnTimer=.4;
+  fireTimer=0;
+
+  updateHUD();
+}
+
+
+/* =========================
+   START
+========================= */
+
+function startGame(event){
+
+  if(event){
+    event.preventDefault();
+  }
+
+  menu.classList.add("hidden");
+  gameOver.classList.add("hidden");
+  evolutionScreen.classList.add("hidden");
+
+  hud.classList.remove("hidden");
+  animalHud.classList.remove("hidden");
+  touchControls.classList.remove("hidden");
+
+  resetGame();
+
+  running=true;
+
+  lastTime=performance.now();
+
+  showMessage(
+    evolution==="sheep"
+    ? "🐑 ¡A VOLAR!"
+    : "🐔 ¡A VOLAR!"
+  );
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function endGame(){
+
+  running=false;
+
+  finalScoreEl.textContent=score;
+  finalCoinsEl.textContent=coins;
+
+  updateShop();
+
+  gameOver.classList.remove("hidden");
+
+  hud.classList.add("hidden");
+  animalHud.classList.add("hidden");
+  touchControls.classList.add("hidden");
+
+}
+
+
+/* =========================
+   MEJORAS
+========================= */
+
+function allUpgradesMax(){
+
+  return(
+    upgrades.fire>=3 &&
+    upgrades.speed>=3 &&
+    upgrades.shield>=3 &&
+    upgrades.life>=3
+  );
+
+}
+
+
+function costFor(type){
+
+  if(type==="fire"){
+    return 40+upgrades.fire*35;
+  }
+
+  if(type==="speed"){
+    return 50+upgrades.speed*40;
+  }
+
+  if(type==="shield"){
+    return 80+upgrades.shield*60;
+  }
+
+  if(type==="life"){
+    return 100+upgrades.life*80;
+  }
+
+  return 999999;
+}
+
+
+function buyUpgrade(type){
+
+  if(upgrades[type]>=3){
+    return;
+  }
+
+  const cost=costFor(type);
+
+  if(coins<cost){
+
+    showMessage(
+      "🪙 Necesitas " +
+      cost +
+      " monedas"
     );
 
+    return;
+  }
+
+  coins-=cost;
+  upgrades[type]++;
+
+  saveNumber("galacticaCoins",coins);
+  saveNumber("galacticaFire",upgrades.fire);
+  saveNumber("galacticaSpeed",upgrades.speed);
+  saveNumber("galacticaShield",upgrades.shield);
+  saveNumber("galacticaLife",upgrades.life);
+
+  updateShop();
+
 }
 
 
-// =====================================================
-// ACTUALIZAR JUEGO
-// =====================================================
+function updateShop(){
 
-function update() {
+  document.getElementById("fireLevel").textContent=
+    upgrades.fire;
 
-    if(!running) return;
+  document.getElementById("speedLevel").textContent=
+    upgrades.speed;
 
-    // Movimiento
+  document.getElementById("shieldLevel").textContent=
+    upgrades.shield;
 
-    if(keys["ArrowLeft"] || keys["a"]) {
+  document.getElementById("lifeLevel").textContent=
+    upgrades.life;
 
-        player.x -= player.speed;
 
-    }
+  setUpgradeButton(
+    document.getElementById("fireUpgrade"),
+    "fire"
+  );
 
-    if(keys["ArrowRight"] || keys["d"]) {
+  setUpgradeButton(
+    document.getElementById("speedUpgrade"),
+    "speed"
+  );
 
-        player.x += player.speed;
+  setUpgradeButton(
+    document.getElementById("shieldUpgrade"),
+    "shield"
+  );
 
-    }
+  setUpgradeButton(
+    document.getElementById("lifeUpgrade"),
+    "life"
+  );
 
-    player.x = Math.max(
-        30,
-        Math.min(
-            window.innerWidth - 30,
-            player.x
-        )
+
+  const evolutionArea=
+    document.getElementById("evolutionArea");
+
+  if(
+    allUpgradesMax() &&
+    evolution==="chicken"
+  ){
+
+    evolutionArea.classList.remove("hidden");
+
+  }else{
+
+    evolutionArea.classList.add("hidden");
+
+  }
+
+}
+
+
+function setUpgradeButton(button,type){
+
+  if(upgrades[type]>=3){
+
+    button.textContent="MAX";
+    button.disabled=true;
+
+  }else{
+
+    button.textContent=
+      costFor(type)+" 🪙";
+
+    button.disabled=false;
+
+  }
+
+}
+
+
+/* =========================
+   EVOLUCIÓN
+========================= */
+
+function openEvolution(){
+
+  if(!allUpgradesMax()){
+    return;
+  }
+
+  evolutionScreen.classList.remove("hidden");
+
+}
+
+
+function confirmEvolution(){
+
+  evolution="sheep";
+
+  try{
+    localStorage.setItem(
+      "galacticaEvolution",
+      "sheep"
     );
+  }catch(e){}
 
+  evolutionScreen.classList.add("hidden");
+  gameOver.classList.add("hidden");
 
-    // Disparo automático con espacio
+  showMessage(
+    "🐑 ¡HAS EVOLUCIONADO!"
+  );
 
-    if(keys[" "] || keys["Spacebar"]) {
-
-        shoot();
-
-    }
-
-
-    if(player.cooldown > 0) {
-
-        player.cooldown--;
-
-    }
-
-
-    // Balas
-
-    for(let i = bullets.length - 1; i >= 0; i--) {
-
-        let b = bullets[i];
-
-        b.y -= b.speed;
-
-        if(b.y < -50) {
-
-            bullets.splice(i,1);
-            continue;
-
-        }
-
-
-        // Colisión con enemigos
-
-        for(let j = enemies.length - 1; j >= 0; j--) {
-
-            let e = enemies[j];
-
-            if(
-                Math.abs(b.x - e.x) <
-                e.size * .55 &&
-                Math.abs(b.y - e.y) <
-                e.size * .55
-            ) {
-
-                e.hp -= b.damage;
-
-                bullets.splice(i,1);
-
-                if(e.hp <= 0) {
-
-                    score += e.points;
-                    coins += e.coins;
-
-                    explosion(
-                        e.x,
-                        e.y
-                    );
-
-                    enemies.splice(j,1);
-
-                    updateHUD();
-
-                }
-
-                break;
-
-            }
-
-        }
-
-    }
-
-
-    // Crear enemigos
-
-    if(Math.random() < .025 + score / 150000) {
-
-        createEnemy();
-
-    }
-
-
-    // Actualizar enemigos
-
-    for(let i = enemies.length - 1; i >= 0; i--) {
-
-        let e = enemies[i];
-
-
-        if(e.type === "boss") {
-
-            e.x += e.speed * e.direction;
-
-            if(
-                e.x > window.innerWidth - 70 ||
-                e.x < 70
-            ) {
-
-                e.direction *= -1;
-
-            }
-
-        }
-        else {
-
-            e.y += e.speed;
-
-        }
-
-
-        // Enemigo llega abajo
-
-        if(
-            e.type !== "boss" &&
-            e.y > window.innerHeight + 60
-        ) {
-
-            enemies.splice(i,1);
-
-            if(player.shield) {
-
-                player.shield = false;
-
-            }
-            else {
-
-                lives--;
-
-                updateHUD();
-
-                if(lives <= 0) {
-
-                    endGame();
-
-                }
-
-            }
-
-        }
-
-    }
-
-
-    // Jefes
-
-    if(
-        score >= 1000 &&
-        !bossSpawned1000
-    ) {
-
-        createBoss();
-
-        bossSpawned1000 = true;
-
-    }
-
-
-    if(
-        score >= 2000 &&
-        !bossSpawned2000
-    ) {
-
-        createBoss();
-
-        bossSpawned2000 = true;
-
-    }
-
-
-    // Evolución disponible
-
-    checkEvolution();
-
+  startGame();
 
 }
 
 
-// =====================================================
-// EVOLUCIÓN
-// =====================================================
+/* =========================
+   BOTONES
+========================= */
 
-function checkEvolution() {
+document.getElementById("startBtn")
+  .addEventListener("click",startGame);
 
-    if(evolution !== "chicken") return;
+document.getElementById("restartBtn")
+  .addEventListener("click",startGame);
 
-    let maxed =
-        upgrades.fire >= 3 &&
-        upgrades.speed >= 3 &&
-        upgrades.shield >= 3 &&
-        upgrades.life >= 3;
+document.getElementById("evolveBtn")
+  .addEventListener("click",openEvolution);
 
-    if(maxed) {
+document.getElementById("confirmEvolution")
+  .addEventListener("click",confirmEvolution);
 
-        document.getElementById(
-            "evolveBtn"
-        ).style.display = "inline-block";
 
+document.getElementById("fireUpgrade")
+  .addEventListener(
+    "click",
+    ()=>buyUpgrade("fire")
+  );
+
+document.getElementById("speedUpgrade")
+  .addEventListener(
+    "click",
+    ()=>buyUpgrade("speed")
+  );
+
+document.getElementById("shieldUpgrade")
+  .addEventListener(
+    "click",
+    ()=>buyUpgrade("shield")
+  );
+
+document.getElementById("lifeUpgrade")
+  .addEventListener(
+    "click",
+    ()=>buyUpgrade("life")
+  );
+
+
+/* =========================
+   TECLADO
+========================= */
+
+window.addEventListener("keydown",e=>{
+
+  if(
+    e.key==="ArrowLeft" ||
+    e.key.toLowerCase()==="a"
+  ){
+    keys.left=true;
+  }
+
+  if(
+    e.key==="ArrowRight" ||
+    e.key.toLowerCase()==="d"
+  ){
+    keys.right=true;
+  }
+
+  if(
+    e.key===" " ||
+    e.key.toLowerCase()==="w"
+  ){
+
+    keys.fire=true;
+    e.preventDefault();
+
+  }
+
+});
+
+
+window.addEventListener("keyup",e=>{
+
+  if(
+    e.key==="ArrowLeft" ||
+    e.key.toLowerCase()==="a"
+  ){
+    keys.left=false;
+  }
+
+  if(
+    e.key==="ArrowRight" ||
+    e.key.toLowerCase()==="d"
+  ){
+    keys.right=false;
+  }
+
+  if(
+    e.key===" " ||
+    e.key.toLowerCase()==="w"
+  ){
+    keys.fire=false;
+  }
+
+});
+
+
+/* =========================
+   CONTROLES TÁCTILES
+========================= */
+
+function holdButton(element,onDown,onUp){
+
+  element.addEventListener(
+    "pointerdown",
+    e=>{
+      e.preventDefault();
+      onDown();
     }
+  );
 
+  element.addEventListener(
+    "pointerup",
+    e=>{
+      e.preventDefault();
+      onUp();
+    }
+  );
+
+  element.addEventListener(
+    "pointercancel",
+    onUp
+  );
+
+  element.addEventListener(
+    "pointerleave",
+    e=>{
+      if(e.buttons===0){
+        onUp();
+      }
+    }
+  );
 }
 
 
-// =====================================================
-// PANTALLA DE EVOLUCIÓN
-// =====================================================
-
-function showEvolution() {
-
-    running = false;
-
-    document.getElementById(
-        "evolutionMenu"
-    ).style.display = "flex";
-
-    document.getElementById(
-        "evolutionText"
-    ).innerHTML =
-        "¡Has llevado a tu Gallina Cósmica al máximo! 🐔✨" +
-        "<br><br>" +
-        "Ahora puede evolucionar en..." +
-        "<br><br>" +
-        "<strong>🐑 OVEJA CÓSMICA</strong>" +
-        "<br><br>" +
-        "Nueva arma: 🧶 bolas de lana" +
-        "<br>" +
-        "¡Y esto es solo el comienzo! 🚀";
-
-}
-
-
-// =====================================================
-// CONFIRMAR EVOLUCIÓN
-// =====================================================
-
-function evolve() {
-
-    if(evolution !== "chicken") return;
-
-    evolution = "sheep";
-
-    saveProgress();
-
-    document.getElementById(
-        "evolutionMenu"
-    ).style.display = "none";
-
-    document.getElementById(
-        "gameOver"
-    ).style.display = "flex";
-
-    updateShop();
-
-}
-
-
-// =====================================================
-// FIN DEL JUEGO
-// =====================================================
-
-function endGame() {
-
-    running = false;
-
-    document.getElementById(
-        "finalScore"
-    ).textContent = score;
-
-    document.getElementById(
-        "finalCoins"
-    ).textContent = coins;
-
-    document.getElementById(
-        "gameOver"
-    ).style.display = "flex";
-
-    updateShop();
-
-}
-
-
-// =====================================================
-// TIENDA
-// =====================================================
-
-function updateShop() {
-
-    let fireCost =
-        40 + upgrades.fire * 35;
-
-    let speedCost =
-        50 + upgrades.speed * 40;
-
-    let shieldCost =
-        80 + upgrades.shield * 60;
-
-    let lifeCost =
-        100 + upgrades.life * 80;
-
-
-    document.getElementById(
-        "fireUpgrade"
-    ).textContent =
-        upgrades.fire >= 3
-        ? "🔥 DISPARO — MÁXIMO"
-        : `🔥 Disparo Lv.${upgrades.fire} — 🪙 ${fireCost}`;
-
-
-    document.getElementById(
-        "speedUpgrade"
-    ).textContent =
-        upgrades.speed >= 3
-        ? "⚡ VELOCIDAD — MÁXIMO"
-        : `⚡ Velocidad Lv.${upgrades.speed} — 🪙 ${speedCost}`;
-
-
-    document.getElementById(
-        "shieldUpgrade"
-    ).textContent =
-        upgrades.shield >= 3
-        ? "🛡️ ESCUDO — MÁXIMO"
-        : `🛡️ Escudo Lv.${upgrades.shield} — 🪙 ${shieldCost}`;
-
-
-    document.getElementById(
-        "lifeUpgrade"
-    ).textContent =
-        upgrades.life >= 3
-        ? "❤️ VIDAS — MÁXIMO"
-        : `❤️ Vida Lv.${upgrades.life} — 🪙 ${lifeCost}`;
-
-
-    checkEvolution();
-
-}
-
-
-// =====================================================
-// COMPRAS
-// =====================================================
-
-document.getElementById(
-    "fireUpgrade"
-).onclick = function() {
-
-    if(upgrades.fire >= 3) return;
-
-    let cost =
-        40 + upgrades.fire * 35;
-
-    if(coins >= cost) {
-
-        coins -= cost;
-
-        upgrades.fire++;
-
-        saveProgress();
-
-        updateHUD();
-        updateShop();
-
-    }
-
-};
-
-
-document.getElementById(
-    "speedUpgrade"
-).onclick = function() {
-
-    if(upgrades.speed >= 3) return;
-
-    let cost =
-        50 + upgrades.speed * 40;
-
-    if(coins >= cost) {
-
-        coins -= cost;
-
-        upgrades.speed++;
-
-        saveProgress();
-
-        updateHUD();
-        updateShop();
-
-    }
-
-};
-
-
-document.getElementById(
-    "shieldUpgrade"
-).onclick = function() {
-
-    if(upgrades.shield >= 3) return;
-
-    let cost =
-        80 + upgrades.shield * 60;
-
-    if(coins >= cost) {
-
-        coins -= cost;
-
-        upgrades.shield++;
-
-        saveProgress();
-
-        updateHUD();
-        updateShop();
-
-    }
-
-};
-
-
-document.getElementById(
-    "lifeUpgrade"
-).onclick = function() {
-
-    if(upgrades.life >= 3) return;
-
-    let cost =
-        100 + upgrades.life * 80;
-
-    if(coins >= cost) {
-
-        coins -= cost;
-
-        upgrades.life++;
-
-        saveProgress();
-
-        updateHUD();
-        updateShop();
-
-    }
-
-};
-
-
-// =====================================================
-// BOTONES
-// =====================================================
-
-document.getElementById(
-    "startBtn"
-).onclick = function() {
-
-    document.getElementById(
-        "menu"
-    ).style.display = "none";
-
-    resetGame();
-
-    running = true;
-
-};
-
-
-document.getElementById(
-    "restartBtn"
-).onclick = function() {
-
-    document.getElementById(
-        "gameOver"
-    ).style.display = "none";
-
-    resetGame();
-
-    running = true;
-
-};
-
-
-document.getElementById(
-    "evolveBtn"
-).onclick = showEvolution;
-
-
-document.getElementById(
-    "confirmEvolution"
-).onclick = evolve;
-
-
-// =====================================================
-// TECLADO
-// =====================================================
-
-window.addEventListener(
-    "keydown",
-    e => {
-
-        keys[e.key] = true;
-
-        if(e.key === " ") {
-
-            e.preventDefault();
-
-        }
-
-    }
+holdButton(
+  document.getElementById("leftBtn"),
+  ()=>keys.left=true,
+  ()=>keys.left=false
+);
+
+holdButton(
+  document.getElementById("rightBtn"),
+  ()=>keys.right=true,
+  ()=>keys.right=false
+);
+
+holdButton(
+  document.getElementById("fireBtn"),
+  ()=>keys.fire=true,
+  ()=>keys.fire=false
 );
 
 
-window.addEventListener(
-    "keyup",
-    e => {
+/* =========================
+   INICIO SEGURO
+========================= */
 
-        keys[e.key] = false;
-
-    }
-);
-
-
-// =====================================================
-// CONTROLES TÁCTILES
-// =====================================================
-
-const leftBtn =
-    document.getElementById("leftBtn");
-
-const rightBtn =
-    document.getElementById("rightBtn");
-
-const shootBtn =
-    document.getElementById("shootBtn");
-
-
-leftBtn.addEventListener(
-    "touchstart",
-    e => {
-
-        e.preventDefault();
-
-        keys["ArrowLeft"] = true;
-
-    }
-);
-
-
-leftBtn.addEventListener(
-    "touchend",
-    e => {
-
-        e.preventDefault();
-
-        keys["ArrowLeft"] = false;
-
-    }
-);
-
-
-rightBtn.addEventListener(
-    "touchstart",
-    e => {
-
-        e.preventDefault();
-
-        keys["ArrowRight"] = true;
-
-    }
-);
-
-
-rightBtn.addEventListener(
-    "touchend",
-    e => {
-
-        e.preventDefault();
-
-        keys["ArrowRight"] = false;
-
-    }
-);
-
-
-shootBtn.addEventListener(
-    "touchstart",
-    e => {
-
-        e.preventDefault();
-
-        keys[" "] = true;
-
-    }
-);
-
-
-shootBtn.addEventListener(
-    "touchend",
-    e => {
-
-        e.preventDefault();
-
-        keys[" "] = false;
-
-    }
-);
-
-
-// =====================================================
-// DIBUJADO
-// =====================================================
-
-function draw() {
-
-    ctx.clearRect(
-        0,
-        0,
-        window.innerWidth,
-        window.innerHeight
-    );
-
-
-    // Fondo
-
-    ctx.fillStyle = "#050518";
-
-    ctx.fillRect(
-        0,
-        0,
-        window.innerWidth,
-        window.innerHeight
-    );
-
-
-    // Estrellas
-
-    for(let s of stars) {
-
-        s.y += s.speed;
-
-        if(s.y > window.innerHeight) {
-
-            s.y = 0;
-            s.x = Math.random() *
-                window.innerWidth;
-
-        }
-
-        ctx.fillStyle = "white";
-
-        ctx.globalAlpha =
-            .4 + Math.random() * .6;
-
-        ctx.beginPath();
-
-        ctx.arc(
-            s.x,
-            s.y,
-            s.size,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-    }
-
-    ctx.globalAlpha = 1;
-
-
-    // Balas
-
-    for(let b of bullets) {
-
-        ctx.font = "28px Arial";
-
-        ctx.textAlign = "center";
-
-        ctx.fillText(
-            b.emoji,
-            b.x,
-            b.y
-        );
-
-    }
-
-
-    // Enemigos
-
-    for(let e of enemies) {
-
-        drawEnemy(e);
-
-    }
-
-
-    // Partículas
-
-    updateParticles();
-
-
-    // Jugador
-
-    if(running) {
-
-        drawPlayer();
-
-    }
-
-}
-
-
-// =====================================================
-// LOOP
-// =====================================================
-
-function gameLoop() {
-
-    update();
-
-    draw();
-
-    requestAnimationFrame(gameLoop);
-
-}
-
-gameLoop();
-
-
-// =====================================================
-// INICIALIZACIÓN
-// =====================================================
-
-updateHUD();
 updateShop();
+updateHUD();
 
 </script>
 
