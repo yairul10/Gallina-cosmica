@@ -151,24 +151,24 @@
         }
 
         .screen-overlay h1 {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             color: #38bdf8;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .screen-overlay p {
             color: #94a3b8;
-            font-size: 0.95rem;
-            margin-bottom: 20px;
-            line-height: 1.4;
+            font-size: 0.85rem;
+            margin-bottom: 14px;
+            line-height: 1.3;
         }
 
         .btn {
             background-color: #38bdf8;
             color: #0f172a;
             border: none;
-            padding: 12px 28px;
-            font-size: 1rem;
+            padding: 10px 24px;
+            font-size: 0.95rem;
             font-weight: 700;
             border-radius: 12px;
             cursor: pointer;
@@ -178,6 +178,54 @@
 
         .btn:active {
             transform: scale(0.95);
+        }
+
+        /* Estilos para el Top de Récords */
+        .leaderboard-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 10px;
+            padding: 8px 16px;
+            margin-bottom: 14px;
+            width: 100%;
+            max-width: 260px;
+            text-align: left;
+        }
+
+        .leaderboard-box h3 {
+            font-size: 0.9rem;
+            color: #fbbf24;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+
+        .lb-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            padding: 2px 0;
+            border-bottom: 1px dashed rgba(255,255,255,0.05);
+        }
+
+        .initials-input-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .initials-input-container input {
+            background: #1e293b;
+            border: 2px solid #38bdf8;
+            color: #fff;
+            font-size: 1.2rem;
+            text-align: center;
+            width: 60px;
+            padding: 6px;
+            border-radius: 8px;
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -209,7 +257,13 @@
         <!-- Pantalla de Inicio -->
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
-            <p>¡Hasta 3 balas por disparo con daño progresivo! Evoluciona: Gallina ➔ Oveja (Lv.6) ➔ Caballo (Lv.10) ➔ Vaca. ¡Los maíces endurecen su vida!</p>
+            <p>Mejoras a 10 y 15 monedas. ¡Evoluciona hasta la Vaca lechera y compite por entrar al Top 5 de récords!</p>
+            
+            <div class="leaderboard-box">
+                <h3>🏆 Mejores Récords</h3>
+                <div id="startLeaderboardList"></div>
+            </div>
+
             <button class="btn" id="startBtn">¡Despegar!</button>
         </div>
 
@@ -217,7 +271,21 @@
         <div id="gameOverScreen" class="screen-overlay" style="display: none;">
             <h1>¡Nave Destruida!</h1>
             <p>Puntuación final: <strong id="finalScore">0</strong></p>
-            <button class="btn" id="restartBtn">Reintentar</button>
+            
+            <div id="saveScoreSection">
+                <p style="font-size:0.8rem; margin-bottom:4px;">¡Nuevo Récord! Ingresa tus 3 iniciales:</p>
+                <div class="initials-input-container">
+                    <input type="text" id="playerInitials" maxlength="3" value="AAA">
+                    <button class="btn" id="saveScoreBtn" style="padding: 8px 14px; font-size: 0.85rem;">Guardar</button>
+                </div>
+            </div>
+
+            <div class="leaderboard-box">
+                <h3>🏆 Top Puntajes</h3>
+                <div id="endLeaderboardList"></div>
+            </div>
+
+            <button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button>
         </div>
     </div>
 
@@ -234,13 +302,12 @@
         let gameTime = 0;
         let gameState = 'START';
         
-        // Fases de evolución: 0 = Gallina, 1 = Oveja, 2 = Caballo, 3 = Vaca
         let evolutionStage = 0; 
         let maxUpgradeLimit = 3; 
         let nextBossScoreThreshold = 5000;
 
         let upgrades = {
-            bullets: 0, // Máximo 3 (Cantidad fija de balas, aumenta el daño)
+            bullets: 0, 
             speed: 1
         };
 
@@ -257,6 +324,32 @@
         let bossBullets = [];
         let boss = null;
         let stars = [];
+
+        // Sistema de Récords (Top 5 guardados en localStorage)
+        let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || [
+            { name: 'PRO', score: 5000 },
+            { name: 'ANA', score: 3000 },
+            { name: 'BOB', score: 1500 }
+        ];
+
+        function saveLeaderboard() {
+            localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard));
+        }
+
+        function renderLeaderboard(elementId) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            if (leaderboard.length === 0) {
+                container.innerHTML = '<div class="lb-row"><span>Sin récords aún</span><span></span></div>';
+                return;
+            }
+            leaderboard.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'lb-row';
+                row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`;
+                container.appendChild(row);
+            });
+        }
 
         for (let i = 0; i < 40; i++) {
             stars.push({
@@ -313,11 +406,9 @@
             if (evolutionStage === 2) bType = 'horseshoe';
             if (evolutionStage === 3) bType = 'milk';
 
-            // El daño de cada bala aumenta conforme sube el nivel de mejora (Nv.1 = 1 de daño, Nv.2 = 2, Nv.3 = 3...)
             let bulletDamage = upgrades.bullets === 0 ? 1 : upgrades.bullets;
 
             if (upgrades.bullets >= 2) {
-                // Máximo de 3 balas simultáneas en abanico
                 bullets.push({ x: player.x + 4, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -1.2, type: bType, damage: bulletDamage });
                 bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
                 bullets.push({ x: player.x + player.width - 20, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 1.2, type: bType, damage: bulletDamage });
@@ -329,12 +420,13 @@
             }
         }
 
+        // Costo de mejoras actualizado a 10 monedas (ataque y velocidad) y 15 para vida
         window.buyUpgrade = function(type) {
-            if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 3) {
-                coins -= 3;
+            if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 10) {
+                coins -= 10;
                 upgrades.bullets++;
-            } else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 3) {
-                coins -= 3;
+            } else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 10) {
+                coins -= 10;
                 upgrades.speed++;
             } else if (type === 'life' && coins >= 15) {
                 coins -= 15;
@@ -342,13 +434,13 @@
                 updateLivesUI();
             } else if (type === 'evolve') {
                 if (evolutionStage === 0) {
-                    evolutionStage = 1; // Oveja
+                    evolutionStage = 1; 
                     maxUpgradeLimit = 6; 
                 } else if (evolutionStage === 1) {
-                    evolutionStage = 2; // Caballo
+                    evolutionStage = 2; 
                     maxUpgradeLimit = 10; 
                 } else if (evolutionStage === 2) {
-                    evolutionStage = 3; // Vaca (forma máxima)
+                    evolutionStage = 3; 
                     maxUpgradeLimit = 10;
                 }
                 document.getElementById('upgEvolve').style.display = 'none';
@@ -358,8 +450,8 @@
 
         function updateUpgradesHUD() {
             document.getElementById('coinVal').textContent = coins;
-            document.getElementById('upgBullets').textContent = upgrades.bullets >= maxUpgradeLimit ? 'Daño Disparos: MÁX' : `Daño/Disparos [🪙3] (Lv.${upgrades.bullets})`;
-            document.getElementById('upgSpeed').textContent = upgrades.speed >= maxUpgradeLimit ? 'Velocidad: MÁX' : `Velocidad [🪙3] (Lv.${upgrades.speed})`;
+            document.getElementById('upgBullets').textContent = upgrades.bullets >= maxUpgradeLimit ? 'Daño Disparos: MÁX' : `Daño/Disparos [🪙10] (Lv.${upgrades.bullets})`;
+            document.getElementById('upgSpeed').textContent = upgrades.speed >= maxUpgradeLimit ? 'Velocidad: MÁX' : `Velocidad [🪙10] (Lv.${upgrades.speed})`;
             document.getElementById('upgLife').textContent = `+1 Vida [🪙15]`;
 
             let evolveBtn = document.getElementById('upgEvolve');
@@ -387,7 +479,6 @@
             const x = Math.random() * (canvas.width - size - 20) + 10;
             let speedMultiplier = 1 + (gameTime / 30); 
 
-            // A partir de la evolución de la Vaca (Stage 3), los maíces tienen más vida base
             let baseCornHp = evolutionStage >= 3 ? 3 : 1;
 
             enemies.push({
@@ -403,7 +494,6 @@
         }
 
         function spawnBoss() {
-            // Los jefes acumulan cada vez más vida de forma progresiva por cada aparición
             let bossLevel = Math.floor(score / 5000);
             let bossHp = 60 + (bossLevel * 45);
 
@@ -423,6 +513,17 @@
         document.getElementById('startBtn').addEventListener('click', startGame);
         document.getElementById('restartBtn').addEventListener('click', startGame);
 
+        document.getElementById('saveScoreBtn').addEventListener('click', () => {
+            let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3);
+            if (!initials) initials = 'ABC';
+            leaderboard.push({ name: initials, score: score });
+            leaderboard.sort((a, b) => b.score - a.score);
+            if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5);
+            saveLeaderboard();
+            document.getElementById('saveScoreSection').style.display = 'none';
+            renderLeaderboard('endLeaderboardList');
+        });
+
         function startGame() {
             score = 0;
             coins = 0;
@@ -441,6 +542,9 @@
             
             document.getElementById('scoreVal').textContent = score;
             document.getElementById('upgEvolve').style.display = 'none';
+            document.getElementById('saveScoreSection').style.display = 'block';
+            document.getElementById('playerInitials').value = 'AAA';
+            
             updateLivesUI();
             updateUpgradesHUD();
 
@@ -460,6 +564,7 @@
             gameState = 'GAMEOVER';
             clearInterval(window.gameTimerInterval);
             document.getElementById('finalScore').textContent = score;
+            renderLeaderboard('endLeaderboardList');
             document.getElementById('gameOverScreen').style.display = 'flex';
         }
 
@@ -538,7 +643,6 @@
                 }
             }
 
-            // Actualizar enemigos normales
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += enemies[i].speed;
                 enemies[i].wobble += 0.05;
@@ -565,7 +669,6 @@
                     continue;
                 }
 
-                // Colisión Bala vs Enemigo (aplicando daño progresivo)
                 for (let j = bullets.length - 1; j >= 0; j--) {
                     if (
                         bullets[j] &&
@@ -589,7 +692,6 @@
                 }
             }
 
-            // Colisiones Bala vs Jefe (aplicando daño progresivo)
             if (boss) {
                 for (let j = bullets.length - 1; j >= 0; j--) {
                     if (
@@ -691,7 +793,6 @@
             ctx.strokeStyle = '#854d0e';
             ctx.stroke();
 
-            // Si tienen más de 1 de vida (a partir de la vaca), se muestran con un casco de combate rojo distintivo
             if (e.maxHp > 1) {
                 ctx.fillStyle = '#b91c1c';
                 ctx.beginPath();
@@ -771,6 +872,8 @@
             requestAnimationFrame(loop);
         }
 
+        // Renderizar tabla de clasificación al cargar la página
+        renderLeaderboard('startLeaderboardList');
         loop();
     </script>
 </body>
