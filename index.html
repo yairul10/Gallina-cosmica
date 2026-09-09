@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>🐔 Gallina Cósmica V4.1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gallina Cósmica V4.2</title>
 
 <style>
 *{
@@ -17,14 +17,29 @@ html,body{
   width:100%;
   height:100%;
   overflow:hidden;
-  background:#050817;
+  background:#050713;
   font-family:Arial,sans-serif;
   color:white;
-  touch-action:none;
+}
+
+body{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+#gameWrap{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  max-width:600px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 30%,#18245a 0%,#090d28 45%,#03040c 100%);
 }
 
 canvas{
-  position:fixed;
+  position:absolute;
   inset:0;
   width:100%;
   height:100%;
@@ -32,1504 +47,1714 @@ canvas{
 }
 
 #hud{
-  position:fixed;
-  top:10px;
-  left:10px;
-  right:10px;
-  z-index:5;
+  position:absolute;
+  top:8px;
+  left:8px;
+  right:8px;
   display:flex;
   justify-content:space-between;
+  gap:6px;
   pointer-events:none;
-  font-weight:bold;
-  font-size:15px;
-  text-shadow:0 2px 4px #000;
+  z-index:5;
 }
 
 .hudBox{
-  background:rgba(0,0,0,.45);
-  border:1px solid rgba(255,255,255,.2);
+  background:rgba(5,8,25,.78);
+  border:1px solid rgba(120,200,255,.35);
   border-radius:12px;
   padding:7px 10px;
-  backdrop-filter:blur(4px);
+  font-size:13px;
+  box-shadow:0 3px 12px rgba(0,0,0,.4);
 }
 
-#animalHud{
-  position:fixed;
-  top:58px;
+#centerHUD{
+  position:absolute;
+  top:48px;
   left:50%;
   transform:translateX(-50%);
   z-index:5;
-  background:rgba(0,0,0,.45);
-  padding:6px 14px;
-  border-radius:20px;
-  font-weight:bold;
   pointer-events:none;
+  background:rgba(5,8,25,.7);
+  padding:5px 12px;
+  border-radius:20px;
+  font-size:13px;
 }
 
-.overlay{
-  position:fixed;
+.screen{
+  position:absolute;
   inset:0;
   z-index:20;
   display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
-  background:rgba(3,5,18,.88);
-  padding:20px;
-}
-
-.panel{
-  width:min(440px,94vw);
-  max-height:90vh;
-  overflow:auto;
-  background:linear-gradient(180deg,#182454,#0c1027);
-  border:2px solid rgba(255,255,255,.18);
-  border-radius:24px;
-  padding:24px;
   text-align:center;
-  box-shadow:0 20px 70px rgba(0,0,0,.6);
+  padding:25px;
+  background:rgba(3,5,16,.84);
 }
 
-h1{
-  margin:0 0 8px;
-  font-size:34px;
+.hidden{
+  display:none!important;
 }
 
-h2{
-  margin:8px 0;
+.title{
+  font-size:42px;
+  font-weight:900;
+  margin-bottom:5px;
+  text-shadow:0 0 18px #69d8ff;
 }
 
 .subtitle{
-  opacity:.8;
-  margin-bottom:18px;
+  color:#b9d9ff;
+  margin-bottom:20px;
 }
 
 button{
   border:0;
   border-radius:14px;
-  padding:13px 18px;
+  padding:13px 20px;
   margin:6px;
-  font-size:16px;
-  font-weight:bold;
   color:white;
-  background:linear-gradient(180deg,#3f7cff,#2351c8);
-  box-shadow:0 5px 0 #17368d;
+  background:linear-gradient(135deg,#1877ff,#713dff);
+  font-weight:bold;
+  font-size:15px;
+  box-shadow:0 5px 15px rgba(0,0,0,.35);
   cursor:pointer;
 }
 
 button:active{
-  transform:translateY(3px);
-  box-shadow:0 2px 0 #17368d;
-}
-
-button:disabled{
-  opacity:.45;
-  cursor:not-allowed;
-}
-
-#startBtn{
-  font-size:20px;
-  padding:15px 35px;
-  margin-top:15px;
+  transform:scale(.96);
 }
 
 .shop{
-  margin-top:15px;
-  text-align:left;
+  width:min(95%,480px);
+  max-height:85vh;
+  overflow:auto;
+  background:rgba(10,15,40,.95);
+  border:1px solid rgba(120,200,255,.3);
+  border-radius:20px;
+  padding:18px;
 }
 
-.shopItem{
+.shop h2{
+  margin:3px 0 8px;
+}
+
+.coins{
+  color:#ffd84d;
+  font-size:20px;
+  font-weight:bold;
+  margin-bottom:12px;
+}
+
+.upgrade{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:8px;
-  padding:10px;
+  gap:10px;
+  padding:11px;
   margin:7px 0;
   border-radius:13px;
-  background:rgba(255,255,255,.07);
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
 }
 
-.shopInfo{
+.upgradeInfo{
+  text-align:left;
   flex:1;
 }
 
-.shopName{
+.upgradeName{
   font-weight:bold;
 }
 
-.shopLevel{
-  font-size:12px;
-  opacity:.7;
+.upgradeDesc{
+  font-size:11px;
+  color:#aebbd6;
+  margin-top:3px;
 }
 
-.shop button{
-  margin:0;
-  padding:9px 11px;
-  font-size:13px;
-}
-
-#evolveBtn{
-  background:linear-gradient(180deg,#b34cff,#7021b5);
-  box-shadow:0 5px 0 #481579;
-}
-
-#message{
-  position:fixed;
-  left:50%;
-  top:86px;
-  transform:translateX(-50%);
-  z-index:8;
+.level{
+  color:#76dcff;
   font-weight:bold;
-  font-size:18px;
-  text-shadow:0 2px 5px #000;
-  pointer-events:none;
-  opacity:0;
-  transition:opacity .2s;
+  white-space:nowrap;
 }
 
-#touchControls{
-  position:fixed;
+.evolve{
+  background:linear-gradient(135deg,#ff8b20,#ff3d76);
+}
+
+#mobileControls{
+  position:absolute;
+  bottom:18px;
   left:0;
   right:0;
-  bottom:15px;
-  z-index:6;
+  z-index:8;
   display:flex;
   justify-content:space-between;
-  padding:0 20px;
+  padding:0 18px;
   pointer-events:none;
 }
 
-.touchSide{
-  display:flex;
-  gap:12px;
-  pointer-events:auto;
-}
-
-.touchBtn{
-  width:65px;
-  height:65px;
+.control{
+  width:75px;
+  height:75px;
   border-radius:50%;
+  background:rgba(50,80,150,.25);
+  border:2px solid rgba(150,220,255,.35);
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(255,255,255,.14);
-  border:2px solid rgba(255,255,255,.25);
-  font-size:27px;
+  font-size:28px;
+  pointer-events:auto;
   user-select:none;
 }
 
-.hidden{
-  display:none !important;
+#fireBtn{
+  width:82px;
+  height:82px;
+  background:rgba(255,80,80,.2);
 }
 
-.evolution{
-  font-size:60px;
-  margin:12px;
+.small{
+  font-size:12px;
+  color:#9eb2d4;
+  line-height:1.5;
 }
 
-.requirement{
-  background:rgba(255,255,255,.07);
-  padding:12px;
-  border-radius:14px;
-  margin:12px 0;
+#evolutionText{
+  font-size:19px;
+  margin:10px 0;
 }
 </style>
 </head>
 
 <body>
 
+<div id="gameWrap">
+
 <canvas id="game"></canvas>
 
-<div id="hud" class="hidden">
+<div id="hud">
   <div class="hudBox">⭐ <span id="score">0</span></div>
-  <div class="hudBox">❤️ <span id="lives">3</span></div>
   <div class="hudBox">🪙 <span id="coins">0</span></div>
+  <div class="hudBox">❤️ <span id="lives">3</span></div>
 </div>
 
-<div id="animalHud" class="hidden">
-  🐔 GALLINA
+<div id="centerHUD">
+  <span id="animalHUD">🐔 GALLINA</span>
+  · 🛡️ <span id="shieldHUD">0</span>
 </div>
 
-<div id="message"></div>
+<div id="mobileControls">
+  <div class="control" id="leftBtn">◀</div>
+  <div class="control" id="fireBtn">🔥</div>
+  <div class="control" id="rightBtn">▶</div>
+</div>
 
-<div id="touchControls" class="hidden">
-  <div class="touchSide">
-    <div class="touchBtn" id="leftBtn">⬅️</div>
-    <div class="touchBtn" id="rightBtn">➡️</div>
+<!-- INICIO -->
+<div class="screen" id="startScreen">
+  <div class="title">🐔</div>
+  <h1>GALLINA CÓSMICA</h1>
+  <div class="subtitle">V4.2 · Evolución Cósmica</div>
+
+  <div class="small">
+    🌽 Destruye los alimentos enemigos<br>
+    🪙 Consigue monedas<br>
+    🛠️ Mejora tu nave<br>
+    🧬 Evoluciona y empieza nuevamente
   </div>
 
-  <div class="touchSide">
-    <div class="touchBtn" id="fireBtn">🐣</div>
-  </div>
+  <button id="startBtn">🚀 COMENZAR</button>
 </div>
 
-<!-- MENÚ PRINCIPAL -->
-<div id="menu" class="overlay">
-  <div class="panel">
-    <h1>🐔🚀</h1>
-    <h1>GALLINA CÓSMICA</h1>
-    <div class="subtitle">
-      ¡Defiende la galaxia de los maíces invasores! 🌽
+<!-- GAME OVER / SHOP -->
+<div class="screen hidden" id="gameOverScreen">
+  <div class="shop">
+    <h2>💥 FIN DEL VUELO</h2>
+    <div>⭐ Puntaje: <b id="finalScore">0</b></div>
+    <div class="coins">🪙 <span id="shopCoins">0</span></div>
+
+    <div class="upgrade">
+      <div class="upgradeInfo">
+        <div class="upgradeName">🔥 Potencia de fuego</div>
+        <div class="upgradeDesc">Dispara más proyectiles.</div>
+      </div>
+      <div class="level" id="fireLevel">0/3</div>
+      <button id="buyFire">MEJORAR</button>
     </div>
 
-    <div>
-      🐔 → 🐑 → 🐴 → 🐄
+    <div class="upgrade">
+      <div class="upgradeInfo">
+        <div class="upgradeName">⚡ Velocidad</div>
+        <div class="upgradeDesc">Mueve la nave más rápido.</div>
+      </div>
+      <div class="level" id="speedLevel">0/3</div>
+      <button id="buySpeed">MEJORAR</button>
     </div>
 
-    <p>
-      Dispara, consigue monedas, mejora tu nave
-      y desbloquea nuevas evoluciones.
-    </p>
-
-    <button id="startBtn">🚀 COMENZAR</button>
-  </div>
-</div>
-
-<!-- GAME OVER -->
-<div id="gameOver" class="overlay hidden">
-  <div class="panel">
-
-    <h1>💥 FIN DEL VUELO</h1>
-
-    <h2>
-      Puntuación: <span id="finalScore">0</span>
-    </h2>
-
-    <p>
-      🪙 Monedas: <span id="finalCoins">0</span>
-    </p>
-
-    <div class="shop">
-
-      <h2>🛒 MEJORAS</h2>
-
-      <div class="shopItem">
-        <div class="shopInfo">
-          <div class="shopName">🐣 Disparo</div>
-          <div class="shopLevel">
-            Nivel <span id="fireLevel">0</span>/3
-          </div>
-        </div>
-        <button id="fireUpgrade">MEJORAR</button>
+    <div class="upgrade">
+      <div class="upgradeInfo">
+        <div class="upgradeName">🛡️ Escudo</div>
+        <div class="upgradeDesc">Absorbe enemigos que escapen.</div>
       </div>
-
-      <div class="shopItem">
-        <div class="shopInfo">
-          <div class="shopName">⚡ Velocidad</div>
-          <div class="shopLevel">
-            Nivel <span id="speedLevel">0</span>/3
-          </div>
-        </div>
-        <button id="speedUpgrade">MEJORAR</button>
-      </div>
-
-      <div class="shopItem">
-        <div class="shopInfo">
-          <div class="shopName">🛡️ Escudo</div>
-          <div class="shopLevel">
-            Nivel <span id="shieldLevel">0</span>/3
-          </div>
-        </div>
-        <button id="shieldUpgrade">MEJORAR</button>
-      </div>
-
-      <div class="shopItem">
-        <div class="shopInfo">
-          <div class="shopName">❤️ Vida extra</div>
-          <div class="shopLevel">
-            Nivel <span id="lifeLevel">0</span>/3
-          </div>
-        </div>
-        <button id="lifeUpgrade">MEJORAR</button>
-      </div>
-
+      <div class="level" id="shieldLevel">0/3</div>
+      <button id="buyShield">MEJORAR</button>
     </div>
 
-    <div id="evolutionArea" class="hidden">
-
-      <div class="requirement">
-        🧬 <b>¡NAVE AL MÁXIMO!</b><br>
-        Has alcanzado el máximo de todas las mejoras.
+    <div class="upgrade">
+      <div class="upgradeInfo">
+        <div class="upgradeName">❤️ Vida</div>
+        <div class="upgradeDesc">Obtienes una vida adicional.</div>
       </div>
-
-      <button id="evolveBtn">
-        🐔 → 🐑 EVOLUCIONAR
-      </button>
-
+      <div class="level" id="lifeLevel">0/3</div>
+      <button id="buyLife">MEJORAR</button>
     </div>
 
-    <br>
-
-    <button id="restartBtn">
-      🚀 VOLVER A JUGAR
-    </button>
-
+    <button id="evolveBtn" class="evolve">🧬 EVOLUCIONAR</button>
+    <button id="restartBtn">🚀 VOLVER A JUGAR</button>
   </div>
 </div>
 
 <!-- EVOLUCIÓN -->
-<div id="evolutionScreen" class="overlay hidden">
-  <div class="panel">
+<div class="screen hidden" id="evolutionScreen">
+  <div class="title" id="evolutionEmoji">🐑</div>
+  <h1 id="evolutionTitle">¡EVOLUCIÓN!</h1>
 
-    <h1>🧬 ¡EVOLUCIÓN!</h1>
-
-    <div class="evolution">
-      🐔 ➡️ 🐑
-    </div>
-
-    <h2>¡GALLINA → OVEJA!</h2>
-
-    <p>
-      Tu nave ha evolucionado.
-    </p>
-
-    <p>
-      Ahora disparará 🧶 <b>bolas de lana</b>
-      en lugar de pollitos.
-    </p>
-
-    <p>
-      La nueva nave tendrá un diseño completamente diferente.
-    </p>
-
-    <button id="confirmEvolution">
-      🐑 ¡EVOLUCIONAR!
-    </button>
-
+  <div id="evolutionText">
+    Tu nave ha evolucionado.
   </div>
+
+  <div class="small">
+    🔄 Las mejoras vuelven a 0/3.<br>
+    🪙 Tus monedas se conservan.<br>
+    🧬 Deberás volver a mejorar la nave<br>
+    para desbloquear la siguiente evolución.
+  </div>
+
+  <button id="continueEvolution">🚀 CONTINUAR</button>
+</div>
+
 </div>
 
 <script>
-"use strict";
-
-/* =========================
-   CANVAS
-========================= */
-
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let W = window.innerWidth;
-let H = window.innerHeight;
-let DPR = Math.min(window.devicePixelRatio || 1,2);
+let W=0;
+let H=0;
 
-function resizeCanvas(){
-  W = window.innerWidth;
-  H = window.innerHeight;
+function resize(){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;
+  H=window.innerHeight;
 
-  DPR = Math.min(window.devicePixelRatio || 1,2);
+  canvas.width=W*dpr;
+  canvas.height=H*dpr;
+  canvas.style.width=W+"px";
+  canvas.style.height=H+"px";
 
-  canvas.width = Math.floor(W * DPR);
-  canvas.height = Math.floor(H * DPR);
-
-  canvas.style.width = W + "px";
-  canvas.style.height = H + "px";
-
-  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 
-window.addEventListener("resize",resizeCanvas);
-resizeCanvas();
+window.addEventListener("resize",resize);
+resize();
 
+const keys={left:false,right:false,fire:false};
 
-/* =========================
-   ELEMENTOS
-========================= */
+let gameRunning=false;
+let score=0;
+let coins=Number(localStorage.getItem("galacticaCoins")||0);
 
-const menu = document.getElementById("menu");
-const gameOver = document.getElementById("gameOver");
-const evolutionScreen = document.getElementById("evolutionScreen");
+let upgrades={
+  fire:Number(localStorage.getItem("galacticaFire")||0),
+  speed:Number(localStorage.getItem("galacticaSpeed")||0),
+  shield:Number(localStorage.getItem("galacticaShield")||0),
+  life:Number(localStorage.getItem("galacticaLife")||0)
+};
 
-const hud = document.getElementById("hud");
-const animalHud = document.getElementById("animalHud");
-const touchControls = document.getElementById("touchControls");
+let evolution=localStorage.getItem("galacticaEvolution")||"chicken";
 
-const scoreEl = document.getElementById("score");
-const livesEl = document.getElementById("lives");
-const coinsEl = document.getElementById("coins");
+let player;
+let projectiles=[];
+let enemies=[];
+let particles=[];
 
-const finalScoreEl = document.getElementById("finalScore");
-const finalCoinsEl = document.getElementById("finalCoins");
+let lastTime=0;
+let spawnTimer=0;
+let fireTimer=0;
 
-const messageEl = document.getElementById("message");
-
-
-/* =========================
-   DATOS GUARDADOS
-========================= */
-
-function loadNumber(key, fallback){
-  try{
-    const value = Number(localStorage.getItem(key));
-    return Number.isFinite(value) ? value : fallback;
-  }catch(e){
-    return fallback;
-  }
-}
+let boss1000Defeated=false;
+let boss2000Defeated=false;
 
 function saveNumber(key,value){
-  try{
-    localStorage.setItem(key,String(value));
-  }catch(e){}
+  localStorage.setItem(key,String(value));
 }
 
-let coins = loadNumber("galacticaCoins",0);
-
-let upgrades = {
-  fire:loadNumber("galacticaFire",0),
-  speed:loadNumber("galacticaSpeed",0),
-  shield:loadNumber("galacticaShield",0),
-  life:loadNumber("galacticaLife",0)
-};
-
-let evolution = "chicken";
-
-try{
-  evolution = localStorage.getItem("galacticaEvolution") || "chicken";
-}catch(e){}
-
-
-/* =========================
-   ESTADO DEL JUEGO
-========================= */
-
-let running = false;
-
-let score = 0;
-let lives = 3;
-
-let player = {
-  x:W/2,
-  y:H-115,
-  width:76,
-  height:72,
-  speed:330,
-  shieldCharges:0
-};
-
-let bullets = [];
-let enemies = [];
-let particles = [];
-let stars = [];
-
-let keys = {
-  left:false,
-  right:false,
-  fire:false
-};
-
-let lastTime = 0;
-let spawnTimer = 0;
-let fireTimer = 0;
-
-let boss1000Defeated = false;
-let boss2000Defeated = false;
-
-let messageTimer = 0;
-
-
-/* =========================
-   ESTRELLAS
-========================= */
-
-function createStars(){
-
-  stars=[];
-
-  for(let i=0;i<100;i++){
-
-    stars.push({
-      x:Math.random()*W,
-      y:Math.random()*H,
-      size:Math.random()*2+0.5,
-      speed:Math.random()*35+10,
-      alpha:Math.random()*.7+.2
-    });
-
-  }
+function saveAll(){
+  saveNumber("galacticaCoins",coins);
+  saveNumber("galacticaFire",upgrades.fire);
+  saveNumber("galacticaSpeed",upgrades.speed);
+  saveNumber("galacticaShield",upgrades.shield);
+  saveNumber("galacticaLife",upgrades.life);
+  localStorage.setItem("galacticaEvolution",evolution);
 }
 
-createStars();
+function updateHUD(){
+  document.getElementById("score").textContent=score;
+  document.getElementById("coins").textContent=coins;
+  document.getElementById("lives").textContent=player?player.lives:3;
+  document.getElementById("shieldHUD").textContent=player?player.shieldCharges:upgrades.shield;
 
-
-/* =========================
-   UTILIDADES
-========================= */
-
-function clamp(value,min,max){
-  return Math.max(min,Math.min(max,value));
+  document.getElementById("animalHUD").textContent=
+    evolution==="chicken" ? "🐔 GALLINA" : "🐑 OVEJA";
 }
 
-function random(min,max){
-  return Math.random()*(max-min)+min;
+function hideAllScreens(){
+  document.querySelectorAll(".screen").forEach(x=>x.classList.add("hidden"));
 }
 
-function circleCollision(a,b){
+function startGame(){
+  hideAllScreens();
 
-  const dx=a.x-b.x;
-  const dy=a.y-b.y;
+  score=0;
+  projectiles=[];
+  enemies=[];
+  particles=[];
+  spawnTimer=0;
+  fireTimer=0;
 
-  return Math.sqrt(dx*dx+dy*dy) < a.radius+b.radius;
+  boss1000Defeated=false;
+  boss2000Defeated=false;
+
+  player={
+    x:W/2,
+    y:H-105,
+    speed:260+upgrades.speed*55,
+    lives:3+upgrades.life,
+    shieldCharges:upgrades.shield,
+    cooldown:0,
+    invincible:0
+  };
+
+  gameRunning=true;
+  lastTime=performance.now();
+
+  updateHUD();
+  requestAnimationFrame(loop);
 }
 
-function showMessage(text){
+function gameOver(){
+  gameRunning=false;
 
-  messageEl.textContent=text;
-  messageEl.style.opacity="1";
+  document.getElementById("finalScore").textContent=score;
 
-  messageTimer=1.5;
+  updateShop();
+
+  document.getElementById("gameOverScreen").classList.remove("hidden");
 }
 
-
-/* =========================
-   DIBUJAR FONDO
-========================= */
-
-function drawBackground(){
-
-  ctx.fillStyle="#050817";
-  ctx.fillRect(0,0,W,H);
-
-  for(const star of stars){
-
-    ctx.globalAlpha=star.alpha;
-
-    ctx.fillStyle="#fff";
-
-    ctx.beginPath();
-    ctx.arc(star.x,star.y,star.size,0,Math.PI*2);
-    ctx.fill();
-
-  }
-
-  ctx.globalAlpha=1;
-}
-
-
-/* =========================
-   NAVE GALLINA
-========================= */
-
-function drawChickenShip(x,y,scale=1){
-
-  ctx.save();
-  ctx.translate(x,y);
-  ctx.scale(scale,scale);
-
-  /* Llama del motor */
-
-  const flameSize=10+Math.random()*8;
-
-  ctx.fillStyle="#ff9d00";
-
-  ctx.beginPath();
-  ctx.moveTo(-13,32);
-  ctx.lineTo(0,32+flameSize);
-  ctx.lineTo(13,32);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle="#fff2a6";
-
-  ctx.beginPath();
-  ctx.moveTo(-6,31);
-  ctx.lineTo(0,31+flameSize*.65);
-  ctx.lineTo(6,31);
-  ctx.closePath();
-  ctx.fill();
-
-
-  /* Alas */
-
-  ctx.fillStyle="#d8dce8";
-
-  ctx.beginPath();
-  ctx.moveTo(-27,-2);
-  ctx.lineTo(-52,19);
-  ctx.lineTo(-25,24);
-  ctx.lineTo(-12,8);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(27,-2);
-  ctx.lineTo(52,19);
-  ctx.lineTo(25,24);
-  ctx.lineTo(12,8);
-  ctx.closePath();
-  ctx.fill();
-
-
-  /* Cola */
-
-  ctx.fillStyle="#f4f1e8";
-
-  ctx.beginPath();
-  ctx.moveTo(-17,20);
-  ctx.lineTo(-31,30);
-  ctx.lineTo(-16,28);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(17,20);
-  ctx.lineTo(31,30);
-  ctx.lineTo(16,28);
-  ctx.closePath();
-  ctx.fill();
-
-
-  /* Cuerpo */
-
-  ctx.fillStyle="#f7f3e8";
-
-  ctx.beginPath();
-  ctx.ellipse(0,5,28,34,0,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.strokeStyle="#bfc5d1";
-  ctx.lineWidth=2;
-  ctx.stroke();
-
-
-  /* Cabina */
-
-  ctx.fillStyle="#65d9ff";
-
-  ctx.beginPath();
-  ctx.ellipse(0,-12,19,15,0,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.strokeStyle="#d9f7ff";
-  ctx.lineWidth=2;
-  ctx.stroke();
-
-
-  /* Cresta */
-
-  ctx.fillStyle="#ef3e4f";
-
-  ctx.beginPath();
-  ctx.arc(-7,-38,7,0,Math.PI*2);
-  ctx.arc(3,-41,7,0,Math.PI*2);
-  ctx.arc(12,-36,6,0,Math.PI*2);
-  ctx.fill();
-
-
-  /* Pico */
-
-  ctx.fillStyle="#ff9d28";
-
-  ctx.beginPath();
-  ctx.moveTo(20,-18);
-  ctx.lineTo(35,-12);
-  ctx.lineTo(20,-7);
-  ctx.closePath();
-  ctx.fill();
-
-
-  /* Ojos */
-
-  ctx.fillStyle="#111";
-
-  ctx.beginPath();
-  ctx.arc(9,-23,3,0,Math.PI*2);
-  ctx.fill();
-
-
-  /* Luces */
-
-  ctx.fillStyle="#7cff91";
-
-  ctx.beginPath();
-  ctx.arc(-24,9,3,0,Math.PI*2);
-  ctx.arc(24,9,3,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
-
-/* =========================
-   NAVE OVEJA
-========================= */
-
-function drawSheepShip(x,y,scale=1){
-
-  ctx.save();
-  ctx.translate(x,y);
-  ctx.scale(scale,scale);
-
-  /* Motor */
-
-  const flameSize=10+Math.random()*8;
-
-  ctx.fillStyle="#ff9d00";
-
-  ctx.beginPath();
-  ctx.moveTo(-12,32);
-  ctx.lineTo(0,32+flameSize);
-  ctx.lineTo(12,32);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle="#fff";
-
-  ctx.beginPath();
-  ctx.moveTo(-6,31);
-  ctx.lineTo(0,31+flameSize*.65);
-  ctx.lineTo(6,31);
-  ctx.closePath();
-  ctx.fill();
-
-
-  /* Alas */
-
-  ctx.fillStyle="#bfc7d4";
-
-  ctx.beginPath();
-  ctx.moveTo(-25,0);
-  ctx.lineTo(-53,18);
-  ctx.lineTo(-23,25);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(25,0);
-  ctx.lineTo(53,18);
-  ctx.lineTo(23,25);
-  ctx.closePath();
-  ctx.fill();
-
-
-  /* Cuerpo lanudo */
-
-  ctx.fillStyle="#fff";
-
-  for(let i=0;i<7;i++){
-
-    const a=i*Math.PI*2/7;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      Math.cos(a)*18,
-      Math.sin(a)*15,
-      17,
-      0,
-      Math.PI*2
-    );
-
-    ctx.fill();
-  }
-
-  ctx.beginPath();
-  ctx.ellipse(0,5,29,28,0,0,Math.PI*2);
-  ctx.fill();
-
-
-  /* Cara */
-
-  ctx.fillStyle="#30333b";
-
-  ctx.beginPath();
-  ctx.ellipse(0,-14,18,22,0,0,Math.PI*2);
-  ctx.fill();
-
-
-  /* Orejas */
-
-  ctx.beginPath();
-  ctx.ellipse(-21,-18,9,5,-.4,0,Math.PI*2);
-  ctx.ellipse(21,-18,9,5,.4,0,Math.PI*2);
-  ctx.fill();
-
-
-  /* Ojos */
-
-  ctx.fillStyle="#fff";
-
-  ctx.beginPath();
-  ctx.arc(-6,-18,4,0,Math.PI*2);
-  ctx.arc(6,-18,4,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle="#111";
-
-  ctx.beginPath();
-  ctx.arc(-6,-18,2,0,Math.PI*2);
-  ctx.arc(6,-18,2,0,Math.PI*2);
-  ctx.fill();
-
-
-  /* Nariz */
-
-  ctx.fillStyle="#f09aaf";
-
-  ctx.beginPath();
-  ctx.ellipse(0,-7,7,5,0,0,Math.PI*2);
-  ctx.fill();
-
-
-  /* Antena */
-
-  ctx.strokeStyle="#aaa";
-  ctx.lineWidth=2;
-
-  ctx.beginPath();
-  ctx.moveTo(0,-35);
-  ctx.lineTo(0,-47);
-  ctx.stroke();
-
-  ctx.fillStyle="#ff6680";
-
-  ctx.beginPath();
-  ctx.arc(0,-49,4,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
-
-/* =========================
-   DIBUJAR NAVE
-========================= */
-
-function drawPlayer(){
-
-  if(evolution==="sheep"){
-    drawSheepShip(player.x,player.y,1);
+function updateShop(){
+  document.getElementById("shopCoins").textContent=coins;
+
+  document.getElementById("fireLevel").textContent=upgrades.fire+"/3";
+  document.getElementById("speedLevel").textContent=upgrades.speed+"/3";
+  document.getElementById("shieldLevel").textContent=upgrades.shield+"/3";
+  document.getElementById("lifeLevel").textContent=upgrades.life+"/3";
+
+  const costs={
+    fire:40+upgrades.fire*35,
+    speed:50+upgrades.speed*40,
+    shield:80+upgrades.shield*60,
+    life:100+upgrades.life*80
+  };
+
+  document.getElementById("buyFire").textContent=
+    upgrades.fire>=3 ? "MAX" : "🪙 "+costs.fire;
+
+  document.getElementById("buySpeed").textContent=
+    upgrades.speed>=3 ? "MAX" : "🪙 "+costs.speed;
+
+  document.getElementById("buyShield").textContent=
+    upgrades.shield>=3 ? "MAX" : "🪙 "+costs.shield;
+
+  document.getElementById("buyLife").textContent=
+    upgrades.life>=3 ? "MAX" : "🪙 "+costs.life;
+
+  document.getElementById("evolveBtn").disabled=!allUpgradesMax();
+
+  if(allUpgradesMax()){
+    document.getElementById("evolveBtn").textContent=
+      evolution==="chicken"
+      ? "🐔 → 🐑 EVOLUCIONAR"
+      : "🐑 → ❓ PRÓXIMA EVOLUCIÓN";
   }else{
-    drawChickenShip(player.x,player.y,1);
-  }
-
-  if(player.shieldCharges>0){
-
-    ctx.save();
-
-    ctx.strokeStyle="rgba(100,220,255,.55)";
-    ctx.lineWidth=3;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      player.x,
-      player.y,
-      52,
-      0,
-      Math.PI*2
-    );
-
-    ctx.stroke();
-
-    ctx.restore();
+    document.getElementById("evolveBtn").textContent=
+      "🔒 MAXIMIZA 4 MEJORAS";
   }
 }
 
+function buyUpgrade(type){
+  if(upgrades[type]>=3)return;
+
+  const costs={
+    fire:40+upgrades.fire*35,
+    speed:50+upgrades.speed*40,
+    shield:80+upgrades.shield*60,
+    life:100+upgrades.life*80
+  };
+
+  const cost=costs[type];
+
+  if(coins<cost)return;
+
+  coins-=cost;
+  upgrades[type]++;
+
+  saveAll();
+  updateShop();
+  updateHUD();
+}
+
+function allUpgradesMax(){
+  return upgrades.fire>=3 &&
+         upgrades.speed>=3 &&
+         upgrades.shield>=3 &&
+         upgrades.life>=3;
+}
+
+function resetUpgradesAfterEvolution(){
+  upgrades={
+    fire:0,
+    speed:0,
+    shield:0,
+    life:0
+  };
+
+  saveNumber("galacticaFire",0);
+  saveNumber("galacticaSpeed",0);
+  saveNumber("galacticaShield",0);
+  saveNumber("galacticaLife",0);
+}
+
+function confirmEvolution(){
+  if(!allUpgradesMax())return;
+
+  if(evolution==="chicken"){
+    evolution="sheep";
+
+    /*
+      IMPORTANTE:
+      Las monedas permanecen.
+      Todas las mejoras vuelven a 0.
+    */
+    resetUpgradesAfterEvolution();
+
+    saveAll();
+
+    document.getElementById("evolutionEmoji").textContent="🐑";
+    document.getElementById("evolutionTitle").textContent=
+      "🐔 → 🐑 ¡EVOLUCIÓN!";
+
+    document.getElementById("evolutionText").innerHTML=
+      "Ahora eres una <b>OVEJA CÓSMICA</b>.<br><br>" +
+      "🌿 Los enemigos ahora son pastos y arbustos.<br>" +
+      "🧶 Tu arma ahora dispara lana.";
+
+    document.getElementById("gameOverScreen").classList.add("hidden");
+    document.getElementById("evolutionScreen").classList.remove("hidden");
+  }
+}
+
+function spawnParticle(x,y,color="#fff",count=5){
+  for(let i=0;i<count;i++){
+    particles.push({
+      x:x,
+      y:y,
+      vx:(Math.random()-.5)*140,
+      vy:(Math.random()-.5)*140,
+      life:.4+Math.random()*.5,
+      size:2+Math.random()*4,
+      color
+    });
+  }
+}
 
 /* =========================
-   PROYECTILES
+   DISPAROS
 ========================= */
 
 function shoot(){
+  if(!gameRunning)return;
 
   const amount=1+Math.min(upgrades.fire,3);
-
   const spread=18;
 
   for(let i=0;i<amount;i++){
-
     const offset=(i-(amount-1)/2)*spread;
 
-    bullets.push({
+    projectiles.push({
       x:player.x+offset,
       y:player.y-42,
-      radius:evolution==="sheep"?10:7,
-      speed:evolution==="sheep"?470:560,
-      damage:1,
-      type:evolution
+      vx:offset*1.7,
+      vy:-430,
+      radius:evolution==="chicken"?10:13,
+      type:evolution==="chicken"?"chick":"wool"
     });
   }
 }
-
-
-/* =========================
-   DIBUJAR POLLITO
-========================= */
-
-function drawChickBullet(b){
-
-  ctx.save();
-
-  ctx.translate(b.x,b.y);
-
-  ctx.fillStyle="#ffe45c";
-
-  ctx.beginPath();
-  ctx.arc(0,0,7,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle="#ff9d28";
-
-  ctx.beginPath();
-  ctx.moveTo(5,-1);
-  ctx.lineTo(12,2);
-  ctx.lineTo(5,4);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle="#111";
-
-  ctx.beginPath();
-  ctx.arc(3,-3,1.5,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
-
-/* =========================
-   DIBUJAR LANA
-========================= */
-
-function drawWoolBullet(b){
-
-  ctx.save();
-
-  ctx.translate(b.x,b.y);
-
-  ctx.fillStyle="#fff";
-
-  ctx.beginPath();
-  ctx.arc(0,0,10,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.strokeStyle="#c8c8c8";
-  ctx.lineWidth=2;
-
-  ctx.beginPath();
-
-  for(let i=0;i<20;i++){
-
-    const a=i*.7;
-    const r=3+Math.sin(i*1.5)*3;
-
-    const px=Math.cos(a)*r;
-    const py=Math.sin(a)*r;
-
-    if(i===0){
-      ctx.moveTo(px,py);
-    }else{
-      ctx.lineTo(px,py);
-    }
-  }
-
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-
-function drawBullets(){
-
-  for(const b of bullets){
-
-    if(b.type==="sheep"){
-      drawWoolBullet(b);
-    }else{
-      drawChickBullet(b);
-    }
-
-  }
-}
-
 
 /* =========================
    ENEMIGOS
 ========================= */
 
 function createEnemy(){
+  if(evolution==="sheep"){
+    return createVegetationEnemy();
+  }
 
-  const roll=Math.random();
+  return createCornEnemy();
+}
+
+function createCornEnemy(){
+
+  const r=Math.random();
 
   let type="normal";
 
-  if(roll<.12){
-    type="giant";
-  }else if(roll<.28){
-    type="fast";
-  }
+  if(r<.18)type="fast";
+  else if(r>.88)type="giant";
 
-  let enemy={
-    x:random(45,W-45),
-    y:-50,
-    radius:25,
-    speed:100,
+  let e={
+    family:"corn",
+    type,
+    x:35+Math.random()*(W-70),
+    y:-60,
     hp:1,
     maxHp:1,
+    radius:25,
+    speed:100,
     points:10,
     coins:2,
-    type:type,
-    wave:Math.random()*Math.PI*2
+    wobble:Math.random()*Math.PI*2
   };
 
   if(type==="fast"){
-
-    enemy.radius=21;
-    enemy.speed=180;
-    enemy.points=20;
-    enemy.coins=4;
-
+    e.radius=21;
+    e.speed=180;
+    e.points=20;
+    e.coins=4;
   }
 
   if(type==="giant"){
-
-    enemy.radius=34;
-    enemy.speed=75;
-    enemy.hp=3;
-    enemy.maxHp=3;
-    enemy.points=30;
-    enemy.coins=7;
-
+    e.radius=36;
+    e.speed=72;
+    e.hp=3;
+    e.maxHp=3;
+    e.points=30;
+    e.coins=7;
   }
 
-  enemies.push(enemy);
+  return e;
 }
 
+function createVegetationEnemy(){
 
-/* =========================
-   BOSS
-========================= */
+  const r=Math.random();
+
+  let type="normal";
+
+  if(r<.18)type="fast";
+  else if(r>.88)type="giant";
+
+  let e={
+    family:"grass",
+    type,
+    x:40+Math.random()*(W-80),
+    y:-65,
+    hp:1,
+    maxHp:1,
+    radius:26,
+    speed:92,
+    points:10,
+    coins:2,
+    wobble:Math.random()*Math.PI*2
+  };
+
+  if(type==="fast"){
+    e.radius=22;
+    e.speed=175;
+    e.points=20;
+    e.coins=4;
+  }
+
+  if(type==="giant"){
+    e.radius=39;
+    e.speed=67;
+    e.hp=3;
+    e.maxHp=3;
+    e.points=30;
+    e.coins=7;
+  }
+
+  return e;
+}
 
 function createBoss(){
 
+  const tier=score>=2000 ? 2 : 1;
+
   enemies.push({
+    family:evolution==="chicken"?"corn":"grass",
+    type:"boss",
+    tier,
     x:W/2,
     y:-100,
-    radius:53,
-    speed:45,
+    radius:70,
+    speed:35,
     hp:12,
     maxHp:12,
     points:250,
     coins:50,
-    type:"boss",
-    wave:0,
-    direction:1
+    direction:1,
+    wobble:0
   });
 
-  showMessage("👑🌽 ¡JEFE DE MAÍZ!");
+  spawnParticle(W/2,90,"#ffe36a",18);
 }
 
+/* =========================
+   DIBUJO DEL JUGADOR
+========================= */
+
+function drawPlayer(){
+
+  ctx.save();
+
+  const x=player.x;
+  const y=player.y;
+
+  if(player.invincible>0 && Math.floor(player.invincible*12)%2===0){
+    ctx.globalAlpha=.45;
+  }
+
+  if(player.shieldCharges>0){
+    const pulse=5+Math.sin(performance.now()/180)*3;
+
+    ctx.beginPath();
+    ctx.arc(x,y,48+pulse,0,Math.PI*2);
+    ctx.strokeStyle="rgba(80,220,255,.45)";
+    ctx.lineWidth=3;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x,y,55+pulse,Math.PI*.15,Math.PI*1.1);
+    ctx.strokeStyle="rgba(130,240,255,.25)";
+    ctx.lineWidth=2;
+    ctx.stroke();
+  }
+
+  if(evolution==="chicken"){
+    drawChickenShip(x,y);
+  }else{
+    drawSheepShip(x,y);
+  }
+
+  ctx.restore();
+}
+
+function drawChickenShip(x,y){
+
+  /* sombra */
+  ctx.fillStyle="rgba(0,0,0,.28)";
+  ctx.beginPath();
+  ctx.ellipse(x,y+35,42,9,0,0,Math.PI*2);
+  ctx.fill();
+
+  /* alas */
+  ctx.fillStyle="#d9e4ef";
+  ctx.strokeStyle="#27344b";
+  ctx.lineWidth=3;
+
+  ctx.beginPath();
+  ctx.moveTo(x-20,y-2);
+  ctx.lineTo(x-58,y+17);
+  ctx.lineTo(x-51,y+32);
+  ctx.lineTo(x-17,y+20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x+20,y-2);
+  ctx.lineTo(x+58,y+17);
+  ctx.lineTo(x+51,y+32);
+  ctx.lineTo(x+17,y+20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  /* cuerpo */
+  const grad=ctx.createLinearGradient(x,y-42,x,y+32);
+  grad.addColorStop(0,"#fffdf5");
+  grad.addColorStop(.55,"#f2eee1");
+  grad.addColorStop(1,"#c9c6bd");
+
+  ctx.fillStyle=grad;
+
+  ctx.beginPath();
+  ctx.ellipse(x,y,35,43,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+
+  /* cola */
+  ctx.fillStyle="#f7f4e9";
+
+  ctx.beginPath();
+  ctx.moveTo(x-22,y+28);
+  ctx.lineTo(x-39,y+43);
+  ctx.lineTo(x-17,y+40);
+  ctx.lineTo(x-5,y+34);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  /* cabeza */
+  ctx.fillStyle="#fffdf6";
+
+  ctx.beginPath();
+  ctx.arc(x,y-25,25,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+
+  /* cresta */
+  ctx.fillStyle="#ef4c4c";
+
+  ctx.beginPath();
+  ctx.arc(x-10,y-48,7,0,Math.PI*2);
+  ctx.arc(x,y-51,8,0,Math.PI*2);
+  ctx.arc(x+10,y-47,7,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.stroke();
+
+  /* visor */
+  const visor=ctx.createLinearGradient(x-17,y-34,x+17,y-18);
+  visor.addColorStop(0,"#8ff3ff");
+  visor.addColorStop(.5,"#2186d9");
+  visor.addColorStop(1,"#104b99");
+
+  ctx.fillStyle=visor;
+
+  ctx.beginPath();
+  ctx.roundRect(x-19,y-34,38,19,9);
+  ctx.fill();
+  ctx.strokeStyle="#142a4d";
+  ctx.stroke();
+
+  /* reflejo visor */
+  ctx.fillStyle="rgba(255,255,255,.75)";
+  ctx.beginPath();
+  ctx.ellipse(x-8,y-29,5,2,0,0,Math.PI*2);
+  ctx.fill();
+
+  /* pico */
+  ctx.fillStyle="#ffae38";
+
+  ctx.beginPath();
+  ctx.moveTo(x-6,y-8);
+  ctx.lineTo(x+6,y-8);
+  ctx.lineTo(x,y+2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  /* barbilla */
+  ctx.fillStyle="#e94848";
+  ctx.beginPath();
+  ctx.ellipse(x,y+3,7,5,0,0,Math.PI*2);
+  ctx.fill();
+
+  /* motor */
+  ctx.fillStyle="#27364d";
+
+  ctx.beginPath();
+  ctx.roundRect(x-13,y+29,26,14,6);
+  ctx.fill();
+  ctx.stroke();
+
+  /* fuego */
+  const flame=ctx.createLinearGradient(x,y+42,x,y+67);
+  flame.addColorStop(0,"#fff36a");
+  flame.addColorStop(.45,"#ff9d2e");
+  flame.addColorStop(1,"rgba(255,50,30,0)");
+
+  ctx.fillStyle=flame;
+
+  ctx.beginPath();
+  ctx.moveTo(x-10,y+40);
+  ctx.quadraticCurveTo(x,y+68,x+10,y+40);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSheepShip(x,y){
+
+  ctx.fillStyle="rgba(0,0,0,.28)";
+  ctx.beginPath();
+  ctx.ellipse(x,y+35,43,9,0,0,Math.PI*2);
+  ctx.fill();
+
+  /* alas */
+  ctx.fillStyle="#e7edf2";
+  ctx.strokeStyle="#30394b";
+  ctx.lineWidth=3;
+
+  ctx.beginPath();
+  ctx.moveTo(x-20,y);
+  ctx.lineTo(x-58,y+18);
+  ctx.lineTo(x-49,y+34);
+  ctx.lineTo(x-15,y+20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x+20,y);
+  ctx.lineTo(x+58,y+18);
+  ctx.lineTo(x+49,y+34);
+  ctx.lineTo(x+15,y+20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  /* cuerpo de lana */
+  ctx.fillStyle="#fff";
+
+  ctx.beginPath();
+  ctx.arc(x-20,y,17,0,Math.PI*2);
+  ctx.arc(x,y-7,22,0,Math.PI*2);
+  ctx.arc(x+21,y,17,0,Math.PI*2);
+  ctx.arc(x,y+15,25,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+
+  /* cara */
+  ctx.fillStyle="#313444";
+
+  ctx.beginPath();
+  ctx.ellipse(x,y-20,21,27,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+
+  /* orejas */
+  ctx.fillStyle="#45495b";
+
+  ctx.beginPath();
+  ctx.ellipse(x-22,y-25,10,6,-.5,0,Math.PI*2);
+  ctx.ellipse(x+22,y-25,10,6,.5,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+
+  /* ojos */
+  ctx.fillStyle="#fff";
+
+  ctx.beginPath();
+  ctx.arc(x-8,y-25,5,0,Math.PI*2);
+  ctx.arc(x+8,y-25,5,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#111";
+
+  ctx.beginPath();
+  ctx.arc(x-8,y-25,2,0,Math.PI*2);
+  ctx.arc(x+8,y-25,2,0,Math.PI*2);
+  ctx.fill();
+
+  /* hocico */
+  ctx.fillStyle="#777b89";
+  ctx.beginPath();
+  ctx.ellipse(x,y-10,9,6,0,0,Math.PI*2);
+  ctx.fill();
+
+  /* antena */
+  ctx.strokeStyle="#7bdfff";
+  ctx.lineWidth=2;
+
+  ctx.beginPath();
+  ctx.moveTo(x,y-46);
+  ctx.lineTo(x,y-61);
+  ctx.stroke();
+
+  ctx.fillStyle="#72eaff";
+  ctx.beginPath();
+  ctx.arc(x,y-63,4,0,Math.PI*2);
+  ctx.fill();
+
+  /* motor */
+  ctx.fillStyle="#303b50";
+  ctx.beginPath();
+  ctx.roundRect(x-13,y+31,26,13,5);
+  ctx.fill();
+  ctx.stroke();
+
+  /* fuego */
+  ctx.fillStyle="#ffd34a";
+
+  ctx.beginPath();
+  ctx.moveTo(x-10,y+42);
+  ctx.quadraticCurveTo(x,y+66,x+10,y+42);
+  ctx.closePath();
+  ctx.fill();
+}
 
 /* =========================
-   DIBUJAR MAÍZ
+   MAÍZ
 ========================= */
 
 function drawCorn(e){
 
   ctx.save();
 
-  ctx.translate(e.x,e.y);
+  const x=e.x;
+  const y=e.y;
 
-  const s=e.radius/25;
+  if(e.type==="giant"){
+    ctx.shadowBlur=18;
+    ctx.shadowColor="#ffd84d";
+  }
 
-  ctx.scale(s,s);
-
-
-  /* Hojas */
-
-  ctx.fillStyle="#49b85b";
+  /* hojas */
+  ctx.fillStyle="#4f9f45";
+  ctx.strokeStyle="#214d28";
+  ctx.lineWidth=2;
 
   ctx.beginPath();
-  ctx.moveTo(-15,15);
-  ctx.quadraticCurveTo(-30,30,-9,20);
-  ctx.lineTo(-3,5);
+  ctx.moveTo(x-12,y+17);
+  ctx.quadraticCurveTo(x-34,y+32,x-35,y-5);
+  ctx.quadraticCurveTo(x-25,y+2,x-12,y+12);
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(15,15);
-  ctx.quadraticCurveTo(30,30,9,20);
-  ctx.lineTo(3,5);
+  ctx.moveTo(x+12,y+17);
+  ctx.quadraticCurveTo(x+34,y+32,x+35,y-5);
+  ctx.quadraticCurveTo(x+25,y+2,x+12,y+12);
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
 
+  /* mazorca */
+  const g=ctx.createLinearGradient(x-e.radius,y,x+e.radius,y);
+  g.addColorStop(0,"#e9a52b");
+  g.addColorStop(.5,"#ffd84c");
+  g.addColorStop(1,"#d88d1e");
 
-  /* Mazorca */
-
-  ctx.fillStyle="#ffd83d";
+  ctx.fillStyle=g;
 
   ctx.beginPath();
-
-  ctx.roundRect(
-    -17,
-    -25,
-    34,
-    52,
-    15
-  );
-
+  ctx.ellipse(x,y,e.radius*.62,e.radius,0,0,Math.PI*2);
   ctx.fill();
 
+  ctx.strokeStyle="#925c13";
+  ctx.stroke();
 
-  /* Granos */
+  /* granos */
+  ctx.fillStyle="#fff17a";
 
-  ctx.fillStyle="#f4bd27";
+  const rows=e.type==="giant"?4:3;
 
-  for(let row=0;row<5;row++){
+  for(let row=0;row<rows;row++){
+    const yy=y-e.radius*.55+row*e.radius*.37;
 
-    for(let col=0;col<3;col++){
-
-      const gx=-9+col*9;
-      const gy=-15+row*9;
+    for(let col=-1;col<=1;col++){
+      const xx=x+col*e.radius*.27+(row%2?3:-3);
 
       ctx.beginPath();
-
-      ctx.arc(
-        gx+(row%2)*2,
-        gy,
-        3,
-        0,
-        Math.PI*2
-      );
-
+      ctx.arc(xx,yy,3,0,Math.PI*2);
       ctx.fill();
     }
   }
 
-
-  /* Ojos */
-
-  ctx.fillStyle="#111";
+  /* cara */
+  ctx.fillStyle="#fff";
 
   ctx.beginPath();
-  ctx.arc(-7,-3,3,0,Math.PI*2);
-  ctx.arc(7,-3,3,0,Math.PI*2);
+  ctx.arc(x-e.radius*.22,y-e.radius*.2,e.radius*.13,0,Math.PI*2);
+  ctx.arc(x+e.radius*.22,y-e.radius*.2,e.radius*.13,0,Math.PI*2);
   ctx.fill();
 
+  ctx.fillStyle="#172033";
 
-  /* Cara */
+  ctx.beginPath();
+  ctx.arc(x-e.radius*.22,y-e.radius*.2,e.radius*.06,0,Math.PI*2);
+  ctx.arc(x+e.radius*.22,y-e.radius*.2,e.radius*.06,0,Math.PI*2);
+  ctx.fill();
 
-  ctx.strokeStyle="#111";
-  ctx.lineWidth=3;
+  /* cejas */
+  ctx.strokeStyle="#422313";
+  ctx.lineWidth=e.type==="fast"?4:2;
 
   ctx.beginPath();
 
-  ctx.arc(
-    0,
-    5,
-    8,
-    0,
-    Math.PI
-  );
+  if(e.type==="fast"){
+    ctx.moveTo(x-12,y-15);
+    ctx.lineTo(x-2,y-19);
+
+    ctx.moveTo(x+12,y-15);
+    ctx.lineTo(x+2,y-19);
+  }else{
+    ctx.moveTo(x-12,y-17);
+    ctx.lineTo(x-3,y-15);
+
+    ctx.moveTo(x+12,y-17);
+    ctx.lineTo(x+3,y-15);
+  }
 
   ctx.stroke();
 
+  /* boca */
+  ctx.beginPath();
 
-  /* Variante rápida */
-
-  if(e.type==="fast"){
-
-    ctx.strokeStyle="#9d5cff";
-    ctx.lineWidth=4;
-
-    ctx.beginPath();
-    ctx.moveTo(-28,-10);
-    ctx.lineTo(-37,-3);
-    ctx.moveTo(-28,4);
-    ctx.lineTo(-38,10);
-    ctx.stroke();
-
+  if(e.type==="fast" || e.type==="giant"){
+    ctx.arc(x,y+8,7,0,Math.PI);
+  }else{
+    ctx.arc(x,y+3,6,0,Math.PI);
   }
 
-
-  /* Gigante */
-
-  if(e.type==="giant"){
-
-    ctx.strokeStyle="#ff704d";
-    ctx.lineWidth=4;
-
-    ctx.beginPath();
-    ctx.arc(0,0,29,0,Math.PI*2);
-    ctx.stroke();
-
-  }
+  ctx.stroke();
 
   ctx.restore();
 }
 
+/* =========================
+   PASTO / ARBUSTO
+========================= */
+
+function drawGrass(e){
+
+  ctx.save();
+
+  const x=e.x;
+  const y=e.y;
+
+  if(e.type==="giant"){
+    ctx.shadowBlur=18;
+    ctx.shadowColor="#66d65b";
+  }
+
+  /* sombra */
+  ctx.fillStyle="rgba(0,0,0,.22)";
+  ctx.beginPath();
+  ctx.ellipse(x,y+e.radius*.75,e.radius*.85,7,0,0,Math.PI*2);
+  ctx.fill();
+
+  /* hojas traseras */
+  ctx.fillStyle="#2f863d";
+  ctx.strokeStyle="#174e2b";
+  ctx.lineWidth=2;
+
+  for(let i=-3;i<=3;i++){
+    const bx=x+i*e.radius*.25;
+
+    ctx.beginPath();
+    ctx.moveTo(bx,y+e.radius*.55);
+    ctx.quadraticCurveTo(
+      bx-8,
+      y-e.radius*.4-Math.abs(i)*2,
+      bx-2,
+      y-e.radius*.9
+    );
+    ctx.quadraticCurveTo(
+      bx+5,
+      y-e.radius*.45,
+      bx+7,
+      y+e.radius*.55
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  /* arbusto */
+  const g=ctx.createRadialGradient(
+    x-e.radius*.3,
+    y-e.radius*.4,
+    3,
+    x,
+    y,
+    e.radius
+  );
+
+  g.addColorStop(0,"#8be36a");
+  g.addColorStop(.55,"#45ad4d");
+  g.addColorStop(1,"#25783a");
+
+  ctx.fillStyle=g;
+
+  ctx.beginPath();
+
+  ctx.arc(x-e.radius*.42,y+5,e.radius*.5,0,Math.PI*2);
+  ctx.arc(x,y-e.radius*.12,e.radius*.65,0,Math.PI*2);
+  ctx.arc(x+e.radius*.42,y+5,e.radius*.5,0,Math.PI*2);
+  ctx.arc(x,y+e.radius*.35,e.radius*.6,0,Math.PI*2);
+
+  ctx.fill();
+  ctx.stroke();
+
+  /* ojos */
+  ctx.fillStyle="#fff";
+
+  ctx.beginPath();
+  ctx.arc(x-e.radius*.25,y-e.radius*.15,e.radius*.13,0,Math.PI*2);
+  ctx.arc(x+e.radius*.25,y-e.radius*.15,e.radius*.13,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#162b1b";
+
+  ctx.beginPath();
+  ctx.arc(x-e.radius*.25,y-e.radius*.15,e.radius*.06,0,Math.PI*2);
+  ctx.arc(x+e.radius*.25,y-e.radius*.15,e.radius*.06,0,Math.PI*2);
+  ctx.fill();
+
+  /* cejas */
+  ctx.strokeStyle="#173c20";
+  ctx.lineWidth=e.type==="fast"?4:2;
+
+  ctx.beginPath();
+
+  if(e.type==="fast"){
+    ctx.moveTo(x-13,y-14);
+    ctx.lineTo(x-3,y-19);
+
+    ctx.moveTo(x+13,y-14);
+    ctx.lineTo(x+3,y-19);
+  }else{
+    ctx.moveTo(x-12,y-17);
+    ctx.lineTo(x-3,y-15);
+
+    ctx.moveTo(x+12,y-17);
+    ctx.lineTo(x+3,y-15);
+  }
+
+  ctx.stroke();
+
+  /* boca */
+  ctx.beginPath();
+
+  if(e.type==="fast" || e.type==="giant"){
+    ctx.arc(x,y+8,7,0,Math.PI);
+  }else{
+    ctx.arc(x,y+4,6,0,Math.PI);
+  }
+
+  ctx.stroke();
+
+  ctx.restore();
+}
 
 /* =========================
-   DIBUJAR BOSS
+   JEFES
 ========================= */
 
 function drawBoss(e){
 
+  if(e.family==="grass"){
+    drawGrassBoss(e);
+  }else{
+    drawCornBoss(e);
+  }
+}
+
+function drawCornBoss(e){
+
   ctx.save();
 
-  ctx.translate(e.x,e.y);
+  const x=e.x;
+  const y=e.y;
 
-  /* Corona */
+  ctx.shadowBlur=25;
+  ctx.shadowColor="#ffcf36";
 
-  ctx.fillStyle="#ffd633";
-
-  ctx.beginPath();
-
-  ctx.moveTo(-35,-50);
-  ctx.lineTo(-28,-76);
-  ctx.lineTo(-10,-58);
-  ctx.lineTo(0,-80);
-  ctx.lineTo(11,-58);
-  ctx.lineTo(29,-76);
-  ctx.lineTo(35,-50);
-  ctx.closePath();
-
-  ctx.fill();
-
-  /* Maíz */
-
-  ctx.fillStyle="#ffcb35";
+  /* hojas */
+  ctx.fillStyle="#3d863c";
+  ctx.strokeStyle="#173e20";
+  ctx.lineWidth=4;
 
   ctx.beginPath();
-
-  ctx.roundRect(
-    -40,
-    -40,
-    80,
-    80,
-    30
-  );
-
-  ctx.fill();
-
-
-  /* Hojas */
-
-  ctx.fillStyle="#3eaa52";
-
-  ctx.beginPath();
-  ctx.moveTo(-20,30);
-  ctx.lineTo(-45,52);
-  ctx.lineTo(-7,39);
+  ctx.moveTo(x-35,y+48);
+  ctx.quadraticCurveTo(x-90,y+75,x-90,y-20);
+  ctx.quadraticCurveTo(x-60,y+5,x-35,y+25);
   ctx.closePath();
   ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(20,30);
-  ctx.lineTo(45,52);
-  ctx.lineTo(7,39);
-  ctx.closePath();
-  ctx.fill();
-
-
-  /* Ojos */
-
-  ctx.fillStyle="#111";
-
-  ctx.beginPath();
-
-  ctx.arc(-13,-6,5,0,Math.PI*2);
-  ctx.arc(13,-6,5,0,Math.PI*2);
-
-  ctx.fill();
-
-
-  /* Boca */
-
-  ctx.strokeStyle="#111";
-  ctx.lineWidth=5;
-
-  ctx.beginPath();
-
-  ctx.moveTo(-17,15);
-  ctx.quadraticCurveTo(0,30,17,15);
-
   ctx.stroke();
 
+  ctx.beginPath();
+  ctx.moveTo(x+35,y+48);
+  ctx.quadraticCurveTo(x+90,y+75,x+90,y-20);
+  ctx.quadraticCurveTo(x+60,y+5,x+35,y+25);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
 
-  /* Barra de vida */
+  /* cuerpo */
+  const g=ctx.createLinearGradient(x-50,y,x+50,y);
 
-  const barW=90;
-  const hpRatio=e.hp/e.maxHp;
+  g.addColorStop(0,"#d98d18");
+  g.addColorStop(.5,"#ffd943");
+  g.addColorStop(1,"#d78a17");
 
-  ctx.fillStyle="rgba(0,0,0,.7)";
-  ctx.fillRect(-barW/2,-94,barW,9);
+  ctx.fillStyle=g;
 
-  ctx.fillStyle="#ff3f57";
-  ctx.fillRect(-barW/2,-94,barW*hpRatio,9);
+  ctx.beginPath();
+  ctx.ellipse(x,y,58,78,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+
+  /* granos */
+  ctx.fillStyle="#fff080";
+
+  for(let row=0;row<5;row++){
+    for(let col=-2;col<=2;col++){
+      ctx.beginPath();
+      ctx.arc(
+        x+col*19+(row%2?7:-7),
+        y-45+row*23,
+        5,
+        0,
+        Math.PI*2
+      );
+      ctx.fill();
+    }
+  }
+
+  /* cara */
+  ctx.fillStyle="#fff";
+
+  ctx.beginPath();
+  ctx.arc(x-20,y-15,11,0,Math.PI*2);
+  ctx.arc(x+20,y-15,11,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#151923";
+
+  ctx.beginPath();
+  ctx.arc(x-20,y-15,5,0,Math.PI*2);
+  ctx.arc(x+20,y-15,5,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle="#391d12";
+  ctx.lineWidth=6;
+
+  ctx.beginPath();
+  ctx.moveTo(x-34,y-32);
+  ctx.lineTo(x-10,y-25);
+  ctx.moveTo(x+34,y-32);
+  ctx.lineTo(x+10,y-25);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(x,y+22,18,0,Math.PI);
+  ctx.stroke();
+
+  drawCrown(x,y-87);
+
+  drawBossBar(e);
 
   ctx.restore();
 }
 
+function drawGrassBoss(e){
 
-function drawEnemies(){
+  ctx.save();
 
-  for(const e of enemies){
+  const x=e.x;
+  const y=e.y;
 
-    if(e.type==="boss"){
-      drawBoss(e);
-    }else{
-      drawCorn(e);
-    }
+  ctx.shadowBlur=25;
+  ctx.shadowColor="#68dc61";
 
+  ctx.fillStyle="#287d39";
+  ctx.strokeStyle="#123d20";
+  ctx.lineWidth=4;
+
+  /* hojas gigantes */
+  for(let i=-4;i<=4;i++){
+
+    const bx=x+i*22;
+
+    ctx.beginPath();
+    ctx.moveTo(bx,y+58);
+    ctx.quadraticCurveTo(
+      bx-25,
+      y-35-Math.abs(i)*3,
+      bx+5,
+      y-85
+    );
+    ctx.quadraticCurveTo(
+      bx+15,
+      y-25,
+      bx+18,
+      y+58
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
   }
+
+  /* cuerpo arbusto */
+  const g=ctx.createRadialGradient(
+    x-30,y-35,5,
+    x,y,100
+  );
+
+  g.addColorStop(0,"#9aef70");
+  g.addColorStop(.5,"#4db64e");
+  g.addColorStop(1,"#246d35");
+
+  ctx.fillStyle=g;
+
+  ctx.beginPath();
+  ctx.arc(x-55,y+10,45,0,Math.PI*2);
+  ctx.arc(x,y-15,65,0,Math.PI*2);
+  ctx.arc(x+55,y+10,45,0,Math.PI*2);
+  ctx.arc(x,y+35,58,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+
+  /* cara */
+  ctx.fillStyle="#fff";
+
+  ctx.beginPath();
+  ctx.arc(x-24,y-15,13,0,Math.PI*2);
+  ctx.arc(x+24,y-15,13,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#14271a";
+
+  ctx.beginPath();
+  ctx.arc(x-24,y-15,6,0,Math.PI*2);
+  ctx.arc(x+24,y-15,6,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle="#153b1d";
+  ctx.lineWidth=7;
+
+  ctx.beginPath();
+  ctx.moveTo(x-40,y-35);
+  ctx.lineTo(x-12,y-27);
+
+  ctx.moveTo(x+40,y-35);
+  ctx.lineTo(x+12,y-27);
+
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(x,y+25,20,0,Math.PI);
+  ctx.stroke();
+
+  drawCrown(x,y-92);
+
+  drawBossBar(e);
+
+  ctx.restore();
 }
 
+function drawCrown(x,y){
+
+  ctx.fillStyle="#ffd33d";
+  ctx.strokeStyle="#8a5b12";
+  ctx.lineWidth=3;
+
+  ctx.beginPath();
+  ctx.moveTo(x-32,y+20);
+  ctx.lineTo(x-27,y-10);
+  ctx.lineTo(x-10,y+4);
+  ctx.lineTo(x,y-18);
+  ctx.lineTo(x+11,y+4);
+  ctx.lineTo(x+28,y-10);
+  ctx.lineTo(x+32,y+20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle="#ffef75";
+
+  ctx.beginPath();
+  ctx.arc(x-16,y-4,4,0,Math.PI*2);
+  ctx.arc(x,y-11,4,0,Math.PI*2);
+  ctx.arc(x+16,y-4,4,0,Math.PI*2);
+  ctx.fill();
+}
+
+function drawBossBar(e){
+
+  const bw=150;
+  const bh=10;
+  const bx=e.x-bw/2;
+  const by=e.y+e.radius+15;
+
+  ctx.fillStyle="rgba(0,0,0,.6)";
+  ctx.fillRect(bx,by,bw,bh);
+
+  ctx.fillStyle="#ff4b55";
+  ctx.fillRect(bx,by,bw*(e.hp/e.maxHp),bh);
+
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=1;
+  ctx.strokeRect(bx,by,bw,bh);
+}
+
+/* =========================
+   PROYECTILES
+========================= */
+
+function drawProjectile(p){
+
+  ctx.save();
+
+  if(p.type==="chick"){
+
+    ctx.fillStyle="#fff4a8";
+    ctx.strokeStyle="#684d20";
+    ctx.lineWidth=2;
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,9,0,Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    /* alitas */
+    ctx.fillStyle="#f6d96a";
+
+    ctx.beginPath();
+    ctx.ellipse(p.x-8,p.y+2,6,3,-.4,0,Math.PI*2);
+    ctx.ellipse(p.x+8,p.y+2,6,3,.4,0,Math.PI*2);
+    ctx.fill();
+
+    /* ojos */
+    ctx.fillStyle="#111";
+
+    ctx.beginPath();
+    ctx.arc(p.x-3,p.y-2,1.7,0,Math.PI*2);
+    ctx.arc(p.x+3,p.y-2,1.7,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle="#ff9e28";
+
+    ctx.beginPath();
+    ctx.moveTo(p.x-3,p.y+2);
+    ctx.lineTo(p.x+3,p.y+2);
+    ctx.lineTo(p.x,p.y+6);
+    ctx.closePath();
+    ctx.fill();
+
+  }else{
+
+    /* bola de lana */
+    ctx.fillStyle="#fff";
+    ctx.strokeStyle="#9ca5b5";
+    ctx.lineWidth=2;
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle="#687386";
+    ctx.lineWidth=1.5;
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.radius*.55,.2,4.9);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(p.x-2,p.y+2,p.radius*.7,1.2,5.8);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
 
 /* =========================
    PARTÍCULAS
 ========================= */
 
-function explode(x,y){
-
-  for(let i=0;i<14;i++){
-
-    particles.push({
-      x:x,
-      y:y,
-      vx:random(-150,150),
-      vy:random(-150,150),
-      life:random(.35,.8),
-      maxLife:.8,
-      size:random(2,6)
-    });
-
-  }
-}
-
-
-function updateParticles(dt){
-
-  for(let i=particles.length-1;i>=0;i--){
-
-    const p=particles[i];
-
-    p.x+=p.vx*dt;
-    p.y+=p.vy*dt;
-
-    p.vx*=.98;
-    p.vy*=.98;
-
-    p.life-=dt;
-
-    if(p.life<=0){
-      particles.splice(i,1);
-    }
-
-  }
-}
-
-
 function drawParticles(){
 
   for(const p of particles){
 
-    ctx.globalAlpha=p.life/p.maxLife;
+    ctx.globalAlpha=Math.max(0,p.life);
 
-    ctx.fillStyle="#ffd85a";
+    ctx.fillStyle=p.color;
 
     ctx.beginPath();
-
-    ctx.arc(
-      p.x,
-      p.y,
-      p.size,
-      0,
-      Math.PI*2
-    );
-
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
     ctx.fill();
-
   }
 
   ctx.globalAlpha=1;
 }
 
-
 /* =========================
-   ACTUALIZAR ESTRELLAS
+   COLISIONES
 ========================= */
 
-function updateStars(dt){
+function distance(a,b){
+  return Math.hypot(a.x-b.x,a.y-b.y);
+}
 
-  for(const star of stars){
+function hitEnemy(e){
 
-    star.y+=star.speed*dt;
+  score+=e.points;
+  coins+=e.coins;
 
-    if(star.y>H){
-      star.y=-5;
-      star.x=Math.random()*W;
-    }
+  saveNumber("galacticaCoins",coins);
 
+  spawnParticle(
+    e.x,
+    e.y,
+    e.family==="grass"?"#70db5e":"#ffd54d",
+    14
+  );
+
+  if(e.type==="boss"){
+    if(e.tier===2)boss2000Defeated=true;
+    else boss1000Defeated=true;
+  }
+
+  updateHUD();
+}
+
+function damagePlayer(){
+
+  if(player.invincible>0)return;
+
+  player.lives--;
+
+  player.invincible=1.5;
+
+  spawnParticle(player.x,player.y,"#ff6262",20);
+
+  if(player.lives<=0){
+    gameOver();
   }
 }
 
-
 /* =========================
-   ACTUALIZAR JUGADOR
+   ACTUALIZAR
 ========================= */
 
-function updatePlayer(dt){
+function update(dt){
 
-  const speed=player.speed*(1+upgrades.speed*.18);
+  /* jugador */
+  let direction=0;
 
-  if(keys.left){
-    player.x-=speed*dt;
+  if(keys.left)direction--;
+  if(keys.right)direction++;
+
+  player.x+=direction*player.speed*dt;
+
+  player.x=Math.max(42,Math.min(W-42,player.x));
+
+  if(player.invincible>0){
+    player.invincible-=dt;
   }
 
-  if(keys.right){
-    player.x+=speed*dt;
-  }
-
-  player.x=clamp(
-    player.x,
-    45,
-    W-45
-  );
-
+  /* disparo automático mientras se mantiene */
   if(keys.fire){
-
     fireTimer-=dt;
 
     if(fireTimer<=0){
-
       shoot();
-
-      fireTimer=Math.max(
-        .18,
-        .42-upgrades.fire*.035
-      );
+      fireTimer=.28-Math.min(upgrades.fire*.025,.06);
     }
   }
-}
 
+  /* enemigos */
+  spawnTimer-=dt;
 
-/* =========================
-   ACTUALIZAR BALAS
-========================= */
+  const spawnRate=Math.max(.32,.72-score/7000);
 
-function updateBullets(dt){
+  if(spawnTimer<=0){
 
-  for(let i=bullets.length-1;i>=0;i--){
+    enemies.push(createEnemy());
 
-    const b=bullets[i];
+    spawnTimer=spawnRate;
 
-    b.y-=b.speed*dt;
-
-    if(b.y<-50){
-      bullets.splice(i,1);
+    /* jefes */
+    if(
+      score>=1000 &&
+      score<2000 &&
+      !boss1000Defeated &&
+      !enemies.some(e=>e.type==="boss")
+    ){
+      createBoss();
     }
 
+    if(
+      score>=2000 &&
+      !boss2000Defeated &&
+      !enemies.some(e=>e.type==="boss")
+    ){
+      createBoss();
+    }
   }
-}
 
+  /* proyectiles */
+  for(let i=projectiles.length-1;i>=0;i--){
 
-/* =========================
-   ACTUALIZAR ENEMIGOS
-========================= */
+    const p=projectiles[i];
 
-function updateEnemies(dt){
+    p.x+=p.vx*dt;
+    p.y+=p.vy*dt;
 
+    if(
+      p.y<-60 ||
+      p.x<-60 ||
+      p.x>W+60
+    ){
+      projectiles.splice(i,1);
+      continue;
+    }
+
+    let removed=false;
+
+    for(let j=enemies.length-1;j>=0;j--){
+
+      const e=enemies[j];
+
+      if(distance(p,e)<p.radius+e.radius*.75){
+
+        e.hp--;
+
+        spawnParticle(
+          p.x,
+          p.y,
+          e.family==="grass"?"#7be76a":"#ffe36c",
+          4
+        );
+
+        projectiles.splice(i,1);
+        removed=true;
+
+        if(e.hp<=0){
+
+          hitEnemy(e);
+          enemies.splice(j,1);
+        }
+
+        break;
+      }
+    }
+
+    if(removed)continue;
+  }
+
+  /* enemigos */
   for(let i=enemies.length-1;i>=0;i--){
 
     const e=enemies[i];
@@ -1538,723 +1763,284 @@ function updateEnemies(dt){
 
       e.y+=e.speed*dt;
 
-      e.x+=e.direction*e.speed*.7*dt;
+      e.x+=e.direction*55*dt;
 
-      if(e.x<70 || e.x>W-70){
-        e.direction*=-1;
-      }
-
-      if(e.y>H*.32){
-        e.y=H*.32;
-      }
+      if(e.x>W-100)e.direction=-1;
+      if(e.x<100)e.direction=1;
 
     }else{
 
       e.y+=e.speed*dt;
-
-      e.x+=Math.sin(
-        e.y*.015+e.wave
-      )*25*dt;
-
+      e.x+=Math.sin(performance.now()/500+e.wobble)*12*dt;
     }
 
+    /* colisión con jugador */
+    if(
+      distance(player,e) <
+      e.radius+28 &&
+      player.invincible<=0
+    ){
 
-    /* enemigo llegó abajo */
+      if(e.type!=="boss"){
+        enemies.splice(i,1);
+      }
 
-    if(e.y>H+70){
+      damagePlayer();
 
-      enemies.splice(i,1);
+      if(!gameRunning)return;
+
+      continue;
+    }
+
+    /* enemigo llega abajo */
+    if(e.y>H+80){
 
       if(player.shieldCharges>0){
 
         player.shieldCharges--;
 
-        showMessage("🛡️ ¡Escudo absorbió el impacto!");
+        spawnParticle(
+          player.x,
+          H-25,
+          "#70eaff",
+          12
+        );
 
       }else{
 
-        loseLife();
+        player.lives--;
 
-      }
-
-    }
-
-  }
-}
-
-
-/* =========================
-   COLISIONES
-========================= */
-
-function updateCollisions(){
-
-  for(let bi=bullets.length-1;bi>=0;bi--){
-
-    const b=bullets[bi];
-
-    let hit=false;
-
-    for(let ei=enemies.length-1;ei>=0;ei--){
-
-      const e=enemies[ei];
-
-      const dx=b.x-e.x;
-      const dy=b.y-e.y;
-
-      const distance=Math.sqrt(
-        dx*dx+dy*dy
-      );
-
-      if(distance<b.radius+e.radius){
-
-        e.hp-=b.damage;
-
-        bullets.splice(bi,1);
-
-        explode(b.x,b.y);
-
-        hit=true;
-
-        if(e.hp<=0){
-
-          score+=e.points;
-          coins+=e.coins;
-
-          saveNumber(
-            "galacticaCoins",
-            coins
-          );
-
-          if(e.type==="boss"){
-
-            if(score>=1900){
-              boss2000Defeated=true;
-            }else{
-              boss1000Defeated=true;
-            }
-
-            showMessage(
-              "👑🌽 ¡JEFE DERROTADO! +" +
-              e.coins +
-              " 🪙"
-            );
-
-          }
-
-          enemies.splice(ei,1);
-
+        if(player.lives<=0){
+          gameOver();
+          return;
         }
-
-        break;
       }
 
+      enemies.splice(i,1);
     }
-
-    if(hit) continue;
-
   }
 
-}
+  /* partículas */
+  for(let i=particles.length-1;i>=0;i--){
 
+    const p=particles[i];
 
-/* =========================
-   VIDA
-========================= */
+    p.x+=p.vx*dt;
+    p.y+=p.vy*dt;
 
-function loseLife(){
+    p.life-=dt;
+    p.vx*=.98;
+    p.vy*=.98;
 
-  lives--;
-
-  if(lives<=0){
-
-    lives=0;
-
-    endGame();
-
-  }else{
-
-    showMessage("💥 ¡Cuidado! ❤️ -1");
-
+    if(p.life<=0){
+      particles.splice(i,1);
+    }
   }
 
+  updateHUD();
 }
 
-
 /* =========================
-   BOSS SPAWN
+   DIBUJAR
 ========================= */
 
-function checkBosses(){
+function drawBackground(){
 
-  const hasBoss=enemies.some(
-    e=>e.type==="boss"
+  ctx.fillStyle="#050713";
+  ctx.fillRect(0,0,W,H);
+
+  /* nebulosa */
+  const g=ctx.createRadialGradient(
+    W*.5,H*.25,20,
+    W*.5,H*.25,H*.8
   );
 
-  if(
-    score>=1000 &&
-    score<2000 &&
-    !boss1000Defeated &&
-    !hasBoss
-  ){
+  g.addColorStop(0,"rgba(37,60,130,.4)");
+  g.addColorStop(.5,"rgba(15,25,70,.2)");
+  g.addColorStop(1,"rgba(0,0,0,0)");
 
-    createBoss();
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,W,H);
 
+  /* estrellas */
+  const time=performance.now()/1000;
+
+  for(let i=0;i<70;i++){
+
+    const x=(i*83)%W;
+    const baseY=(i*137)%H;
+
+    const y=(baseY+(time*(15+(i%4)*7)))%H;
+
+    const size=i%7===0?1.8:1;
+
+    ctx.fillStyle="rgba(255,255,255,.7)";
+
+    ctx.beginPath();
+    ctx.arc(x,y,size,0,Math.PI*2);
+    ctx.fill();
   }
-
-  if(
-    score>=2000 &&
-    !boss2000Defeated &&
-    !hasBoss
-  ){
-
-    createBoss();
-
-  }
-
 }
-
-
-/* =========================
-   DIBUJAR TODO
-========================= */
 
 function draw(){
 
   drawBackground();
-  drawEnemies();
-  drawBullets();
+
+  for(const e of enemies){
+
+    if(e.type==="boss"){
+      drawBoss(e);
+    }else if(e.family==="grass"){
+      drawGrass(e);
+    }else{
+      drawCorn(e);
+    }
+  }
+
+  for(const p of projectiles){
+    drawProjectile(p);
+  }
+
   drawParticles();
 
-  if(running){
+  if(player){
     drawPlayer();
   }
-
 }
-
-
-/* =========================
-   UPDATE
-========================= */
-
-function update(dt){
-
-  if(!running){
-    return;
-  }
-
-  updateStars(dt);
-  updatePlayer(dt);
-  updateBullets(dt);
-  updateEnemies(dt);
-  updateParticles(dt);
-  updateCollisions();
-
-  spawnTimer-=dt;
-
-  if(spawnTimer<=0){
-
-    createEnemy();
-
-    const difficulty=
-      Math.min(score/2500,.75);
-
-    spawnTimer=
-      Math.max(.25,.85-difficulty*.5);
-
-  }
-
-  checkBosses();
-
-  if(messageTimer>0){
-
-    messageTimer-=dt;
-
-    if(messageTimer<=0){
-      messageEl.style.opacity="0";
-    }
-
-  }
-
-  updateHUD();
-
-}
-
 
 /* =========================
    LOOP
 ========================= */
 
-function gameLoop(timestamp){
+function loop(time){
 
-  if(!lastTime){
-    lastTime=timestamp;
-  }
+  if(!gameRunning)return;
 
-  let dt=(timestamp-lastTime)/1000;
+  const dt=Math.min((time-lastTime)/1000,.035);
 
-  lastTime=timestamp;
-
-  dt=Math.min(dt,.05);
+  lastTime=time;
 
   update(dt);
   draw();
 
-  requestAnimationFrame(gameLoop);
+  if(gameRunning){
+    requestAnimationFrame(loop);
+  }
 }
-
-requestAnimationFrame(gameLoop);
-
 
 /* =========================
-   HUD
+   CONTROLES
 ========================= */
 
-function updateHUD(){
+window.addEventListener("keydown",e=>{
 
-  scoreEl.textContent=score;
-  livesEl.textContent=lives;
-  coinsEl.textContent=coins;
-
-  if(evolution==="sheep"){
-    animalHud.textContent="🐑 OVEJA";
-  }else{
-    animalHud.textContent="🐔 GALLINA";
+  if(e.key==="ArrowLeft" || e.key.toLowerCase()==="a"){
+    keys.left=true;
   }
 
-}
-
-
-/* =========================
-   RESET
-========================= */
-
-function resetGame(){
-
-  score=0;
-
-  lives=3+upgrades.life;
-
-  bullets=[];
-  enemies=[];
-  particles=[];
-
-  boss1000Defeated=false;
-  boss2000Defeated=false;
-
-  player.x=W/2;
-  player.y=H-115;
-
-  player.shieldCharges=upgrades.shield;
-
-  spawnTimer=.4;
-  fireTimer=0;
-
-  updateHUD();
-}
-
-
-/* =========================
-   START
-========================= */
-
-function startGame(event){
-
-  if(event){
-    event.preventDefault();
+  if(e.key==="ArrowRight" || e.key.toLowerCase()==="d"){
+    keys.right=true;
   }
 
-  menu.classList.add("hidden");
-  gameOver.classList.add("hidden");
-  evolutionScreen.classList.add("hidden");
+  if(e.code==="Space"){
+    keys.fire=true;
+    e.preventDefault();
+  }
+});
 
-  hud.classList.remove("hidden");
-  animalHud.classList.remove("hidden");
-  touchControls.classList.remove("hidden");
+window.addEventListener("keyup",e=>{
 
-  resetGame();
-
-  running=true;
-
-  lastTime=performance.now();
-
-  showMessage(
-    evolution==="sheep"
-    ? "🐑 ¡A VOLAR!"
-    : "🐔 ¡A VOLAR!"
-  );
-}
-
-
-/* =========================
-   GAME OVER
-========================= */
-
-function endGame(){
-
-  running=false;
-
-  finalScoreEl.textContent=score;
-  finalCoinsEl.textContent=coins;
-
-  updateShop();
-
-  gameOver.classList.remove("hidden");
-
-  hud.classList.add("hidden");
-  animalHud.classList.add("hidden");
-  touchControls.classList.add("hidden");
-
-}
-
-
-/* =========================
-   MEJORAS
-========================= */
-
-function allUpgradesMax(){
-
-  return(
-    upgrades.fire>=3 &&
-    upgrades.speed>=3 &&
-    upgrades.shield>=3 &&
-    upgrades.life>=3
-  );
-
-}
-
-
-function costFor(type){
-
-  if(type==="fire"){
-    return 40+upgrades.fire*35;
+  if(e.key==="ArrowLeft" || e.key.toLowerCase()==="a"){
+    keys.left=false;
   }
 
-  if(type==="speed"){
-    return 50+upgrades.speed*40;
+  if(e.key==="ArrowRight" || e.key.toLowerCase()==="d"){
+    keys.right=false;
   }
 
-  if(type==="shield"){
-    return 80+upgrades.shield*60;
+  if(e.code==="Space"){
+    keys.fire=false;
   }
+});
 
-  if(type==="life"){
-    return 100+upgrades.life*80;
-  }
+/* controles móviles */
 
-  return 999999;
+function holdButton(element,key){
+
+  const start=e=>{
+    e.preventDefault();
+    keys[key]=true;
+  };
+
+  const end=e=>{
+    e.preventDefault();
+    keys[key]=false;
+  };
+
+  element.addEventListener("pointerdown",start);
+  element.addEventListener("pointerup",end);
+  element.addEventListener("pointercancel",end);
+  element.addEventListener("pointerleave",end);
 }
 
+holdButton(document.getElementById("leftBtn"),"left");
+holdButton(document.getElementById("rightBtn"),"right");
+holdButton(document.getElementById("fireBtn"),"fire");
 
-function buyUpgrade(type){
+/* tocar pantalla izquierda/derecha */
+canvas.addEventListener("pointermove",e=>{
 
-  if(upgrades[type]>=3){
-    return;
+  if(!gameRunning)return;
+
+  if(e.pointerType==="touch"){
+
+    const x=e.clientX;
+
+    player.x=x;
   }
-
-  const cost=costFor(type);
-
-  if(coins<cost){
-
-    showMessage(
-      "🪙 Necesitas " +
-      cost +
-      " monedas"
-    );
-
-    return;
-  }
-
-  coins-=cost;
-  upgrades[type]++;
-
-  saveNumber("galacticaCoins",coins);
-  saveNumber("galacticaFire",upgrades.fire);
-  saveNumber("galacticaSpeed",upgrades.speed);
-  saveNumber("galacticaShield",upgrades.shield);
-  saveNumber("galacticaLife",upgrades.life);
-
-  updateShop();
-
-}
-
-
-function updateShop(){
-
-  document.getElementById("fireLevel").textContent=
-    upgrades.fire;
-
-  document.getElementById("speedLevel").textContent=
-    upgrades.speed;
-
-  document.getElementById("shieldLevel").textContent=
-    upgrades.shield;
-
-  document.getElementById("lifeLevel").textContent=
-    upgrades.life;
-
-
-  setUpgradeButton(
-    document.getElementById("fireUpgrade"),
-    "fire"
-  );
-
-  setUpgradeButton(
-    document.getElementById("speedUpgrade"),
-    "speed"
-  );
-
-  setUpgradeButton(
-    document.getElementById("shieldUpgrade"),
-    "shield"
-  );
-
-  setUpgradeButton(
-    document.getElementById("lifeUpgrade"),
-    "life"
-  );
-
-
-  const evolutionArea=
-    document.getElementById("evolutionArea");
-
-  if(
-    allUpgradesMax() &&
-    evolution==="chicken"
-  ){
-
-    evolutionArea.classList.remove("hidden");
-
-  }else{
-
-    evolutionArea.classList.add("hidden");
-
-  }
-
-}
-
-
-function setUpgradeButton(button,type){
-
-  if(upgrades[type]>=3){
-
-    button.textContent="MAX";
-    button.disabled=true;
-
-  }else{
-
-    button.textContent=
-      costFor(type)+" 🪙";
-
-    button.disabled=false;
-
-  }
-
-}
-
-
-/* =========================
-   EVOLUCIÓN
-========================= */
-
-function openEvolution(){
-
-  if(!allUpgradesMax()){
-    return;
-  }
-
-  evolutionScreen.classList.remove("hidden");
-
-}
-
-
-function confirmEvolution(){
-
-  evolution="sheep";
-
-  try{
-    localStorage.setItem(
-      "galacticaEvolution",
-      "sheep"
-    );
-  }catch(e){}
-
-  evolutionScreen.classList.add("hidden");
-  gameOver.classList.add("hidden");
-
-  showMessage(
-    "🐑 ¡HAS EVOLUCIONADO!"
-  );
-
-  startGame();
-
-}
-
+});
 
 /* =========================
    BOTONES
 ========================= */
 
 document.getElementById("startBtn")
-  .addEventListener("click",startGame);
+.addEventListener("click",startGame);
 
 document.getElementById("restartBtn")
-  .addEventListener("click",startGame);
+.addEventListener("click",startGame);
+
+document.getElementById("buyFire")
+.addEventListener("click",()=>buyUpgrade("fire"));
+
+document.getElementById("buySpeed")
+.addEventListener("click",()=>buyUpgrade("speed"));
+
+document.getElementById("buyShield")
+.addEventListener("click",()=>buyUpgrade("shield"));
+
+document.getElementById("buyLife")
+.addEventListener("click",()=>buyUpgrade("life"));
 
 document.getElementById("evolveBtn")
-  .addEventListener("click",openEvolution);
+.addEventListener("click",confirmEvolution);
 
-document.getElementById("confirmEvolution")
-  .addEventListener("click",confirmEvolution);
+document.getElementById("continueEvolution")
+.addEventListener("click",()=>{
+  document.getElementById("evolutionScreen").classList.add("hidden");
+  startGame();
+});
 
-
-document.getElementById("fireUpgrade")
-  .addEventListener(
-    "click",
-    ()=>buyUpgrade("fire")
-  );
-
-document.getElementById("speedUpgrade")
-  .addEventListener(
-    "click",
-    ()=>buyUpgrade("speed")
-  );
-
-document.getElementById("shieldUpgrade")
-  .addEventListener(
-    "click",
-    ()=>buyUpgrade("shield")
-  );
-
-document.getElementById("lifeUpgrade")
-  .addEventListener(
-    "click",
-    ()=>buyUpgrade("life")
-  );
-
-
-/* =========================
-   TECLADO
-========================= */
-
-window.addEventListener("keydown",e=>{
-
-  if(
-    e.key==="ArrowLeft" ||
-    e.key.toLowerCase()==="a"
-  ){
-    keys.left=true;
-  }
-
-  if(
-    e.key==="ArrowRight" ||
-    e.key.toLowerCase()==="d"
-  ){
-    keys.right=true;
-  }
-
-  if(
-    e.key===" " ||
-    e.key.toLowerCase()==="w"
-  ){
-
-    keys.fire=true;
+/* impedir scroll */
+document.addEventListener("touchmove",e=>{
+  if(e.target.closest("#gameWrap")){
     e.preventDefault();
-
   }
+},{passive:false});
 
-});
-
-
-window.addEventListener("keyup",e=>{
-
-  if(
-    e.key==="ArrowLeft" ||
-    e.key.toLowerCase()==="a"
-  ){
-    keys.left=false;
-  }
-
-  if(
-    e.key==="ArrowRight" ||
-    e.key.toLowerCase()==="d"
-  ){
-    keys.right=false;
-  }
-
-  if(
-    e.key===" " ||
-    e.key.toLowerCase()==="w"
-  ){
-    keys.fire=false;
-  }
-
-});
-
-
-/* =========================
-   CONTROLES TÁCTILES
-========================= */
-
-function holdButton(element,onDown,onUp){
-
-  element.addEventListener(
-    "pointerdown",
-    e=>{
-      e.preventDefault();
-      onDown();
-    }
-  );
-
-  element.addEventListener(
-    "pointerup",
-    e=>{
-      e.preventDefault();
-      onUp();
-    }
-  );
-
-  element.addEventListener(
-    "pointercancel",
-    onUp
-  );
-
-  element.addEventListener(
-    "pointerleave",
-    e=>{
-      if(e.buttons===0){
-        onUp();
-      }
-    }
-  );
-}
-
-
-holdButton(
-  document.getElementById("leftBtn"),
-  ()=>keys.left=true,
-  ()=>keys.left=false
-);
-
-holdButton(
-  document.getElementById("rightBtn"),
-  ()=>keys.right=true,
-  ()=>keys.right=false
-);
-
-holdButton(
-  document.getElementById("fireBtn"),
-  ()=>keys.fire=true,
-  ()=>keys.fire=false
-);
-
-
-/* =========================
-   INICIO SEGURO
-========================= */
-
-updateShop();
+/* estado inicial */
 updateHUD();
+updateShop();
 
 </script>
 
