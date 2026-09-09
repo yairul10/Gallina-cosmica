@@ -59,7 +59,7 @@
         .header-score {
             display: flex;
             justify-content: space-between;
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 800;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
             background: rgba(15, 23, 42, 0.85);
@@ -92,7 +92,7 @@
             color: #38bdf8;
             border: 1px solid #38bdf8;
             padding: 4px 8px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             border-radius: 6px;
             cursor: pointer;
@@ -208,8 +208,8 @@
 
         <!-- Pantalla de Inicio -->
         <div id="startScreen" class="screen-overlay">
-            <h1>🐔 Batalla Espacial</h1>
-            <p>¡Sobrevive a los jefes que disparan, mejora tus armas hasta Nivel 6 y evoluciona de Gallina a Oveja y luego a Caballo!</p>
+            <h1>🐔 Granja Espacial</h1>
+            <p>¡Derrota jefes cada 5,000 puntos, evoluciona de Gallina ➔ Oveja (Límite Lv.6) ➔ Caballo (Límite Lv.10 con herraduras) ➔ ¡Vaca lechera!</p>
             <button class="btn" id="startBtn">¡Despegar!</button>
         </div>
 
@@ -234,9 +234,10 @@
         let gameTime = 0;
         let gameState = 'START';
         
-        // Fases de evolución: 0 = Gallina, 1 = Oveja, 2 = Caballo
+        // Fases de evolución: 0 = Gallina, 1 = Oveja, 2 = Caballo, 3 = Vaca
         let evolutionStage = 0; 
-        let maxUpgradeLimit = 3; // Límite actual de mejoras (sube a 6 con la oveja)
+        let maxUpgradeLimit = 3; // Límite inicial de mejoras
+        let nextBossScoreThreshold = 5000; // El primer jefe sale a los 5,000 puntos
 
         let upgrades = {
             bullets: 0, 
@@ -309,10 +310,10 @@
             let heightSize = 16;
             let bType = 'chick';
             if (evolutionStage === 1) bType = 'wool';
-            if (evolutionStage === 2) bType = 'carrot'; // O herradura/poder de caballo
+            if (evolutionStage === 2) bType = 'horseshoe';
+            if (evolutionStage === 3) bType = 'milk';
 
             if (upgrades.bullets >= 2) {
-                // Múltiples proyectiles según nivel
                 bullets.push({ x: player.x + 4, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -1.5, type: bType });
                 bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType });
                 bullets.push({ x: player.x + player.width - 20, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 1.5, type: bType });
@@ -335,19 +336,20 @@
             } else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 3) {
                 coins -= 3;
                 upgrades.speed++;
-            } else if (type === 'life' && coins >= 15) { // Costo de vida aumentado a 15 monedas
+            } else if (type === 'life' && coins >= 15) {
                 coins -= 15;
                 lives++;
                 updateLivesUI();
             } else if (type === 'evolve') {
                 if (evolutionStage === 0) {
-                    evolutionStage = 1; // Evoluciona a Oveja
-                    maxUpgradeLimit = 6; // Aumenta límite a nivel 6
-                    upgrades.bullets = 3; // Reajuste inicial de etapa
-                    upgrades.speed = 3;
+                    evolutionStage = 1; // Oveja
+                    maxUpgradeLimit = 6; // Límite sube a 6
                 } else if (evolutionStage === 1) {
-                    evolutionStage = 2; // Evoluciona a Caballo
-                    maxUpgradeLimit = 6;
+                    evolutionStage = 2; // Caballo
+                    maxUpgradeLimit = 10; // Límite sube a 10
+                } else if (evolutionStage === 2) {
+                    evolutionStage = 3; // Vaca (forma máxima)
+                    maxUpgradeLimit = 10;
                 }
                 document.getElementById('upgEvolve').style.display = 'none';
             }
@@ -360,7 +362,6 @@
             document.getElementById('upgSpeed').textContent = upgrades.speed >= maxUpgradeLimit ? 'Velocidad: MÁX' : `Velocidad [🪙3] (Lv.${upgrades.speed})`;
             document.getElementById('upgLife').textContent = `+1 Vida [🪙15]`;
 
-            // Si se alcanza el límite actual de mejoras, se habilita la evolución correspondiente
             let evolveBtn = document.getElementById('upgEvolve');
             if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) {
                 if (evolutionStage === 0) {
@@ -369,6 +370,9 @@
                 } else if (evolutionStage === 1) {
                     evolveBtn.style.display = 'block';
                     evolveBtn.textContent = '🌟 Evolucionar a Caballo';
+                } else if (evolutionStage === 2) {
+                    evolveBtn.style.display = 'block';
+                    evolveBtn.textContent = '🌟 Evolucionar a Vaca';
                 } else {
                     evolveBtn.style.display = 'none';
                 }
@@ -399,8 +403,8 @@
                 y: -100,
                 width: 120,
                 height: 100,
-                maxHp: 40 + Math.floor(gameTime / 15) * 20,
-                hp: 40 + Math.floor(gameTime / 15) * 20,
+                maxHp: 50 + Math.floor(score / 5000) * 25,
+                hp: 50 + Math.floor(score / 5000) * 25,
                 speed: 1.5,
                 direction: 1,
                 shootCooldown: 0
@@ -421,6 +425,7 @@
             boss = null;
             evolutionStage = 0;
             maxUpgradeLimit = 3;
+            nextBossScoreThreshold = 5000;
             upgrades.bullets = 0;
             upgrades.speed = 1;
             player.x = canvas.width / 2 - player.width / 2;
@@ -438,9 +443,6 @@
             window.gameTimerInterval = setInterval(() => {
                 if (gameState === 'PLAYING') {
                     gameTime++;
-                    if (gameTime % 40 === 0 && !boss) {
-                        spawnBoss();
-                    }
                 }
             }, 1000);
         }
@@ -456,7 +458,13 @@
         function update() {
             if (gameState !== 'PLAYING') return;
 
-            let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.8;
+            // Verificar si el puntaje alcanzó el umbral para invocar al jefe cada 5,000 puntos
+            if (score >= nextBossScoreThreshold && !boss) {
+                spawnBoss();
+                nextBossScoreThreshold += 5000; // Siguiente jefe a los 10,000, 15,000, etc.
+            }
+
+            let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
             if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed;
             if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
 
@@ -468,21 +476,18 @@
                 if (s.y > canvas.height) s.y = 0;
             }
 
-            // Actualizar proyectiles del jugador
             for (let i = bullets.length - 1; i >= 0; i--) {
                 bullets[i].y -= bullets[i].speed;
                 if (bullets[i].dx) bullets[i].x += bullets[i].dx;
                 if (bullets[i].y < -20) bullets.splice(i, 1);
             }
 
-            // Actualizar disparos del jefe hacia abajo
             for (let i = bossBullets.length - 1; i >= 0; i--) {
                 bossBullets[i].y += bossBullets[i].speed;
                 if (bossBullets[i].y > canvas.height + 20) {
                     bossBullets.splice(i, 1);
                     continue;
                 }
-                // Colisión bala del jefe vs Jugador
                 if (
                     player.x < bossBullets[i].x + bossBullets[i].width &&
                     player.x + player.width > bossBullets[i].x &&
@@ -505,7 +510,6 @@
                 }
             }
 
-            // Lógica del Jefe y sus disparos de maíces pequeños
             if (boss) {
                 if (boss.y < 50) boss.y += 1;
                 boss.x += boss.speed * boss.direction;
@@ -514,19 +518,18 @@
                 }
 
                 boss.shootCooldown++;
-                if (boss.shootCooldown >= 45) { // Dispara cada cierto tiempo
+                if (boss.shootCooldown >= 40) {
                     boss.shootCooldown = 0;
                     bossBullets.push({
                         x: boss.x + boss.width / 2 - 6,
                         y: boss.y + boss.height,
                         width: 12,
                         height: 12,
-                        speed: 5
+                        speed: 5.5
                     });
                 }
             }
 
-            // Actualizar enemigos normales
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += enemies[i].speed;
                 enemies[i].wobble += 0.05;
@@ -572,7 +575,6 @@
                 }
             }
 
-            // Colisiones Bala vs Jefe
             if (boss) {
                 for (let j = bullets.length - 1; j >= 0; j--) {
                     if (
@@ -585,8 +587,8 @@
                         boss.hp--;
                         bullets.splice(j, 1);
                         if (boss.hp <= 0) {
-                            score += 1000;
-                            coins += 12;
+                            score += 1500;
+                            coins += 15;
                             document.getElementById('scoreVal').textContent = score;
                             updateUpgradesHUD();
                             boss = null;
@@ -607,17 +609,25 @@
             ctx.save();
             ctx.translate(x, y);
 
-            if (evolutionStage === 2) {
-                // Nave Caballo Espacial
+            if (evolutionStage === 3) {
+                // Nave Vaca lechera
+                ctx.fillStyle = '#f1f5f9';
+                ctx.beginPath();
+                ctx.ellipse(25, 26, 22, 18, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(15, 20, 8, 8);
+                ctx.fillRect(30, 28, 6, 6);
+            } else if (evolutionStage === 2) {
+                // Nave Caballo
                 ctx.fillStyle = '#a855f7';
                 ctx.beginPath();
                 ctx.ellipse(25, 26, 18, 22, 0, 0, Math.PI * 2);
                 ctx.fill();
-                // Cabeza de caballo
                 ctx.fillStyle = '#c084fc';
                 ctx.fillRect(20, -4, 10, 16);
             } else if (evolutionStage === 1) {
-                // Nave Oveja Espacial
+                // Nave Oveja
                 ctx.fillStyle = '#f8fafc';
                 ctx.beginPath();
                 ctx.ellipse(25, 26, 20, 16, 0, 0, Math.PI * 2);
@@ -626,7 +636,7 @@
                 ctx.arc(25, 10, 10, 0, Math.PI * 2);
                 ctx.fill();
             } else {
-                // Nave Gallina base
+                // Gallina Base
                 ctx.fillStyle = '#38bdf8';
                 ctx.fillRect(16, 42, 6, 10);
                 
@@ -713,18 +723,19 @@
 
             drawPlayerShip(player.x, player.y);
 
-            // Proyectiles del jugador
+            // Proyectiles del jugador (Pollito, Lana, Herradura o Leche)
             for (let b of bullets) {
                 ctx.font = '22px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 let icon = '🐥';
                 if (b.type === 'wool') icon = '🧶';
-                if (b.type === 'carrot') icon = '🥕';
+                if (b.type === 'horseshoe') icon = '🧲'; // Herradura
+                if (b.type === 'milk') icon = '🥛'; // Leche
                 ctx.fillText(icon, b.x + b.width / 2, b.y + b.height / 2);
             }
 
-            // Balas disparadas por el jefe
+            // Balas del jefe (Maíces pequeños)
             for (let bb of bossBullets) {
                 ctx.font = '16px sans-serif';
                 ctx.textAlign = 'center';
