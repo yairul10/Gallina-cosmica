@@ -13,7 +13,7 @@
         }
 
         body {
-            background-color: #0b1329;
+            background-color: #020617;
             color: #ffffff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -29,17 +29,18 @@
             width: 100%;
             max-width: 420px;
             height: 640px;
-            background: linear-gradient(to bottom, #1e293b, #0f172a);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.7);
+            background: #0f172a;
+            box-shadow: 0 25px 35px -5px rgb(0 0 0 / 0.9);
             overflow: hidden;
-            border-radius: 16px;
-            border: 2px solid #334155;
+            border-radius: 20px;
+            border: 3px solid #334155;
         }
 
         canvas {
             display: block;
             width: 100%;
             height: 100%;
+            background: #090d16;
         }
 
         .ui-layer {
@@ -58,9 +59,41 @@
         .header-score {
             display: flex;
             justify-content: space-between;
-            font-size: 1.1rem;
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            font-size: 1.15rem;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            background: rgba(15, 23, 42, 0.75);
+            padding: 8px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Botón de disparo en pantalla para móviles */
+        .fire-button-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            pointer-events: auto;
+            z-index: 5;
+        }
+
+        .btn-fire {
+            width: 75px;
+            height: 75px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: 3px solid #fef3c7;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+            transition: transform 0.08s;
+        }
+
+        .btn-fire:active {
+            transform: scale(0.9);
         }
 
         .screen-overlay {
@@ -69,7 +102,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(9, 13, 22, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -103,21 +136,11 @@
             border-radius: 12px;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-            transition: transform 0.1s, background-color 0.2s;
+            transition: transform 0.1s;
         }
 
         .btn:active {
             transform: scale(0.95);
-        }
-
-        .controls-hint {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            font-size: 0.75rem;
-            color: #64748b;
-            pointer-events: none;
         }
     </style>
 </head>
@@ -133,62 +156,63 @@
             </div>
         </div>
 
+        <!-- Botón de disparo en pantalla -->
+        <div class="fire-button-container">
+            <button class="btn-fire" id="fireBtn">🐣</button>
+        </div>
+
         <!-- Pantalla de Inicio -->
         <div id="startScreen" class="screen-overlay">
-            <h1>🐔 Gallina vs Maíces</h1>
-            <p>¡Lanza pollitos valientes para detener a las mazorcas malvadas antes de que invadan el corral!</p>
-            <button class="btn" id="startBtn">¡A Pelear!</button>
+            <h1>🐔 Nave Gallina</h1>
+            <p>¡Usa el botón 🐣 para lanzar pollitos contra las mazorcas malvadas!</p>
+            <button class="btn" id="startBtn">¡Despegar!</button>
         </div>
 
         <!-- Pantalla de Game Over -->
         <div id="gameOverScreen" class="screen-overlay" style="display: none;">
-            <h1>¡Derrota!</h1>
-            <p>Los maíces se apoderaron del terreno.<br>Puntuación final: <strong id="finalScore">0</strong></p>
+            <h1>¡Invasión de Maíz!</h1>
+            <p>Las mazorcas ganaron terreno.<br>Puntuación final: <strong id="finalScore">0</strong></p>
             <button class="btn" id="restartBtn">Jugar de Nuevo</button>
         </div>
-
-        <div class="controls-hint">Arrastra la gallina o usa las flechas / A-D</div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Ajustar resolución interna del canvas para nitidez
         canvas.width = 420;
         canvas.height = 640;
 
         let score = 0;
         let lives = 3;
-        let gameState = 'START'; // START, PLAYING, GAMEOVER
+        let gameState = 'START';
 
-        // Entidad Gallina (Jugador)
         const player = {
             x: canvas.width / 2 - 25,
-            y: canvas.height - 80,
+            y: canvas.height - 90,
             width: 50,
             height: 50,
-            speed: 6,
-            dx: 0
+            speed: 6
         };
 
-        let bullets = []; // Pollitos disparados
-        let enemies = []; // Maíces malvados
-        let particles = []; // Plumas o efectos de explosión
+        let bullets = [];
+        let enemies = [];
 
-        // Control de teclado
-        let keys = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false, Space: false };
+        let keys = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false };
 
         window.addEventListener('keydown', (e) => {
             if (e.code in keys) keys[e.code] = true;
-            if (e.code === 'Space' && gameState === 'PLAYING') shootBullet();
+            if (e.code === 'Space' && gameState === 'PLAYING') {
+                shootBullet();
+                e.preventDefault();
+            }
         });
 
         window.addEventListener('keyup', (e) => {
             if (e.code in keys) keys[e.code] = false;
         });
 
-        // Control táctil / Mouse arrastrando
+        // Controles táctiles de arrastre para la nave
         let isDragging = false;
         canvas.addEventListener('pointerdown', (e) => {
             isDragging = true;
@@ -205,18 +229,24 @@
             player.x = touchX - player.width / 2;
         }
 
+        // Evento del botón de disparo manual
+        document.getElementById('fireBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (gameState === 'PLAYING') {
+                shootBullet();
+            }
+        });
+
         function shootBullet() {
-            // Disparar un pollito desde el centro de la gallina
             bullets.push({
-                x: player.x + player.width / 2 - 10,
-                y: player.y,
-                width: 20,
-                height: 20,
-                speed: 8
+                x: player.x + player.width / 2 - 8,
+                y: player.y - 10,
+                width: 16,
+                height: 16,
+                speed: 9
             });
         }
 
-        let shootTimer = 0;
         function spawnEnemy() {
             const size = 44;
             const x = Math.random() * (canvas.width - size - 20) + 10;
@@ -225,11 +255,10 @@
                 y: -50,
                 width: size,
                 height: size,
-                speed: 1.5 + Math.random() * 1.5
+                speed: 1.4 + Math.random() * 1.6
             });
         }
 
-        // Interfaz y botones
         document.getElementById('startBtn').addEventListener('click', startGame);
         document.getElementById('restartBtn').addEventListener('click', startGame);
 
@@ -238,7 +267,6 @@
             lives = 3;
             bullets = [];
             enemies = [];
-            particles = [];
             player.x = canvas.width / 2 - player.width / 2;
             document.getElementById('scoreVal').textContent = score;
             document.getElementById('livesVal').textContent = '❤️ ❤️ ❤️';
@@ -253,56 +281,40 @@
             document.getElementById('gameOverScreen').style.display = 'flex';
         }
 
-        // Bucle principal del juego
         let enemySpawnInterval = 0;
         function update() {
             if (gameState !== 'PLAYING') return;
 
-            // Movimiento de la gallina por teclado
             if (keys.ArrowLeft || keys.KeyA) player.x -= player.speed;
             if (keys.ArrowRight || keys.KeyD) player.x += player.speed;
 
-            // Limites de pantalla
             if (player.x < 10) player.x = 10;
             if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
 
-            // Disparo automático rítmico cada cierto tiempo para facilitar móvil/PC
-            shootTimer++;
-            if (shootTimer % 25 === 0) {
-                shootBullet();
-            }
-
-            // Actualizar pollitos (proyectiles)
+            // Actualizar proyectiles
             for (let i = bullets.length - 1; i >= 0; i--) {
                 bullets[i].y -= bullets[i].speed;
-                if (bullets[i].y < -20) {
-                    bullets.splice(i, 1);
-                }
+                if (bullets[i].y < -20) bullets.splice(i, 1);
             }
 
-            // Generar maíces enemigos
             enemySpawnInterval++;
-            if (enemySpawnInterval > 50) {
+            if (enemySpawnInterval > 45) {
                 spawnEnemy();
                 enemySpawnInterval = 0;
             }
 
-            // Actualizar maíces malvados
+            // Actualizar enemigos
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += enemies[i].speed;
 
-                // Si el maíz toca fondo (pasa a la gallina)
                 if (enemies[i].y > canvas.height) {
                     enemies.splice(i, 1);
                     lives--;
                     updateLivesUI();
-                    if (lives <= 0) {
-                        gameOver();
-                    }
+                    if (lives <= 0) gameOver();
                     continue;
                 }
 
-                // Colisión Gallina vs Maíz enemigo
                 if (
                     player.x < enemies[i].x + enemies[i].width &&
                     player.x + player.width > enemies[i].x &&
@@ -312,13 +324,10 @@
                     enemies.splice(i, 1);
                     lives--;
                     updateLivesUI();
-                    if (lives <= 0) {
-                        gameOver();
-                    }
+                    if (lives <= 0) gameOver();
                     continue;
                 }
 
-                // Colisión Pollito vs Maíz enemigo
                 for (let j = bullets.length - 1; j >= 0; j--) {
                     if (
                         bullets[j] &&
@@ -327,7 +336,6 @@
                         bullets[j].y < enemies[i].y + enemies[i].height &&
                         bullets[j].y + bullets[j].height > enemies[i].y
                     ) {
-                        // Impacto!
                         score += 100;
                         document.getElementById('scoreVal').textContent = score;
                         enemies.splice(i, 1);
@@ -345,29 +353,32 @@
         }
 
         function draw() {
-            // Limpiar pantalla
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Dibujar estrellas o fondo ambiental sutil
-            ctx.fillStyle = '#ffffff15';
-            ctx.fillRect(50, 100, 2, 2);
-            ctx.fillRect(150, 250, 3, 3);
-            ctx.fillRect(320, 80, 2, 2);
-            ctx.fillRect(280, 400, 3, 3);
+            // Fondo con estrellas nítidas y sólidas
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(40, 90, 3, 3);
+            ctx.fillRect(160, 220, 2, 2);
+            ctx.fillRect(340, 120, 3, 3);
+            ctx.fillRect(260, 410, 2, 2);
+            ctx.fillRect(90, 520, 3, 3);
 
-            // Dibujar Jugador (Gallina tierna)
-            ctx.font = '40px sans-serif';
+            // Nave Gallina (Estilo nave espacial con propulsor)
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(player.x + 20, player.y + 35, 10, 12); // Fuego del propulsor
+            
+            ctx.font = '42px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('🐔', player.x + player.width / 2, player.y + player.height / 2);
+            ctx.fillText('🛸🐔', player.x + player.width / 2, player.y + player.height / 2);
 
-            // Dibujar Proyectiles (Pollitos voladores)
+            // Proyectiles (Pollitos valientes)
             for (let b of bullets) {
                 ctx.font = '22px sans-serif';
                 ctx.fillText('🐥', b.x + b.width / 2, b.y + b.height / 2);
             }
 
-            // Dibujar Enemigos (Maíces malvados)
+            // Enemigos (Maíces malvados)
             for (let e of enemies) {
                 ctx.font = '36px sans-serif';
                 ctx.fillText('🌽', e.x + e.width / 2, e.y + e.height / 2);
