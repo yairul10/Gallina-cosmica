@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gallina vs Maíces Malvados</title>
+    <title>Gallina Robótica vs Maíces Malvados</title>
     <style>
         * {
             box-sizing: border-box;
@@ -62,13 +62,12 @@
             font-size: 1.15rem;
             font-weight: 800;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            background: rgba(15, 23, 42, 0.75);
+            background: rgba(15, 23, 42, 0.85);
             padding: 8px 14px;
             border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
         }
 
-        /* Botón de disparo en pantalla para móviles */
         .fire-button-container {
             position: absolute;
             bottom: 20px;
@@ -80,15 +79,15 @@
         .btn-fire {
             width: 75px;
             height: 75px;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            border: 3px solid #fef3c7;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            border: 3px solid #fee2e2;
             border-radius: 50%;
             font-size: 1.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
             transition: transform 0.08s;
         }
 
@@ -102,7 +101,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(9, 13, 22, 0.95);
+            background: rgba(9, 13, 22, 0.96);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -156,23 +155,22 @@
             </div>
         </div>
 
-        <!-- Botón de disparo en pantalla -->
         <div class="fire-button-container">
-            <button class="btn-fire" id="fireBtn">🐣</button>
+            <button class="btn-fire" id="fireBtn">🚀</button>
         </div>
 
         <!-- Pantalla de Inicio -->
         <div id="startScreen" class="screen-overlay">
-            <h1>🐔 Nave Gallina</h1>
-            <p>¡Usa el botón 🐣 para lanzar pollitos contra las mazorcas malvadas!</p>
-            <button class="btn" id="startBtn">¡Despegar!</button>
+            <h1>🤖🐔 Robo-Gallina vs Maíces</h1>
+            <p>¡Usa el botón espacial 🚀 para lanzar pollitos cibernéticos contra los malvados maíces!</p>
+            <button class="btn" id="startBtn">¡Iniciar Combate!</button>
         </div>
 
         <!-- Pantalla de Game Over -->
         <div id="gameOverScreen" class="screen-overlay" style="display: none;">
-            <h1>¡Invasión de Maíz!</h1>
-            <p>Las mazorcas ganaron terreno.<br>Puntuación final: <strong id="finalScore">0</strong></p>
-            <button class="btn" id="restartBtn">Jugar de Nuevo</button>
+            <h1>¡Sistema Destruido!</h1>
+            <p>Los maíces malvados invadieron la base.<br>Puntuación final: <strong id="finalScore">0</strong></p>
+            <button class="btn" id="restartBtn">Reintentar</button>
         </div>
     </div>
 
@@ -190,13 +188,24 @@
         const player = {
             x: canvas.width / 2 - 25,
             y: canvas.height - 90,
-            width: 50,
-            height: 50,
-            speed: 6
+            width: 52,
+            height: 52,
+            speed: 6.5
         };
 
         let bullets = [];
         let enemies = [];
+        let stars = [];
+
+        // Inicializar estrellas de fondo
+        for (let i = 0; i < 40; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 0.8 + 0.3
+            });
+        }
 
         let keys = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false };
 
@@ -212,7 +221,6 @@
             if (e.code in keys) keys[e.code] = false;
         });
 
-        // Controles táctiles de arrastre para la nave
         let isDragging = false;
         canvas.addEventListener('pointerdown', (e) => {
             isDragging = true;
@@ -229,7 +237,6 @@
             player.x = touchX - player.width / 2;
         }
 
-        // Evento del botón de disparo manual
         document.getElementById('fireBtn').addEventListener('click', (e) => {
             e.stopPropagation();
             if (gameState === 'PLAYING') {
@@ -243,19 +250,20 @@
                 y: player.y - 10,
                 width: 16,
                 height: 16,
-                speed: 9
+                speed: 10
             });
         }
 
         function spawnEnemy() {
-            const size = 44;
+            const size = 48;
             const x = Math.random() * (canvas.width - size - 20) + 10;
             enemies.push({
                 x: x,
-                y: -50,
+                y: -60,
                 width: size,
                 height: size,
-                speed: 1.4 + Math.random() * 1.6
+                speed: 1.5 + Math.random() * 1.5,
+                wobble: Math.random() * Math.PI
             });
         }
 
@@ -291,6 +299,12 @@
             if (player.x < 10) player.x = 10;
             if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
 
+            // Mover estrellas de fondo
+            for (let s of stars) {
+                s.y += s.speed;
+                if (s.y > canvas.height) s.y = 0;
+            }
+
             // Actualizar proyectiles
             for (let i = bullets.length - 1; i >= 0; i--) {
                 bullets[i].y -= bullets[i].speed;
@@ -298,7 +312,7 @@
             }
 
             enemySpawnInterval++;
-            if (enemySpawnInterval > 45) {
+            if (enemySpawnInterval > 42) {
                 spawnEnemy();
                 enemySpawnInterval = 0;
             }
@@ -306,6 +320,8 @@
             // Actualizar enemigos
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += enemies[i].speed;
+                enemies[i].wobble += 0.05;
+                enemies[i].x += Math.sin(enemies[i].wobble) * 0.8; // Pequeño movimiento lateral malvado
 
                 if (enemies[i].y > canvas.height) {
                     enemies.splice(i, 1);
@@ -355,33 +371,37 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Fondo con estrellas nítidas y sólidas
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(40, 90, 3, 3);
-            ctx.fillRect(160, 220, 2, 2);
-            ctx.fillRect(340, 120, 3, 3);
-            ctx.fillRect(260, 410, 2, 2);
-            ctx.fillRect(90, 520, 3, 3);
+            // Dibujar fondo estelar dinámico
+            ctx.fillStyle = '#334155';
+            for (let s of stars) {
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+            }
 
-            // Nave Gallina (Estilo nave espacial con propulsor)
-            ctx.fillStyle = '#f59e0b';
-            ctx.fillRect(player.x + 20, player.y + 35, 10, 12); // Fuego del propulsor
-            
-            ctx.font = '42px sans-serif';
+            // Dibujar Propulsor de la Robo-Gallina
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(player.x + 14, player.y + 44, 8, 10);
+            ctx.fillRect(player.x + 30, player.y + 44, 8, 10);
+
+            // Dibujar Nave Robo-Gallina (Estilo cibernético)
+            ctx.font = '44px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('🛸🐔', player.x + player.width / 2, player.y + player.height / 2);
+            ctx.fillText('🤖🐔', player.x + player.width / 2, player.y + player.height / 2);
 
-            // Proyectiles (Pollitos valientes)
+            // Proyectiles (Pollitos cibernéticos)
             for (let b of bullets) {
                 ctx.font = '22px sans-serif';
                 ctx.fillText('🐥', b.x + b.width / 2, b.y + b.height / 2);
             }
 
-            // Enemigos (Maíces malvados)
+            // Enemigos (Maíces malvados con rostros furiosos)
             for (let e of enemies) {
-                ctx.font = '36px sans-serif';
+                ctx.font = '40px sans-serif';
                 ctx.fillText('🌽', e.x + e.width / 2, e.y + e.height / 2);
+                
+                // Añadir una pequeña expresión extra o brillo malvado encima
+                ctx.font = '14px sans-serif';
+                ctx.fillText('💢', e.x + e.width - 10, e.y + 5);
             }
         }
 
