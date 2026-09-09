@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+      initial-scale=1,
+      maximum-scale=1,
+      user-scalable=no">
+
+<title>🐔🚀 Gallina Cósmica</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#03051c;
+    font-family:Arial,sans-serif;
+    touch-action:none;
+}
+
+canvas{
+    display:block;
+    width:100%;
+    height:100%;
+}
+
+#hud{
+    position:fixed;
+    top:10px;
+    left:0;
+    width:100%;
+
+    display:flex;
+    justify-content:space-between;
+
+    padding:10px 15px;
+
+    color:white;
+    font-size:17px;
+    font-weight:bold;
+
+    text-shadow:
+        0 2px 4px black,
+        0 0 8px #00ffff;
+
+    z-index:5;
+}
+
+#menu{
+    position:fixed;
+    inset:0;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+
+    text-align:center;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(40,70,180,.35),
+            rgba(0,0,20,.95)
+        );
+
+    color:white;
+
+    z-index:10;
+}
+
+#menu .chickenTitle{
+    font-size:75px;
+    animation:
+        floatChicken 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes floatChicken{
+
+    from{
+        transform:translateY(0) rotate(-4deg);
+    }
+
+    to{
+        transform:translateY(-12px) rotate(4deg);
+    }
+
+}
+
+#menu h1{
+    font-size:clamp(32px,8vw,65px);
+
+    margin-bottom:10px;
+
+    text-shadow:
+        0 0 10px #00ffff,
+        0 0 25px #0088ff;
+}
+
+#menu p{
+    max-width:500px;
+
+    padding:0 20px;
+
+    margin-bottom:25px;
+
+    font-size:18px;
+    line-height:1.5;
+}
+
+#start{
+
+    border:none;
+
+    border-radius:20px;
+
+    padding:16px 35px;
+
+    font-size:24px;
+
+    font-weight:bold;
+
+    background:#ffd83d;
+
+    color:#402800;
+
+    box-shadow:
+        0 6px 0 #a87800,
+        0 0 25px #ffe900;
+
+    cursor:pointer;
+
+}
+
+#start:active{
+
+    transform:translateY(5px);
+
+    box-shadow:
+        0 1px 0 #a87800;
+
+}
+
+#controls{
+
+    position:fixed;
+
+    bottom:20px;
+
+    left:0;
+
+    width:100%;
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:25px;
+
+    z-index:5;
+
+}
+
+.control{
+
+    width:75px;
+    height:65px;
+
+    border:none;
+
+    border-radius:20px;
+
+    background:
+        rgba(255,255,255,.15);
+
+    backdrop-filter:blur(5px);
+
+    color:white;
+
+    font-size:30px;
+
+    font-weight:bold;
+
+    border:
+        2px solid
+        rgba(255,255,255,.4);
+
+    box-shadow:
+        0 0 15px
+        rgba(0,255,255,.3);
+
+}
+
+.control:active{
+
+    transform:scale(.9);
+
+    background:
+        rgba(255,255,255,.35);
+
+}
+
+.hidden{
+    display:none!important;
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<canvas id="game"></canvas>
+
+
+<div id="hud">
+
+    <div>
+        🐔 GALLINA CÓSMICA
+    </div>
+
+    <div>
+
+        ⭐ <span id="score">0</span>
+
+        &nbsp;
+
+        ❤️ <span id="lives">3</span>
+
+    </div>
+
+</div>
+
+
+
+<div id="menu">
+
+    <div class="chickenTitle">
+        🐔🚀
+    </div>
+
+    <h1>
+        GALLINA CÓSMICA
+    </h1>
+
+    <p>
+        ¡Los maíces invasores están
+        atacando el espacio!
+        <br><br>
+
+        🌽 normales · ⚡ maíces rápidos
+        · 👑 maíces gigantes
+    </p>
+
+    <button id="start">
+        🚀 JUGAR
+    </button>
+
+</div>
+
+
+
+<div id="controls"
+     class="hidden">
+
+    <button
+        class="control"
+        id="left">
+
+        ◀
+
+    </button>
+
+
+    <button
+        class="control"
+        id="fire">
+
+        🐣
+
+    </button>
+
+
+    <button
+        class="control"
+        id="right">
+
+        ▶
+
+    </button>
+
+</div>
+
+
+
+<script>
+
+
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+const scoreText =
+    document.getElementById("score");
+
+const livesText =
+    document.getElementById("lives");
+
+
+const menu =
+    document.getElementById("menu");
+
+const startButton =
+    document.getElementById("start");
+
+const controls =
+    document.getElementById("controls");
+
+
+let width;
+let height;
+
+let score = 0;
+
+let lives = 3;
+
+let gameRunning = false;
+
+let lastTime = 0;
+
+let enemyTimer = 0;
+
+let keys = {};
+
+let bullets = [];
+
+let enemies = [];
+
+let explosions = [];
+
+let stars = [];
+
+
+
+/* =========================
+   RESOLUCIÓN
+========================= */
+
+function resize(){
+
+    width =
+        window.innerWidth;
+
+    height =
+        window.innerHeight;
+
+
+    const dpr =
+        Math.min(
+            window.devicePixelRatio || 1,
+            2
+        );
+
+
+    canvas.width =
+        width * dpr;
+
+    canvas.height =
+        height * dpr;
+
+
+    ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+    );
+
+
+    if(chicken){
+
+        chicken.y =
+            height - 120;
+
+    }
+
+}
+
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+
+
+/* =========================
+   ESTRELLAS
+========================= */
+
+for(let i=0;i<110;i++){
+
+    stars.push({
+
+        x:Math.random(),
+
+        y:Math.random(),
+
+        size:
+            Math.random()*2+.5,
+
+        speed:
+            Math.random()*.5+.1
+
+    });
+
+}
+
+
+
+/* =========================
+   GALLINA
+========================= */
+
+const chicken = {
+
+    x:window.innerWidth/2,
+
+    y:window.innerHeight-120,
+
+    speed:430,
+
+    size:65,
+
+    wing:0
+
+};
+
+
+
+/* =========================
+   REINICIAR
+========================= */
+
+function resetGame(){
+
+    score=0;
+
+    lives=3;
+
+    scoreText.textContent=score;
+
+    livesText.textContent=lives;
+
+    bullets=[];
+
+    enemies=[];
+
+    explosions=[];
+
+    chicken.x=
+        width/2;
+
+    chicken.y=
+        height-120;
+
+}
+
+
+
+/* =========================
+   DISPARAR
+========================= */
+
+function shoot(){
+
+    if(!gameRunning)
+        return;
+
+
+    bullets.push({
+
+        x:chicken.x,
+
+        y:chicken.y-35,
+
+        speed:650,
+
+        size:18
+
+    });
+
+}
+
+
+
+/* =========================
+   CREAR MAÍZ
+========================= */
+
+function createEnemy(){
+
+    /*
+       Probabilidades según
+       la puntuación
+    */
+
+    let type="normal";
+
+
+    const roll=
+        Math.random();
+
+
+    /*
+       Al principio solamente
+       maíz normal.
+    */
+
+    if(score >= 100){
+
+        if(roll < .20){
+
+            type="fast";
+
+        }
+
+    }
+
+
+    /*
+       Maíz gigante aparece
+       después de 250 puntos.
+    */
+
+    if(score >= 250){
+
+        if(roll < .12){
+
+            type="giant";
+
+        }
+
+        else if(
+            roll < .32
+        ){
+
+            type="fast";
+
+        }
+
+    }
+
+
+    let enemy;
+
+
+    /*
+       MAÍZ NORMAL
+    */
+
+    if(type==="normal"){
+
+        enemy={
+
+            type:"normal",
+
+            x:
+                30+
+                Math.random()*
+                (width-60),
+
+            y:-50,
+
+            size:43,
+
+            speed:
+                75+
+                Math.random()*50,
+
+            hp:1,
+
+            points:10,
+
+            wave:
+                Math.random()*10,
+
+            rotation:0
+
+        };
+
+    }
+
+
+    /*
+       MAÍZ RÁPIDO
+    */
+
+    else if(type==="fast"){
+
+        enemy={
+
+            type:"fast",
+
+            x:
+                30+
+                Math.random()*
+                (width-60),
+
+            y:-50,
+
+            size:35,
+
+            speed:
+                170+
+                Math.random()*90,
+
+            hp:1,
+
+            points:20,
+
+            wave:
+                Math.random()*10,
+
+            rotation:0
+
+        };
+
+    }
+
+
+    /*
+       MAÍZ GIGANTE
+    */
+
+    else{
+
+        enemy={
+
+            type:"giant",
+
+            x:
+                45+
+                Math.random()*
+                (width-90),
+
+            y:-70,
+
+            size:65,
+
+            speed:
+                50+
+                Math.random()*35,
+
+            hp:2,
+
+            maxHp:2,
+
+            points:30,
+
+            wave:
+                Math.random()*10,
+
+            rotation:0
+
+        };
+
+    }
+
+
+    enemies.push(enemy);
+
+}
+
+
+
+/* =========================
+   EXPLOSIÓN
+========================= */
+
+function explode(x,y){
+
+    for(
+        let i=0;
+        i<18;
+        i++
+    ){
+
+        explosions.push({
+
+            x:x,
+
+            y:y,
+
+            vx:
+                (Math.random()-.5)*
+                280,
+
+            vy:
+                (Math.random()-.5)*
+                280,
+
+            life:1,
+
+            size:
+                Math.random()*7+3
+
+        });
+
+    }
+
+}
+
+
+
+/* =========================
+   ESTRELLAS
+========================= */
+
+function drawStars(delta){
+
+    ctx.fillStyle=
+        "#02051b";
+
+
+    ctx.fillRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    for(const star of stars){
+
+        star.y +=
+            star.speed*delta;
+
+
+        if(star.y>1){
+
+            star.y=0;
+
+        }
+
+
+        ctx.fillStyle=
+            "rgba(255,255,255,.8)";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            star.x*width,
+
+            star.y*height,
+
+            star.size,
+
+            0,
+
+            Math.PI*2
+
+        );
+
+
+        ctx.fill();
+
+    }
+
+}
+
+
+
+/* =========================
+   GALLINA
+========================= */
+
+function drawChicken(){
+
+    chicken.wing += .15;
+
+
+    const wingMove=
+        Math.sin(
+            chicken.wing
+        )*5;
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        chicken.x,
+        chicken.y
+    );
+
+
+    ctx.shadowColor=
+        "#00ffff";
+
+    ctx.shadowBlur=25;
+
+
+    /*
+       CUERPO
+    */
+
+    ctx.fillStyle=
+        "#ffffff";
+
+
+    ctx.beginPath();
+
+
+    ctx.ellipse(
+        0,
+        5,
+        30,
+        35,
+        0,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.fill();
+
+
+
+    /*
+       CABEZA
+    */
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        0,
+        -28,
+        24,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.fill();
+
+
+
+    /*
+       CRESTA
+    */
+
+    ctx.fillStyle=
+        "#ff3b3b";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        -12,
+        -49,
+        9,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.arc(
+        0,
+        -53,
+        10,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.arc(
+        12,
+        -49,
+        9,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.fill();
+
+
+
+    /*
+       PICO
+    */
+
+    ctx.fillStyle=
+        "#ffb52e";
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        20,
+        -27
+    );
+
+
+    ctx.lineTo(
+        38,
+        -19
+    );
+
+
+    ctx.lineTo(
+        20,
+        -12
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+
+    /*
+       OJO
+    */
+
+    ctx.fillStyle=
+        "#111";
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        8,
+        -33,
+        4,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.fill();
+
+
+
+    /*
+       ALAS
+    */
+
+    ctx.fillStyle=
+        "#eeeeee";
+
+
+    ctx.beginPath();
+
+
+    ctx.ellipse(
+        -30,
+        8+wingMove,
+        12,
+        25,
+        -.4,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.fill();
+
+
+    ctx.beginPath();
+
+
+    ctx.ellipse(
+        30,
+        8-wingMove,
+        12,
+        25,
+        .4,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.fill();
+
+
+
+    /*
+       PROPULSOR
+    */
+
+    ctx.shadowColor=
+        "#00ffff";
+
+    ctx.shadowBlur=20;
+
+
+    ctx.fillStyle=
+        "#00ffff";
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        -13,
+        35
+    );
+
+
+    ctx.lineTo(
+        0,
+        65+
+        Math.random()*12
+    );
+
+
+    ctx.lineTo(
+        13,
+        35
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+}
+
+
+
+/* =========================
+   POLLITO
+========================= */
+
+function drawBullet(bullet){
+
+    ctx.save();
+
+
+    ctx.translate(
+        bullet.x,
+        bullet.y
+    );
+
+
+    ctx.shadowColor=
+        "#ffe600";
+
+    ctx.shadowBlur=15;
+
+
+    ctx.font=
+        "24px Arial";
+
+
+    ctx.textAlign=
+        "center";
+
+
+    ctx.textBaseline=
+        "middle";
+
+
+    ctx.fillText(
+        "🐣",
+        0,
+        0
+    );
+
+
+    ctx.restore();
+
+}
+
+
+
+/* =========================
+   MAÍCES
+========================= */
+
+function drawEnemy(enemy){
+
+    ctx.save();
+
+
+    ctx.translate(
+        enemy.x,
+        enemy.y
+    );
+
+
+    /*
+       Movimiento diferente
+       para cada tipo
+    */
+
+    if(enemy.type==="normal"){
+
+        enemy.wave += .035;
+
+    }
+
+
+    if(enemy.type==="fast"){
+
+        enemy.wave += .09;
+
+    }
+
+
+    if(enemy.type==="giant"){
+
+        enemy.wave += .025;
+
+    }
+
+
+    const wobble=
+        Math.sin(
+            enemy.wave
+        );
+
+
+    ctx.rotate(
+        wobble*.18
+    );
+
+
+    ctx.shadowColor=
+        enemy.type==="fast"
+        ? "#00ffff"
+        : enemy.type==="giant"
+        ? "#ff5500"
+        : "#ffe000";
+
+
+    ctx.shadowBlur=18;
+
+
+    ctx.font=
+        enemy.size+
+        "px Arial";
+
+
+    ctx.textAlign=
+        "center";
+
+
+    ctx.textBaseline=
+        "middle";
+
+
+    /*
+       Emoji diferente según
+       el tipo.
+    */
+
+    if(
+        enemy.type==="normal"
+    ){
+
+        ctx.fillText(
+            "🌽",
+            0,
+            0
+        );
+
+    }
+
+
+    else if(
+        enemy.type==="fast"
+    ){
+
+        ctx.fillText(
+            "⚡🌽",
+            0,
+            0
+        );
+
+    }
+
+
+    else{
+
+        ctx.fillText(
+            "👑🌽",
+            0,
+            0
+        );
+
+    }
+
+
+    /*
+       Barra de vida del gigante
+    */
+
+    if(
+        enemy.type==="giant"
+    ){
+
+        const barWidth=65;
+
+
+        ctx.fillStyle=
+            "rgba(0,0,0,.7)";
+
+
+        ctx.fillRect(
+            -barWidth/2,
+            -45,
+            barWidth,
+            7
+        );
+
+
+        ctx.fillStyle=
+            "#ff4444";
+
+
+        ctx.fillRect(
+            -barWidth/2,
+            -45,
+            barWidth*
+            (enemy.hp/
+             enemy.maxHp),
+            7
+        );
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+
+/* =========================
+   ACTUALIZAR
+========================= */
+
+function update(delta){
+
+    /*
+       MOVIMIENTO GALLINA
+    */
+
+    if(keys.left){
+
+        chicken.x -=
+            chicken.speed*
+            delta;
+
+    }
+
+
+    if(keys.right){
+
+        chicken.x +=
+            chicken.speed*
+            delta;
+
+    }
+
+
+    chicken.x=
+        Math.max(
+            40,
+            Math.min(
+                width-40,
+                chicken.x
+            )
+        );
+
+
+
+    /*
+       POLLITOS
+    */
+
+    for(
+        let i=bullets.length-1;
+        i>=0;
+        i--
+    ){
+
+        const bullet=
+            bullets[i];
+
+
+        bullet.y -=
+            bullet.speed*
+            delta;
+
+
+        if(
+            bullet.y<
+            -50
+        ){
+
+            bullets.splice(
+                i,
+                1
+            );
+
+        }
+
+    }
+
+
+
+    /*
+       MAÍCES
+    */
+
+    for(
+        let i=enemies.length-1;
+        i>=0;
+        i--
+    ){
+
+        const enemy=
+            enemies[i];
+
+
+        /*
+           Movimiento lateral
+        */
+
+        if(
+            enemy.type==="fast"
+        ){
+
+            enemy.x +=
+                Math.sin(
+                    enemy.wave
+                )*
+                90*
+                delta;
+
+        }
+
+        else if(
+            enemy.type==="giant"
+        ){
+
+            enemy.x +=
+                Math.sin(
+                    enemy.wave
+                )*
+                25*
+                delta;
+
+        }
+
+        else{
+
+            enemy.x +=
+                Math.sin(
+                    enemy.wave
+                )*
+                40*
+                delta;
+
+        }
+
+
+        enemy.y +=
+            enemy.speed*
+            delta;
+
+
+
+        /*
+           Rebote lateral
+        */
+
+        if(
+            enemy.x <
+            enemy.size
+        ){
+
+            enemy.x=
+                enemy.size;
+
+        }
+
+
+        if(
+            enemy.x >
+            width-enemy.size
+        ){
+
+            enemy.x=
+                width-enemy.size;
+
+        }
+
+
+
+        /*
+           MAÍZ QUE ESCAPA
+        */
+
+        if(
+            enemy.y>
+            height+70
+        ){
+
+            enemies.splice(
+                i,
+                1
+            );
+
+
+            lives--;
+
+            livesText.textContent=
+                lives;
+
+
+            if(
+                lives<=0
+            ){
+
+                gameOver();
+
+            }
+
+        }
+
+    }
+
+
+
+    /*
+       COLISIONES
+    */
+
+    for(
+        let i=bullets.length-1;
+        i>=0;
+        i--
+    ){
+
+        const bullet=
+            bullets[i];
+
+
+        for(
+            let j=enemies.length-1;
+            j>=0;
+            j--
+        ){
+
+            const enemy=
+                enemies[j];
+
+
+            const dx=
+                bullet.x-
+                enemy.x;
+
+
+            const dy=
+                bullet.y-
+                enemy.y;
+
+
+            const distance=
+                Math.sqrt(
+                    dx*dx+
+                    dy*dy
+                );
+
+
+            if(
+                distance<
+                enemy.size*.55
+            ){
+
+                /*
+                   Gigante:
+                   necesita 2 impactos
+                */
+
+                if(
+                    enemy.type==="giant"
+                ){
+
+                    enemy.hp--;
+
+
+                    bullets.splice(
+                        i,
+                        1
+                    );
+
+
+                    if(
+                        enemy.hp<=0
+                    ){
+
+                        explode(
+                            enemy.x,
+                            enemy.y
+                        );
+
+
+                        enemies.splice(
+                            j,
+                            1
+                        );
+
+
+                        score+=
+                            enemy.points;
+
+                    }
+
+                    else{
+
+                        /*
+                           Pequeña explosión
+                           cuando recibe
+                           el primer golpe
+                        */
+
+                        explode(
+                            enemy.x,
+                            enemy.y
+                        );
+
+                    }
+
+                }
+
+
+                else{
+
+                    explode(
+                        enemy.x,
+                        enemy.y
+                    );
+
+
+                    bullets.splice(
+                        i,
+                        1
+                    );
+
+
+                    enemies.splice(
+                        j,
+                        1
+                    );
+
+
+                    score+=
+                        enemy.points;
+
+                }
+
+
+                scoreText.textContent=
+                    score;
+
+
+                break;
+
+            }
+
+        }
+
+    }
+
+
+
+    /*
+       EXPLOSIONES
+    */
+
+    for(
+        let i=explosions.length-1;
+        i>=0;
+        i--
+    ){
+
+        const particle=
+            explosions[i];
+
+
+        particle.x +=
+            particle.vx*
+            delta;
+
+
+        particle.y +=
+            particle.vy*
+            delta;
+
+
+        particle.life -=
+            delta*1.8;
+
+
+        if(
+            particle.life<=0
+        ){
+
+            explosions.splice(
+                i,
+                1
+            );
+
+        }
+
+    }
+
+}
+
+
+
+/* =========================
+   EXPLOSIONES
+========================= */
+
+function drawExplosions(){
+
+    for(
+        const p of explosions
+    ){
+
+        ctx.globalAlpha=
+            Math.max(
+                0,
+                p.life
+            );
+
+
+        ctx.fillStyle=
+            "#ffd600";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
+
+        ctx.fill();
+
+    }
+
+
+    ctx.globalAlpha=1;
+
+}
+
+
+
+/* =========================
+   LOOP
+========================= */
+
+function gameLoop(time){
+
+    if(
+        !gameRunning
+    ){
+
+        return;
+
+    }
+
+
+    const delta=
+        Math.min(
+            (time-lastTime)/
+            1000,
+            .035
+        );
+
+
+    lastTime=time;
+
+
+    drawStars(delta);
+
+
+    update(delta);
+
+
+
+    /*
+       APARICIÓN DE MAÍCES
+    */
+
+    enemyTimer-=delta;
+
+
+    if(
+        enemyTimer<=0
+    ){
+
+        createEnemy();
+
+
+        /*
+           Aumenta la dificultad
+        */
+
+        enemyTimer=
+            Math.max(
+                .35,
+                1.1-
+                score/1500
+            );
+
+    }
+
+
+
+    /*
+       DIBUJAR
+    */
+
+    for(
+        const enemy of enemies
+    ){
+
+        drawEnemy(enemy);
+
+    }
+
+
+    for(
+        const bullet of bullets
+    ){
+
+        drawBullet(bullet);
+
+    }
+
+
+    drawExplosions();
+
+    drawChicken();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+
+/* =========================
+   INICIAR
+========================= */
+
+function startGame(){
+
+    resetGame();
+
+
+    menu.classList.add(
+        "hidden"
+    );
+
+
+    controls.classList.remove(
+        "hidden"
+    );
+
+
+    gameRunning=true;
+
+
+    lastTime=
+        performance.now();
+
+
+    enemyTimer=.5;
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function gameOver(){
+
+    gameRunning=false;
+
+
+    controls.classList.add(
+        "hidden"
+    );
+
+
+    menu.classList.remove(
+        "hidden"
+    );
+
+
+    menu.querySelector(
+        ".chickenTitle"
+    ).textContent=
+        "💥🌽";
+
+
+    menu.querySelector(
+        "h1"
+    ).textContent=
+        "¡SE ACABÓ EL MAÍZ!";
+
+
+    menu.querySelector(
+        "p"
+    ).innerHTML=
+        "La invasión ganó esta vez.<br><br>"+
+        "Puntaje: "+
+        score+
+        " ⭐";
+
+
+    startButton.textContent=
+        "🐔 ¡REVANCHA!";
+
+}
+
+
+
+/* =========================
+   TECLADO
+========================= */
+
+window.addEventListener(
+    "keydown",
+    function(e){
+
+        if(
+            e.key==="ArrowLeft" ||
+            e.key.toLowerCase()==="a"
+        ){
+
+            keys.left=true;
+
+        }
+
+
+        if(
+            e.key==="ArrowRight" ||
+            e.key.toLowerCase()==="d"
+        ){
+
+            keys.right=true;
+
+        }
+
+
+        if(
+            e.code==="Space"
+        ){
+
+            e.preventDefault();
+
+            shoot();
+
+        }
+
+    }
+);
+
+
+
+window.addEventListener(
+    "keyup",
+    function(e){
+
+        if(
+            e.key==="ArrowLeft" ||
+            e.key.toLowerCase()==="a"
+        ){
+
+            keys.left=false;
+
+        }
+
+
+        if(
+            e.key==="ArrowRight" ||
+            e.key.toLowerCase()==="d"
+        ){
+
+            keys.right=false;
+
+        }
+
+    }
+);
+
+
+
+/* =========================
+   BOTONES CELULAR
+========================= */
+
+function holdButton(
+    button,
+    action
+){
+
+    button.addEventListener(
+        "pointerdown",
+        function(e){
+
+            e.preventDefault();
+
+            action(true);
+
+        }
+    );
+
+
+    button.addEventListener(
+        "pointerup",
+        function(e){
+
+            e.preventDefault();
+
+            action(false);
+
+        }
+    );
+
+
+    button.addEventListener(
+        "pointercancel",
+        function(){
+
+            action(false);
+
+        }
+    );
+
+}
+
+
+
+holdButton(
+
+    document.getElementById(
+        "left"
+    ),
+
+    value=>{
+
+        keys.left=value;
+
+    }
+
+);
+
+
+
+holdButton(
+
+    document.getElementById(
+        "right"
+    ),
+
+    value=>{
+
+        keys.right=value;
+
+    }
+
+);
+
+
+
+document
+    .getElementById("fire")
+    .addEventListener(
+        "pointerdown",
+        function(e){
+
+            e.preventDefault();
+
+            shoot();
+
+        }
+    );
+
+
+
+startButton.addEventListener(
+    "click",
+    startGame
+);
+
+
+</script>
+
+</body>
+</html>
