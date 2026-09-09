@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gallina Robótica vs Maíces Malvados</title>
+    <title>Nave Gallina vs Maíces Malvados</title>
     <style>
         * {
             box-sizing: border-box;
@@ -161,15 +161,15 @@
 
         <!-- Pantalla de Inicio -->
         <div id="startScreen" class="screen-overlay">
-            <h1>🤖🐔 Robo-Gallina vs Maíces</h1>
-            <p>¡Usa el botón espacial 🚀 para lanzar pollitos cibernéticos contra los malvados maíces!</p>
-            <button class="btn" id="startBtn">¡Iniciar Combate!</button>
+            <h1>🐔 Nave Gallina Espacial</h1>
+            <p>¡Pilota la nave con forma de gallina y defiende el espacio de los maíces malvados!</p>
+            <button class="btn" id="startBtn">¡Despegar!</button>
         </div>
 
         <!-- Pantalla de Game Over -->
         <div id="gameOverScreen" class="screen-overlay" style="display: none;">
-            <h1>¡Sistema Destruido!</h1>
-            <p>Los maíces malvados invadieron la base.<br>Puntuación final: <strong id="finalScore">0</strong></p>
+            <h1>¡Nave Destruida!</h1>
+            <p>Los maíces conquistaron el sector.<br>Puntuación final: <strong id="finalScore">0</strong></p>
             <button class="btn" id="restartBtn">Reintentar</button>
         </div>
     </div>
@@ -188,8 +188,8 @@
         const player = {
             x: canvas.width / 2 - 25,
             y: canvas.height - 90,
-            width: 52,
-            height: 52,
+            width: 50,
+            height: 50,
             speed: 6.5
         };
 
@@ -197,7 +197,6 @@
         let enemies = [];
         let stars = [];
 
-        // Inicializar estrellas de fondo
         for (let i = 0; i < 40; i++) {
             stars.push({
                 x: Math.random() * canvas.width,
@@ -299,13 +298,11 @@
             if (player.x < 10) player.x = 10;
             if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
 
-            // Mover estrellas de fondo
             for (let s of stars) {
                 s.y += s.speed;
                 if (s.y > canvas.height) s.y = 0;
             }
 
-            // Actualizar proyectiles
             for (let i = bullets.length - 1; i >= 0; i--) {
                 bullets[i].y -= bullets[i].speed;
                 if (bullets[i].y < -20) bullets.splice(i, 1);
@@ -317,11 +314,10 @@
                 enemySpawnInterval = 0;
             }
 
-            // Actualizar enemigos
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += enemies[i].speed;
                 enemies[i].wobble += 0.05;
-                enemies[i].x += Math.sin(enemies[i].wobble) * 0.8; // Pequeño movimiento lateral malvado
+                enemies[i].x += Math.sin(enemies[i].wobble) * 0.8;
 
                 if (enemies[i].y > canvas.height) {
                     enemies.splice(i, 1);
@@ -368,40 +364,146 @@
             document.getElementById('livesVal').textContent = hearts.trim();
         }
 
+        function drawChickenShip(x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Propulsor trasero de la nave
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(15, 38, 8, 12);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(17, 42, 4, 8);
+
+            // Cuerpo principal de la nave (metálico/blanco de gallina)
+            ctx.fillStyle = '#f8fafc';
+            ctx.beginPath();
+            ctx.ellipse(25, 25, 18, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Alas espaciales laterales
+            ctx.fillStyle = '#94a3b8';
+            ctx.beginPath();
+            ctx.moveTo(5, 25);
+            ctx.lineTo(-5, 35);
+            ctx.lineTo(10, 30);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(45, 25);
+            ctx.lineTo(55, 35);
+            ctx.lineTo(40, 30);
+            ctx.fill();
+
+            // Cabeza de la gallina
+            ctx.fillStyle = '#fef08a';
+            ctx.beginPath();
+            ctx.arc(25, 12, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cresta roja en la cabeza
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(21, 2, 4, 0, Math.PI * 2);
+            ctx.arc(27, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pico de la nave (hacia arriba, listo para disparar)
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath();
+            ctx.moveTo(22, 10);
+            ctx.lineTo(28, 10);
+            ctx.lineTo(25, 3);
+            ctx.fill();
+
+            // Ojos cibernéticos decididos
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(20, 10, 3, 4);
+            ctx.fillRect(27, 10, 3, 4);
+
+            ctx.restore();
+        }
+
+        function drawEvilCorn(x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Cuerpo del maíz (amarillo/naranja malvado)
+            ctx.fillStyle = '#eab308';
+            ctx.beginPath();
+            ctx.roundRect(4, 4, 40, 44, [14, 14, 20, 20]);
+            ctx.fill();
+            ctx.strokeStyle = '#a16207';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Hojas espaciales inferiores estilo armadura malvada
+            ctx.fillStyle = '#15803d';
+            ctx.beginPath();
+            ctx.moveTo(4, 30);
+            ctx.lineTo(-4, 48);
+            ctx.lineTo(16, 40);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(44, 30);
+            ctx.lineTo(52, 48);
+            ctx.lineTo(32, 40);
+            ctx.fill();
+
+            // Ojos furiosos
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(12, 16, 8, 6);
+            ctx.fillRect(28, 16, 8, 6);
+            // Pupilas negras con enojo
+            ctx.fillStyle = '#000';
+            ctx.fillRect(16, 17, 3, 4);
+            ctx.fillRect(30, 17, 3, 4);
+
+            // Cejas enojadas
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(10, 14); ctx.lineTo(22, 19);
+            ctx.moveTo(38, 14); ctx.lineTo(26, 19);
+            ctx.stroke();
+
+            // Boca malvada con sonrisa siniestra
+            ctx.fillStyle = '#78350f';
+            ctx.beginPath();
+            ctx.fillRect(16, 32, 16, 6);
+            // Dientes afilados
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(18, 32, 3, 3);
+            ctx.fillRect(27, 32, 3, 3);
+
+            ctx.restore();
+        }
+
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Dibujar fondo estelar dinámico
             ctx.fillStyle = '#334155';
             for (let s of stars) {
                 ctx.fillRect(s.x, s.y, s.size, s.size);
             }
 
-            // Dibujar Propulsor de la Robo-Gallina
-            ctx.fillStyle = '#38bdf8';
-            ctx.fillRect(player.x + 14, player.y + 44, 8, 10);
-            ctx.fillRect(player.x + 30, player.y + 44, 8, 10);
+            // Dibujar la nave con forma de gallina
+            drawChickenShip(player.x, player.y);
 
-            // Dibujar Nave Robo-Gallina (Estilo cibernético)
-            ctx.font = '44px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🤖🐔', player.x + player.width / 2, player.y + player.height / 2);
-
-            // Proyectiles (Pollitos cibernéticos)
+            // Proyectiles (Pollitos)
             for (let b of bullets) {
                 ctx.font = '22px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
                 ctx.fillText('🐥', b.x + b.width / 2, b.y + b.height / 2);
             }
 
-            // Enemigos (Maíces malvados con rostros furiosos)
+            // Enemigos (Maíces malvados diseñados)
             for (let e of enemies) {
-                ctx.font = '40px sans-serif';
-                ctx.fillText('🌽', e.x + e.width / 2, e.y + e.height / 2);
-                
-                // Añadir una pequeña expresión extra o brillo malvado encima
-                ctx.font = '14px sans-serif';
-                ctx.fillText('💢', e.x + e.width - 10, e.y + 5);
+                drawEvilCorn(e.x, e.y);
             }
         }
 
