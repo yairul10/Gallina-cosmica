@@ -162,7 +162,7 @@
         <!-- Pantalla de Inicio -->
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Nave Gallina Espacial</h1>
-            <p>¡Pilota la nave con forma de gallina y defiende el espacio de los maíces malvados!</p>
+            <p>¡Pilota la nave nodriza con forma de gallina y defiende el espacio de los maíces malvados!</p>
             <button class="btn" id="startBtn">¡Despegar!</button>
         </div>
 
@@ -368,60 +368,58 @@
             ctx.save();
             ctx.translate(x, y);
 
-            // Propulsor trasero de la nave
+            // Fuego del propulsor trasero
             ctx.fillStyle = '#38bdf8';
-            ctx.fillRect(15, 38, 8, 12);
-            ctx.fillStyle = '#f59e0b';
-            ctx.fillRect(17, 42, 4, 8);
+            ctx.fillRect(16, 42, 6, 10);
+            ctx.fillStyle = '#fbbf24';
+            ctx.fillRect(18, 45, 2, 6);
 
-            // Cuerpo principal de la nave (metálico/blanco de gallina)
-            ctx.fillStyle = '#f8fafc';
-            ctx.beginPath();
-            ctx.ellipse(25, 25, 18, 22, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#cbd5e1';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Alas espaciales laterales
+            // Alas laterales de la nave espacial (metálicas)
             ctx.fillStyle = '#94a3b8';
             ctx.beginPath();
-            ctx.moveTo(5, 25);
-            ctx.lineTo(-5, 35);
-            ctx.lineTo(10, 30);
+            ctx.moveTo(8, 25);
+            ctx.lineTo(-2, 38);
+            ctx.lineTo(16, 32);
             ctx.fill();
 
             ctx.beginPath();
-            ctx.moveTo(45, 25);
-            ctx.lineTo(55, 35);
-            ctx.lineTo(40, 30);
+            ctx.moveTo(42, 25);
+            ctx.lineTo(52, 38);
+            ctx.lineTo(34, 32);
             ctx.fill();
 
-            // Cabeza de la gallina
-            ctx.fillStyle = '#fef08a';
+            // Fuselaje principal en forma de cuerpo de gallina
+            ctx.fillStyle = '#f8fafc';
             ctx.beginPath();
-            ctx.arc(25, 12, 12, 0, Math.PI * 2);
+            ctx.ellipse(25, 26, 16, 20, 0, 0, Math.PI * 2);
             ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.stroke();
 
-            // Cresta roja en la cabeza
-            ctx.fillStyle = '#ef4444';
+            // Cabina redonda frontal (tipo domo de cristal tecnológico)
+            ctx.fillStyle = '#38bdf8';
             ctx.beginPath();
-            ctx.arc(21, 2, 4, 0, Math.PI * 2);
-            ctx.arc(27, 0, 5, 0, Math.PI * 2);
+            ctx.arc(25, 17, 9, 0, Math.PI * 2);
             ctx.fill();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#0284c7';
+            ctx.stroke();
 
-            // Pico de la nave (hacia arriba, listo para disparar)
+            // Pico de la nave (hacia arriba)
             ctx.fillStyle = '#f97316';
             ctx.beginPath();
-            ctx.moveTo(22, 10);
-            ctx.lineTo(28, 10);
-            ctx.lineTo(25, 3);
+            ctx.moveTo(21, 8);
+            ctx.lineTo(29, 8);
+            ctx.lineTo(25, 0);
             ctx.fill();
 
-            // Ojos cibernéticos decididos
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(20, 10, 3, 4);
-            ctx.fillRect(27, 10, 3, 4);
+            // Cresta galáctica roja arriba
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(22, 2, 3.5, 0, Math.PI * 2);
+            ctx.arc(27, 1, 4.5, 0, Math.PI * 2);
+            ctx.fill();
 
             ctx.restore();
         }
@@ -430,54 +428,56 @@
             ctx.save();
             ctx.translate(x, y);
 
-            // Cuerpo del maíz (amarillo/naranja malvado)
+            // Cuerpo del maíz malvado (amarillo degradado/cálido)
             ctx.fillStyle = '#eab308';
             ctx.beginPath();
-            ctx.roundRect(4, 4, 40, 44, [14, 14, 20, 20]);
+            ctx.roundRect(4, 6, 40, 42, [12, 12, 18, 18]);
             ctx.fill();
-            ctx.strokeStyle = '#a16207';
             ctx.lineWidth = 2;
+            ctx.strokeStyle = '#854d0e';
             ctx.stroke();
 
-            // Hojas espaciales inferiores estilo armadura malvada
-            ctx.fillStyle = '#15803d';
+            // Hojas inferiores verdes puntiagudas (armadura)
+            ctx.fillStyle = '#166534';
             ctx.beginPath();
-            ctx.moveTo(4, 30);
+            ctx.moveTo(4, 32);
             ctx.lineTo(-4, 48);
             ctx.lineTo(16, 40);
             ctx.fill();
 
             ctx.beginPath();
-            ctx.moveTo(44, 30);
+            ctx.moveTo(44, 32);
             ctx.lineTo(52, 48);
             ctx.lineTo(32, 40);
             ctx.fill();
 
-            // Ojos furiosos
-            ctx.fillStyle = '#ef4444';
-            ctx.fillRect(12, 16, 8, 6);
-            ctx.fillRect(28, 16, 8, 6);
-            // Pupilas negras con enojo
-            ctx.fillStyle = '#000';
-            ctx.fillRect(16, 17, 3, 4);
-            ctx.fillRect(30, 17, 3, 4);
+            // Ojos furiosos (rojos)
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(11, 16, 9, 6);
+            ctx.fillRect(28, 16, 9, 6);
+            
+            // Pupilas negras enojadas
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(15, 17, 3, 4);
+            ctx.fillRect(31, 17, 3, 4);
 
-            // Cejas enojadas
-            ctx.strokeStyle = '#000';
+            // Cejas fruncidas
+            ctx.strokeStyle = '#000000';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(10, 14); ctx.lineTo(22, 19);
-            ctx.moveTo(38, 14); ctx.lineTo(26, 19);
+            ctx.moveTo(9, 13); ctx.lineTo(22, 18);
+            ctx.moveTo(39, 13); ctx.lineTo(26, 18);
             ctx.stroke();
 
-            // Boca malvada con sonrisa siniestra
-            ctx.fillStyle = '#78350f';
+            // Boca malvada con dientes afilados
+            ctx.fillStyle = '#451a03';
             ctx.beginPath();
-            ctx.fillRect(16, 32, 16, 6);
-            // Dientes afilados
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(18, 32, 3, 3);
-            ctx.fillRect(27, 32, 3, 3);
+            ctx.fillRect(14, 32, 20, 7);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(16, 32, 3, 3);
+            ctx.fillRect(22, 32, 3, 3);
+            ctx.fillRect(28, 32, 3, 3);
 
             ctx.restore();
         }
@@ -490,10 +490,10 @@
                 ctx.fillRect(s.x, s.y, s.size, s.size);
             }
 
-            // Dibujar la nave con forma de gallina
+            // Dibuja la nave de gallina real
             drawChickenShip(player.x, player.y);
 
-            // Proyectiles (Pollitos)
+            // Proyectiles (Pollitos tiernos saliendo disparados)
             for (let b of bullets) {
                 ctx.font = '22px sans-serif';
                 ctx.textAlign = 'center';
@@ -501,7 +501,7 @@
                 ctx.fillText('🐥', b.x + b.width / 2, b.y + b.height / 2);
             }
 
-            // Enemigos (Maíces malvados diseñados)
+            // Enemigos (Maíces malvados dibujados)
             for (let e of enemies) {
                 drawEvilCorn(e.x, e.y);
             }
