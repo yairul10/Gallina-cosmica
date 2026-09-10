@@ -72,6 +72,9 @@
         #trophiesVal {
             margin-left: 6px;
             letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .controls-hud {
@@ -300,11 +303,17 @@
         canvas.width = 420;
         canvas.height = 640;
 
+        // --- SISTEMA DE AUDIO ---
+        const bgMusic = new Audio('assets/musica_retro.mp3');
+        bgMusic.loop = true;
+        bgMusic.volume = 0.4; // Volumen balanceado para que no sature
+
         const assets = {
             gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(),
             maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(),
             balaPollito: new Image(), balaLana: new Image(), balaHerradura: new Image(), balaLeche: new Image(),
-            balaJefe: new Image()
+            balaJefe: new Image(),
+            trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image()
         };
         
         assets.gallina.src = 'assets/gallina.png';
@@ -319,6 +328,10 @@
         assets.balaHerradura.src = 'assets/bala_herradura.png';
         assets.balaLeche.src = 'assets/bala_leche.png';
         assets.balaJefe.src = 'assets/bala_jefe.png';
+        assets.trofeoPollito.src = 'assets/trofeo_pollito.png';
+        assets.trofeoLana.src = 'assets/trofeo_lana.png';
+        assets.trofeoHerradura.src = 'assets/trofeo_herradura.png';
+        assets.trofeoLeche.src = 'assets/trofeo_leche.png';
 
         let score = 0;
         let coins = 0;
@@ -331,6 +344,7 @@
         let gotTrophy100k = false;
         let gotTrophy200k = false;
         let toastIcon = "";
+        let toastImg = null;
         let toastTimer = 0;
         
         let evolutionStage = 0; 
@@ -557,17 +571,25 @@
             } else { evolveBtn.style.display = 'none'; }
         }
 
-        function showTrophyToast(icon) {
+        function showTrophyToast(icon, imgObj) {
             toastIcon = icon;
+            toastImg = imgObj;
             toastTimer = 180; 
+        }
+
+        function getTrophyHTML(imgObj, emoji) {
+            if (imgObj.complete && imgObj.naturalWidth > 0) {
+                return `<img src="${imgObj.src}" style="height:18px; margin-left:4px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.5));">`;
+            }
+            return `<span style="margin-left:4px;">${emoji}</span>`;
         }
 
         function updateTrophiesHUD() {
             let html = "";
-            if (gotTrophy20k) html += "🥉🐥 ";
-            if (gotTrophy50k) html += "🥈🧶 ";
-            if (gotTrophy100k) html += "🏅🧲 ";
-            if (gotTrophy200k) html += "🏆🥛";
+            if (gotTrophy20k) html += getTrophyHTML(assets.trofeoPollito, "🥉🐥");
+            if (gotTrophy50k) html += getTrophyHTML(assets.trofeoLana, "🥈🧶");
+            if (gotTrophy100k) html += getTrophyHTML(assets.trofeoHerradura, "🏅🧲");
+            if (gotTrophy200k) html += getTrophyHTML(assets.trofeoLeche, "🏆🥛");
             document.getElementById('trophiesVal').innerHTML = html;
         }
 
@@ -575,8 +597,6 @@
             if (boss) return;
             const size = 48;
             const x = Math.random() * (canvas.width - size - 20) + 10;
-            
-            // --- VELOCIDAD ORIGINAL RESTAURADA ---
             let speedMultiplier = 1 + (gameTime / 30); 
             let baseCornHp = evolutionStage >= 3 ? 3 : 1;
 
@@ -590,7 +610,6 @@
             let bossLevel = Math.floor(score / 5000);
             let bossHp = 60 + (bossLevel * 45);
 
-            // --- VELOCIDAD ORIGINAL RESTAURADA ---
             boss = {
                 x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp,
                 speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0
@@ -612,6 +631,9 @@
         });
 
         function startGame() {
+            // Reproducir música y manejar error si falla
+            bgMusic.play().catch(e => console.log("A la espera de interacción del usuario para reproducir audio."));
+
             score = 0; coins = 0; lives = 3; gameTime = 0;
             bullets = []; enemies = []; bossBullets = []; boss = null;
             evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000;
@@ -644,6 +666,8 @@
 
         function gameOver() {
             gameState = 'GAMEOVER';
+            bgMusic.pause();
+            bgMusic.currentTime = 0;
             clearInterval(window.gameTimerInterval);
             document.getElementById('finalScore').textContent = score;
             renderLeaderboard('endLeaderboardList');
@@ -655,16 +679,16 @@
             if (gameState !== 'PLAYING') return;
 
             if (score >= 20000 && !gotTrophy20k) {
-                gotTrophy20k = true; showTrophyToast("🥉🐥"); updateTrophiesHUD();
+                gotTrophy20k = true; showTrophyToast("🥉🐥", assets.trofeoPollito); updateTrophiesHUD();
             }
             if (score >= 50000 && !gotTrophy50k) {
-                gotTrophy50k = true; showTrophyToast("🥈🧶"); updateTrophiesHUD();
+                gotTrophy50k = true; showTrophyToast("🥈🧶", assets.trofeoLana); updateTrophiesHUD();
             }
             if (score >= 100000 && !gotTrophy100k) {
-                gotTrophy100k = true; showTrophyToast("🏅🧲"); updateTrophiesHUD();
+                gotTrophy100k = true; showTrophyToast("🏅🧲", assets.trofeoHerradura); updateTrophiesHUD();
             }
             if (score >= 200000 && !gotTrophy200k) {
-                gotTrophy200k = true; showTrophyToast("🏆🥛"); updateTrophiesHUD();
+                gotTrophy200k = true; showTrophyToast("🏆🥛", assets.trofeoLeche); updateTrophiesHUD();
             }
 
             if (score >= nextBossScoreThreshold && !boss) {
@@ -713,7 +737,6 @@
 
             if (!boss) {
                 enemySpawnInterval++;
-                // --- VELOCIDAD ORIGINAL RESTAURADA ---
                 let spawnLimit = Math.max(20, 45 - Math.floor(gameTime / 10)); 
                 if (enemySpawnInterval > spawnLimit) {
                     spawnEnemy();
@@ -913,15 +936,20 @@
             if (toastTimer > 0) {
                 ctx.save();
                 ctx.globalAlpha = Math.min(1, toastTimer / 30); 
-                ctx.font = '80px sans-serif'; 
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
-                ctx.shadowBlur = 20;
-                
                 let floatY = 180 - ((180 - toastTimer) * 0.3); 
-                
-                ctx.fillText(toastIcon, canvas.width / 2, floatY);
+
+                if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) {
+                    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+                    ctx.shadowBlur = 20;
+                    ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80);
+                } else {
+                    ctx.font = '80px sans-serif'; 
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+                    ctx.shadowBlur = 20;
+                    ctx.fillText(toastIcon, canvas.width / 2, floatY);
+                }
                 ctx.restore();
                 toastTimer--;
             }
