@@ -78,11 +78,11 @@
             gap: 4px;
         }
 
-        /* --- NUEVO ESTILO DE BOTONES FLOTANTES (HUD) --- */
+        /* --- HUD MEJORADO Y REDUCIDO --- */
         .draggable-btn {
             position: absolute;
-            width: 65px;
-            height: 65px;
+            width: 45px; /* Tamaño reducido al ~50% visualmente */
+            height: 45px;
             background: rgba(15, 23, 42, 0.65);
             backdrop-filter: blur(4px);
             border: 2px solid rgba(56, 189, 248, 0.5);
@@ -93,7 +93,7 @@
             justify-content: center;
             pointer-events: auto;
             touch-action: none;
-            z-index: 5;
+            z-index: 20; /* Soluciona el problema de arrastre elevándolos por encima de la pausa */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
             transition: transform 0.08s;
             cursor: pointer;
@@ -103,7 +103,6 @@
             transform: scale(0.9);
         }
 
-        /* Efecto cuando el juego está pausado (Modo Edición) */
         .draggable-btn.paused {
             border: 2px dashed #fbbf24;
             background: rgba(15, 23, 42, 0.85);
@@ -113,45 +112,43 @@
 
         @keyframes pulsePause {
             0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
 
-        /* Estilo interior de los botones */
         .hud-cost {
             position: absolute;
-            top: -6px;
-            right: -6px;
+            top: -4px;
+            right: -4px;
             background: #b91c1c;
             color: white;
-            font-size: 0.65rem;
+            font-size: 0.55rem;
             font-weight: bold;
-            padding: 2px 5px;
+            padding: 1px 4px;
             border-radius: 8px;
             border: 1px solid #fee2e2;
             box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .hud-emoji {
-            font-size: 1.6rem;
+            font-size: 1.1rem;
             line-height: 1;
-            margin-top: 4px;
-        }
-
-        .hud-lvl {
-            font-size: 0.65rem;
-            font-weight: 800;
-            color: #e2e8f0;
             margin-top: 2px;
         }
 
-        /* Botón de disparo personalizado */
+        .hud-lvl {
+            font-size: 0.5rem;
+            font-weight: 800;
+            color: #e2e8f0;
+            margin-top: 0;
+        }
+
         #fireBtn {
             background: linear-gradient(135deg, rgba(239, 68, 68, 0.75), rgba(185, 28, 28, 0.75));
             border-color: rgba(254, 226, 226, 0.6);
         }
         #fireBtn .hud-emoji {
-            font-size: 1.8rem;
+            font-size: 1.3rem;
             margin-top: 0;
         }
         /* ----------------------------------------------- */
@@ -170,7 +167,7 @@
             text-align: center;
             padding: 24px;
             pointer-events: auto;
-            z-index: 10;
+            z-index: 10; /* La pausa queda debajo de los botones ahora */
         }
 
         .screen-overlay h1 {
@@ -286,7 +283,7 @@
                 </div>
             </div>
 
-            <!-- Botones Flotantes Arrastrables -->
+            <!-- Botones Flotantes Arrastrables Reducidos -->
             <div id="hud-bullets" class="draggable-btn" data-type="bullets">
                 <div class="hud-cost">🪙6</div>
                 <div class="hud-emoji">⚔️</div>
@@ -299,7 +296,6 @@
                 <div class="hud-lvl">Lv.1</div>
             </div>
             
-            <!-- Este botón cambiará dinámicamente entre Vida ❤️ y Evolución 🌟 -->
             <div id="hud-life-evolve" class="draggable-btn" data-type="btn3">
                 <div class="hud-cost">🪙15</div>
                 <div class="hud-emoji">❤️</div>
@@ -326,7 +322,7 @@
 
         <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.85);">
             <h1 style="margin-bottom: 8px;">⏸️ Pausa</h1>
-            <p style="color:#fbbf24; margin-bottom: 24px;">Puedes arrastrar y organizar<br>tus botones ahora mismo.</p>
+            <p style="color:#fbbf24; margin-bottom: 24px;">Puedes arrastrar y organizar<br>tus botones libremente.</p>
             <button class="btn" id="resumeBtn">▶️ Reanudar</button>
             <button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button>
         </div>
@@ -359,9 +355,10 @@
         canvas.width = 420;
         canvas.height = 640;
 
-        // --- SISTEMA DE POSICIÓN GUARDADA DE BOTONES (MODO EDICIÓN) ---
+        // --- SISTEMA DE POSICIÓN GUARDADA ---
         function loadHudPositions() {
-            const saved = JSON.parse(localStorage.getItem('farm_space_hud_v2'));
+            // Clave nueva v3 para forzar el reinicio de las coordenadas y el tamaño
+            const saved = JSON.parse(localStorage.getItem('farm_space_hud_v3'));
             if (saved) {
                 ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'fireBtn'].forEach(id => {
                     if(saved[id]) {
@@ -370,18 +367,18 @@
                     }
                 });
             } else {
-                // Posiciones originales por defecto
+                // Nuevas posiciones por defecto: más altas y separadas
                 document.getElementById('hud-bullets').style.left = '16px';
-                document.getElementById('hud-bullets').style.top = '360px';
+                document.getElementById('hud-bullets').style.top = '140px';
                 
                 document.getElementById('hud-speed').style.left = '16px';
-                document.getElementById('hud-speed').style.top = '440px';
+                document.getElementById('hud-speed').style.top = '200px';
                 
                 document.getElementById('hud-life-evolve').style.left = '16px';
-                document.getElementById('hud-life-evolve').style.top = '520px';
+                document.getElementById('hud-life-evolve').style.top = '260px';
                 
-                document.getElementById('fireBtn').style.left = '334px'; // 420 - 70 - 16
-                document.getElementById('fireBtn').style.top = '520px';
+                document.getElementById('fireBtn').style.left = '350px'; 
+                document.getElementById('fireBtn').style.top = '560px';
             }
         }
 
@@ -391,10 +388,10 @@
                 const el = document.getElementById(id);
                 positions[id] = { left: el.style.left, top: el.style.top };
             });
-            localStorage.setItem('farm_space_hud_v2', JSON.stringify(positions));
+            localStorage.setItem('farm_space_hud_v3', JSON.stringify(positions));
         }
 
-        loadHudPositions(); // Cargar al abrir el juego
+        loadHudPositions();
 
         // --- SISTEMA DE AUDIO ---
         const playlist = [
@@ -422,7 +419,7 @@
             e.target.textContent = bgMusic.muted ? '🔇 Activar Música' : '🔊 Silenciar Música';
         });
 
-        // --- SISTEMA DE PAUSA Y DRAG AND DROP ---
+        // --- SISTEMA DE PAUSA ---
         document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => {
             e.stopPropagation();
             if (gameState === 'PLAYING') {
@@ -430,9 +427,8 @@
                 bgMusic.pause();
                 document.getElementById('pauseScreen').style.display = 'flex';
                 
-                // Activar modo edición en botones
                 document.querySelectorAll('.draggable-btn').forEach(b => b.classList.add('paused'));
-                isDraggingShip = false; // Detener nave
+                isDraggingShip = false; 
                 dragPointerId = null;
             }
         });
@@ -444,7 +440,6 @@
                 if (!bgMusic.muted) { bgMusic.play().catch(e => console.log(e)); }
                 document.getElementById('pauseScreen').style.display = 'none';
                 
-                // Desactivar modo edición
                 document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused'));
             }
         });
@@ -551,7 +546,7 @@
             if (e.code in keys) keys[e.code] = false;
         });
 
-        // --- LÓGICA DE DRAG & DROP (BOTONES) E INTERACCIÓN ---
+        // --- LÓGICA DE DRAG & DROP CORREGIDA ---
         let dragObj = null;
         let dragOffX = 0;
         let dragOffY = 0;
@@ -562,12 +557,10 @@
                 e.preventDefault();
 
                 if (gameState === 'PLAYING') {
-                    // Si estamos jugando, accionamos el botón
                     const type = btn.getAttribute('data-type');
                     if (type === 'fire') {
                         shootBullet();
                     } else if (type === 'btn3') {
-                        // El botón dinámico decide si cura o evoluciona
                         if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) {
                             buyUpgrade('evolve');
                         } else {
@@ -577,12 +570,10 @@
                         buyUpgrade(type);
                     }
                 } else if (gameState === 'PAUSED') {
-                    // Si está en pausa, iniciamos el arrastre
                     dragObj = btn;
                     const rect = btn.getBoundingClientRect();
                     dragOffX = e.clientX - rect.left;
                     dragOffY = e.clientY - rect.top;
-                    btn.style.zIndex = 100; // Traer al frente
                 }
             });
         });
@@ -595,7 +586,6 @@
                 let newX = e.clientX - containerRect.left - dragOffX;
                 let newY = e.clientY - containerRect.top - dragOffY;
                 
-                // Límites para que no se salgan de la pantalla
                 if (newX < 0) newX = 0;
                 if (newY < 0) newY = 0;
                 if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth;
@@ -608,9 +598,8 @@
 
         document.addEventListener('pointerup', (e) => {
             if (dragObj && gameState === 'PAUSED') {
-                dragObj.style.zIndex = 5;
                 dragObj = null;
-                saveHudPositions(); // Guardamos automáticamente al soltar
+                saveHudPositions(); 
             }
         });
 
@@ -716,7 +705,6 @@
         function updateUpgradesHUD() {
             document.getElementById('coinVal').textContent = coins;
 
-            // Actualizar Botón 1: Balas
             const btnBullets = document.getElementById('hud-bullets');
             if (upgrades.bullets >= maxUpgradeLimit) {
                 btnBullets.querySelector('.hud-lvl').textContent = 'MÁX';
@@ -726,7 +714,6 @@
                 btnBullets.querySelector('.hud-cost').style.display = 'block';
             }
 
-            // Actualizar Botón 2: Velocidad
             const btnSpeed = document.getElementById('hud-speed');
             if (upgrades.speed >= maxUpgradeLimit) {
                 btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX';
@@ -736,16 +723,13 @@
                 btnSpeed.querySelector('.hud-cost').style.display = 'block';
             }
 
-            // Actualizar Botón 3: Vida / Evolución
             const btnLifeEvolve = document.getElementById('hud-life-evolve');
             if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) {
-                // MODO EVOLUCIÓN (¡Es Gratis!)
                 btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟';
                 btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.';
                 btnLifeEvolve.querySelector('.hud-cost').style.display = 'none';
                 btnLifeEvolve.style.borderColor = '#fbbf24';
             } else {
-                // MODO VIDA
                 btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️';
                 btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1';
                 btnLifeEvolve.querySelector('.hud-cost').style.display = 'block';
@@ -840,7 +824,6 @@
             document.getElementById('gameOverScreen').style.display = 'none';
             document.getElementById('pauseScreen').style.display = 'none';
             
-            // Asegurarnos de que los botones estén visibles
             document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'flex');
 
             gameState = 'PLAYING';
@@ -859,7 +842,6 @@
             renderLeaderboard('endLeaderboardList');
             document.getElementById('gameOverScreen').style.display = 'flex';
             
-            // Ocultar botones en Game Over para que no estorben
             document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none');
         }
 
