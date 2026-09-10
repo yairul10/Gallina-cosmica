@@ -68,6 +68,11 @@
             border: 1px solid rgba(255,255,255,0.15);
         }
 
+        #trophiesVal {
+            margin-left: 6px;
+            letter-spacing: 2px;
+        }
+
         .controls-hud {
             display: flex;
             justify-content: space-between;
@@ -235,7 +240,7 @@
         
         <div class="ui-layer">
             <div class="header-score">
-                <div>Pts: <span id="scoreVal">0</span> | 🪙 <span id="coinVal">0</span></div>
+                <div>Pts: <span id="scoreVal">0</span> | 🪙 <span id="coinVal">0</span> <span id="trophiesVal"></span></div>
                 <div>Vidas: <span id="livesVal">❤️ ❤️ ❤️</span></div>
             </div>
 
@@ -255,7 +260,7 @@
 
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
-            <p>Mejoras a 6 y 15 monedas. ¡Hasta 8 balas por disparo! Evoluciona hasta la Vaca lechera y compite por el Top 5 de récords.</p>
+            <p>Mejoras a 6🪙. ¡Desbloquea trofeos a los 20k, 50k, 100k y 200k puntos y llega a la nave Vaca!</p>
             
             <div class="leaderboard-box">
                 <h3>🏆 Mejores Récords</h3>
@@ -321,6 +326,14 @@
         let gameTime = 0;
         let gameState = 'START';
         
+        // Trofeos
+        let gotTrophy20k = false;
+        let gotTrophy50k = false;
+        let gotTrophy100k = false;
+        let gotTrophy200k = false;
+        let toastMessage = "";
+        let toastTimer = 0;
+        
         let evolutionStage = 0; 
         let maxUpgradeLimit = 3; 
         let nextBossScoreThreshold = 5000;
@@ -342,7 +355,7 @@
         let stars = [];
 
         let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || [
-            { name: 'PRO', score: 5000 }, { name: 'ANA', score: 3000 }, { name: 'BOB', score: 1500 }
+            { name: 'PRO', score: 200000 }, { name: 'ANA', score: 100000 }, { name: 'BOB', score: 50000 }
         ];
 
         function saveLeaderboard() {
@@ -420,11 +433,8 @@
             if (evolutionStage === 3) bType = 'milk';
 
             let bulletDamage = upgrades.bullets === 0 ? 1 : upgrades.bullets;
-
-            // Determinar cantidad de balas (de 1 a 8 según nivel de mejora)
             let bulletCount = Math.min(8, upgrades.bullets + 1);
 
-            // Configuraciones de desplazamiento horizontal (dx) y posición relativa (offsetX) para hasta 8 proyectiles
             const patterns = {
                 1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }],
                 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 24, offY: -10 }],
@@ -525,6 +535,20 @@
             } else { evolveBtn.style.display = 'none'; }
         }
 
+        function showToast(msg) {
+            toastMessage = msg;
+            toastTimer = 180; // 3 segundos a 60fps
+        }
+
+        function updateTrophiesHUD() {
+            let html = "";
+            if (gotTrophy20k) html += "🥉🐥 ";
+            if (gotTrophy50k) html += "🥈🧶 ";
+            if (gotTrophy100k) html += "🏅🧲 ";
+            if (gotTrophy200k) html += "🏆🥛";
+            document.getElementById('trophiesVal').innerHTML = html;
+        }
+
         function spawnEnemy() {
             if (boss) return;
             const size = 48;
@@ -567,6 +591,10 @@
             bullets = []; enemies = []; bossBullets = []; boss = null;
             evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000;
             upgrades.bullets = 0; upgrades.speed = 1;
+            
+            gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false;
+            updateTrophiesHUD();
+
             player.x = canvas.width / 2 - player.width / 2;
             
             document.getElementById('scoreVal').textContent = score;
@@ -598,6 +626,28 @@
         let enemySpawnInterval = 0;
         function update() {
             if (gameState !== 'PLAYING') return;
+
+            // Revisar Trofeos
+            if (score >= 20000 && !gotTrophy20k) {
+                gotTrophy20k = true;
+                showToast("¡LOGRO: Pollito de Cobre!");
+                updateTrophiesHUD();
+            }
+            if (score >= 50000 && !gotTrophy50k) {
+                gotTrophy50k = true;
+                showToast("¡LOGRO: Lana Plateada!");
+                updateTrophiesHUD();
+            }
+            if (score >= 100000 && !gotTrophy100k) {
+                gotTrophy100k = true;
+                showToast("¡LOGRO: Herradura de Bronce!");
+                updateTrophiesHUD();
+            }
+            if (score >= 200000 && !gotTrophy200k) {
+                gotTrophy200k = true;
+                showToast("¡LOGRO: Leche Dorada!");
+                updateTrophiesHUD();
+            }
 
             if (score >= nextBossScoreThreshold && !boss) {
                 spawnBoss();
@@ -840,6 +890,19 @@
             }
 
             for (let e of enemies) drawEvilCorn(e);
+
+            if (toastTimer > 0) {
+                ctx.save();
+                ctx.fillStyle = `rgba(255, 215, 0, ${Math.min(1, toastTimer / 30)})`; 
+                ctx.font = 'bold 20px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(toastMessage, canvas.width / 2, 120);
+                ctx.restore();
+                toastTimer--;
+            }
         }
 
         function loop() {
