@@ -41,7 +41,7 @@
         .initials-input-container input { background: #1e293b; border: 2px solid #38bdf8; color: #fff; font-size: 1.2rem; text-align: center; width: 60px; padding: 6px; border-radius: 8px; text-transform: uppercase; }
         .icon-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 0 6px; pointer-events: auto; }
 
-        /* --- NUEVO: ESTILOS DE VITRINA DE TROFEOS --- */
+        /* --- ESTILOS DE VITRINA DE TROFEOS --- */
         .trophy-rack { display: flex; gap: 12px; justify-content: center; align-items: center; margin-bottom: 15px; width: 100%; }
         .trophy-item { position: relative; width: 60px; height: 60px; background: rgba(15, 23, 42, 0.8); border: 2px solid #334155; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.1s, border-color 0.2s; }
         .trophy-item:active { transform: scale(0.9); }
@@ -49,7 +49,7 @@
         .trophy-img { width: 40px; height: 40px; object-fit: contain; position: relative; z-index: 2; transition: filter 0.3s; }
         .trophy-locked { filter: grayscale(100%) opacity(30%); }
         .trophy-unlocked { filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.9)); }
-        .trophy-emoji-fallback { position: absolute; font-size: 1.6rem; z-index: 1; opacity: 0.5; }
+        .trophy-emoji-fallback { position: absolute; font-size: 1.6rem; z-index: 1; opacity: 0.5; transition: filter 0.3s; }
     </style>
 </head>
 <body>
@@ -96,26 +96,27 @@
             <button class="btn btn-secondary" id="openTrophiesBtn">🏆 Trofeos</button>
         </div>
 
-        <!-- NUEVA PANTALLA: VITRINA DE TROFEOS -->
+        <!-- PANTALLA: VITRINA DE TROFEOS -->
         <div id="trophiesScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 24px;">🏆 Salón de la Fama</h1>
             
             <div class="trophy-rack">
+                <!-- Se añadió lógica para ocultar el emoji si la imagen carga correctamente -->
                 <div class="trophy-item" data-id="20k" onclick="showTrophyInfo('20k')">
-                    <span class="trophy-emoji-fallback">🐥</span>
-                    <img src="assets/trofeo_pollito.png" id="img-t20k" class="trophy-img" onerror="this.style.display='none'">
+                    <span id="fall-20k" class="trophy-emoji-fallback">🥉</span>
+                    <img src="assets/trofeo_pollito.png" id="img-t20k" class="trophy-img" onload="document.getElementById('fall-20k').style.display='none'" onerror="this.style.display='none'">
                 </div>
                 <div class="trophy-item" data-id="50k" onclick="showTrophyInfo('50k')">
-                    <span class="trophy-emoji-fallback">🧶</span>
-                    <img src="assets/trofeo_lana.png" id="img-t50k" class="trophy-img" onerror="this.style.display='none'">
+                    <span id="fall-50k" class="trophy-emoji-fallback">🥈</span>
+                    <img src="assets/trofeo_lana.png" id="img-t50k" class="trophy-img" onload="document.getElementById('fall-50k').style.display='none'" onerror="this.style.display='none'">
                 </div>
                 <div class="trophy-item" data-id="100k" onclick="showTrophyInfo('100k')">
-                    <span class="trophy-emoji-fallback">🧲</span>
-                    <img src="assets/trofeo_herradura.png" id="img-t100k" class="trophy-img" onerror="this.style.display='none'">
+                    <span id="fall-100k" class="trophy-emoji-fallback">🏅</span>
+                    <img src="assets/trofeo_herradura.png" id="img-t100k" class="trophy-img" onload="document.getElementById('fall-100k').style.display='none'" onerror="this.style.display='none'">
                 </div>
                 <div class="trophy-item" data-id="200k" onclick="showTrophyInfo('200k')">
-                    <span class="trophy-emoji-fallback">🥛</span>
-                    <img src="assets/trofeo_leche.png" id="img-t200k" class="trophy-img" onerror="this.style.display='none'">
+                    <span id="fall-200k" class="trophy-emoji-fallback">🏆</span>
+                    <img src="assets/trofeo_leche.png" id="img-t200k" class="trophy-img" onload="document.getElementById('fall-200k').style.display='none'" onerror="this.style.display='none'">
                 </div>
             </div>
 
@@ -134,6 +135,7 @@
             <button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button>
         </div>
 
+        <!-- PANTALLA GAME OVER CON NUEVO BOTÓN -->
         <div id="gameOverScreen" class="screen-overlay" style="display: none;">
             <h1>¡Nave Destruida!</h1>
             <p>Puntuación final: <strong id="finalScore">0</strong></p>
@@ -150,6 +152,7 @@
                 <div id="endLeaderboardList"></div>
             </div>
             <button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button>
+            <button class="btn btn-secondary" id="mainMenuBtn">Menú Principal</button>
         </div>
     </div>
 
@@ -158,7 +161,6 @@
         const ctx = canvas.getContext('2d');
         canvas.width = 420; canvas.height = 640;
 
-        // --- SISTEMA DE POSICIÓN GUARDADA ---
         function loadHudPositions() {
             const saved = JSON.parse(localStorage.getItem('farm_space_hud_v5'));
             if (saved) {
@@ -185,7 +187,6 @@
         }
         loadHudPositions();
 
-        // --- SISTEMA DE AUDIO ---
         const playlist = ['assets/musica_1.mp3', 'assets/musica_2.mp3', 'assets/musica_3.mp3'];
         let currentTrackIndex = 0;
         const bgMusic = new Audio(playlist[currentTrackIndex]);
@@ -203,7 +204,6 @@
             e.target.textContent = bgMusic.muted ? '🔇 Activar Música' : '🔊 Silenciar Música';
         });
 
-        // --- SISTEMA DE PAUSA ---
         document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => {
             e.stopPropagation();
             if (gameState === 'PLAYING') {
@@ -223,7 +223,6 @@
             }
         });
 
-        // --- MENÚ DE TROFEOS ---
         const trophyData = {
             '20k': { name: '🥉 Pollito de Bronce', req: 20000, key: 't20k' },
             '50k': { name: '🥈 Lana de Plata', req: 50000, key: 't50k' },
@@ -235,10 +234,15 @@
             let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {};
             ['20k', '50k', '100k', '200k'].forEach(id => {
                 let img = document.getElementById(`img-t${id}`);
+                let emoji = document.getElementById(`fall-${id}`);
                 if(pTrophies[trophyData[id].key]) {
                     img.className = 'trophy-img trophy-unlocked';
+                    emoji.style.filter = 'none';
+                    emoji.style.opacity = '1';
                 } else {
                     img.className = 'trophy-img trophy-locked';
+                    emoji.style.filter = 'grayscale(100%)';
+                    emoji.style.opacity = '0.3';
                 }
             });
         }
@@ -277,8 +281,14 @@
             document.getElementById('trophiesScreen').style.display = 'none';
             document.getElementById('startScreen').style.display = 'flex';
         });
+        
+        // --- NUEVO: BOTÓN DE MENÚ PRINCIPAL DESDE GAME OVER ---
+        document.getElementById('mainMenuBtn').addEventListener('click', () => {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'flex';
+            gameState = 'START';
+        });
 
-        // --- ASSETS Y VARIABLES ---
         const assets = {
             gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(),
             maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(),
@@ -321,7 +331,6 @@
         window.addEventListener('keydown', (e) => { if (e.code in keys) keys[e.code] = true; if (e.code === 'Space' && gameState === 'PLAYING') shootBullet(); });
         window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = false; });
 
-        // --- LÓGICA DE DRAG & DROP BOTONES ---
         let dragObj = null; let dragOffX = 0; let dragOffY = 0;
         document.querySelectorAll('.draggable-btn').forEach(btn => {
             btn.addEventListener('pointerdown', (e) => {
@@ -474,7 +483,6 @@
         function update() {
             if (gameState !== 'PLAYING') return;
 
-            // --- LÓGICA DE TROFEOS PERSISTENTES ---
             if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; showTrophyToast("🥉🐥", assets.trofeoPollito); updateTrophiesHUD(); savePersistentTrophy('t20k'); }
             if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; showTrophyToast("🥈🧶", assets.trofeoLana); updateTrophiesHUD(); savePersistentTrophy('t50k'); }
             if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; showTrophyToast("🏅🧲", assets.trofeoHerradura); updateTrophiesHUD(); savePersistentTrophy('t100k'); }
