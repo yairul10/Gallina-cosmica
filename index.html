@@ -41,7 +41,7 @@
             width: 100%;
             height: 100%;
             background: #090d16;
-            touch-action: none; /* Previene comportamientos extraños al deslizar */
+            touch-action: none;
         }
 
         .ui-layer {
@@ -319,7 +319,6 @@
         assets.balaHerradura.src = 'assets/bala_herradura.png';
         assets.balaLeche.src = 'assets/bala_leche.png';
         assets.balaJefe.src = 'assets/bala_jefe.png';
-        // ------------------------------------------
 
         let score = 0;
         let coins = 0;
@@ -332,7 +331,7 @@
         let gotTrophy50k = false;
         let gotTrophy100k = false;
         let gotTrophy200k = false;
-        let toastMessage = "";
+        let toastIcon = "";
         let toastTimer = 0;
         
         let evolutionStage = 0; 
@@ -401,14 +400,13 @@
             if (e.code in keys) keys[e.code] = false;
         });
 
-        // --- NUEVO SISTEMA DE MOVIMIENTO TÁCTIL RELATIVO (DESLIZAR) ---
+        // MOVIMIENTO TÁCTIL RELATIVO
         let isDragging = false;
         let lastTouchX = 0;
 
         canvas.addEventListener('pointerdown', (e) => {
             isDragging = true;
             const rect = canvas.getBoundingClientRect();
-            // Guardamos la posición inicial donde el usuario puso el dedo
             lastTouchX = (e.clientX - rect.left) * (canvas.width / rect.width);
         });
 
@@ -417,28 +415,18 @@
             const rect = canvas.getBoundingClientRect();
             const currentTouchX = (e.clientX - rect.left) * (canvas.width / rect.width);
             
-            // Calculamos cuánto se ha movido el dedo desde el último frame
             const deltaX = currentTouchX - lastTouchX;
-            
-            // Le aplicamos ese movimiento a la nave (más un multiplicador de velocidad si se desea)
-            let speedMultiplier = 1 + (upgrades.speed * 0.15); // La mejora de velocidad también afecta al táctil
+            let speedMultiplier = 1 + (upgrades.speed * 0.15); 
             player.x += deltaX * speedMultiplier;
             
-            // Límites para no salir de la pantalla
             if (player.x < 10) player.x = 10;
             if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
 
-            // Actualizamos la última posición del dedo
             lastTouchX = currentTouchX;
         });
 
-        window.addEventListener('pointerup', () => { 
-            isDragging = false; 
-        });
-        window.addEventListener('pointercancel', () => { 
-            isDragging = false; 
-        });
-        // --------------------------------------------------------------
+        window.addEventListener('pointerup', () => { isDragging = false; });
+        window.addEventListener('pointercancel', () => { isDragging = false; });
 
         document.getElementById('fireBtn').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -559,9 +547,9 @@
             } else { evolveBtn.style.display = 'none'; }
         }
 
-        function showToast(msg) {
-            toastMessage = msg;
-            toastTimer = 180; 
+        function showTrophyToast(icon) {
+            toastIcon = icon;
+            toastTimer = 180; // 3 segundos
         }
 
         function updateTrophiesHUD() {
@@ -651,24 +639,25 @@
         function update() {
             if (gameState !== 'PLAYING') return;
 
+            // Revisar Trofeos y mostrar ícono flotante
             if (score >= 20000 && !gotTrophy20k) {
                 gotTrophy20k = true;
-                showToast("¡LOGRO: Pollito de Cobre!");
+                showTrophyToast("🥉🐥");
                 updateTrophiesHUD();
             }
             if (score >= 50000 && !gotTrophy50k) {
                 gotTrophy50k = true;
-                showToast("¡LOGRO: Lana Plateada!");
+                showTrophyToast("🥈🧶");
                 updateTrophiesHUD();
             }
             if (score >= 100000 && !gotTrophy100k) {
                 gotTrophy100k = true;
-                showToast("¡LOGRO: Herradura de Bronce!");
+                showTrophyToast("🏅🧲");
                 updateTrophiesHUD();
             }
             if (score >= 200000 && !gotTrophy200k) {
                 gotTrophy200k = true;
-                showToast("¡LOGRO: Leche Dorada!");
+                showTrophyToast("🏆🥛");
                 updateTrophiesHUD();
             }
 
@@ -677,7 +666,6 @@
                 nextBossScoreThreshold += 5000;
             }
 
-            // Movimiento por teclado (el táctil ya se maneja en el evento pointermove)
             let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
             if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed;
             if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
@@ -915,15 +903,20 @@
 
             for (let e of enemies) drawEvilCorn(e);
 
+            // Ícono flotante de Logro Desbloqueado sin texto
             if (toastTimer > 0) {
                 ctx.save();
-                ctx.fillStyle = `rgba(255, 215, 0, ${Math.min(1, toastTimer / 30)})`; 
-                ctx.font = 'bold 20px sans-serif';
+                ctx.globalAlpha = Math.min(1, toastTimer / 30); // Hace que el emoji se vuelva transparente al final
+                ctx.font = '80px sans-serif'; // Ícono bien grande
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                ctx.shadowBlur = 4;
-                ctx.fillText(toastMessage, canvas.width / 2, 120);
+                ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; // Brillo dorado
+                ctx.shadowBlur = 20;
+                
+                // Efecto de flotación: sube ligeramente mientras desaparece
+                let floatY = 180 - ((180 - toastTimer) * 0.3); 
+                
+                ctx.fillText(toastIcon, canvas.width / 2, floatY);
                 ctx.restore();
                 toastTimer--;
             }
