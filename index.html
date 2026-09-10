@@ -255,7 +255,7 @@
 
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
-            <p>Mejoras a 6 y 15 monedas. ¡Evoluciona hasta la Vaca lechera y compite por entrar al Top 5 de récords!</p>
+            <p>Mejoras a 6 y 15 monedas. ¡Hasta 4 balas por disparo! Evoluciona hasta la Vaca lechera y compite por entrar al Top 5 de récords.</p>
             
             <div class="leaderboard-box">
                 <h3>🏆 Mejores Récords</h3>
@@ -421,14 +421,24 @@
 
             let bulletDamage = upgrades.bullets === 0 ? 1 : upgrades.bullets;
 
-            if (upgrades.bullets >= 2) {
+            // Se aumentó a 4 el máximo de balas
+            if (upgrades.bullets >= 3) {
+                // 4 Balas
+                bullets.push({ x: player.x + 2, y: player.y - 8, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -2, type: bType, damage: bulletDamage });
+                bullets.push({ x: player.x + 12, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -0.6, type: bType, damage: bulletDamage });
+                bullets.push({ x: player.x + player.width - 28, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0.6, type: bType, damage: bulletDamage });
+                bullets.push({ x: player.x + player.width - 18, y: player.y - 8, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 2, type: bType, damage: bulletDamage });
+            } else if (upgrades.bullets === 2) {
+                // 3 Balas
                 bullets.push({ x: player.x + 4, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -1.2, type: bType, damage: bulletDamage });
                 bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
                 bullets.push({ x: player.x + player.width - 20, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 1.2, type: bType, damage: bulletDamage });
             } else if (upgrades.bullets === 1) {
+                // 2 Balas
                 bullets.push({ x: player.x + 8, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
                 bullets.push({ x: player.x + player.width - 24, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
             } else {
+                // 1 Bala
                 bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
             }
         }
