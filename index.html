@@ -396,7 +396,6 @@
             if (e.code in keys) keys[e.code] = false;
         });
 
-        // MOVIMIENTO TÁCTIL RELATIVO
         let isDragging = false;
         let dragPointerId = null; 
         let lastTouchX = 0;
@@ -576,14 +575,14 @@
             if (boss) return;
             const size = 48;
             const x = Math.random() * (canvas.width - size - 20) + 10;
-            let speedMultiplier = 1 + (gameTime / 80); // Crecimiento más lento
-            let baseCornHp = evolutionStage >= 3 ? 3 : 1;
             
-            let baseSpeed = 1.0 + Math.random() * 1.0;
+            // --- VELOCIDAD ORIGINAL RESTAURADA ---
+            let speedMultiplier = 1 + (gameTime / 30); 
+            let baseCornHp = evolutionStage >= 3 ? 3 : 1;
 
             enemies.push({
                 x: x, y: -60, width: size, height: size, hp: baseCornHp, maxHp: baseCornHp,
-                speed: baseSpeed * speedMultiplier, wobble: Math.random() * Math.PI
+                speed: (1.5 + Math.random() * 1.5) * speedMultiplier, wobble: Math.random() * Math.PI
             });
         }
 
@@ -591,9 +590,10 @@
             let bossLevel = Math.floor(score / 5000);
             let bossHp = 60 + (bossLevel * 45);
 
+            // --- VELOCIDAD ORIGINAL RESTAURADA ---
             boss = {
                 x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp,
-                speed: 1.0 + (bossLevel * 0.1), direction: 1, shootCooldown: 0
+                speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0
             };
         }
 
@@ -713,7 +713,8 @@
 
             if (!boss) {
                 enemySpawnInterval++;
-                let spawnLimit = Math.max(25, 50 - Math.floor(gameTime / 10)); 
+                // --- VELOCIDAD ORIGINAL RESTAURADA ---
+                let spawnLimit = Math.max(20, 45 - Math.floor(gameTime / 10)); 
                 if (enemySpawnInterval > spawnLimit) {
                     spawnEnemy();
                     enemySpawnInterval = 0;
@@ -926,9 +927,8 @@
             }
         }
 
-        // --- SISTEMA FPS CONSTANTES PARA CELULARES DE 120HZ ---
         let lastFrameTime = 0;
-        const fpsInterval = 1000 / 60; // Fija el juego estrictamente a 60 FPS
+        const fpsInterval = 1000 / 60; 
 
         function loop(timestamp) {
             requestAnimationFrame(loop);
@@ -936,13 +936,11 @@
             if (!lastFrameTime) lastFrameTime = timestamp;
             let elapsed = timestamp - lastFrameTime;
 
-            // Si se cambia de pestaña, evita que el juego procese miles de cuadros al regresar
             if (elapsed > 200) { 
                 lastFrameTime = timestamp;
                 elapsed = 0;
             }
 
-            // Solo actualiza y dibuja si han pasado 16.6 ms (60 FPS)
             if (elapsed >= fpsInterval) {
                 lastFrameTime = timestamp - (elapsed % fpsInterval);
                 update();
@@ -951,7 +949,7 @@
         }
 
         renderLeaderboard('startLeaderboardList');
-        requestAnimationFrame(loop); // Inicia el ciclo con el estabilizador
+        requestAnimationFrame(loop); 
     </script>
 </body>
 </html>
