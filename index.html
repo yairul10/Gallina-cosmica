@@ -255,7 +255,7 @@
 
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
-            <p>Mejoras a 6 y 15 monedas. ¡Hasta 4 balas por disparo! Evoluciona hasta la Vaca lechera y compite por entrar al Top 5 de récords.</p>
+            <p>Mejoras a 6 y 15 monedas. ¡Hasta 8 balas por disparo! Evoluciona hasta la Vaca lechera y compite por el Top 5 de récords.</p>
             
             <div class="leaderboard-box">
                 <h3>🏆 Mejores Récords</h3>
@@ -421,29 +421,75 @@
 
             let bulletDamage = upgrades.bullets === 0 ? 1 : upgrades.bullets;
 
-            // Se aumentó a 4 el máximo de balas
-            if (upgrades.bullets >= 3) {
-                // 4 Balas
-                bullets.push({ x: player.x + 2, y: player.y - 8, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -2, type: bType, damage: bulletDamage });
-                bullets.push({ x: player.x + 12, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -0.6, type: bType, damage: bulletDamage });
-                bullets.push({ x: player.x + player.width - 28, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0.6, type: bType, damage: bulletDamage });
-                bullets.push({ x: player.x + player.width - 18, y: player.y - 8, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 2, type: bType, damage: bulletDamage });
-            } else if (upgrades.bullets === 2) {
-                // 3 Balas
-                bullets.push({ x: player.x + 4, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -1.2, type: bType, damage: bulletDamage });
-                bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
-                bullets.push({ x: player.x + player.width - 20, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 1.2, type: bType, damage: bulletDamage });
-            } else if (upgrades.bullets === 1) {
-                // 2 Balas
-                bullets.push({ x: player.x + 8, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
-                bullets.push({ x: player.x + player.width - 24, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
-            } else {
-                // 1 Bala
-                bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
+            // Determinar cantidad de balas (de 1 a 8 según nivel de mejora)
+            let bulletCount = Math.min(8, upgrades.bullets + 1);
+
+            // Configuraciones de desplazamiento horizontal (dx) y posición relativa (offsetX) para hasta 8 proyectiles
+            const patterns = {
+                1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }],
+                2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 24, offY: -10 }],
+                3: [
+                    { dx: -1.2, offX: 4, offY: -10 },
+                    { dx: 0, offX: player.width / 2 - 8, offY: -14 },
+                    { dx: 1.2, offX: player.width - 20, offY: -10 }
+                ],
+                4: [
+                    { dx: -2.0, offX: 2, offY: -8 },
+                    { dx: -0.6, offX: 12, offY: -14 },
+                    { dx: 0.6, offX: player.width - 28, offY: -14 },
+                    { dx: 2.0, offX: player.width - 18, offY: -8 }
+                ],
+                5: [
+                    { dx: -2.4, offX: 0, offY: -6 },
+                    { dx: -1.2, offX: 8, offY: -11 },
+                    { dx: 0, offX: player.width / 2 - 8, offY: -15 },
+                    { dx: 1.2, offX: player.width - 24, offY: -11 },
+                    { dx: 2.4, offX: player.width - 16, offY: -6 }
+                ],
+                6: [
+                    { dx: -2.8, offX: -4, offY: -4 },
+                    { dx: -1.7, offX: 4, offY: -9 },
+                    { dx: -0.6, offX: 12, offY: -13 },
+                    { dx: 0.6, offX: player.width - 28, offY: -13 },
+                    { dx: 1.7, offX: player.width - 20, offY: -9 },
+                    { dx: 2.8, offX: player.width - 12, offY: -4 }
+                ],
+                7: [
+                    { dx: -3.2, offX: -6, offY: -2 },
+                    { dx: -2.1, offX: 0, offY: -7 },
+                    { dx: -1.0, offX: 8, offY: -11 },
+                    { dx: 0, offX: player.width / 2 - 8, offY: -15 },
+                    { dx: 1.0, offX: player.width - 24, offY: -11 },
+                    { dx: 2.1, offX: player.width - 16, offY: -7 },
+                    { dx: 3.2, offX: player.width - 10, offY: -2 }
+                ],
+                8: [
+                    { dx: -3.5, offX: -8, offY: 0 },
+                    { dx: -2.5, offX: -2, offY: -5 },
+                    { dx: -1.5, offX: 6, offY: -9 },
+                    { dx: -0.5, offX: 14, offY: -13 },
+                    { dx: 0.5, offX: player.width - 30, offY: -13 },
+                    { dx: 1.5, offX: player.width - 22, offY: -9 },
+                    { dx: 2.5, offX: player.width - 14, offY: -5 },
+                    { dx: 3.5, offX: player.width - 8, offY: 0 }
+                ]
+            };
+
+            let currentPattern = patterns[bulletCount] || patterns[8];
+            for (let p of currentPattern) {
+                bullets.push({
+                    x: player.x + p.offX,
+                    y: player.y + p.offY,
+                    width: widthSize,
+                    height: heightSize,
+                    speed: bulletSpeed,
+                    dx: p.dx,
+                    type: bType,
+                    damage: bulletDamage
+                });
             }
         }
 
-        // --- COSTOS AJUSTADOS: 6 MONEDAS ---
         window.buyUpgrade = function(type) {
             if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 6) {
                 coins -= 6;
@@ -573,7 +619,9 @@
             for (let i = bullets.length - 1; i >= 0; i--) {
                 bullets[i].y -= bullets[i].speed;
                 if (bullets[i].dx) bullets[i].x += bullets[i].dx;
-                if (bullets[i].y < -20) bullets.splice(i, 1);
+                if (bullets[i].y < -20 || bullets[i].x < -30 || bullets[i].x > canvas.width + 30) {
+                    bullets.splice(i, 1);
+                }
             }
 
             for (let i = bossBullets.length - 1; i >= 0; i--) {
@@ -716,7 +764,7 @@
                     ctx.lineWidth = 2; ctx.strokeStyle = '#cbd5e1'; ctx.stroke();
                     ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(25, 17, 9, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.moveTo(21, 8); ctx.lineTo(29, 8); ctx.lineTo(25, 0); ctx.fill();
-                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(22, 2, 3.5, 0, Math.PI * 2); ctx.arc(27, 1, 4.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(22, 2, 3.5, 0, Math.PI * 2); ctx.fill();
                 }
                 ctx.restore();
             }
