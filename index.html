@@ -41,7 +41,7 @@
             width: 100%;
             height: 100%;
             background: #090d16;
-            touch-action: none; /* Fundamental para evitar scroll */
+            touch-action: none;
         }
 
         .ui-layer {
@@ -133,7 +133,7 @@
             cursor: pointer;
             box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
             transition: transform 0.08s;
-            touch-action: none; /* Para que responda perfecto al multi-touch */
+            touch-action: none;
         }
 
         .btn-fire:active {
@@ -396,13 +396,12 @@
             if (e.code in keys) keys[e.code] = false;
         });
 
-        // --- SISTEMA MULTI-TOQUE MEJORADO ---
+        // MOVIMIENTO TÁCTIL RELATIVO
         let isDragging = false;
-        let dragPointerId = null; // Memoriza qué dedo mueve la nave
+        let dragPointerId = null; 
         let lastTouchX = 0;
 
         canvas.addEventListener('pointerdown', (e) => {
-            // Solo registramos el primer dedo que toca el canvas para moverse
             if (dragPointerId === null && gameState === 'PLAYING') {
                 dragPointerId = e.pointerId;
                 isDragging = true;
@@ -412,7 +411,6 @@
         });
 
         canvas.addEventListener('pointermove', (e) => {
-            // Ignoramos si es un dedo diferente al que está moviendo la nave
             if (!isDragging || gameState !== 'PLAYING' || e.pointerId !== dragPointerId) return;
             const rect = canvas.getBoundingClientRect();
             const currentTouchX = (e.clientX - rect.left) * (canvas.width / rect.width);
@@ -440,10 +438,9 @@
             }
         });
 
-        // --- BOTÓN DE DISPARO OPTIMIZADO (POINTERDOWN EN VEZ DE CLICK) ---
         document.getElementById('fireBtn').addEventListener('pointerdown', (e) => {
-            e.stopPropagation(); // Evita que este toque llegue al canvas
-            e.preventDefault();  // Evita comportamientos raros del navegador
+            e.stopPropagation(); 
+            e.preventDefault();  
             if (gameState === 'PLAYING') {
                 shootBullet();
             }
@@ -575,18 +572,14 @@
             document.getElementById('trophiesVal').innerHTML = html;
         }
 
-        // --- VELOCIDAD DE ENEMIGOS BALANCEADA ---
         function spawnEnemy() {
             if (boss) return;
             const size = 48;
             const x = Math.random() * (canvas.width - size - 20) + 10;
-            
-            // La dificultad sube mucho más lento (antes era /30, ahora /80)
-            let speedMultiplier = 1 + (gameTime / 80); 
-            // Velocidad base reducida un poco para que no sea imposible
-            let baseSpeed = 1.0 + Math.random() * 1.0;
-            
+            let speedMultiplier = 1 + (gameTime / 80); // Crecimiento más lento
             let baseCornHp = evolutionStage >= 3 ? 3 : 1;
+            
+            let baseSpeed = 1.0 + Math.random() * 1.0;
 
             enemies.push({
                 x: x, y: -60, width: size, height: size, hp: baseCornHp, maxHp: baseCornHp,
@@ -600,7 +593,7 @@
 
             boss = {
                 x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp,
-                speed: 1.0 + (bossLevel * 0.1), direction: 1, shootCooldown: 0 // Velocidad base bajada a 1.0
+                speed: 1.0 + (bossLevel * 0.1), direction: 1, shootCooldown: 0
             };
         }
 
@@ -679,7 +672,6 @@
                 nextBossScoreThreshold += 5000;
             }
 
-            // Movimiento por teclado (el táctil se maneja arriba)
             let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
             if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed;
             if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
@@ -721,7 +713,7 @@
 
             if (!boss) {
                 enemySpawnInterval++;
-                let spawnLimit = Math.max(25, 50 - Math.floor(gameTime / 10)); // También suavizado el tiempo de respawn
+                let spawnLimit = Math.max(25, 50 - Math.floor(gameTime / 10)); 
                 if (enemySpawnInterval > spawnLimit) {
                     spawnEnemy();
                     enemySpawnInterval = 0;
@@ -934,14 +926,32 @@
             }
         }
 
-        function loop() {
-            update();
-            draw();
+        // --- SISTEMA FPS CONSTANTES PARA CELULARES DE 120HZ ---
+        let lastFrameTime = 0;
+        const fpsInterval = 1000 / 60; // Fija el juego estrictamente a 60 FPS
+
+        function loop(timestamp) {
             requestAnimationFrame(loop);
+
+            if (!lastFrameTime) lastFrameTime = timestamp;
+            let elapsed = timestamp - lastFrameTime;
+
+            // Si se cambia de pestaña, evita que el juego procese miles de cuadros al regresar
+            if (elapsed > 200) { 
+                lastFrameTime = timestamp;
+                elapsed = 0;
+            }
+
+            // Solo actualiza y dibuja si han pasado 16.6 ms (60 FPS)
+            if (elapsed >= fpsInterval) {
+                lastFrameTime = timestamp - (elapsed % fpsInterval);
+                update();
+                draw();
+            }
         }
 
         renderLeaderboard('startLeaderboardList');
-        loop();
+        requestAnimationFrame(loop); // Inicia el ciclo con el estabilizador
     </script>
 </body>
 </html>
