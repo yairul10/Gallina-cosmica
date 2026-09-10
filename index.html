@@ -250,8 +250,6 @@
             if (!pAchiev[key]) {
                 pAchiev[key] = true;
                 localStorage.setItem('farm_space_achievements', JSON.stringify(pAchiev));
-                
-                // Mostrar Pop-up
                 document.getElementById('achievToastName').textContent = achievData[key].title;
                 const toast = document.getElementById('achievToast');
                 toast.classList.add('show');
@@ -409,8 +407,7 @@
             else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 12) { coins -= 12; upgrades.speed++; if (upgrades.speed === maxUpgradeLimit) unlockAchievement('a9'); }
             else if (type === 'life' && coins >= 15) { 
                 coins -= 15; lives++; updateLivesUI(); 
-                gameStats.totalLivesBought++; saveStats();
-                sessionLivesBought++;
+                gameStats.totalLivesBought++; saveStats(); sessionLivesBought++;
                 if (gameStats.totalLivesBought >= 10) unlockAchievement('a15');
                 if (sessionLivesBought >= 10) unlockAchievement('a16');
             }
@@ -441,9 +438,15 @@
 
         function savePersistentTrophy(key) { let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; if (!pT[key]) { pT[key] = true; localStorage.setItem('farm_space_trophies', JSON.stringify(pT)); } }
 
+        // --- SISTEMA DE BALANCE ACTUALIZADO ---
         function spawnEnemy() {
-            if (boss) return; let speedMultiplier = 1 + ((gameTime / 30) * 0.85); let progressiveHp = 1 + Math.floor(gameTime / 45);
-            enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: progressiveHp, maxHp: progressiveHp, speed: (1.5 + Math.random() * 1.5) * speedMultiplier, wobble: Math.random() * Math.PI });
+            if (boss) return; 
+            // Velocidad sube mucho más lento (se enfoca en esquivar y apuntar, no en pánico)
+            let speedMultiplier = 1 + ((gameTime / 70) * 0.3); 
+            // La vida sube más rápido por tiempo, y da un salto de resistencia con cada evolución
+            let progressiveHp = 1 + Math.floor(gameTime / 12) + (evolutionStage * 5);
+            
+            enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: progressiveHp, maxHp: progressiveHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI });
         }
 
         function spawnBoss() { let bossLevel = Math.floor(score / 5000); let bossHp = 60 + (bossLevel * 45); boss = { x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0 }; }
