@@ -78,10 +78,10 @@
             gap: 4px;
         }
 
-        /* --- HUD MEJORADO Y REDUCIDO --- */
+        /* --- HUD MEJORADO --- */
         .draggable-btn {
             position: absolute;
-            width: 45px; /* Tamaño reducido al ~50% visualmente */
+            width: 45px; /* Botones de mejora reducidos */
             height: 45px;
             background: rgba(15, 23, 42, 0.65);
             backdrop-filter: blur(4px);
@@ -93,7 +93,7 @@
             justify-content: center;
             pointer-events: auto;
             touch-action: none;
-            z-index: 20; /* Soluciona el problema de arrastre elevándolos por encima de la pausa */
+            z-index: 20; 
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
             transition: transform 0.08s;
             cursor: pointer;
@@ -143,12 +143,15 @@
             margin-top: 0;
         }
 
+        /* Botón de disparo recupera su tamaño gigante original */
         #fireBtn {
             background: linear-gradient(135deg, rgba(239, 68, 68, 0.75), rgba(185, 28, 28, 0.75));
             border-color: rgba(254, 226, 226, 0.6);
+            width: 70px; 
+            height: 70px;
         }
         #fireBtn .hud-emoji {
-            font-size: 1.3rem;
+            font-size: 1.8rem;
             margin-top: 0;
         }
         /* ----------------------------------------------- */
@@ -167,7 +170,7 @@
             text-align: center;
             padding: 24px;
             pointer-events: auto;
-            z-index: 10; /* La pausa queda debajo de los botones ahora */
+            z-index: 10;
         }
 
         .screen-overlay h1 {
@@ -302,7 +305,7 @@
                 <div class="hud-lvl">+1</div>
             </div>
 
-            <!-- Botón de Disparo también arrastrable -->
+            <!-- Botón de Disparo Arrastrable (Tamaño Grande) -->
             <div id="fireBtn" class="draggable-btn" data-type="fire">
                 <div class="hud-emoji">🚀</div>
             </div>
@@ -310,7 +313,7 @@
 
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
-            <p>Mejora tu nave tocando los íconos de la izquierda.<br><br>💡 <b>Tip:</b> ¡Ponle Pausa al juego para acomodar los botones donde tú quieras!</p>
+            <p>Mejora tu nave tocando los íconos de la izquierda.<br><br>💡 <b>Tip:</b> ¡Ponle Pausa al juego para arrastrar y acomodar los botones donde tú quieras!</p>
             
             <div class="leaderboard-box">
                 <h3>🏆 Mejores Récords</h3>
@@ -355,10 +358,10 @@
         canvas.width = 420;
         canvas.height = 640;
 
-        // --- SISTEMA DE POSICIÓN GUARDADA ---
+        // --- SISTEMA DE POSICIÓN GUARDADA (VERSIÓN 5) ---
         function loadHudPositions() {
-            // Clave nueva v3 para forzar el reinicio de las coordenadas y el tamaño
-            const saved = JSON.parse(localStorage.getItem('farm_space_hud_v3'));
+            // Usamos v5 para restablecer con el tamaño de botón grande
+            const saved = JSON.parse(localStorage.getItem('farm_space_hud_v5'));
             if (saved) {
                 ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'fireBtn'].forEach(id => {
                     if(saved[id]) {
@@ -367,18 +370,19 @@
                     }
                 });
             } else {
-                // Nuevas posiciones por defecto: más altas y separadas
+                // Posiciones por defecto
                 document.getElementById('hud-bullets').style.left = '16px';
-                document.getElementById('hud-bullets').style.top = '140px';
+                document.getElementById('hud-bullets').style.top = '340px';
                 
                 document.getElementById('hud-speed').style.left = '16px';
-                document.getElementById('hud-speed').style.top = '200px';
+                document.getElementById('hud-speed').style.top = '400px';
                 
                 document.getElementById('hud-life-evolve').style.left = '16px';
-                document.getElementById('hud-life-evolve').style.top = '260px';
+                document.getElementById('hud-life-evolve').style.top = '460px';
                 
-                document.getElementById('fireBtn').style.left = '350px'; 
-                document.getElementById('fireBtn').style.top = '560px';
+                // Botón de disparo más a la izquierda (334) para que el de 70px quepa sin cortarse
+                document.getElementById('fireBtn').style.left = '334px'; 
+                document.getElementById('fireBtn').style.top = '540px';
             }
         }
 
@@ -388,7 +392,7 @@
                 const el = document.getElementById(id);
                 positions[id] = { left: el.style.left, top: el.style.top };
             });
-            localStorage.setItem('farm_space_hud_v3', JSON.stringify(positions));
+            localStorage.setItem('farm_space_hud_v5', JSON.stringify(positions));
         }
 
         loadHudPositions();
@@ -546,7 +550,7 @@
             if (e.code in keys) keys[e.code] = false;
         });
 
-        // --- LÓGICA DE DRAG & DROP CORREGIDA ---
+        // --- LÓGICA DE DRAG & DROP BOTONES ---
         let dragObj = null;
         let dragOffX = 0;
         let dragOffY = 0;
@@ -637,6 +641,14 @@
         });
         window.addEventListener('pointercancel', (e) => { 
             if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; }
+        });
+
+        document.getElementById('fireBtn').addEventListener('pointerdown', (e) => {
+            e.stopPropagation(); 
+            e.preventDefault();  
+            if (gameState === 'PLAYING') {
+                shootBullet();
+            }
         });
 
         function shootBullet() {
