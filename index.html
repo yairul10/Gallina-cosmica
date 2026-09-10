@@ -78,7 +78,6 @@
             gap: 4px;
         }
 
-        /* --- HUD MEJORADO --- */
         .draggable-btn {
             position: absolute;
             width: 45px; 
@@ -153,7 +152,6 @@
             font-size: 1.8rem;
             margin-top: 0;
         }
-        /* ----------------------------------------------- */
 
         .screen-overlay {
             position: absolute;
@@ -285,7 +283,6 @@
                 </div>
             </div>
 
-            <!-- Botones Flotantes Arrastrables Reducidos -->
             <div id="hud-bullets" class="draggable-btn" data-type="bullets">
                 <div class="hud-cost">🪙6</div>
                 <div class="hud-emoji">⚔️</div>
@@ -304,7 +301,6 @@
                 <div class="hud-lvl">+1</div>
             </div>
 
-            <!-- Botón de Disparo Arrastrable (Tamaño Grande) -->
             <div id="fireBtn" class="draggable-btn" data-type="fire">
                 <div class="hud-emoji">🚀</div>
             </div>
@@ -766,11 +762,12 @@
             if (boss) return;
             const size = 48;
             const x = Math.random() * (canvas.width - size - 20) + 10;
-            let speedMultiplier = 1 + (gameTime / 30); 
-            let baseCornHp = evolutionStage >= 3 ? 3 : 1;
+            
+            let speedMultiplier = 1 + ((gameTime / 30) * 0.85); 
+            let progressiveHp = 1 + Math.floor(gameTime / 45);
 
             enemies.push({
-                x: x, y: -60, width: size, height: size, hp: baseCornHp, maxHp: baseCornHp,
+                x: x, y: -60, width: size, height: size, hp: progressiveHp, maxHp: progressiveHp,
                 speed: (1.5 + Math.random() * 1.5) * speedMultiplier, wobble: Math.random() * Math.PI
             });
         }
@@ -892,7 +889,9 @@
 
             for (let i = bossBullets.length - 1; i >= 0; i--) {
                 bossBullets[i].y += bossBullets[i].speed;
-                if (bossBullets[i].y > canvas.height + 20) {
+                if (bossBullets[i].dx) bossBullets[i].x += bossBullets[i].dx;
+                
+                if (bossBullets[i].y > canvas.height + 20 || bossBullets[i].x < -20 || bossBullets[i].x > canvas.width + 20) {
                     bossBullets.splice(i, 1);
                     continue;
                 }
@@ -926,14 +925,37 @@
                 boss.shootCooldown++;
                 if (boss.shootCooldown >= 35) {
                     boss.shootCooldown = 0;
-                    bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5 });
+                    
+                    // --- BALAS EN ABANICO DEL JEFE SEGÚN PUNTAJE ---
+                    let bossBulletCount = 1;
+                    if (score >= 20000) {
+                        bossBulletCount = 2 + Math.floor((score - 20000) / 20000); // 20k=2, 40k=3, 60k=4
+                    }
+                    bossBulletCount = Math.min(4, Math.max(1, bossBulletCount));
+
+                    if (bossBulletCount === 1) {
+                        bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0 });
+                    } else if (bossBulletCount === 2) {
+                        bossBullets.push({ x: boss.x + boss.width / 2 - 16, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -1.2 });
+                        bossBullets.push({ x: boss.x + boss.width / 2 + 4, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 1.2 });
+                    } else if (bossBulletCount === 3) {
+                        bossBullets.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2 });
+                        bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0 });
+                        bossBullets.push({ x: boss.x + boss.width / 2 + 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2 });
+                    } else {
+                        bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2.5 });
+                        bossBullets.push({ x: boss.x + boss.width / 2 - 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -0.8 });
+                        bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0.8 });
+                        bossBullets.push({ x: boss.x + boss.width / 2 + 18, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2.5 });
+                    }
                 }
             }
 
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += enemies[i].speed;
-                enemies[i].wobble += 0.05;
-                enemies[i].x += Math.sin(enemies[i].wobble) * 0.8;
+                // --- ZIGZAG AUMENTADO ---
+                enemies[i].wobble += 0.06;
+                enemies[i].x += Math.sin(enemies[i].wobble) * 2.2; 
 
                 if (enemies[i].y > canvas.height) {
                     enemies.splice(i, 1);
