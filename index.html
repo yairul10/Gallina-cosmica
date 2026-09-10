@@ -60,6 +60,7 @@
         .header-score {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 0.85rem;
             font-weight: 800;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
@@ -236,6 +237,15 @@
             border-radius: 8px;
             text-transform: uppercase;
         }
+        
+        #muteBtn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 8px;
+            pointer-events: auto; /* Para que se pueda clickear */
+        }
     </style>
 </head>
 <body>
@@ -245,8 +255,13 @@
         
         <div class="ui-layer">
             <div class="header-score">
-                <div>Pts: <span id="scoreVal">0</span> | 🪙 <span id="coinVal">0</span> <span id="trophiesVal"></span></div>
-                <div>Vidas: <span id="livesVal">❤️ ❤️ ❤️</span></div>
+                <div style="display:flex; align-items:center;">
+                    Pts: <span id="scoreVal">0</span> &nbsp;|&nbsp; 🪙 <span id="coinVal">0</span> <span id="trophiesVal"></span>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <button id="muteBtn">🔊</button>
+                    Vidas: <span id="livesVal">❤️ ❤️ ❤️</span>
+                </div>
             </div>
 
             <div class="controls-hud">
@@ -265,7 +280,7 @@
 
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
-            <p>¡Usa un dedo para moverte y el otro para disparar a toda velocidad! Llega a la nave Vaca y salva la galaxia.</p>
+            <p>¡Desliza para moverte y presiona para disparar! Llega a la nave Vaca para desbloquear el 4to disparo simultáneo.</p>
             
             <div class="leaderboard-box">
                 <h3>🏆 Mejores Récords</h3>
@@ -306,7 +321,14 @@
         // --- SISTEMA DE AUDIO ---
         const bgMusic = new Audio('assets/musica_retro.mp3');
         bgMusic.loop = true;
-        bgMusic.volume = 0.4; // Volumen balanceado para que no sature
+        bgMusic.volume = 0.4; 
+
+        // Botón Mute
+        document.getElementById('muteBtn').addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            bgMusic.muted = !bgMusic.muted;
+            e.target.textContent = bgMusic.muted ? '🔇' : '🔊';
+        });
 
         const assets = {
             gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(),
@@ -468,8 +490,12 @@
             if (evolutionStage === 2) bType = 'horseshoe';
             if (evolutionStage === 3) bType = 'milk';
 
+            // El daño base sube con el nivel sin importar el límite de balas visibles
             let bulletDamage = upgrades.bullets === 0 ? 1 : upgrades.bullets;
-            let bulletCount = Math.min(8, upgrades.bullets + 1);
+            
+            // Límite de balas visibles: 3 normalmente, 4 si eres la Vaca
+            let maxVisualBullets = (evolutionStage === 3) ? 4 : 3;
+            let bulletCount = Math.min(maxVisualBullets, upgrades.bullets + 1);
 
             const patterns = {
                 1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }],
@@ -484,44 +510,10 @@
                     { dx: -0.6, offX: 12, offY: -14 },
                     { dx: 0.6, offX: player.width - 28, offY: -14 },
                     { dx: 2.0, offX: player.width - 18, offY: -8 }
-                ],
-                5: [
-                    { dx: -2.4, offX: 0, offY: -6 },
-                    { dx: -1.2, offX: 8, offY: -11 },
-                    { dx: 0, offX: player.width / 2 - 8, offY: -15 },
-                    { dx: 1.2, offX: player.width - 24, offY: -11 },
-                    { dx: 2.4, offX: player.width - 16, offY: -6 }
-                ],
-                6: [
-                    { dx: -2.8, offX: -4, offY: -4 },
-                    { dx: -1.7, offX: 4, offY: -9 },
-                    { dx: -0.6, offX: 12, offY: -13 },
-                    { dx: 0.6, offX: player.width - 28, offY: -13 },
-                    { dx: 1.7, offX: player.width - 20, offY: -9 },
-                    { dx: 2.8, offX: player.width - 12, offY: -4 }
-                ],
-                7: [
-                    { dx: -3.2, offX: -6, offY: -2 },
-                    { dx: -2.1, offX: 0, offY: -7 },
-                    { dx: -1.0, offX: 8, offY: -11 },
-                    { dx: 0, offX: player.width / 2 - 8, offY: -15 },
-                    { dx: 1.0, offX: player.width - 24, offY: -11 },
-                    { dx: 2.1, offX: player.width - 16, offY: -7 },
-                    { dx: 3.2, offX: player.width - 10, offY: -2 }
-                ],
-                8: [
-                    { dx: -3.5, offX: -8, offY: 0 },
-                    { dx: -2.5, offX: -2, offY: -5 },
-                    { dx: -1.5, offX: 6, offY: -9 },
-                    { dx: -0.5, offX: 14, offY: -13 },
-                    { dx: 0.5, offX: player.width - 30, offY: -13 },
-                    { dx: 1.5, offX: player.width - 22, offY: -9 },
-                    { dx: 2.5, offX: player.width - 14, offY: -5 },
-                    { dx: 3.5, offX: player.width - 8, offY: 0 }
                 ]
             };
 
-            let currentPattern = patterns[bulletCount] || patterns[8];
+            let currentPattern = patterns[bulletCount] || patterns[3];
             for (let p of currentPattern) {
                 bullets.push({
                     x: player.x + p.offX,
@@ -631,7 +623,6 @@
         });
 
         function startGame() {
-            // Reproducir música y manejar error si falla
             bgMusic.play().catch(e => console.log("A la espera de interacción del usuario para reproducir audio."));
 
             score = 0; coins = 0; lives = 3; gameTime = 0;
