@@ -185,6 +185,16 @@
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
             transition: transform 0.1s;
+            width: 100%;
+            max-width: 200px;
+            margin-bottom: 8px;
+        }
+
+        .btn.btn-secondary {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #38bdf8;
+            box-shadow: none;
         }
 
         .btn:active {
@@ -238,13 +248,13 @@
             text-transform: uppercase;
         }
         
-        #muteBtn {
+        .icon-btn {
             background: none;
             border: none;
             font-size: 1.2rem;
             cursor: pointer;
-            padding: 0 8px;
-            pointer-events: auto; /* Para que se pueda clickear */
+            padding: 0 6px;
+            pointer-events: auto;
         }
     </style>
 </head>
@@ -259,7 +269,7 @@
                     Pts: <span id="scoreVal">0</span> &nbsp;|&nbsp; 🪙 <span id="coinVal">0</span> <span id="trophiesVal"></span>
                 </div>
                 <div style="display:flex; align-items:center;">
-                    <button id="muteBtn">🔊</button>
+                    <button class="icon-btn" id="pauseBtn" title="Pausar Juego">⏸️</button>
                     Vidas: <span id="livesVal">❤️ ❤️ ❤️</span>
                 </div>
             </div>
@@ -290,6 +300,13 @@
             <button class="btn" id="startBtn">¡Despegar!</button>
         </div>
 
+        <!-- Pantalla de Pausa -->
+        <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.85);">
+            <h1 style="margin-bottom: 24px;">⏸️ Pausa</h1>
+            <button class="btn" id="resumeBtn">▶️ Reanudar</button>
+            <button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button>
+        </div>
+
         <div id="gameOverScreen" class="screen-overlay" style="display: none;">
             <h1>¡Nave Destruida!</h1>
             <p>Puntuación final: <strong id="finalScore">0</strong></p>
@@ -318,16 +335,55 @@
         canvas.width = 420;
         canvas.height = 640;
 
-        // --- SISTEMA DE AUDIO ---
-        const bgMusic = new Audio('assets/musica_retro.mp3');
-        bgMusic.loop = true;
+        // --- SISTEMA DE AUDIO (PLAYLIST MULTIPLE) ---
+        const playlist = [
+            'assets/musica_1.mp3',
+            'assets/musica_2.mp3',
+            'assets/musica_3.mp3'
+        ];
+
+        let currentTrackIndex = 0;
+        const bgMusic = new Audio(playlist[currentTrackIndex]);
         bgMusic.volume = 0.4; 
 
-        // Botón Mute
-        document.getElementById('muteBtn').addEventListener('pointerdown', (e) => {
+        bgMusic.addEventListener('ended', () => {
+            currentTrackIndex++;
+            if (currentTrackIndex >= playlist.length) {
+                currentTrackIndex = 0;
+            }
+            bgMusic.src = playlist[currentTrackIndex];
+            bgMusic.play().catch(e => console.log(e));
+        });
+
+        // Botón Mute desde el menú de pausa
+        document.getElementById('muteMenuBtn').addEventListener('click', (e) => {
             e.stopPropagation();
             bgMusic.muted = !bgMusic.muted;
-            e.target.textContent = bgMusic.muted ? '🔇' : '🔊';
+            e.target.textContent = bgMusic.muted ? '🔇 Activar Música' : '🔊 Silenciar Música';
+        });
+
+        // --- SISTEMA DE PAUSA ---
+        document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                bgMusic.pause();
+                document.getElementById('pauseScreen').style.display = 'flex';
+                // Reseteamos controles táctiles para evitar saltos al reanudar
+                isDragging = false;
+                dragPointerId = null;
+            }
+        });
+
+        document.getElementById('resumeBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                if (!bgMusic.muted) {
+                    bgMusic.play().catch(e => console.log(e));
+                }
+                document.getElementById('pauseScreen').style.display = 'none';
+            }
         });
 
         const assets = {
@@ -359,7 +415,7 @@
         let coins = 0;
         let lives = 3;
         let gameTime = 0;
-        let gameState = 'START';
+        let gameState = 'START'; 
         
         let gotTrophy20k = false;
         let gotTrophy50k = false;
@@ -490,10 +546,7 @@
             if (evolutionStage === 2) bType = 'horseshoe';
             if (evolutionStage === 3) bType = 'milk';
 
-            // El daño base sube con el nivel sin importar el límite de balas visibles
             let bulletDamage = upgrades.bullets === 0 ? 1 : upgrades.bullets;
-            
-            // Límite de balas visibles: 3 normalmente, 4 si eres la Vaca
             let maxVisualBullets = (evolutionStage === 3) ? 4 : 3;
             let bulletCount = Math.min(maxVisualBullets, upgrades.bullets + 1);
 
@@ -623,7 +676,9 @@
         });
 
         function startGame() {
-            bgMusic.play().catch(e => console.log("A la espera de interacción del usuario para reproducir audio."));
+            if (!bgMusic.muted) {
+                bgMusic.play().catch(e => console.log(e));
+            }
 
             score = 0; coins = 0; lives = 3; gameTime = 0;
             bullets = []; enemies = []; bossBullets = []; boss = null;
@@ -647,6 +702,7 @@
 
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('pauseScreen').style.display = 'none';
             gameState = 'PLAYING';
 
             if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
@@ -658,7 +714,6 @@
         function gameOver() {
             gameState = 'GAMEOVER';
             bgMusic.pause();
-            bgMusic.currentTime = 0;
             clearInterval(window.gameTimerInterval);
             document.getElementById('finalScore').textContent = score;
             renderLeaderboard('endLeaderboardList');
@@ -924,7 +979,7 @@
 
             for (let e of enemies) drawEvilCorn(e);
 
-            if (toastTimer > 0) {
+            if (toastTimer > 0 && gameState === 'PLAYING') {
                 ctx.save();
                 ctx.globalAlpha = Math.min(1, toastTimer / 30); 
                 let floatY = 180 - ((180 - toastTimer) * 0.3); 
