@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>Nave Gallina vs Maíces Malvados</title>
 
     <style>
@@ -254,34 +255,38 @@
             <div class="upgrades-panel" id="upgradesPanel">
 
                 <button class="upgrade-btn"
-                    id="upgBullets"
-                    onclick="buyUpgrade('bullets')">
+                        id="upgBullets"
+                        onclick="buyUpgrade('bullets')">
                     Daño/Disparo (Lv.0)
                 </button>
 
                 <button class="upgrade-btn"
-                    id="upgSpeed"
-                    onclick="buyUpgrade('speed')">
+                        id="upgSpeed"
+                        onclick="buyUpgrade('speed')">
                     Velocidad (Lv.1)
                 </button>
 
                 <button class="upgrade-btn"
-                    id="upgLife"
-                    onclick="buyUpgrade('life')">
+                        id="upgLife"
+                        onclick="buyUpgrade('life')">
                     +1 Vida [🪙15]
                 </button>
 
                 <button class="upgrade-btn"
-                    id="upgEvolve"
-                    onclick="buyUpgrade('evolve')"
-                    style="display:none; border-color:#fbbf24; color:#fbbf24;">
+                        id="upgEvolve"
+                        onclick="buyUpgrade('evolve')"
+                        style="display:none; border-color:#fbbf24; color:#fbbf24;">
                     🌟 Evolucionar
                 </button>
 
             </div>
 
             <div class="fire-button-container">
-                <button class="btn-fire" id="fireBtn">🚀</button>
+
+                <button class="btn-fire" id="fireBtn">
+                    🚀
+                </button>
+
             </div>
 
         </div>
@@ -295,8 +300,7 @@
 
         <p>
             Mejoras a 10 y 15 monedas.
-            ¡Evoluciona hasta la Vaca lechera y compite
-            por entrar al Top 5 de récords!
+            ¡Evoluciona hasta la Vaca lechera y compite por entrar al Top 5 de récords!
         </p>
 
         <div class="leaderboard-box">
@@ -333,23 +337,20 @@
 
             <div class="initials-input-container">
 
-                <input
-                    type="text"
-                    id="playerInitials"
-                    maxlength="3"
-                    value="AAA">
+                <input type="text"
+                       id="playerInitials"
+                       maxlength="3"
+                       value="AAA">
 
-                <button
-                    class="btn"
-                    id="saveScoreBtn"
-                    style="padding: 8px 14px; font-size: 0.85rem;">
+                <button class="btn"
+                        id="saveScoreBtn"
+                        style="padding: 8px 14px; font-size: 0.85rem;">
                     Guardar
                 </button>
 
             </div>
 
         </div>
-
 
         <div class="leaderboard-box">
 
@@ -359,11 +360,9 @@
 
         </div>
 
-
-        <button
-            class="btn"
-            id="restartBtn"
-            style="margin-top: 4px;">
+        <button class="btn"
+                id="restartBtn"
+                style="margin-top: 4px;">
             Reintentar
         </button>
 
@@ -381,9 +380,9 @@ canvas.width = 420;
 canvas.height = 640;
 
 
-/* =========================
+/* =========================================================
    VARIABLES DEL JUEGO
-========================= */
+========================================================= */
 
 let score = 0;
 let coins = 0;
@@ -402,11 +401,15 @@ let upgrades = {
 
 
 const player = {
+
     x: canvas.width / 2 - 25,
     y: canvas.height - 110,
+
     width: 50,
     height: 50,
+
     baseSpeed: 5.5
+
 };
 
 
@@ -417,9 +420,9 @@ let boss = null;
 let stars = [];
 
 
-/* =========================
+/* =========================================================
    RÉCORDS
-========================= */
+========================================================= */
 
 let leaderboard =
     JSON.parse(localStorage.getItem('farm_space_leaderboard')) ||
@@ -450,10 +453,7 @@ function renderLeaderboard(elementId) {
     if (leaderboard.length === 0) {
 
         container.innerHTML =
-            '<div class="lb-row">' +
-            '<span>Sin récords aún</span>' +
-            '<span></span>' +
-            '</div>';
+            '<div class="lb-row"><span>Sin récords aún</span><span></span></div>';
 
         return;
     }
@@ -466,8 +466,8 @@ function renderLeaderboard(elementId) {
         row.className = 'lb-row';
 
         row.innerHTML =
-            `<span>#${index + 1} ${item.name}</span>` +
-            `<span>${item.score} pts</span>`;
+            `<span>#${index + 1} ${item.name}</span>
+             <span>${item.score} pts</span>`;
 
         container.appendChild(row);
 
@@ -476,48 +476,56 @@ function renderLeaderboard(elementId) {
 }
 
 
-/* =========================
+/* =========================================================
    ESTRELLAS
-========================= */
+========================================================= */
 
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 55; i++) {
 
     stars.push({
 
         x: Math.random() * canvas.width,
+
         y: Math.random() * canvas.height,
-        size: Math.random() * 2 + 1,
-        speed: Math.random() * 0.8 + 0.3
+
+        size: Math.random() * 2 + 0.5,
+
+        speed: Math.random() * 0.8 + 0.2,
+
+        alpha: Math.random() * 0.7 + 0.3
 
     });
 
 }
 
 
-/* =========================
+/* =========================================================
    CONTROLES
-========================= */
+========================================================= */
 
 let keys = {
+
     ArrowLeft: false,
     ArrowRight: false,
     KeyA: false,
     KeyD: false
+
 };
 
 
 window.addEventListener('keydown', (e) => {
 
     if (e.code in keys) {
+
         keys[e.code] = true;
+
     }
 
-    if (
-        e.code === 'Space' &&
-        gameState === 'PLAYING'
-    ) {
+    if (e.code === 'Space' &&
+        gameState === 'PLAYING') {
 
         shootBullet();
+
         e.preventDefault();
 
     }
@@ -528,7 +536,9 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
 
     if (e.code in keys) {
+
         keys[e.code] = false;
+
     }
 
 });
@@ -540,6 +550,7 @@ let isDragging = false;
 canvas.addEventListener('pointerdown', (e) => {
 
     isDragging = true;
+
     movePlayerToTouch(e);
 
 });
@@ -548,7 +559,9 @@ canvas.addEventListener('pointerdown', (e) => {
 canvas.addEventListener('pointermove', (e) => {
 
     if (isDragging) {
+
         movePlayerToTouch(e);
+
     }
 
 });
@@ -576,6 +589,10 @@ function movePlayerToTouch(e) {
 }
 
 
+/* =========================================================
+   BOTÓN DISPARO
+========================================================= */
+
 document
     .getElementById('fireBtn')
     .addEventListener('click', (e) => {
@@ -583,19 +600,22 @@ document
         e.stopPropagation();
 
         if (gameState === 'PLAYING') {
+
             shootBullet();
+
         }
 
     });
 
 
-/* =========================
+/* =========================================================
    DISPAROS
-========================= */
+========================================================= */
 
 function shootBullet() {
 
     let bulletSpeed = 10;
+
     let widthSize = 16;
     let heightSize = 16;
 
@@ -683,14 +703,23 @@ function shootBullet() {
     else {
 
         bullets.push({
+
             x: player.x + player.width / 2 - 8,
+
             y: player.y - 10,
+
             width: widthSize,
+
             height: heightSize,
+
             speed: bulletSpeed,
+
             dx: 0,
+
             type: bType,
+
             damage: bulletDamage
+
         });
 
     }
@@ -698,9 +727,9 @@ function shootBullet() {
 }
 
 
-/* =========================
+/* =========================================================
    MEJORAS
-========================= */
+========================================================= */
 
 window.buyUpgrade = function(type) {
 
@@ -711,6 +740,7 @@ window.buyUpgrade = function(type) {
     ) {
 
         coins -= 10;
+
         upgrades.bullets++;
 
     }
@@ -722,6 +752,7 @@ window.buyUpgrade = function(type) {
     ) {
 
         coins -= 10;
+
         upgrades.speed++;
 
     }
@@ -732,6 +763,7 @@ window.buyUpgrade = function(type) {
     ) {
 
         coins -= 15;
+
         lives++;
 
         updateLivesUI();
@@ -743,6 +775,7 @@ window.buyUpgrade = function(type) {
         if (evolutionStage === 0) {
 
             evolutionStage = 1;
+
             maxUpgradeLimit = 6;
 
         }
@@ -750,6 +783,7 @@ window.buyUpgrade = function(type) {
         else if (evolutionStage === 1) {
 
             evolutionStage = 2;
+
             maxUpgradeLimit = 10;
 
         }
@@ -757,6 +791,7 @@ window.buyUpgrade = function(type) {
         else if (evolutionStage === 2) {
 
             evolutionStage = 3;
+
             maxUpgradeLimit = 10;
 
         }
@@ -774,24 +809,31 @@ window.buyUpgrade = function(type) {
 
 function updateUpgradesHUD() {
 
-    document.getElementById('coinVal').textContent =
-        coins;
+    document
+        .getElementById('coinVal')
+        .textContent = coins;
 
 
-    document.getElementById('upgBullets').textContent =
-        upgrades.bullets >= maxUpgradeLimit
+    document
+        .getElementById('upgBullets')
+        .textContent =
+            upgrades.bullets >= maxUpgradeLimit
             ? 'Daño Disparos: MÁX'
             : `Daño/Disparos [🪙10] (Lv.${upgrades.bullets})`;
 
 
-    document.getElementById('upgSpeed').textContent =
-        upgrades.speed >= maxUpgradeLimit
+    document
+        .getElementById('upgSpeed')
+        .textContent =
+            upgrades.speed >= maxUpgradeLimit
             ? 'Velocidad: MÁX'
             : `Velocidad [🪙10] (Lv.${upgrades.speed})`;
 
 
-    document.getElementById('upgLife').textContent =
-        '+1 Vida [🪙15]';
+    document
+        .getElementById('upgLife')
+        .textContent =
+            '+1 Vida [🪙15]';
 
 
     let evolveBtn =
@@ -806,6 +848,7 @@ function updateUpgradesHUD() {
         if (evolutionStage === 0) {
 
             evolveBtn.style.display = 'block';
+
             evolveBtn.textContent =
                 '🌟 Evolucionar a Oveja';
 
@@ -814,6 +857,7 @@ function updateUpgradesHUD() {
         else if (evolutionStage === 1) {
 
             evolveBtn.style.display = 'block';
+
             evolveBtn.textContent =
                 '🌟 Evolucionar a Caballo';
 
@@ -822,6 +866,7 @@ function updateUpgradesHUD() {
         else if (evolutionStage === 2) {
 
             evolveBtn.style.display = 'block';
+
             evolveBtn.textContent =
                 '🌟 Evolucionar a Vaca';
 
@@ -844,9 +889,9 @@ function updateUpgradesHUD() {
 }
 
 
-/* =========================
+/* =========================================================
    ENEMIGOS
-========================= */
+========================================================= */
 
 function spawnEnemy() {
 
@@ -859,25 +904,27 @@ function spawnEnemy() {
         (canvas.width - size - 20) +
         10;
 
-
     let speedMultiplier =
         1 + (gameTime / 30);
 
-
     let baseCornHp =
         evolutionStage >= 3
-            ? 3
-            : 1;
+        ? 3
+        : 1;
 
 
     enemies.push({
 
         x: x,
+
         y: -60,
+
         width: size,
+
         height: size,
 
         hp: baseCornHp,
+
         maxHp: baseCornHp,
 
         speed:
@@ -892,9 +939,9 @@ function spawnEnemy() {
 }
 
 
-/* =========================
+/* =========================================================
    JEFE
-========================= */
+========================================================= */
 
 function spawnBoss() {
 
@@ -907,13 +954,17 @@ function spawnBoss() {
 
     boss = {
 
-        x: canvas.width / 2 - 60,
+        x:
+            canvas.width / 2 - 60,
+
         y: -100,
 
         width: 120,
+
         height: 100,
 
         maxHp: bossHp,
+
         hp: bossHp,
 
         speed:
@@ -928,9 +979,9 @@ function spawnBoss() {
 }
 
 
-/* =========================
+/* =========================================================
    BOTONES
-========================= */
+========================================================= */
 
 document
     .getElementById('startBtn')
@@ -959,8 +1010,11 @@ document
 
 
         leaderboard.push({
+
             name: initials,
+
             score: score
+
         });
 
 
@@ -969,9 +1023,12 @@ document
         );
 
 
-        if (leaderboard.length > 5)
+        if (leaderboard.length > 5) {
+
             leaderboard =
                 leaderboard.slice(0, 5);
+
+        }
 
 
         saveLeaderboard();
@@ -989,28 +1046,36 @@ document
     });
 
 
-/* =========================
+/* =========================================================
    INICIAR
-========================= */
+========================================================= */
 
 function startGame() {
 
     score = 0;
+
     coins = 0;
+
     lives = 3;
+
     gameTime = 0;
 
     bullets = [];
+
     enemies = [];
+
     bossBullets = [];
+
     boss = null;
 
     evolutionStage = 0;
+
     maxUpgradeLimit = 3;
 
     nextBossScoreThreshold = 5000;
 
     upgrades.bullets = 0;
+
     upgrades.speed = 1;
 
     player.x =
@@ -1039,6 +1104,7 @@ function startGame() {
 
 
     updateLivesUI();
+
     updateUpgradesHUD();
 
 
@@ -1056,16 +1122,16 @@ function startGame() {
 
 
     if (window.gameTimerInterval)
-        clearInterval(
-            window.gameTimerInterval
-        );
+        clearInterval(window.gameTimerInterval);
 
 
     window.gameTimerInterval =
         setInterval(() => {
 
             if (gameState === 'PLAYING') {
+
                 gameTime++;
+
             }
 
         }, 1000);
@@ -1073,9 +1139,9 @@ function startGame() {
 }
 
 
-/* =========================
+/* =========================================================
    GAME OVER
-========================= */
+========================================================= */
 
 function gameOver() {
 
@@ -1103,9 +1169,9 @@ function gameOver() {
 }
 
 
-/* =========================
-   ACTUALIZACIÓN
-========================= */
+/* =========================================================
+   ACTUALIZACIÓN DEL JUEGO
+========================================================= */
 
 let enemySpawnInterval = 0;
 
@@ -1136,15 +1202,21 @@ function update() {
     if (
         keys.ArrowLeft ||
         keys.KeyA
-    )
+    ) {
+
         player.x -= currentSpeed;
+
+    }
 
 
     if (
         keys.ArrowRight ||
         keys.KeyD
-    )
+    ) {
+
         player.x += currentSpeed;
+
+    }
 
 
     if (player.x < 10)
@@ -1156,19 +1228,29 @@ function update() {
         canvas.width -
         player.width -
         10
-    )
+    ) {
+
         player.x =
             canvas.width -
             player.width -
             10;
+
+    }
 
 
     for (let s of stars) {
 
         s.y += s.speed;
 
-        if (s.y > canvas.height)
+        if (s.y > canvas.height) {
+
             s.y = 0;
+
+            s.x =
+                Math.random() *
+                canvas.width;
+
+        }
 
     }
 
@@ -1210,6 +1292,7 @@ function update() {
         ) {
 
             bossBullets.splice(i, 1);
+
             continue;
 
         }
@@ -1217,20 +1300,20 @@ function update() {
 
         if (
             player.x <
-                bossBullets[i].x +
-                bossBullets[i].width &&
+            bossBullets[i].x +
+            bossBullets[i].width &&
 
             player.x +
-                player.width >
-                bossBullets[i].x &&
+            player.width >
+            bossBullets[i].x &&
 
             player.y <
-                bossBullets[i].y +
-                bossBullets[i].height &&
+            bossBullets[i].y +
+            bossBullets[i].height &&
 
             player.y +
-                player.height >
-                bossBullets[i].y
+            player.height >
+            bossBullets[i].y
         ) {
 
             bossBullets.splice(i, 1);
@@ -1265,6 +1348,7 @@ function update() {
         ) {
 
             spawnEnemy();
+
             enemySpawnInterval = 0;
 
         }
@@ -1285,9 +1369,8 @@ function update() {
 
         if (
             boss.x < 10 ||
-            boss.x +
-                boss.width >
-                canvas.width - 10
+            boss.x + boss.width >
+            canvas.width - 10
         ) {
 
             boss.direction *= -1;
@@ -1317,6 +1400,7 @@ function update() {
                     boss.height,
 
                 width: 12,
+
                 height: 12,
 
                 speed: 5.5
@@ -1368,20 +1452,20 @@ function update() {
 
         if (
             player.x <
-                enemies[i].x +
-                enemies[i].width &&
+            enemies[i].x +
+            enemies[i].width &&
 
             player.x +
-                player.width >
-                enemies[i].x &&
+            player.width >
+            enemies[i].x &&
 
             player.y <
-                enemies[i].y +
-                enemies[i].height &&
+            enemies[i].y +
+            enemies[i].height &&
 
             player.y +
-                player.height >
-                enemies[i].y
+            player.height >
+            enemies[i].y
         ) {
 
             enemies.splice(i, 1);
@@ -1408,20 +1492,20 @@ function update() {
                 bullets[j] &&
 
                 bullets[j].x <
-                    enemies[i].x +
-                    enemies[i].width &&
+                enemies[i].x +
+                enemies[i].width &&
 
                 bullets[j].x +
-                    bullets[j].width >
-                    enemies[i].x &&
+                bullets[j].width >
+                enemies[i].x &&
 
                 bullets[j].y <
-                    enemies[i].y +
-                    enemies[i].height &&
+                enemies[i].y +
+                enemies[i].height &&
 
                 bullets[j].y +
-                    bullets[j].height >
-                    enemies[i].y
+                bullets[j].height >
+                enemies[i].y
             ) {
 
                 enemies[i].hp -=
@@ -1436,6 +1520,7 @@ function update() {
                 ) {
 
                     score += 100;
+
                     coins += 1;
 
 
@@ -1472,20 +1557,20 @@ function update() {
                 bullets[j] &&
 
                 bullets[j].x <
-                    boss.x +
-                    boss.width &&
+                boss.x +
+                boss.width &&
 
                 bullets[j].x +
-                    bullets[j].width >
-                    boss.x &&
+                bullets[j].width >
+                boss.x &&
 
                 bullets[j].y <
-                    boss.y +
-                    boss.height &&
+                boss.y +
+                boss.height &&
 
                 bullets[j].y +
-                    bullets[j].height >
-                    boss.y
+                bullets[j].height >
+                boss.y
             ) {
 
                 boss.hp -=
@@ -1498,6 +1583,7 @@ function update() {
                 if (boss.hp <= 0) {
 
                     score += 1500;
+
                     coins += 15;
 
 
@@ -1524,95 +1610,173 @@ function update() {
 }
 
 
-/* =========================
+/* =========================================================
    VIDAS
-========================= */
+========================================================= */
 
 function updateLivesUI() {
 
     let hearts = '';
 
-    for (
-        let i = 0;
-        i < lives;
-        i++
-    ) {
-
+    for (let i = 0; i < lives; i++)
         hearts += '❤️ ';
-
-    }
 
     document
         .getElementById('livesVal')
         .textContent =
-        hearts.trim();
+            hearts.trim();
 
 }
 
 
-/* =====================================================
-   NUEVOS DIBUJOS
-===================================================== */
+/* =========================================================
+   FUNCIONES VISUALES 2.0
+========================================================= */
 
 
-/* =========================
-   PEQUEÑAS UTILIDADES
-========================= */
+/* Rectángulo redondeado compatible */
+function roundedRect(
+    x,
+    y,
+    w,
+    h,
+    r
+) {
 
-function ellipse(x, y, rx, ry) {
+    const radius =
+        Math.min(
+            r,
+            w / 2,
+            h / 2
+        );
+
 
     ctx.beginPath();
 
-    ctx.ellipse(
+    ctx.moveTo(
+        x + radius,
+        y
+    );
+
+    ctx.lineTo(
+        x + w - radius,
+        y
+    );
+
+    ctx.quadraticCurveTo(
+        x + w,
+        y,
+        x + w,
+        y + radius
+    );
+
+    ctx.lineTo(
+        x + w,
+        y + h - radius
+    );
+
+    ctx.quadraticCurveTo(
+        x + w,
+        y + h,
+        x + w - radius,
+        y + h
+    );
+
+    ctx.lineTo(
+        x + radius,
+        y + h
+    );
+
+    ctx.quadraticCurveTo(
+        x,
+        y + h,
+        x,
+        y + h - radius
+    );
+
+    ctx.lineTo(
+        x,
+        y + radius
+    );
+
+    ctx.quadraticCurveTo(
         x,
         y,
-        rx,
-        ry,
-        0,
-        0,
-        Math.PI * 2
+        x + radius,
+        y
     );
+
+    ctx.closePath();
 
 }
 
 
-function drawEye(x, y, size) {
+/* =========================================================
+   PROPULSORES
+========================================================= */
 
-    ctx.fillStyle = '#ffffff';
+function drawThruster(
+    x,
+    y,
+    size,
+    color
+) {
+
+    const gradient =
+        ctx.createLinearGradient(
+            x,
+            y,
+            x,
+            y + size
+        );
+
+
+    gradient.addColorStop(
+        0,
+        '#ffffff'
+    );
+
+    gradient.addColorStop(
+        0.35,
+        color
+    );
+
+    gradient.addColorStop(
+        1,
+        'rgba(0,0,0,0)'
+    );
+
+
+    ctx.fillStyle = gradient;
+
 
     ctx.beginPath();
 
-    ctx.arc(
-        x,
-        y,
-        size,
-        0,
-        Math.PI * 2
+    ctx.moveTo(
+        x - size / 2,
+        y
     );
+
+    ctx.lineTo(
+        x + size / 2,
+        y
+    );
+
+    ctx.lineTo(
+        x,
+        y + size
+    );
+
+    ctx.closePath();
 
     ctx.fill();
 
-
-    ctx.fillStyle = '#111827';
-
-    ctx.beginPath();
-
-    ctx.arc(
-        x,
-        y + 1,
-        size * 0.45,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
 }
 
 
-/* =========================
+/* =========================================================
    NAVE / ANIMALES
-========================= */
+========================================================= */
 
 function drawPlayerShip(x, y) {
 
@@ -1621,481 +1785,1056 @@ function drawPlayerShip(x, y) {
     ctx.translate(x, y);
 
 
-    /* PROPULSORES */
+    /* -----------------------------
+       SOMBRA
+    ----------------------------- */
+
+    ctx.shadowColor =
+        'rgba(0,0,0,0.65)';
 
     ctx.shadowBlur = 10;
-    ctx.shadowColor = '#38bdf8';
 
-    ctx.fillStyle = '#38bdf8';
-
-    ctx.beginPath();
-    ctx.moveTo(9, 43);
-    ctx.lineTo(16, 43);
-    ctx.lineTo(13, 54);
-    ctx.lineTo(6, 48);
-    ctx.closePath();
-    ctx.fill();
+    ctx.shadowOffsetY = 5;
 
 
-    ctx.beginPath();
-    ctx.moveTo(34, 43);
-    ctx.lineTo(41, 43);
-    ctx.lineTo(44, 48);
-    ctx.lineTo(37, 54);
-    ctx.closePath();
-    ctx.fill();
-
-
-    ctx.shadowBlur = 0;
-
-
-    /* =========================
+    /* =====================================================
        VACA
-    ========================= */
+    ===================================================== */
 
     if (evolutionStage === 3) {
 
-        /* patas */
+        /* Propulsores */
 
-        ctx.fillStyle = '#334155';
+        ctx.shadowBlur = 0;
 
-        ctx.fillRect(10, 37, 8, 12);
-        ctx.fillRect(32, 37, 8, 12);
+        drawThruster(
+            13,
+            42,
+            16,
+            '#38bdf8'
+        );
+
+        drawThruster(
+            37,
+            42,
+            16,
+            '#38bdf8'
+        );
 
 
-        /* cuerpo */
+        /* Cuerpo */
 
-        ctx.fillStyle = '#f8fafc';
+        const cowGradient =
+            ctx.createLinearGradient(
+                0,
+                8,
+                0,
+                48
+            );
 
-        ellipse(25, 27, 23, 18);
+        cowGradient.addColorStop(
+            0,
+            '#ffffff'
+        );
+
+        cowGradient.addColorStop(
+            1,
+            '#cbd5e1'
+        );
+
+
+        ctx.fillStyle =
+            cowGradient;
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            25,
+            29,
+            22,
+            17,
+            0,
+            0,
+            Math.PI * 2
+        );
+
         ctx.fill();
 
-        ctx.strokeStyle = '#cbd5e1';
+
+        ctx.strokeStyle =
+            '#64748b';
+
         ctx.lineWidth = 2;
+
         ctx.stroke();
 
 
-        /* manchas */
+        /* Manchas */
 
-        ctx.fillStyle = '#1e293b';
+        ctx.fillStyle =
+            '#334155';
 
-        ellipse(15, 22, 6, 7);
-        ctx.fill();
-
-        ellipse(33, 31, 7, 5);
-        ctx.fill();
-
-        ellipse(26, 17, 4, 5);
-        ctx.fill();
-
-
-        /* cabeza */
-
-        ctx.fillStyle = '#f8fafc';
-
-        ellipse(25, 10, 13, 11);
-        ctx.fill();
-
-
-        /* orejas */
-
-        ctx.fillStyle = '#94a3b8';
-
-        ellipse(12, 8, 5, 4);
-        ctx.fill();
-
-        ellipse(38, 8, 5, 4);
-        ctx.fill();
-
-
-        /* cuernos */
-
-        ctx.fillStyle = '#f59e0b';
 
         ctx.beginPath();
-        ctx.moveTo(17, 3);
+
+        ctx.ellipse(
+            12,
+            24,
+            7,
+            6,
+            -0.4,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            34,
+            34,
+            7,
+            5,
+            0.4,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Cabeza */
+
+        ctx.fillStyle =
+            '#f8fafc';
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            25,
+            12,
+            13,
+            11,
+            0,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            '#64748b';
+
+        ctx.stroke();
+
+
+        /* Orejas */
+
+        ctx.fillStyle =
+            '#f8fafc';
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            13,
+            9,
+            5,
+            4,
+            -0.5,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            37,
+            9,
+            5,
+            4,
+            0.5,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Cuernos */
+
+        ctx.fillStyle =
+            '#fbbf24';
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(18, 4);
+
         ctx.lineTo(14, -3);
-        ctx.lineTo(20, 1);
+
+        ctx.lineTo(21, 2);
+
         ctx.closePath();
+
         ctx.fill();
 
+
         ctx.beginPath();
-        ctx.moveTo(33, 3);
+
+        ctx.moveTo(32, 4);
+
         ctx.lineTo(36, -3);
-        ctx.lineTo(30, 1);
+
+        ctx.lineTo(29, 2);
+
         ctx.closePath();
+
         ctx.fill();
 
 
-        /* ojos */
+        /* Ojos */
 
-        drawEye(20, 9, 3);
-        drawEye(30, 9, 3);
+        ctx.fillStyle =
+            '#0f172a';
 
-
-        /* hocico */
-
-        ctx.fillStyle = '#fca5a5';
-
-        ellipse(25, 15, 7, 4);
-        ctx.fill();
-
-
-        ctx.fillStyle = '#7f1d1d';
 
         ctx.beginPath();
-        ctx.arc(22, 15, 1.3, 0, Math.PI * 2);
-        ctx.arc(28, 15, 1.3, 0, Math.PI * 2);
+
+        ctx.arc(
+            20,
+            11,
+            2.5,
+            0,
+            Math.PI * 2
+        );
+
         ctx.fill();
 
 
-        /* cristal */
+        ctx.beginPath();
 
-        ctx.fillStyle = 'rgba(56,189,248,0.45)';
+        ctx.arc(
+            30,
+            11,
+            2.5,
+            0,
+            Math.PI * 2
+        );
 
-        ellipse(25, 25, 9, 6);
         ctx.fill();
 
-        ctx.strokeStyle = '#bae6fd';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+
+        /* Hocico */
+
+        ctx.fillStyle =
+            '#f5a3b5';
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            25,
+            17,
+            7,
+            4,
+            0,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Fosas */
+
+        ctx.fillStyle =
+            '#9f1239';
+
+        ctx.beginPath();
+
+        ctx.arc(
+            22,
+            17,
+            1,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.arc(
+            28,
+            17,
+            1,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Cabina */
+
+        ctx.fillStyle =
+            'rgba(56,189,248,0.8)';
+
+        ctx.beginPath();
+
+        ctx.arc(
+            25,
+            27,
+            7,
+            Math.PI,
+            0
+        );
+
+        ctx.fill();
 
 
     }
 
 
-    /* =========================
+    /* =====================================================
        CABALLO
-    ========================= */
+    ===================================================== */
 
     else if (evolutionStage === 2) {
-
-        /* cuerpo */
-
-        ctx.fillStyle = '#a855f7';
-
-        ellipse(25, 29, 21, 17);
-        ctx.fill();
-
-        ctx.strokeStyle = '#7e22ce';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-
-        /* cuello */
-
-        ctx.fillStyle = '#c084fc';
-
-        ctx.beginPath();
-
-        ctx.moveTo(18, 25);
-        ctx.lineTo(19, 2);
-        ctx.lineTo(32, 2);
-        ctx.lineTo(34, 27);
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        /* crin */
-
-        ctx.fillStyle = '#581c87';
-
-        ctx.beginPath();
-
-        ctx.moveTo(19, 5);
-        ctx.lineTo(14, 10);
-        ctx.lineTo(19, 13);
-        ctx.lineTo(14, 17);
-        ctx.lineTo(20, 19);
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        /* cabeza */
-
-        ctx.fillStyle = '#c084fc';
-
-        ellipse(25, 3, 12, 10);
-        ctx.fill();
-
-
-        /* orejas */
-
-        ctx.fillStyle = '#9333ea';
-
-        ctx.beginPath();
-        ctx.moveTo(17, -3);
-        ctx.lineTo(15, -10);
-        ctx.lineTo(22, -5);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(33, -3);
-        ctx.lineTo(35, -10);
-        ctx.lineTo(28, -5);
-        ctx.closePath();
-        ctx.fill();
-
-
-        /* ojos */
-
-        drawEye(21, 2, 2.8);
-        drawEye(29, 2, 2.8);
-
-
-        /* hocico */
-
-        ctx.fillStyle = '#e9d5ff';
-
-        ellipse(25, 8, 7, 4);
-        ctx.fill();
-
-
-        /* alas */
-
-        ctx.fillStyle = '#7e22ce';
-
-        ellipse(6, 30, 8, 12);
-        ctx.fill();
-
-        ellipse(44, 30, 8, 12);
-        ctx.fill();
-
-
-        /* cristal */
-
-        ctx.fillStyle = 'rgba(224,231,255,0.45)';
-
-        ellipse(25, 29, 9, 6);
-        ctx.fill();
-
-
-        /* herraduras */
-
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 3;
-
-        ctx.beginPath();
-        ctx.arc(13, 45, 5, Math.PI, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(37, 45, 5, Math.PI, Math.PI * 2);
-        ctx.stroke();
-
-    }
-
-
-    /* =========================
-       OVEJA
-    ========================= */
-
-    else if (evolutionStage === 1) {
-
-        /* patas */
-
-        ctx.fillStyle = '#334155';
-
-        ctx.fillRect(13, 37, 7, 11);
-        ctx.fillRect(30, 37, 7, 11);
-
-
-        /* cuerpo de lana */
-
-        ctx.fillStyle = '#f8fafc';
-
-        ellipse(25, 29, 22, 18);
-        ctx.fill();
-
-        ellipse(12, 28, 9, 10);
-        ctx.fill();
-
-        ellipse(38, 28, 9, 10);
-        ctx.fill();
-
-
-        /* cabeza */
-
-        ctx.fillStyle = '#475569';
-
-        ellipse(25, 9, 12, 11);
-        ctx.fill();
-
-
-        /* lana superior */
-
-        ctx.fillStyle = '#ffffff';
-
-        ellipse(18, 7, 7, 7);
-        ctx.fill();
-
-        ellipse(25, 4, 8, 8);
-        ctx.fill();
-
-        ellipse(32, 7, 7, 7);
-        ctx.fill();
-
-
-        /* orejas */
-
-        ctx.fillStyle = '#64748b';
-
-        ellipse(13, 10, 6, 4);
-        ctx.fill();
-
-        ellipse(37, 10, 6, 4);
-        ctx.fill();
-
-
-        /* ojos */
-
-        drawEye(21, 10, 2.8);
-        drawEye(29, 10, 2.8);
-
-
-        /* hocico */
-
-        ctx.fillStyle = '#cbd5e1';
-
-        ellipse(25, 16, 6, 4);
-        ctx.fill();
-
-
-        /* alas */
-
-        ctx.fillStyle = '#e2e8f0';
-
-        ellipse(5, 30, 7, 11);
-        ctx.fill();
-
-        ellipse(45, 30, 7, 11);
-        ctx.fill();
-
-
-        /* cristal */
-
-        ctx.fillStyle = 'rgba(56,189,248,0.38)';
-
-        ellipse(25, 29, 9, 6);
-        ctx.fill();
-
-    }
-
-
-    /* =========================
-       GALLINA
-    ========================= */
-
-    else {
-
-        /* llama */
-
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = '#38bdf8';
-
-        ctx.fillStyle = '#38bdf8';
-
-        ctx.beginPath();
-        ctx.moveTo(25, 48);
-        ctx.lineTo(19, 58);
-        ctx.lineTo(25, 53);
-        ctx.lineTo(31, 58);
-        ctx.closePath();
-        ctx.fill();
 
         ctx.shadowBlur = 0;
 
 
-        /* alas */
+        drawThruster(
+            12,
+            43,
+            15,
+            '#a855f7'
+        );
 
-        ctx.fillStyle = '#cbd5e1';
+        drawThruster(
+            38,
+            43,
+            15,
+            '#a855f7'
+        );
 
-        ellipse(8, 29, 9, 15);
+
+        /* Cuerpo */
+
+        const horseGradient =
+            ctx.createLinearGradient(
+                0,
+                8,
+                0,
+                48
+            );
+
+        horseGradient.addColorStop(
+            0,
+            '#a855f7'
+        );
+
+        horseGradient.addColorStop(
+            1,
+            '#6b21a8'
+        );
+
+
+        ctx.fillStyle =
+            horseGradient;
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            25,
+            31,
+            20,
+            16,
+            0,
+            0,
+            Math.PI * 2
+        );
+
         ctx.fill();
 
-        ellipse(42, 29, 9, 15);
-        ctx.fill();
 
+        ctx.strokeStyle =
+            '#4c1d95';
 
-        /* cuerpo */
-
-        ctx.fillStyle = '#f8fafc';
-
-        ellipse(25, 29, 18, 22);
-        ctx.fill();
-
-        ctx.strokeStyle = '#cbd5e1';
         ctx.lineWidth = 2;
+
         ctx.stroke();
 
 
-        /* cuello/cabeza */
+        /* Cuello */
 
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle =
+            '#9333ea';
 
-        ellipse(25, 12, 13, 13);
-        ctx.fill();
-
-
-        /* cresta */
-
-        ctx.fillStyle = '#ef4444';
-
-        ctx.beginPath();
-
-        ctx.arc(19, 3, 4, 0, Math.PI * 2);
-        ctx.arc(25, 0, 5, 0, Math.PI * 2);
-        ctx.arc(31, 3, 4, 0, Math.PI * 2);
+        roundedRect(
+            18,
+            5,
+            14,
+            29,
+            6
+        );
 
         ctx.fill();
 
 
-        /* pico */
+        /* Cabeza */
 
-        ctx.fillStyle = '#f97316';
+        ctx.fillStyle =
+            '#c084fc';
 
         ctx.beginPath();
 
-        ctx.moveTo(25, 13);
-        ctx.lineTo(37, 16);
-        ctx.lineTo(25, 19);
+        ctx.ellipse(
+            25,
+            7,
+            12,
+            9,
+            0,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Orejas */
+
+        ctx.fillStyle =
+            '#a855f7';
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(17, 2);
+
+        ctx.lineTo(15, -7);
+
+        ctx.lineTo(22, 0);
+
         ctx.closePath();
 
         ctx.fill();
 
 
-        /* ojos */
+        ctx.beginPath();
 
-        drawEye(20, 11, 3);
-        drawEye(29, 11, 3);
+        ctx.moveTo(33, 2);
 
+        ctx.lineTo(35, -7);
 
-        /* cristal */
+        ctx.lineTo(28, 0);
 
-        ctx.fillStyle = 'rgba(56,189,248,0.45)';
+        ctx.closePath();
 
-        ellipse(25, 29, 10, 7);
         ctx.fill();
 
-        ctx.strokeStyle = '#7dd3fc';
-        ctx.lineWidth = 1;
+
+        /* Crin */
+
+        ctx.fillStyle =
+            '#581c87';
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(16, 4);
+
+        ctx.lineTo(11, 8);
+
+        ctx.lineTo(17, 10);
+
+        ctx.lineTo(11, 14);
+
+        ctx.lineTo(19, 15);
+
+        ctx.closePath();
+
+        ctx.fill();
+
+
+        /* Ojos */
+
+        ctx.fillStyle =
+            '#111827';
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            21,
+            7,
+            2,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            29,
+            7,
+            2,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Hocico */
+
+        ctx.fillStyle =
+            '#e9d5ff';
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            25,
+            13,
+            7,
+            4,
+            0,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Cabina */
+
+        ctx.fillStyle =
+            '#67e8f9';
+
+        ctx.globalAlpha = 0.8;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            25,
+            29,
+            7,
+            Math.PI,
+            0
+        );
+
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+
+
+        /* Herradura */
+
+        ctx.strokeStyle =
+            '#fbbf24';
+
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            25,
+            45,
+            7,
+            0.2,
+            Math.PI - 0.2
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    /* =====================================================
+       OVEJA
+    ===================================================== */
+
+    else if (evolutionStage === 1) {
+
+        ctx.shadowBlur = 0;
+
+
+        drawThruster(
+            12,
+            42,
+            15,
+            '#38bdf8'
+        );
+
+        drawThruster(
+            38,
+            42,
+            15,
+            '#38bdf8'
+        );
+
+
+        /* Lana */
+
+        ctx.fillStyle =
+            '#ffffff';
+
+
+        const woolCircles = [
+
+            [12, 27, 9],
+            [20, 21, 10],
+            [30, 21, 10],
+            [39, 27, 9],
+            [18, 34, 10],
+            [29, 35, 11],
+            [38, 35, 8]
+
+        ];
+
+
+        for (let p of woolCircles) {
+
+            ctx.beginPath();
+
+            ctx.arc(
+                p[0],
+                p[1],
+                p[2],
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+
+        }
+
+
+        /* Cabeza */
+
+        ctx.fillStyle =
+            '#334155';
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            25,
+            12,
+            10,
+            9,
+            0,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Orejas */
+
+        ctx.fillStyle =
+            '#64748b';
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            15,
+            10,
+            5,
+            3,
+            -0.4,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            35,
+            10,
+            5,
+            3,
+            0.4,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Ojos */
+
+        ctx.fillStyle =
+            '#ffffff';
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            21,
+            12,
+            3,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.arc(
+            29,
+            12,
+            3,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            '#111827';
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            21,
+            12,
+            1.3,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.arc(
+            29,
+            12,
+            1.3,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Hocico */
+
+        ctx.fillStyle =
+            '#f9a8d4';
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            25,
+            17,
+            5,
+            3,
+            0,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Cabina */
+
+        ctx.fillStyle =
+            'rgba(56,189,248,0.85)';
+
+        ctx.beginPath();
+
+        ctx.arc(
+            25,
+            30,
+            8,
+            Math.PI,
+            0
+        );
+
+        ctx.fill();
+
+    }
+
+
+    /* =====================================================
+       GALLINA
+    ===================================================== */
+
+    else {
+
+        ctx.shadowBlur = 0;
+
+
+        /* Propulsores */
+
+        drawThruster(
+            12,
+            42,
+            17,
+            '#38bdf8'
+        );
+
+        drawThruster(
+            38,
+            42,
+            17,
+            '#38bdf8'
+        );
+
+
+        /* Alas */
+
+        ctx.fillStyle =
+            '#cbd5e1';
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            8,
+            29,
+            9,
+            13,
+            -0.4,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            42,
+            29,
+            9,
+            13,
+            0.4,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Cuerpo */
+
+        const chickenGradient =
+            ctx.createLinearGradient(
+                0,
+                5,
+                0,
+                45
+            );
+
+        chickenGradient.addColorStop(
+            0,
+            '#ffffff'
+        );
+
+        chickenGradient.addColorStop(
+            1,
+            '#cbd5e1'
+        );
+
+
+        ctx.fillStyle =
+            chickenGradient;
+
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            25,
+            29,
+            18,
+            19,
+            0,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            '#94a3b8';
+
+        ctx.lineWidth = 2;
+
         ctx.stroke();
 
 
-        /* panel inferior */
+        /* Cabeza */
 
-        ctx.fillStyle = '#0ea5e9';
+        ctx.fillStyle =
+            '#ffffff';
+
 
         ctx.beginPath();
-        ctx.moveTo(16, 43);
-        ctx.lineTo(34, 43);
-        ctx.lineTo(30, 48);
-        ctx.lineTo(20, 48);
+
+        ctx.arc(
+            25,
+            12,
+            12,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            '#cbd5e1';
+
+        ctx.stroke();
+
+
+        /* Cresta */
+
+        ctx.fillStyle =
+            '#ef4444';
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            19,
+            2,
+            4,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.arc(
+            25,
+            0,
+            5,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.arc(
+            31,
+            2,
+            4,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Pico */
+
+        ctx.fillStyle =
+            '#f97316';
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            25,
+            12
+        );
+
+        ctx.lineTo(
+            36,
+            15
+        );
+
+        ctx.lineTo(
+            25,
+            18
+        );
+
         ctx.closePath();
+
+        ctx.fill();
+
+
+        /* Ojos */
+
+        ctx.fillStyle =
+            '#111827';
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            21,
+            10,
+            2,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.arc(
+            29,
+            10,
+            2,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Cabina */
+
+        ctx.fillStyle =
+            '#38bdf8';
+
+        ctx.globalAlpha = 0.9;
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            25,
+            27,
+            9,
+            Math.PI,
+            0
+        );
+
+        ctx.fill();
+
+
+        ctx.globalAlpha = 1;
+
+
+        /* Reflejo de cabina */
+
+        ctx.fillStyle =
+            'rgba(255,255,255,0.8)';
+
+        ctx.beginPath();
+
+        ctx.arc(
+            22,
+            24,
+            2,
+            0,
+            Math.PI * 2
+        );
+
         ctx.fill();
 
     }
@@ -2106,9 +2845,9 @@ function drawPlayerShip(x, y) {
 }
 
 
-/* =========================
-   MAÍZ ENEMIGO
-========================= */
+/* =========================================================
+   MAÍZ MALVADO 2.0
+========================================================= */
 
 function drawEvilCorn(e) {
 
@@ -2117,27 +2856,38 @@ function drawEvilCorn(e) {
     ctx.translate(e.x, e.y);
 
 
-    /* aura */
+    /* Sombra */
 
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = '#facc15';
+    ctx.shadowColor =
+        'rgba(0,0,0,0.65)';
+
+    ctx.shadowBlur = 9;
+
+    ctx.shadowOffsetY = 4;
 
 
-    /* hojas */
+    /* Hojas inferiores */
 
-    ctx.fillStyle = '#65a30d';
+    ctx.fillStyle =
+        '#16a34a';
+
 
     ctx.beginPath();
 
-    ctx.moveTo(9, 14);
+    ctx.moveTo(8, 42);
+
     ctx.quadraticCurveTo(
-        -2, 4,
-        4, -4
+        0,
+        48,
+        5,
+        34
     );
-    ctx.quadraticCurveTo(
-        15, 3,
-        19, 14
+
+    ctx.lineTo(
+        19,
+        43
     );
+
     ctx.closePath();
 
     ctx.fill();
@@ -2145,141 +2895,316 @@ function drawEvilCorn(e) {
 
     ctx.beginPath();
 
-    ctx.moveTo(39, 14);
+    ctx.moveTo(40, 42);
+
     ctx.quadraticCurveTo(
-        50, 4,
-        44, -4
+        48,
+        48,
+        43,
+        34
     );
-    ctx.quadraticCurveTo(
-        33, 3,
-        29, 14
+
+    ctx.lineTo(
+        29,
+        43
     );
+
     ctx.closePath();
 
     ctx.fill();
 
 
-    /* cuerpo */
+    /* Cuerpo */
 
-    ctx.shadowBlur = 0;
+    const cornGradient =
+        ctx.createLinearGradient(
+            4,
+            5,
+            44,
+            45
+        );
 
-    ctx.fillStyle = '#facc15';
+    cornGradient.addColorStop(
+        0,
+        '#fde047'
+    );
 
-    ellipse(24, 27, 19, 22);
+    cornGradient.addColorStop(
+        0.5,
+        '#eab308'
+    );
+
+    cornGradient.addColorStop(
+        1,
+        '#ca8a04'
+    );
+
+
+    ctx.fillStyle =
+        cornGradient;
+
+
+    roundedRect(
+        5,
+        5,
+        38,
+        40,
+        12
+    );
+
     ctx.fill();
 
 
-    ctx.strokeStyle = '#a16207';
+    ctx.strokeStyle =
+        '#854d0e';
+
     ctx.lineWidth = 2;
+
     ctx.stroke();
 
 
-    /* granos */
+    /* Granos */
 
-    ctx.fillStyle = '#fde047';
+    ctx.shadowBlur = 0;
 
-    for (let row = 0; row < 4; row++) {
+    ctx.fillStyle =
+        'rgba(161,98,7,0.35)';
 
-        for (let col = 0; col < 3; col++) {
 
-            let gx =
-                15 +
-                col * 8 +
-                (row % 2) * 4;
+    const grainRows = [
 
-            let gy =
-                17 +
-                row * 9;
+        [13, 10],
+        [24, 10],
+        [35, 10],
 
-            ctx.beginPath();
+        [13, 19],
+        [24, 19],
+        [35, 19],
 
-            ctx.arc(
-                gx,
-                gy,
-                2.3,
-                0,
-                Math.PI * 2
-            );
+        [13, 28],
+        [24, 28],
+        [35, 28],
 
-            ctx.fill();
+        [13, 37],
+        [24, 37],
+        [35, 37]
 
-        }
+    ];
+
+
+    for (let g of grainRows) {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            g[0],
+            g[1],
+            3.2,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
 
     }
 
 
-    /* cejas */
+    /* Cresta roja si tiene más vida */
 
-    ctx.strokeStyle = '#450a0a';
+    if (e.maxHp > 1) {
+
+        ctx.fillStyle =
+            '#dc2626';
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            14,
+            7,
+            5,
+            Math.PI,
+            0
+        );
+
+        ctx.arc(
+            24,
+            4,
+            6,
+            Math.PI,
+            0
+        );
+
+        ctx.arc(
+            34,
+            7,
+            5,
+            Math.PI,
+            0
+        );
+
+        ctx.fill();
+
+    }
+
+
+    /* Cejas */
+
+    ctx.strokeStyle =
+        '#450a0a';
+
     ctx.lineWidth = 3;
 
     ctx.beginPath();
 
-    ctx.moveTo(12, 16);
-    ctx.lineTo(21, 20);
+    ctx.moveTo(
+        10,
+        17
+    );
 
-    ctx.moveTo(27, 20);
-    ctx.lineTo(36, 16);
+    ctx.lineTo(
+        20,
+        14
+    );
+
+    ctx.moveTo(
+        28,
+        14
+    );
+
+    ctx.lineTo(
+        38,
+        17
+    );
 
     ctx.stroke();
 
 
-    /* ojos */
+    /* Ojos */
 
-    drawEye(17, 23, 5);
-    drawEye(31, 23, 5);
+    ctx.fillStyle =
+        '#ffffff';
 
-
-    /* boca */
-
-    ctx.fillStyle = '#450a0a';
-
-    ellipse(24, 35, 9, 6);
-    ctx.fill();
-
-
-    /* dientes */
-
-    ctx.fillStyle = '#ffffff';
 
     ctx.beginPath();
 
-    ctx.moveTo(18, 34);
-    ctx.lineTo(22, 34);
-    ctx.lineTo(20, 39);
-    ctx.closePath();
+    ctx.arc(
+        16,
+        20,
+        5,
+        0,
+        Math.PI * 2
+    );
 
-    ctx.moveTo(26, 34);
-    ctx.lineTo(30, 34);
-    ctx.lineTo(28, 39);
+    ctx.arc(
+        32,
+        20,
+        5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.fillStyle =
+        '#111827';
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        16,
+        20,
+        2.5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.arc(
+        32,
+        20,
+        2.5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Boca */
+
+    ctx.fillStyle =
+        '#450a0a';
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        24,
+        31,
+        9,
+        0,
+        Math.PI
+    );
+
+    ctx.fill();
+
+
+    /* Dientes */
+
+    ctx.fillStyle =
+        '#fff7ed';
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(19, 31);
+
+    ctx.lineTo(22, 36);
+
+    ctx.lineTo(25, 31);
+
+    ctx.lineTo(28, 36);
+
+    ctx.lineTo(31, 31);
+
     ctx.closePath();
 
     ctx.fill();
 
 
-    /* barra de vida */
+    /* Barra de vida */
 
     if (e.maxHp > 1) {
 
-        ctx.fillStyle = '#1e293b';
+        ctx.fillStyle =
+            '#1e293b';
 
-        ctx.fillRect(
+        roundedRect(
             4,
-            -7,
+            -8,
             40,
-            5
+            5,
+            2
         );
 
+        ctx.fill();
 
-        ctx.fillStyle = '#ef4444';
 
-        ctx.fillRect(
+        ctx.fillStyle =
+            '#ef4444';
+
+        roundedRect(
             4,
-            -7,
+            -8,
             40 *
             (e.hp / e.maxHp),
-            5
+            5,
+            2
         );
+
+        ctx.fill();
 
     }
 
@@ -2289,39 +3214,81 @@ function drawEvilCorn(e) {
 }
 
 
-/* =========================
-   JEFE MAÍZ
-========================= */
+/* =========================================================
+   JEFE 2.0
+========================================================= */
 
 function drawBoss(b) {
 
     ctx.save();
 
-    ctx.translate(b.x, b.y);
+    ctx.translate(
+        b.x,
+        b.y
+    );
 
 
-    /* aura */
+    /* Aura */
 
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = '#f59e0b';
+    const aura =
+        ctx.createRadialGradient(
+            60,
+            48,
+            15,
+            60,
+            48,
+            85
+        );
+
+    aura.addColorStop(
+        0,
+        'rgba(250,204,21,0.25)'
+    );
+
+    aura.addColorStop(
+        1,
+        'rgba(250,204,21,0)'
+    );
 
 
-    /* hojas gigantes */
-
-    ctx.fillStyle = '#4d7c0f';
+    ctx.fillStyle = aura;
 
     ctx.beginPath();
 
-    ctx.moveTo(25, 45);
+    ctx.arc(
+        60,
+        48,
+        85,
+        0,
+        Math.PI * 2
+    );
 
-    ctx.quadraticCurveTo(
-        -25, 25,
-        5, -10
+    ctx.fill();
+
+
+    /* Hojas */
+
+    ctx.fillStyle =
+        '#15803d';
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        25,
+        85
     );
 
     ctx.quadraticCurveTo(
-        35, 10,
-        42, 50
+        -10,
+        105,
+        20,
+        55
+    );
+
+    ctx.lineTo(
+        45,
+        82
     );
 
     ctx.closePath();
@@ -2331,16 +3298,21 @@ function drawBoss(b) {
 
     ctx.beginPath();
 
-    ctx.moveTo(95, 45);
-
-    ctx.quadraticCurveTo(
-        145, 25,
-        115, -10
+    ctx.moveTo(
+        95,
+        85
     );
 
     ctx.quadraticCurveTo(
-        85, 10,
-        78, 50
+        130,
+        105,
+        100,
+        55
+    );
+
+    ctx.lineTo(
+        75,
+        82
     );
 
     ctx.closePath();
@@ -2348,50 +3320,87 @@ function drawBoss(b) {
     ctx.fill();
 
 
-    /* cuerpo */
+    /* Cuerpo gigante */
 
-    ctx.shadowBlur = 0;
+    const bossGradient =
+        ctx.createLinearGradient(
+            0,
+            5,
+            0,
+            95
+        );
 
-    ctx.fillStyle = '#eab308';
+    bossGradient.addColorStop(
+        0,
+        '#fde047'
+    );
 
-    ellipse(
-        b.width / 2,
+    bossGradient.addColorStop(
+        0.5,
+        '#eab308'
+    );
+
+    bossGradient.addColorStop(
+        1,
+        '#a16207'
+    );
+
+
+    ctx.fillStyle =
+        bossGradient;
+
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        60,
         50,
-        52,
-        47
+        55,
+        46,
+        0,
+        0,
+        Math.PI * 2
     );
 
     ctx.fill();
 
 
-    ctx.strokeStyle = '#713f12';
+    ctx.strokeStyle =
+        '#713f12';
+
     ctx.lineWidth = 4;
+
     ctx.stroke();
 
 
-    /* granos */
+    /* Granos */
 
-    ctx.fillStyle = '#fde047';
+    ctx.shadowBlur = 0;
 
-    for (let row = 0; row < 5; row++) {
+    ctx.fillStyle =
+        'rgba(161,98,7,0.38)';
 
-        for (let col = 0; col < 4; col++) {
+
+    for (let row = 0; row < 4; row++) {
+
+        for (let col = 0; col < 5; col++) {
 
             let gx =
-                40 +
-                col * 17 +
-                (row % 2) * 8;
+                30 +
+                col * 15 +
+                (row % 2 ? 7 : 0);
 
             let gy =
                 18 +
-                row * 15;
+                row * 17;
+
 
             ctx.beginPath();
 
             ctx.arc(
                 gx,
                 gy,
-                4,
+                5,
                 0,
                 Math.PI * 2
             );
@@ -2403,57 +3412,169 @@ function drawBoss(b) {
     }
 
 
-    /* cejas */
+    /* Corona / cresta */
 
-    ctx.strokeStyle = '#450a0a';
+    ctx.fillStyle =
+        '#dc2626';
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        34,
+        10,
+        10,
+        Math.PI,
+        0
+    );
+
+    ctx.arc(
+        60,
+        4,
+        13,
+        Math.PI,
+        0
+    );
+
+    ctx.arc(
+        86,
+        10,
+        10,
+        Math.PI,
+        0
+    );
+
+    ctx.fill();
+
+
+    /* Cejas */
+
+    ctx.strokeStyle =
+        '#450a0a';
+
     ctx.lineWidth = 6;
 
     ctx.beginPath();
 
-    ctx.moveTo(25, 27);
-    ctx.lineTo(52, 37);
+    ctx.moveTo(
+        20,
+        32
+    );
 
-    ctx.moveTo(68, 37);
-    ctx.lineTo(95, 27);
+    ctx.lineTo(
+        48,
+        25
+    );
+
+    ctx.moveTo(
+        72,
+        25
+    );
+
+    ctx.lineTo(
+        100,
+        32
+    );
 
     ctx.stroke();
 
 
-    /* ojos */
+    /* Ojos */
 
-    drawEye(40, 45, 10);
-    drawEye(80, 45, 10);
+    ctx.fillStyle =
+        '#ffffff';
 
 
-    /* boca */
+    ctx.beginPath();
 
-    ctx.fillStyle = '#450a0a';
+    ctx.arc(
+        37,
+        38,
+        11,
+        0,
+        Math.PI * 2
+    );
 
-    ellipse(60, 70, 25, 12);
+    ctx.arc(
+        83,
+        38,
+        11,
+        0,
+        Math.PI * 2
+    );
+
     ctx.fill();
 
 
-    /* dientes */
+    ctx.fillStyle =
+        '#111827';
 
-    ctx.fillStyle = '#fff7ed';
+
+    ctx.beginPath();
+
+    ctx.arc(
+        37,
+        38,
+        5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.arc(
+        83,
+        38,
+        5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Boca */
+
+    ctx.fillStyle =
+        '#450a0a';
+
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        60,
+        68,
+        25,
+        14,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Dientes */
+
+    ctx.fillStyle =
+        '#fff7ed';
+
 
     for (let i = 0; i < 5; i++) {
 
         ctx.beginPath();
 
         ctx.moveTo(
-            39 + i * 10,
-            65
+            42 + i * 9,
+            64
         );
 
         ctx.lineTo(
-            45 + i * 10,
-            65
-        );
-
-        ctx.lineTo(
-            42 + i * 10,
+            46 + i * 9,
             73
+        );
+
+        ctx.lineTo(
+            50 + i * 9,
+            64
         );
 
         ctx.closePath();
@@ -2463,38 +3584,53 @@ function drawBoss(b) {
     }
 
 
-    /* barra de vida */
+    /* Barra de vida */
 
-    ctx.fillStyle = '#020617';
+    ctx.shadowBlur = 0;
 
-    ctx.fillRect(
+    ctx.fillStyle =
+        '#020617';
+
+    roundedRect(
         10,
-        -15,
+        -16,
         b.width - 20,
-        9
+        9,
+        4
     );
 
+    ctx.fill();
 
-    ctx.fillStyle = '#22c55e';
 
-    ctx.fillRect(
+    ctx.fillStyle =
+        '#ef4444';
+
+    roundedRect(
         10,
-        -15,
+        -16,
         (b.width - 20) *
         (b.hp / b.maxHp),
-        9
+        9,
+        4
     );
 
+    ctx.fill();
 
-    ctx.strokeStyle = '#ffffff';
+
+    ctx.strokeStyle =
+        '#f8fafc';
+
     ctx.lineWidth = 1;
 
-    ctx.strokeRect(
+    roundedRect(
         10,
-        -15,
+        -16,
         b.width - 20,
-        9
+        9,
+        4
     );
+
+    ctx.stroke();
 
 
     ctx.restore();
@@ -2502,23 +3638,389 @@ function drawBoss(b) {
 }
 
 
-/* =========================
-   DIBUJAR TODO
-========================= */
+/* =========================================================
+   PROYECTILES VISUALES
+========================================================= */
 
-function draw() {
+function drawBullet(b) {
 
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
+    ctx.save();
+
+    ctx.translate(
+        b.x + b.width / 2,
+        b.y + b.height / 2
     );
 
 
-    /* fondo */
+    /* Brillo */
 
-    ctx.fillStyle = '#090d16';
+    ctx.shadowBlur = 12;
+
+
+    if (b.type === 'chick') {
+
+        ctx.shadowColor =
+            '#f97316';
+
+        ctx.fillStyle =
+            '#fbbf24';
+
+
+        /* Pollito */
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            1,
+            7,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            '#ef4444';
+
+        ctx.beginPath();
+
+        ctx.arc(
+            -2,
+            -7,
+            2.5,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            '#f97316';
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            6,
+            0
+        );
+
+        ctx.lineTo(
+            12,
+            3
+        );
+
+        ctx.lineTo(
+            6,
+            5
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+    }
+
+
+    else if (b.type === 'wool') {
+
+        ctx.shadowColor =
+            '#ffffff';
+
+        ctx.strokeStyle =
+            '#e2e8f0';
+
+        ctx.lineWidth = 4;
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            0,
+            6,
+            0,
+            Math.PI * 1.7
+        );
+
+        ctx.stroke();
+
+
+        ctx.strokeStyle =
+            '#ffffff';
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            0,
+            3,
+            0,
+            Math.PI * 1.7
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    else if (b.type === 'horseshoe') {
+
+        ctx.shadowColor =
+            '#fbbf24';
+
+        ctx.strokeStyle =
+            '#fbbf24';
+
+        ctx.lineWidth = 4;
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            0,
+            7,
+            0.2,
+            Math.PI * 1.8
+        );
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            '#92400e';
+
+        ctx.fillRect(
+            -7,
+            -2,
+            3,
+            4
+        );
+
+        ctx.fillRect(
+            4,
+            -2,
+            3,
+            4
+        );
+
+    }
+
+
+    else if (b.type === 'milk') {
+
+        ctx.shadowColor =
+            '#67e8f9';
+
+        ctx.fillStyle =
+            '#f8fafc';
+
+
+        roundedRect(
+            -5,
+            -7,
+            10,
+            14,
+            2
+        );
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            '#38bdf8';
+
+        ctx.fillRect(
+            -5,
+            -2,
+            10,
+            3
+        );
+
+
+        ctx.fillStyle =
+            '#bae6fd';
+
+        ctx.fillRect(
+            -3,
+            -9,
+            6,
+            3
+        );
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   PROYECTIL DEL JEFE
+========================================================= */
+
+function drawBossBullet(bb) {
+
+    ctx.save();
+
+    ctx.translate(
+        bb.x + bb.width / 2,
+        bb.y + bb.height / 2
+    );
+
+
+    ctx.shadowColor =
+        '#facc15';
+
+    ctx.shadowBlur = 10;
+
+
+    /* Mazorca */
+
+    ctx.fillStyle =
+        '#fde047';
+
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        0,
+        0,
+        5,
+        8,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* Granos */
+
+    ctx.fillStyle =
+        '#ca8a04';
+
+
+    for (let i = -4; i <= 4; i += 4) {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            -2,
+            i,
+            1.2,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.arc(
+            2,
+            i,
+            1.2,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+    }
+
+
+    /* Hojas */
+
+    ctx.fillStyle =
+        '#16a34a';
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        -3,
+        7
+    );
+
+    ctx.lineTo(
+        -8,
+        10
+    );
+
+    ctx.lineTo(
+        -2,
+        3
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        3,
+        7
+    );
+
+    ctx.lineTo(
+        8,
+        10
+    );
+
+    ctx.lineTo(
+        2,
+        3
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   FONDO ESPACIAL MEJORADO
+========================================================= */
+
+function drawBackground() {
+
+    /* Fondo */
+
+    const bg =
+        ctx.createLinearGradient(
+            0,
+            0,
+            0,
+            canvas.height
+        );
+
+
+    bg.addColorStop(
+        0,
+        '#020617'
+    );
+
+    bg.addColorStop(
+        0.5,
+        '#0b1120'
+    );
+
+    bg.addColorStop(
+        1,
+        '#111827'
+    );
+
+
+    ctx.fillStyle =
+        bg;
 
     ctx.fillRect(
         0,
@@ -2528,12 +4030,84 @@ function draw() {
     );
 
 
-    /* estrellas */
+    /* Nebulosas */
+
+    const glow1 =
+        ctx.createRadialGradient(
+            80,
+            180,
+            0,
+            80,
+            180,
+            150
+        );
+
+
+    glow1.addColorStop(
+        0,
+        'rgba(56,189,248,0.08)'
+    );
+
+    glow1.addColorStop(
+        1,
+        'rgba(56,189,248,0)'
+    );
+
+
+    ctx.fillStyle =
+        glow1;
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    const glow2 =
+        ctx.createRadialGradient(
+            350,
+            430,
+            0,
+            350,
+            430,
+            170
+        );
+
+
+    glow2.addColorStop(
+        0,
+        'rgba(168,85,247,0.07)'
+    );
+
+    glow2.addColorStop(
+        1,
+        'rgba(168,85,247,0)'
+    );
+
+
+    ctx.fillStyle =
+        glow2;
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* Estrellas */
 
     for (let s of stars) {
 
+        ctx.globalAlpha =
+            s.alpha;
+
         ctx.fillStyle =
-            'rgba(255,255,255,0.75)';
+            '#e2e8f0';
+
 
         ctx.beginPath();
 
@@ -2550,13 +4124,23 @@ function draw() {
     }
 
 
-    /* jefe */
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* =========================================================
+   DIBUJAR TODO
+========================================================= */
+
+function draw() {
+
+    drawBackground();
+
 
     if (boss)
         drawBoss(boss);
 
-
-    /* jugador */
 
     drawPlayerShip(
         player.x,
@@ -2564,180 +4148,19 @@ function draw() {
     );
 
 
-    /* proyectiles */
-
     for (let b of bullets) {
 
-        ctx.save();
-
-        ctx.translate(
-            b.x + b.width / 2,
-            b.y + b.height / 2
-        );
-
-
-        ctx.shadowBlur = 10;
-
-
-        if (b.type === 'chick') {
-
-            ctx.shadowColor = '#facc15';
-
-            ctx.fillStyle = '#facc15';
-
-            ellipse(0, 0, 7, 9);
-            ctx.fill();
-
-            ctx.fillStyle = '#ef4444';
-
-            ctx.beginPath();
-            ctx.arc(-3, -7, 3, 0, Math.PI * 2);
-            ctx.fill();
-
-
-            ctx.fillStyle = '#f97316';
-
-            ctx.beginPath();
-            ctx.moveTo(4, 0);
-            ctx.lineTo(10, 2);
-            ctx.lineTo(4, 4);
-            ctx.closePath();
-            ctx.fill();
-
-        }
-
-
-        else if (b.type === 'wool') {
-
-            ctx.shadowColor = '#ffffff';
-
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 4;
-
-            ctx.beginPath();
-
-            ctx.arc(
-                0,
-                0,
-                7,
-                0,
-                Math.PI * 1.7
-            );
-
-            ctx.stroke();
-
-        }
-
-
-        else if (b.type === 'horseshoe') {
-
-            ctx.shadowColor = '#facc15';
-
-            ctx.strokeStyle = '#facc15';
-            ctx.lineWidth = 5;
-
-            ctx.beginPath();
-
-            ctx.arc(
-                0,
-                0,
-                7,
-                Math.PI * 0.15,
-                Math.PI * 1.85
-            );
-
-            ctx.stroke();
-
-        }
-
-
-        else if (b.type === 'milk') {
-
-            ctx.shadowColor = '#e0f2fe';
-
-            ctx.fillStyle = '#f8fafc';
-
-            ctx.beginPath();
-
-            ctx.roundRect(
-                -6,
-                -8,
-                12,
-                16,
-                3
-            );
-
-            ctx.fill();
-
-
-            ctx.fillStyle = '#38bdf8';
-
-            ctx.fillRect(
-                -6,
-                -2,
-                12,
-                4
-            );
-
-
-            ctx.fillStyle = '#bae6fd';
-
-            ctx.fillRect(
-                -3,
-                -11,
-                6,
-                4
-            );
-
-        }
-
-
-        ctx.restore();
+        drawBullet(b);
 
     }
 
-
-    /* proyectiles del jefe */
 
     for (let bb of bossBullets) {
 
-        ctx.save();
-
-        ctx.translate(
-            bb.x + bb.width / 2,
-            bb.y + bb.height / 2
-        );
-
-
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#ef4444';
-
-
-        ctx.fillStyle = '#facc15';
-
-        ellipse(0, 0, 6, 8);
-        ctx.fill();
-
-
-        ctx.fillStyle = '#65a30d';
-
-        ctx.beginPath();
-
-        ctx.moveTo(-3, -6);
-        ctx.lineTo(-7, -11);
-        ctx.lineTo(1, -7);
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        ctx.restore();
+        drawBossBullet(bb);
 
     }
 
-
-    /* enemigos */
 
     for (let e of enemies) {
 
@@ -2748,13 +4171,14 @@ function draw() {
 }
 
 
-/* =========================
-   BUCLE
-========================= */
+/* =========================================================
+   LOOP
+========================================================= */
 
 function loop() {
 
     update();
+
     draw();
 
     requestAnimationFrame(loop);
@@ -2762,9 +4186,9 @@ function loop() {
 }
 
 
-/* =========================
+/* =========================================================
    INICIO
-========================= */
+========================================================= */
 
 renderLeaderboard(
     'startLeaderboardList'
