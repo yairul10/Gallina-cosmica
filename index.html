@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
     <title>Nave Gallina vs Maíces Malvados</title>
-
     <style>
         * {
             box-sizing: border-box;
@@ -230,3973 +228,574 @@
         }
     </style>
 </head>
-
 <body>
 
-<div id="game-container">
-
-    <canvas id="gameCanvas"></canvas>
-
-    <div class="ui-layer">
-
-        <div class="header-score">
-            <div>
-                Pts: <span id="scoreVal">0</span> |
-                🪙 <span id="coinVal">0</span>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div class="ui-layer">
+            <div class="header-score">
+                <div>Pts: <span id="scoreVal">0</span> | 🪙 <span id="coinVal">0</span></div>
+                <div>Vidas: <span id="livesVal">❤️ ❤️ ❤️</span></div>
             </div>
 
-            <div>
-                Vidas: <span id="livesVal">❤️ ❤️ ❤️</span>
+            <div class="controls-hud">
+                <div class="upgrades-panel" id="upgradesPanel">
+                    <button class="upgrade-btn" id="upgBullets" onclick="buyUpgrade('bullets')">Daño/Disparo (Lv.0)</button>
+                    <button class="upgrade-btn" id="upgSpeed" onclick="buyUpgrade('speed')">Velocidad (Lv.1)</button>
+                    <button class="upgrade-btn" id="upgLife" onclick="buyUpgrade('life')">+1 Vida [🪙15]</button>
+                    <button class="upgrade-btn" id="upgEvolve" onclick="buyUpgrade('evolve')" style="display:none; border-color:#fbbf24; color:#fbbf24;">🌟 Evolucionar</button>
+                </div>
+
+                <div class="fire-button-container">
+                    <button class="btn-fire" id="fireBtn">🚀</button>
+                </div>
             </div>
         </div>
 
-        <div class="controls-hud">
-
-            <div class="upgrades-panel" id="upgradesPanel">
-
-                <button class="upgrade-btn"
-                        id="upgBullets"
-                        onclick="buyUpgrade('bullets')">
-                    Daño/Disparo (Lv.0)
-                </button>
-
-                <button class="upgrade-btn"
-                        id="upgSpeed"
-                        onclick="buyUpgrade('speed')">
-                    Velocidad (Lv.1)
-                </button>
-
-                <button class="upgrade-btn"
-                        id="upgLife"
-                        onclick="buyUpgrade('life')">
-                    +1 Vida [🪙15]
-                </button>
-
-                <button class="upgrade-btn"
-                        id="upgEvolve"
-                        onclick="buyUpgrade('evolve')"
-                        style="display:none; border-color:#fbbf24; color:#fbbf24;">
-                    🌟 Evolucionar
-                </button>
-
+        <div id="startScreen" class="screen-overlay">
+            <h1>🐔 Granja Espacial Épica</h1>
+            <p>Mejoras a 10 y 15 monedas. ¡Evoluciona hasta la Vaca lechera y compite por entrar al Top 5 de récords!</p>
+            
+            <div class="leaderboard-box">
+                <h3>🏆 Mejores Récords</h3>
+                <div id="startLeaderboardList"></div>
             </div>
 
-            <div class="fire-button-container">
-
-                <button class="btn-fire" id="fireBtn">
-                    🚀
-                </button>
-
-            </div>
-
+            <button class="btn" id="startBtn">¡Despegar!</button>
         </div>
 
+        <div id="gameOverScreen" class="screen-overlay" style="display: none;">
+            <h1>¡Nave Destruida!</h1>
+            <p>Puntuación final: <strong id="finalScore">0</strong></p>
+            
+            <div id="saveScoreSection">
+                <p style="font-size:0.8rem; margin-bottom:4px;">¡Nuevo Récord! Ingresa tus 3 iniciales:</p>
+                <div class="initials-input-container">
+                    <input type="text" id="playerInitials" maxlength="3" value="AAA">
+                    <button class="btn" id="saveScoreBtn" style="padding: 8px 14px; font-size: 0.85rem;">Guardar</button>
+                </div>
+            </div>
+
+            <div class="leaderboard-box">
+                <h3>🏆 Top Puntajes</h3>
+                <div id="endLeaderboardList"></div>
+            </div>
+
+            <button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button>
+        </div>
     </div>
 
-
-    <div id="startScreen" class="screen-overlay">
-
-        <h1>🐔 Granja Espacial Épica</h1>
-
-        <p>
-            Mejoras a 10 y 15 monedas.
-            ¡Evoluciona hasta la Vaca lechera y compite por entrar al Top 5 de récords!
-        </p>
-
-        <div class="leaderboard-box">
-
-            <h3>🏆 Mejores Récords</h3>
-
-            <div id="startLeaderboardList"></div>
-
-        </div>
-
-        <button class="btn" id="startBtn">
-            ¡Despegar!
-        </button>
-
-    </div>
-
-
-    <div id="gameOverScreen"
-         class="screen-overlay"
-         style="display: none;">
-
-        <h1>¡Nave Destruida!</h1>
-
-        <p>
-            Puntuación final:
-            <strong id="finalScore">0</strong>
-        </p>
-
-        <div id="saveScoreSection">
-
-            <p style="font-size:0.8rem; margin-bottom:4px;">
-                ¡Nuevo Récord! Ingresa tus 3 iniciales:
-            </p>
-
-            <div class="initials-input-container">
-
-                <input type="text"
-                       id="playerInitials"
-                       maxlength="3"
-                       value="AAA">
-
-                <button class="btn"
-                        id="saveScoreBtn"
-                        style="padding: 8px 14px; font-size: 0.85rem;">
-                    Guardar
-                </button>
-
-            </div>
-
-        </div>
-
-        <div class="leaderboard-box">
-
-            <h3>🏆 Top Puntajes</h3>
-
-            <div id="endLeaderboardList"></div>
-
-        </div>
-
-        <button class="btn"
-                id="restartBtn"
-                style="margin-top: 4px;">
-            Reintentar
-        </button>
-
-    </div>
-
-</div>
-
-
-<script>
-
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-canvas.width = 420;
-canvas.height = 640;
-
-
-/* =========================================================
-   VARIABLES DEL JUEGO
-========================================================= */
-
-let score = 0;
-let coins = 0;
-let lives = 3;
-let gameTime = 0;
-let gameState = 'START';
-
-let evolutionStage = 0;
-let maxUpgradeLimit = 3;
-let nextBossScoreThreshold = 5000;
-
-let upgrades = {
-    bullets: 0,
-    speed: 1
-};
-
-
-const player = {
-
-    x: canvas.width / 2 - 25,
-    y: canvas.height - 110,
-
-    width: 50,
-    height: 50,
-
-    baseSpeed: 5.5
-
-};
-
-
-let bullets = [];
-let enemies = [];
-let bossBullets = [];
-let boss = null;
-let stars = [];
-
-
-/* =========================================================
-   RÉCORDS
-========================================================= */
-
-let leaderboard =
-    JSON.parse(localStorage.getItem('farm_space_leaderboard')) ||
-    [
-        { name: 'PRO', score: 5000 },
-        { name: 'ANA', score: 3000 },
-        { name: 'BOB', score: 1500 }
-    ];
-
-
-function saveLeaderboard() {
-
-    localStorage.setItem(
-        'farm_space_leaderboard',
-        JSON.stringify(leaderboard)
-    );
-
-}
-
-
-function renderLeaderboard(elementId) {
-
-    const container =
-        document.getElementById(elementId);
-
-    container.innerHTML = '';
-
-    if (leaderboard.length === 0) {
-
-        container.innerHTML =
-            '<div class="lb-row"><span>Sin récords aún</span><span></span></div>';
-
-        return;
-    }
-
-    leaderboard.forEach((item, index) => {
-
-        const row =
-            document.createElement('div');
-
-        row.className = 'lb-row';
-
-        row.innerHTML =
-            `<span>#${index + 1} ${item.name}</span>
-             <span>${item.score} pts</span>`;
-
-        container.appendChild(row);
-
-    });
-
-}
-
-
-/* =========================================================
-   ESTRELLAS
-========================================================= */
-
-for (let i = 0; i < 55; i++) {
-
-    stars.push({
-
-        x: Math.random() * canvas.width,
-
-        y: Math.random() * canvas.height,
-
-        size: Math.random() * 2 + 0.5,
-
-        speed: Math.random() * 0.8 + 0.2,
-
-        alpha: Math.random() * 0.7 + 0.3
-
-    });
-
-}
-
-
-/* =========================================================
-   CONTROLES
-========================================================= */
-
-let keys = {
-
-    ArrowLeft: false,
-    ArrowRight: false,
-    KeyA: false,
-    KeyD: false
-
-};
-
-
-window.addEventListener('keydown', (e) => {
-
-    if (e.code in keys) {
-
-        keys[e.code] = true;
-
-    }
-
-    if (e.code === 'Space' &&
-        gameState === 'PLAYING') {
-
-        shootBullet();
-
-        e.preventDefault();
-
-    }
-
-});
-
-
-window.addEventListener('keyup', (e) => {
-
-    if (e.code in keys) {
-
-        keys[e.code] = false;
-
-    }
-
-});
-
-
-let isDragging = false;
-
-
-canvas.addEventListener('pointerdown', (e) => {
-
-    isDragging = true;
-
-    movePlayerToTouch(e);
-
-});
-
-
-canvas.addEventListener('pointermove', (e) => {
-
-    if (isDragging) {
-
-        movePlayerToTouch(e);
-
-    }
-
-});
-
-
-window.addEventListener('pointerup', () => {
-
-    isDragging = false;
-
-});
-
-
-function movePlayerToTouch(e) {
-
-    const rect =
-        canvas.getBoundingClientRect();
-
-    const touchX =
-        (e.clientX - rect.left) *
-        (canvas.width / rect.width);
-
-    player.x =
-        touchX - player.width / 2;
-
-}
-
-
-/* =========================================================
-   BOTÓN DISPARO
-========================================================= */
-
-document
-    .getElementById('fireBtn')
-    .addEventListener('click', (e) => {
-
-        e.stopPropagation();
-
-        if (gameState === 'PLAYING') {
-
-            shootBullet();
-
-        }
-
-    });
-
-
-/* =========================================================
-   DISPAROS
-========================================================= */
-
-function shootBullet() {
-
-    let bulletSpeed = 10;
-
-    let widthSize = 16;
-    let heightSize = 16;
-
-    let bType = 'chick';
-
-    if (evolutionStage === 1)
-        bType = 'wool';
-
-    if (evolutionStage === 2)
-        bType = 'horseshoe';
-
-    if (evolutionStage === 3)
-        bType = 'milk';
-
-
-    let bulletDamage =
-        upgrades.bullets === 0
-            ? 1
-            : upgrades.bullets;
-
-
-    if (upgrades.bullets >= 2) {
-
-        bullets.push({
-            x: player.x + 4,
-            y: player.y - 10,
-            width: widthSize,
-            height: heightSize,
-            speed: bulletSpeed,
-            dx: -1.2,
-            type: bType,
-            damage: bulletDamage
-        });
-
-        bullets.push({
-            x: player.x + player.width / 2 - 8,
-            y: player.y - 14,
-            width: widthSize,
-            height: heightSize,
-            speed: bulletSpeed,
-            dx: 0,
-            type: bType,
-            damage: bulletDamage
-        });
-
-        bullets.push({
-            x: player.x + player.width - 20,
-            y: player.y - 10,
-            width: widthSize,
-            height: heightSize,
-            speed: bulletSpeed,
-            dx: 1.2,
-            type: bType,
-            damage: bulletDamage
-        });
-
-    }
-
-    else if (upgrades.bullets === 1) {
-
-        bullets.push({
-            x: player.x + 8,
-            y: player.y - 10,
-            width: widthSize,
-            height: heightSize,
-            speed: bulletSpeed,
-            dx: 0,
-            type: bType,
-            damage: bulletDamage
-        });
-
-        bullets.push({
-            x: player.x + player.width - 24,
-            y: player.y - 10,
-            width: widthSize,
-            height: heightSize,
-            speed: bulletSpeed,
-            dx: 0,
-            type: bType,
-            damage: bulletDamage
-        });
-
-    }
-
-    else {
-
-        bullets.push({
-
-            x: player.x + player.width / 2 - 8,
-
-            y: player.y - 10,
-
-            width: widthSize,
-
-            height: heightSize,
-
-            speed: bulletSpeed,
-
-            dx: 0,
-
-            type: bType,
-
-            damage: bulletDamage
-
-        });
-
-    }
-
-}
-
-
-/* =========================================================
-   MEJORAS
-========================================================= */
-
-window.buyUpgrade = function(type) {
-
-    if (
-        type === 'bullets' &&
-        upgrades.bullets < maxUpgradeLimit &&
-        coins >= 10
-    ) {
-
-        coins -= 10;
-
-        upgrades.bullets++;
-
-    }
-
-    else if (
-        type === 'speed' &&
-        upgrades.speed < maxUpgradeLimit &&
-        coins >= 10
-    ) {
-
-        coins -= 10;
-
-        upgrades.speed++;
-
-    }
-
-    else if (
-        type === 'life' &&
-        coins >= 15
-    ) {
-
-        coins -= 15;
-
-        lives++;
-
-        updateLivesUI();
-
-    }
-
-    else if (type === 'evolve') {
-
-        if (evolutionStage === 0) {
-
-            evolutionStage = 1;
-
-            maxUpgradeLimit = 6;
-
-        }
-
-        else if (evolutionStage === 1) {
-
-            evolutionStage = 2;
-
-            maxUpgradeLimit = 10;
-
-        }
-
-        else if (evolutionStage === 2) {
-
-            evolutionStage = 3;
-
-            maxUpgradeLimit = 10;
-
-        }
-
-        document
-            .getElementById('upgEvolve')
-            .style.display = 'none';
-
-    }
-
-    updateUpgradesHUD();
-
-};
-
-
-function updateUpgradesHUD() {
-
-    document
-        .getElementById('coinVal')
-        .textContent = coins;
-
-
-    document
-        .getElementById('upgBullets')
-        .textContent =
-            upgrades.bullets >= maxUpgradeLimit
-            ? 'Daño Disparos: MÁX'
-            : `Daño/Disparos [🪙10] (Lv.${upgrades.bullets})`;
-
-
-    document
-        .getElementById('upgSpeed')
-        .textContent =
-            upgrades.speed >= maxUpgradeLimit
-            ? 'Velocidad: MÁX'
-            : `Velocidad [🪙10] (Lv.${upgrades.speed})`;
-
-
-    document
-        .getElementById('upgLife')
-        .textContent =
-            '+1 Vida [🪙15]';
-
-
-    let evolveBtn =
-        document.getElementById('upgEvolve');
-
-
-    if (
-        upgrades.bullets >= maxUpgradeLimit &&
-        upgrades.speed >= maxUpgradeLimit
-    ) {
-
-        if (evolutionStage === 0) {
-
-            evolveBtn.style.display = 'block';
-
-            evolveBtn.textContent =
-                '🌟 Evolucionar a Oveja';
-
-        }
-
-        else if (evolutionStage === 1) {
-
-            evolveBtn.style.display = 'block';
-
-            evolveBtn.textContent =
-                '🌟 Evolucionar a Caballo';
-
-        }
-
-        else if (evolutionStage === 2) {
-
-            evolveBtn.style.display = 'block';
-
-            evolveBtn.textContent =
-                '🌟 Evolucionar a Vaca';
-
-        }
-
-        else {
-
-            evolveBtn.style.display = 'none';
-
-        }
-
-    }
-
-    else {
-
-        evolveBtn.style.display = 'none';
-
-    }
-
-}
-
-
-/* =========================================================
-   ENEMIGOS
-========================================================= */
-
-function spawnEnemy() {
-
-    if (boss) return;
-
-    const size = 48;
-
-    const x =
-        Math.random() *
-        (canvas.width - size - 20) +
-        10;
-
-    let speedMultiplier =
-        1 + (gameTime / 30);
-
-    let baseCornHp =
-        evolutionStage >= 3
-        ? 3
-        : 1;
-
-
-    enemies.push({
-
-        x: x,
-
-        y: -60,
-
-        width: size,
-
-        height: size,
-
-        hp: baseCornHp,
-
-        maxHp: baseCornHp,
-
-        speed:
-            (1.5 + Math.random() * 1.5) *
-            speedMultiplier,
-
-        wobble:
-            Math.random() * Math.PI
-
-    });
-
-}
-
-
-/* =========================================================
-   JEFE
-========================================================= */
-
-function spawnBoss() {
-
-    let bossLevel =
-        Math.floor(score / 5000);
-
-    let bossHp =
-        60 + (bossLevel * 45);
-
-
-    boss = {
-
-        x:
-            canvas.width / 2 - 60,
-
-        y: -100,
-
-        width: 120,
-
-        height: 100,
-
-        maxHp: bossHp,
-
-        hp: bossHp,
-
-        speed:
-            1.5 + (bossLevel * 0.1),
-
-        direction: 1,
-
-        shootCooldown: 0
-
-    };
-
-}
-
-
-/* =========================================================
-   BOTONES
-========================================================= */
-
-document
-    .getElementById('startBtn')
-    .addEventListener('click', startGame);
-
-
-document
-    .getElementById('restartBtn')
-    .addEventListener('click', startGame);
-
-
-document
-    .getElementById('saveScoreBtn')
-    .addEventListener('click', () => {
-
-        let initials =
-            document
-                .getElementById('playerInitials')
-                .value
-                .toUpperCase()
-                .slice(0, 3);
-
-
-        if (!initials)
-            initials = 'ABC';
-
-
-        leaderboard.push({
-
-            name: initials,
-
-            score: score
-
-        });
-
-
-        leaderboard.sort(
-            (a, b) => b.score - a.score
-        );
-
-
-        if (leaderboard.length > 5) {
-
-            leaderboard =
-                leaderboard.slice(0, 5);
-
-        }
-
-
-        saveLeaderboard();
-
-
-        document
-            .getElementById('saveScoreSection')
-            .style.display = 'none';
-
-
-        renderLeaderboard(
-            'endLeaderboardList'
-        );
-
-    });
-
-
-/* =========================================================
-   INICIAR
-========================================================= */
-
-function startGame() {
-
-    score = 0;
-
-    coins = 0;
-
-    lives = 3;
-
-    gameTime = 0;
-
-    bullets = [];
-
-    enemies = [];
-
-    bossBullets = [];
-
-    boss = null;
-
-    evolutionStage = 0;
-
-    maxUpgradeLimit = 3;
-
-    nextBossScoreThreshold = 5000;
-
-    upgrades.bullets = 0;
-
-    upgrades.speed = 1;
-
-    player.x =
-        canvas.width / 2 -
-        player.width / 2;
-
-
-    document
-        .getElementById('scoreVal')
-        .textContent = score;
-
-
-    document
-        .getElementById('upgEvolve')
-        .style.display = 'none';
-
-
-    document
-        .getElementById('saveScoreSection')
-        .style.display = 'block';
-
-
-    document
-        .getElementById('playerInitials')
-        .value = 'AAA';
-
-
-    updateLivesUI();
-
-    updateUpgradesHUD();
-
-
-    document
-        .getElementById('startScreen')
-        .style.display = 'none';
-
-
-    document
-        .getElementById('gameOverScreen')
-        .style.display = 'none';
-
-
-    gameState = 'PLAYING';
-
-
-    if (window.gameTimerInterval)
-        clearInterval(window.gameTimerInterval);
-
-
-    window.gameTimerInterval =
-        setInterval(() => {
-
-            if (gameState === 'PLAYING') {
-
-                gameTime++;
-
-            }
-
-        }, 1000);
-
-}
-
-
-/* =========================================================
-   GAME OVER
-========================================================= */
-
-function gameOver() {
-
-    gameState = 'GAMEOVER';
-
-    clearInterval(
-        window.gameTimerInterval
-    );
-
-
-    document
-        .getElementById('finalScore')
-        .textContent = score;
-
-
-    renderLeaderboard(
-        'endLeaderboardList'
-    );
-
-
-    document
-        .getElementById('gameOverScreen')
-        .style.display = 'flex';
-
-}
-
-
-/* =========================================================
-   ACTUALIZACIÓN DEL JUEGO
-========================================================= */
-
-let enemySpawnInterval = 0;
-
-
-function update() {
-
-    if (gameState !== 'PLAYING')
-        return;
-
-
-    if (
-        score >= nextBossScoreThreshold &&
-        !boss
-    ) {
-
-        spawnBoss();
-
-        nextBossScoreThreshold += 5000;
-
-    }
-
-
-    let currentSpeed =
-        player.baseSpeed +
-        (upgrades.speed - 1) * 0.5;
-
-
-    if (
-        keys.ArrowLeft ||
-        keys.KeyA
-    ) {
-
-        player.x -= currentSpeed;
-
-    }
-
-
-    if (
-        keys.ArrowRight ||
-        keys.KeyD
-    ) {
-
-        player.x += currentSpeed;
-
-    }
-
-
-    if (player.x < 10)
-        player.x = 10;
-
-
-    if (
-        player.x >
-        canvas.width -
-        player.width -
-        10
-    ) {
-
-        player.x =
-            canvas.width -
-            player.width -
-            10;
-
-    }
-
-
-    for (let s of stars) {
-
-        s.y += s.speed;
-
-        if (s.y > canvas.height) {
-
-            s.y = 0;
-
-            s.x =
-                Math.random() *
-                canvas.width;
-
-        }
-
-    }
-
-
-    for (
-        let i = bullets.length - 1;
-        i >= 0;
-        i--
-    ) {
-
-        bullets[i].y -=
-            bullets[i].speed;
-
-
-        if (bullets[i].dx)
-            bullets[i].x +=
-                bullets[i].dx;
-
-
-        if (bullets[i].y < -20)
-            bullets.splice(i, 1);
-
-    }
-
-
-    for (
-        let i = bossBullets.length - 1;
-        i >= 0;
-        i--
-    ) {
-
-        bossBullets[i].y +=
-            bossBullets[i].speed;
-
-
-        if (
-            bossBullets[i].y >
-            canvas.height + 20
-        ) {
-
-            bossBullets.splice(i, 1);
-
-            continue;
-
-        }
-
-
-        if (
-            player.x <
-            bossBullets[i].x +
-            bossBullets[i].width &&
-
-            player.x +
-            player.width >
-            bossBullets[i].x &&
-
-            player.y <
-            bossBullets[i].y +
-            bossBullets[i].height &&
-
-            player.y +
-            player.height >
-            bossBullets[i].y
-        ) {
-
-            bossBullets.splice(i, 1);
-
-            lives--;
-
-            updateLivesUI();
-
-            if (lives <= 0)
-                gameOver();
-
-        }
-
-    }
-
-
-    if (!boss) {
-
-        enemySpawnInterval++;
-
-        let spawnLimit =
-            Math.max(
-                20,
-                45 -
-                Math.floor(gameTime / 10)
-            );
-
-
-        if (
-            enemySpawnInterval >
-            spawnLimit
-        ) {
-
-            spawnEnemy();
-
-            enemySpawnInterval = 0;
-
-        }
-
-    }
-
-
-    if (boss) {
-
-        if (boss.y < 50)
-            boss.y += 1;
-
-
-        boss.x +=
-            boss.speed *
-            boss.direction;
-
-
-        if (
-            boss.x < 10 ||
-            boss.x + boss.width >
-            canvas.width - 10
-        ) {
-
-            boss.direction *= -1;
-
-        }
-
-
-        boss.shootCooldown++;
-
-
-        if (
-            boss.shootCooldown >= 35
-        ) {
-
-            boss.shootCooldown = 0;
-
-
-            bossBullets.push({
-
-                x:
-                    boss.x +
-                    boss.width / 2 -
-                    6,
-
-                y:
-                    boss.y +
-                    boss.height,
-
-                width: 12,
-
-                height: 12,
-
-                speed: 5.5
-
-            });
-
-        }
-
-    }
-
-
-    for (
-        let i = enemies.length - 1;
-        i >= 0;
-        i--
-    ) {
-
-        enemies[i].y +=
-            enemies[i].speed;
-
-
-        enemies[i].wobble += 0.05;
-
-
-        enemies[i].x +=
-            Math.sin(
-                enemies[i].wobble
-            ) * 0.8;
-
-
-        if (
-            enemies[i].y >
-            canvas.height
-        ) {
-
-            enemies.splice(i, 1);
-
-            lives--;
-
-            updateLivesUI();
-
-            if (lives <= 0)
-                gameOver();
-
-            continue;
-
-        }
-
-
-        if (
-            player.x <
-            enemies[i].x +
-            enemies[i].width &&
-
-            player.x +
-            player.width >
-            enemies[i].x &&
-
-            player.y <
-            enemies[i].y +
-            enemies[i].height &&
-
-            player.y +
-            player.height >
-            enemies[i].y
-        ) {
-
-            enemies.splice(i, 1);
-
-            lives--;
-
-            updateLivesUI();
-
-            if (lives <= 0)
-                gameOver();
-
-            continue;
-
-        }
-
-
-        for (
-            let j = bullets.length - 1;
-            j >= 0;
-            j--
-        ) {
-
-            if (
-                bullets[j] &&
-
-                bullets[j].x <
-                enemies[i].x +
-                enemies[i].width &&
-
-                bullets[j].x +
-                bullets[j].width >
-                enemies[i].x &&
-
-                bullets[j].y <
-                enemies[i].y +
-                enemies[i].height &&
-
-                bullets[j].y +
-                bullets[j].height >
-                enemies[i].y
-            ) {
-
-                enemies[i].hp -=
-                    bullets[j].damage;
-
-
-                bullets.splice(j, 1);
-
-
-                if (
-                    enemies[i].hp <= 0
-                ) {
-
-                    score += 100;
-
-                    coins += 1;
-
-
-                    document
-                        .getElementById('scoreVal')
-                        .textContent = score;
-
-
-                    updateUpgradesHUD();
-
-
-                    enemies.splice(i, 1);
-
-                }
-
-                break;
-
-            }
-
-        }
-
-    }
-
-
-    if (boss) {
-
-        for (
-            let j = bullets.length - 1;
-            j >= 0;
-            j--
-        ) {
-
-            if (
-                bullets[j] &&
-
-                bullets[j].x <
-                boss.x +
-                boss.width &&
-
-                bullets[j].x +
-                bullets[j].width >
-                boss.x &&
-
-                bullets[j].y <
-                boss.y +
-                boss.height &&
-
-                bullets[j].y +
-                bullets[j].height >
-                boss.y
-            ) {
-
-                boss.hp -=
-                    bullets[j].damage;
-
-
-                bullets.splice(j, 1);
-
-
-                if (boss.hp <= 0) {
-
-                    score += 1500;
-
-                    coins += 15;
-
-
-                    document
-                        .getElementById('scoreVal')
-                        .textContent = score;
-
-
-                    updateUpgradesHUD();
-
-
-                    boss = null;
-
-                    break;
-
-                }
-
-            }
-
-        }
-
-    }
-
-}
-
-
-/* =========================================================
-   VIDAS
-========================================================= */
-
-function updateLivesUI() {
-
-    let hearts = '';
-
-    for (let i = 0; i < lives; i++)
-        hearts += '❤️ ';
-
-    document
-        .getElementById('livesVal')
-        .textContent =
-            hearts.trim();
-
-}
-
-
-/* =========================================================
-   FUNCIONES VISUALES 2.0
-========================================================= */
-
-
-/* Rectángulo redondeado compatible */
-function roundedRect(
-    x,
-    y,
-    w,
-    h,
-    r
-) {
-
-    const radius =
-        Math.min(
-            r,
-            w / 2,
-            h / 2
-        );
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        x + radius,
-        y
-    );
-
-    ctx.lineTo(
-        x + w - radius,
-        y
-    );
-
-    ctx.quadraticCurveTo(
-        x + w,
-        y,
-        x + w,
-        y + radius
-    );
-
-    ctx.lineTo(
-        x + w,
-        y + h - radius
-    );
-
-    ctx.quadraticCurveTo(
-        x + w,
-        y + h,
-        x + w - radius,
-        y + h
-    );
-
-    ctx.lineTo(
-        x + radius,
-        y + h
-    );
-
-    ctx.quadraticCurveTo(
-        x,
-        y + h,
-        x,
-        y + h - radius
-    );
-
-    ctx.lineTo(
-        x,
-        y + radius
-    );
-
-    ctx.quadraticCurveTo(
-        x,
-        y,
-        x + radius,
-        y
-    );
-
-    ctx.closePath();
-
-}
-
-
-/* =========================================================
-   PROPULSORES
-========================================================= */
-
-function drawThruster(
-    x,
-    y,
-    size,
-    color
-) {
-
-    const gradient =
-        ctx.createLinearGradient(
-            x,
-            y,
-            x,
-            y + size
-        );
-
-
-    gradient.addColorStop(
-        0,
-        '#ffffff'
-    );
-
-    gradient.addColorStop(
-        0.35,
-        color
-    );
-
-    gradient.addColorStop(
-        1,
-        'rgba(0,0,0,0)'
-    );
-
-
-    ctx.fillStyle = gradient;
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        x - size / 2,
-        y
-    );
-
-    ctx.lineTo(
-        x + size / 2,
-        y
-    );
-
-    ctx.lineTo(
-        x,
-        y + size
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-}
-
-
-/* =========================================================
-   NAVE / ANIMALES
-========================================================= */
-
-function drawPlayerShip(x, y) {
-
-    ctx.save();
-
-    ctx.translate(x, y);
-
-
-    /* -----------------------------
-       SOMBRA
-    ----------------------------- */
-
-    ctx.shadowColor =
-        'rgba(0,0,0,0.65)';
-
-    ctx.shadowBlur = 10;
-
-    ctx.shadowOffsetY = 5;
-
-
-    /* =====================================================
-       VACA
-    ===================================================== */
-
-    if (evolutionStage === 3) {
-
-        /* Propulsores */
-
-        ctx.shadowBlur = 0;
-
-        drawThruster(
-            13,
-            42,
-            16,
-            '#38bdf8'
-        );
-
-        drawThruster(
-            37,
-            42,
-            16,
-            '#38bdf8'
-        );
-
-
-        /* Cuerpo */
-
-        const cowGradient =
-            ctx.createLinearGradient(
-                0,
-                8,
-                0,
-                48
-            );
-
-        cowGradient.addColorStop(
-            0,
-            '#ffffff'
-        );
-
-        cowGradient.addColorStop(
-            1,
-            '#cbd5e1'
-        );
-
-
-        ctx.fillStyle =
-            cowGradient;
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            25,
-            29,
-            22,
-            17,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.strokeStyle =
-            '#64748b';
-
-        ctx.lineWidth = 2;
-
-        ctx.stroke();
-
-
-        /* Manchas */
-
-        ctx.fillStyle =
-            '#334155';
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            12,
-            24,
-            7,
-            6,
-            -0.4,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            34,
-            34,
-            7,
-            5,
-            0.4,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Cabeza */
-
-        ctx.fillStyle =
-            '#f8fafc';
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            25,
-            12,
-            13,
-            11,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.strokeStyle =
-            '#64748b';
-
-        ctx.stroke();
-
-
-        /* Orejas */
-
-        ctx.fillStyle =
-            '#f8fafc';
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            13,
-            9,
-            5,
-            4,
-            -0.5,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            37,
-            9,
-            5,
-            4,
-            0.5,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Cuernos */
-
-        ctx.fillStyle =
-            '#fbbf24';
-
-
-        ctx.beginPath();
-
-        ctx.moveTo(18, 4);
-
-        ctx.lineTo(14, -3);
-
-        ctx.lineTo(21, 2);
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        ctx.beginPath();
-
-        ctx.moveTo(32, 4);
-
-        ctx.lineTo(36, -3);
-
-        ctx.lineTo(29, 2);
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        /* Ojos */
-
-        ctx.fillStyle =
-            '#0f172a';
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            20,
-            11,
-            2.5,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            30,
-            11,
-            2.5,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Hocico */
-
-        ctx.fillStyle =
-            '#f5a3b5';
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            25,
-            17,
-            7,
-            4,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Fosas */
-
-        ctx.fillStyle =
-            '#9f1239';
-
-        ctx.beginPath();
-
-        ctx.arc(
-            22,
-            17,
-            1,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.arc(
-            28,
-            17,
-            1,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Cabina */
-
-        ctx.fillStyle =
-            'rgba(56,189,248,0.8)';
-
-        ctx.beginPath();
-
-        ctx.arc(
-            25,
-            27,
-            7,
-            Math.PI,
-            0
-        );
-
-        ctx.fill();
-
-
-    }
-
-
-    /* =====================================================
-       CABALLO
-    ===================================================== */
-
-    else if (evolutionStage === 2) {
-
-        ctx.shadowBlur = 0;
-
-
-        drawThruster(
-            12,
-            43,
-            15,
-            '#a855f7'
-        );
-
-        drawThruster(
-            38,
-            43,
-            15,
-            '#a855f7'
-        );
-
-
-        /* Cuerpo */
-
-        const horseGradient =
-            ctx.createLinearGradient(
-                0,
-                8,
-                0,
-                48
-            );
-
-        horseGradient.addColorStop(
-            0,
-            '#a855f7'
-        );
-
-        horseGradient.addColorStop(
-            1,
-            '#6b21a8'
-        );
-
-
-        ctx.fillStyle =
-            horseGradient;
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            25,
-            31,
-            20,
-            16,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.strokeStyle =
-            '#4c1d95';
-
-        ctx.lineWidth = 2;
-
-        ctx.stroke();
-
-
-        /* Cuello */
-
-        ctx.fillStyle =
-            '#9333ea';
-
-        roundedRect(
-            18,
-            5,
-            14,
-            29,
-            6
-        );
-
-        ctx.fill();
-
-
-        /* Cabeza */
-
-        ctx.fillStyle =
-            '#c084fc';
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            25,
-            7,
-            12,
-            9,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Orejas */
-
-        ctx.fillStyle =
-            '#a855f7';
-
-
-        ctx.beginPath();
-
-        ctx.moveTo(17, 2);
-
-        ctx.lineTo(15, -7);
-
-        ctx.lineTo(22, 0);
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        ctx.beginPath();
-
-        ctx.moveTo(33, 2);
-
-        ctx.lineTo(35, -7);
-
-        ctx.lineTo(28, 0);
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        /* Crin */
-
-        ctx.fillStyle =
-            '#581c87';
-
-
-        ctx.beginPath();
-
-        ctx.moveTo(16, 4);
-
-        ctx.lineTo(11, 8);
-
-        ctx.lineTo(17, 10);
-
-        ctx.lineTo(11, 14);
-
-        ctx.lineTo(19, 15);
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        /* Ojos */
-
-        ctx.fillStyle =
-            '#111827';
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            21,
-            7,
-            2,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            29,
-            7,
-            2,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Hocico */
-
-        ctx.fillStyle =
-            '#e9d5ff';
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            25,
-            13,
-            7,
-            4,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Cabina */
-
-        ctx.fillStyle =
-            '#67e8f9';
-
-        ctx.globalAlpha = 0.8;
-
-        ctx.beginPath();
-
-        ctx.arc(
-            25,
-            29,
-            7,
-            Math.PI,
-            0
-        );
-
-        ctx.fill();
-
-        ctx.globalAlpha = 1;
-
-
-        /* Herradura */
-
-        ctx.strokeStyle =
-            '#fbbf24';
-
-        ctx.lineWidth = 3;
-
-        ctx.beginPath();
-
-        ctx.arc(
-            25,
-            45,
-            7,
-            0.2,
-            Math.PI - 0.2
-        );
-
-        ctx.stroke();
-
-    }
-
-
-    /* =====================================================
-       OVEJA
-    ===================================================== */
-
-    else if (evolutionStage === 1) {
-
-        ctx.shadowBlur = 0;
-
-
-        drawThruster(
-            12,
-            42,
-            15,
-            '#38bdf8'
-        );
-
-        drawThruster(
-            38,
-            42,
-            15,
-            '#38bdf8'
-        );
-
-
-        /* Lana */
-
-        ctx.fillStyle =
-            '#ffffff';
-
-
-        const woolCircles = [
-
-            [12, 27, 9],
-            [20, 21, 10],
-            [30, 21, 10],
-            [39, 27, 9],
-            [18, 34, 10],
-            [29, 35, 11],
-            [38, 35, 8]
-
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = 420;
+        canvas.height = 640;
+
+        // --- SISTEMA DE IMÁGENES PROFESIONALES ---
+        const assets = {
+            gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(),
+            maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(),
+            balaPollito: new Image(), balaLana: new Image(), balaHerradura: new Image(), balaLeche: new Image(),
+            balaJefe: new Image()
+        };
+        // Define aquí la ruta a la carpeta donde guardarás tus imágenes
+        assets.gallina.src = 'assets/gallina.png';
+        assets.oveja.src = 'assets/oveja.png';
+        assets.caballo.src = 'assets/caballo.png';
+        assets.vaca.src = 'assets/vaca.png';
+        assets.maiz.src = 'assets/maiz.png';
+        assets.maizFuerte.src = 'assets/maiz_fuerte.png';
+        assets.jefeMaiz.src = 'assets/jefe_maiz.png';
+        assets.balaPollito.src = 'assets/bala_pollito.png';
+        assets.balaLana.src = 'assets/bala_lana.png';
+        assets.balaHerradura.src = 'assets/bala_herradura.png';
+        assets.balaLeche.src = 'assets/bala_leche.png';
+        assets.balaJefe.src = 'assets/bala_jefe.png';
+        // ------------------------------------------
+
+        let score = 0;
+        let coins = 0;
+        let lives = 3;
+        let gameTime = 0;
+        let gameState = 'START';
+        
+        let evolutionStage = 0; 
+        let maxUpgradeLimit = 3; 
+        let nextBossScoreThreshold = 5000;
+
+        let upgrades = { bullets: 0, speed: 1 };
+
+        const player = {
+            x: canvas.width / 2 - 25,
+            y: canvas.height - 110,
+            width: 50,
+            height: 50,
+            baseSpeed: 5.5
+        };
+
+        let bullets = [];
+        let enemies = [];
+        let bossBullets = [];
+        let boss = null;
+        let stars = [];
+
+        let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || [
+            { name: 'PRO', score: 5000 }, { name: 'ANA', score: 3000 }, { name: 'BOB', score: 1500 }
         ];
 
-
-        for (let p of woolCircles) {
-
-            ctx.beginPath();
-
-            ctx.arc(
-                p[0],
-                p[1],
-                p[2],
-                0,
-                Math.PI * 2
-            );
-
-            ctx.fill();
-
+        function saveLeaderboard() {
+            localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard));
         }
 
-
-        /* Cabeza */
-
-        ctx.fillStyle =
-            '#334155';
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            25,
-            12,
-            10,
-            9,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Orejas */
-
-        ctx.fillStyle =
-            '#64748b';
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            15,
-            10,
-            5,
-            3,
-            -0.4,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            35,
-            10,
-            5,
-            3,
-            0.4,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Ojos */
-
-        ctx.fillStyle =
-            '#ffffff';
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            21,
-            12,
-            3,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.arc(
-            29,
-            12,
-            3,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            '#111827';
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            21,
-            12,
-            1.3,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.arc(
-            29,
-            12,
-            1.3,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Hocico */
-
-        ctx.fillStyle =
-            '#f9a8d4';
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            25,
-            17,
-            5,
-            3,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Cabina */
-
-        ctx.fillStyle =
-            'rgba(56,189,248,0.85)';
-
-        ctx.beginPath();
-
-        ctx.arc(
-            25,
-            30,
-            8,
-            Math.PI,
-            0
-        );
-
-        ctx.fill();
-
-    }
-
-
-    /* =====================================================
-       GALLINA
-    ===================================================== */
-
-    else {
-
-        ctx.shadowBlur = 0;
-
-
-        /* Propulsores */
-
-        drawThruster(
-            12,
-            42,
-            17,
-            '#38bdf8'
-        );
-
-        drawThruster(
-            38,
-            42,
-            17,
-            '#38bdf8'
-        );
-
-
-        /* Alas */
-
-        ctx.fillStyle =
-            '#cbd5e1';
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            8,
-            29,
-            9,
-            13,
-            -0.4,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            42,
-            29,
-            9,
-            13,
-            0.4,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Cuerpo */
-
-        const chickenGradient =
-            ctx.createLinearGradient(
-                0,
-                5,
-                0,
-                45
-            );
-
-        chickenGradient.addColorStop(
-            0,
-            '#ffffff'
-        );
-
-        chickenGradient.addColorStop(
-            1,
-            '#cbd5e1'
-        );
-
-
-        ctx.fillStyle =
-            chickenGradient;
-
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            25,
-            29,
-            18,
-            19,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.strokeStyle =
-            '#94a3b8';
-
-        ctx.lineWidth = 2;
-
-        ctx.stroke();
-
-
-        /* Cabeza */
-
-        ctx.fillStyle =
-            '#ffffff';
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            25,
-            12,
-            12,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.strokeStyle =
-            '#cbd5e1';
-
-        ctx.stroke();
-
-
-        /* Cresta */
-
-        ctx.fillStyle =
-            '#ef4444';
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            19,
-            2,
-            4,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.arc(
-            25,
-            0,
-            5,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.arc(
-            31,
-            2,
-            4,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Pico */
-
-        ctx.fillStyle =
-            '#f97316';
-
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            25,
-            12
-        );
-
-        ctx.lineTo(
-            36,
-            15
-        );
-
-        ctx.lineTo(
-            25,
-            18
-        );
-
-        ctx.closePath();
-
-        ctx.fill();
-
-
-        /* Ojos */
-
-        ctx.fillStyle =
-            '#111827';
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            21,
-            10,
-            2,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.arc(
-            29,
-            10,
-            2,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        /* Cabina */
-
-        ctx.fillStyle =
-            '#38bdf8';
-
-        ctx.globalAlpha = 0.9;
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            25,
-            27,
-            9,
-            Math.PI,
-            0
-        );
-
-        ctx.fill();
-
-
-        ctx.globalAlpha = 1;
-
-
-        /* Reflejo de cabina */
-
-        ctx.fillStyle =
-            'rgba(255,255,255,0.8)';
-
-        ctx.beginPath();
-
-        ctx.arc(
-            22,
-            24,
-            2,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-    }
-
-
-    ctx.restore();
-
-}
-
-
-/* =========================================================
-   MAÍZ MALVADO 2.0
-========================================================= */
-
-function drawEvilCorn(e) {
-
-    ctx.save();
-
-    ctx.translate(e.x, e.y);
-
-
-    /* Sombra */
-
-    ctx.shadowColor =
-        'rgba(0,0,0,0.65)';
-
-    ctx.shadowBlur = 9;
-
-    ctx.shadowOffsetY = 4;
-
-
-    /* Hojas inferiores */
-
-    ctx.fillStyle =
-        '#16a34a';
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(8, 42);
-
-    ctx.quadraticCurveTo(
-        0,
-        48,
-        5,
-        34
-    );
-
-    ctx.lineTo(
-        19,
-        43
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(40, 42);
-
-    ctx.quadraticCurveTo(
-        48,
-        48,
-        43,
-        34
-    );
-
-    ctx.lineTo(
-        29,
-        43
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    /* Cuerpo */
-
-    const cornGradient =
-        ctx.createLinearGradient(
-            4,
-            5,
-            44,
-            45
-        );
-
-    cornGradient.addColorStop(
-        0,
-        '#fde047'
-    );
-
-    cornGradient.addColorStop(
-        0.5,
-        '#eab308'
-    );
-
-    cornGradient.addColorStop(
-        1,
-        '#ca8a04'
-    );
-
-
-    ctx.fillStyle =
-        cornGradient;
-
-
-    roundedRect(
-        5,
-        5,
-        38,
-        40,
-        12
-    );
-
-    ctx.fill();
-
-
-    ctx.strokeStyle =
-        '#854d0e';
-
-    ctx.lineWidth = 2;
-
-    ctx.stroke();
-
-
-    /* Granos */
-
-    ctx.shadowBlur = 0;
-
-    ctx.fillStyle =
-        'rgba(161,98,7,0.35)';
-
-
-    const grainRows = [
-
-        [13, 10],
-        [24, 10],
-        [35, 10],
-
-        [13, 19],
-        [24, 19],
-        [35, 19],
-
-        [13, 28],
-        [24, 28],
-        [35, 28],
-
-        [13, 37],
-        [24, 37],
-        [35, 37]
-
-    ];
-
-
-    for (let g of grainRows) {
-
-        ctx.beginPath();
-
-        ctx.arc(
-            g[0],
-            g[1],
-            3.2,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-    }
-
-
-    /* Cresta roja si tiene más vida */
-
-    if (e.maxHp > 1) {
-
-        ctx.fillStyle =
-            '#dc2626';
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            14,
-            7,
-            5,
-            Math.PI,
-            0
-        );
-
-        ctx.arc(
-            24,
-            4,
-            6,
-            Math.PI,
-            0
-        );
-
-        ctx.arc(
-            34,
-            7,
-            5,
-            Math.PI,
-            0
-        );
-
-        ctx.fill();
-
-    }
-
-
-    /* Cejas */
-
-    ctx.strokeStyle =
-        '#450a0a';
-
-    ctx.lineWidth = 3;
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        10,
-        17
-    );
-
-    ctx.lineTo(
-        20,
-        14
-    );
-
-    ctx.moveTo(
-        28,
-        14
-    );
-
-    ctx.lineTo(
-        38,
-        17
-    );
-
-    ctx.stroke();
-
-
-    /* Ojos */
-
-    ctx.fillStyle =
-        '#ffffff';
-
-
-    ctx.beginPath();
-
-    ctx.arc(
-        16,
-        20,
-        5,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.arc(
-        32,
-        20,
-        5,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    ctx.fillStyle =
-        '#111827';
-
-
-    ctx.beginPath();
-
-    ctx.arc(
-        16,
-        20,
-        2.5,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.arc(
-        32,
-        20,
-        2.5,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    /* Boca */
-
-    ctx.fillStyle =
-        '#450a0a';
-
-
-    ctx.beginPath();
-
-    ctx.arc(
-        24,
-        31,
-        9,
-        0,
-        Math.PI
-    );
-
-    ctx.fill();
-
-
-    /* Dientes */
-
-    ctx.fillStyle =
-        '#fff7ed';
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(19, 31);
-
-    ctx.lineTo(22, 36);
-
-    ctx.lineTo(25, 31);
-
-    ctx.lineTo(28, 36);
-
-    ctx.lineTo(31, 31);
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    /* Barra de vida */
-
-    if (e.maxHp > 1) {
-
-        ctx.fillStyle =
-            '#1e293b';
-
-        roundedRect(
-            4,
-            -8,
-            40,
-            5,
-            2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            '#ef4444';
-
-        roundedRect(
-            4,
-            -8,
-            40 *
-            (e.hp / e.maxHp),
-            5,
-            2
-        );
-
-        ctx.fill();
-
-    }
-
-
-    ctx.restore();
-
-}
-
-
-/* =========================================================
-   JEFE 2.0
-========================================================= */
-
-function drawBoss(b) {
-
-    ctx.save();
-
-    ctx.translate(
-        b.x,
-        b.y
-    );
-
-
-    /* Aura */
-
-    const aura =
-        ctx.createRadialGradient(
-            60,
-            48,
-            15,
-            60,
-            48,
-            85
-        );
-
-    aura.addColorStop(
-        0,
-        'rgba(250,204,21,0.25)'
-    );
-
-    aura.addColorStop(
-        1,
-        'rgba(250,204,21,0)'
-    );
-
-
-    ctx.fillStyle = aura;
-
-    ctx.beginPath();
-
-    ctx.arc(
-        60,
-        48,
-        85,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    /* Hojas */
-
-    ctx.fillStyle =
-        '#15803d';
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        25,
-        85
-    );
-
-    ctx.quadraticCurveTo(
-        -10,
-        105,
-        20,
-        55
-    );
-
-    ctx.lineTo(
-        45,
-        82
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        95,
-        85
-    );
-
-    ctx.quadraticCurveTo(
-        130,
-        105,
-        100,
-        55
-    );
-
-    ctx.lineTo(
-        75,
-        82
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    /* Cuerpo gigante */
-
-    const bossGradient =
-        ctx.createLinearGradient(
-            0,
-            5,
-            0,
-            95
-        );
-
-    bossGradient.addColorStop(
-        0,
-        '#fde047'
-    );
-
-    bossGradient.addColorStop(
-        0.5,
-        '#eab308'
-    );
-
-    bossGradient.addColorStop(
-        1,
-        '#a16207'
-    );
-
-
-    ctx.fillStyle =
-        bossGradient;
-
-
-    ctx.beginPath();
-
-    ctx.ellipse(
-        60,
-        50,
-        55,
-        46,
-        0,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    ctx.strokeStyle =
-        '#713f12';
-
-    ctx.lineWidth = 4;
-
-    ctx.stroke();
-
-
-    /* Granos */
-
-    ctx.shadowBlur = 0;
-
-    ctx.fillStyle =
-        'rgba(161,98,7,0.38)';
-
-
-    for (let row = 0; row < 4; row++) {
-
-        for (let col = 0; col < 5; col++) {
-
-            let gx =
-                30 +
-                col * 15 +
-                (row % 2 ? 7 : 0);
-
-            let gy =
-                18 +
-                row * 17;
-
-
-            ctx.beginPath();
-
-            ctx.arc(
-                gx,
-                gy,
-                5,
-                0,
-                Math.PI * 2
-            );
-
-            ctx.fill();
-
+        function renderLeaderboard(elementId) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            if (leaderboard.length === 0) {
+                container.innerHTML = '<div class="lb-row"><span>Sin récords aún</span><span></span></div>';
+                return;
+            }
+            leaderboard.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'lb-row';
+                row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`;
+                container.appendChild(row);
+            });
         }
 
-    }
-
-
-    /* Corona / cresta */
-
-    ctx.fillStyle =
-        '#dc2626';
-
-
-    ctx.beginPath();
-
-    ctx.arc(
-        34,
-        10,
-        10,
-        Math.PI,
-        0
-    );
-
-    ctx.arc(
-        60,
-        4,
-        13,
-        Math.PI,
-        0
-    );
-
-    ctx.arc(
-        86,
-        10,
-        10,
-        Math.PI,
-        0
-    );
-
-    ctx.fill();
-
-
-    /* Cejas */
-
-    ctx.strokeStyle =
-        '#450a0a';
-
-    ctx.lineWidth = 6;
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        20,
-        32
-    );
-
-    ctx.lineTo(
-        48,
-        25
-    );
-
-    ctx.moveTo(
-        72,
-        25
-    );
-
-    ctx.lineTo(
-        100,
-        32
-    );
-
-    ctx.stroke();
-
-
-    /* Ojos */
-
-    ctx.fillStyle =
-        '#ffffff';
-
-
-    ctx.beginPath();
-
-    ctx.arc(
-        37,
-        38,
-        11,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.arc(
-        83,
-        38,
-        11,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    ctx.fillStyle =
-        '#111827';
-
-
-    ctx.beginPath();
-
-    ctx.arc(
-        37,
-        38,
-        5,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.arc(
-        83,
-        38,
-        5,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    /* Boca */
-
-    ctx.fillStyle =
-        '#450a0a';
-
-
-    ctx.beginPath();
-
-    ctx.ellipse(
-        60,
-        68,
-        25,
-        14,
-        0,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    /* Dientes */
-
-    ctx.fillStyle =
-        '#fff7ed';
-
-
-    for (let i = 0; i < 5; i++) {
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            42 + i * 9,
-            64
-        );
-
-        ctx.lineTo(
-            46 + i * 9,
-            73
-        );
-
-        ctx.lineTo(
-            50 + i * 9,
-            64
-        );
-
-        ctx.closePath();
-
-        ctx.fill();
-
-    }
-
-
-    /* Barra de vida */
-
-    ctx.shadowBlur = 0;
-
-    ctx.fillStyle =
-        '#020617';
-
-    roundedRect(
-        10,
-        -16,
-        b.width - 20,
-        9,
-        4
-    );
-
-    ctx.fill();
-
-
-    ctx.fillStyle =
-        '#ef4444';
-
-    roundedRect(
-        10,
-        -16,
-        (b.width - 20) *
-        (b.hp / b.maxHp),
-        9,
-        4
-    );
-
-    ctx.fill();
-
-
-    ctx.strokeStyle =
-        '#f8fafc';
-
-    ctx.lineWidth = 1;
-
-    roundedRect(
-        10,
-        -16,
-        b.width - 20,
-        9,
-        4
-    );
-
-    ctx.stroke();
-
-
-    ctx.restore();
-
-}
-
-
-/* =========================================================
-   PROYECTILES VISUALES
-========================================================= */
-
-function drawBullet(b) {
-
-    ctx.save();
-
-    ctx.translate(
-        b.x + b.width / 2,
-        b.y + b.height / 2
-    );
-
-
-    /* Brillo */
-
-    ctx.shadowBlur = 12;
-
-
-    if (b.type === 'chick') {
-
-        ctx.shadowColor =
-            '#f97316';
-
-        ctx.fillStyle =
-            '#fbbf24';
-
-
-        /* Pollito */
-
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            1,
-            7,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            '#ef4444';
-
-        ctx.beginPath();
-
-        ctx.arc(
-            -2,
-            -7,
-            2.5,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            '#f97316';
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            6,
-            0
-        );
-
-        ctx.lineTo(
-            12,
-            3
-        );
-
-        ctx.lineTo(
-            6,
-            5
-        );
-
-        ctx.closePath();
-
-        ctx.fill();
-
-    }
-
-
-    else if (b.type === 'wool') {
-
-        ctx.shadowColor =
-            '#ffffff';
-
-        ctx.strokeStyle =
-            '#e2e8f0';
-
-        ctx.lineWidth = 4;
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            0,
-            6,
-            0,
-            Math.PI * 1.7
-        );
-
-        ctx.stroke();
-
-
-        ctx.strokeStyle =
-            '#ffffff';
-
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            0,
-            3,
-            0,
-            Math.PI * 1.7
-        );
-
-        ctx.stroke();
-
-    }
-
-
-    else if (b.type === 'horseshoe') {
-
-        ctx.shadowColor =
-            '#fbbf24';
-
-        ctx.strokeStyle =
-            '#fbbf24';
-
-        ctx.lineWidth = 4;
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            0,
-            0,
-            7,
-            0.2,
-            Math.PI * 1.8
-        );
-
-        ctx.stroke();
-
-
-        ctx.fillStyle =
-            '#92400e';
-
-        ctx.fillRect(
-            -7,
-            -2,
-            3,
-            4
-        );
-
-        ctx.fillRect(
-            4,
-            -2,
-            3,
-            4
-        );
-
-    }
-
-
-    else if (b.type === 'milk') {
-
-        ctx.shadowColor =
-            '#67e8f9';
-
-        ctx.fillStyle =
-            '#f8fafc';
-
-
-        roundedRect(
-            -5,
-            -7,
-            10,
-            14,
-            2
-        );
-
-        ctx.fill();
-
-
-        ctx.fillStyle =
-            '#38bdf8';
-
-        ctx.fillRect(
-            -5,
-            -2,
-            10,
-            3
-        );
-
-
-        ctx.fillStyle =
-            '#bae6fd';
-
-        ctx.fillRect(
-            -3,
-            -9,
-            6,
-            3
-        );
-
-    }
-
-
-    ctx.restore();
-
-}
-
-
-/* =========================================================
-   PROYECTIL DEL JEFE
-========================================================= */
-
-function drawBossBullet(bb) {
-
-    ctx.save();
-
-    ctx.translate(
-        bb.x + bb.width / 2,
-        bb.y + bb.height / 2
-    );
-
-
-    ctx.shadowColor =
-        '#facc15';
-
-    ctx.shadowBlur = 10;
-
-
-    /* Mazorca */
-
-    ctx.fillStyle =
-        '#fde047';
-
-
-    ctx.beginPath();
-
-    ctx.ellipse(
-        0,
-        0,
-        5,
-        8,
-        0,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    /* Granos */
-
-    ctx.fillStyle =
-        '#ca8a04';
-
-
-    for (let i = -4; i <= 4; i += 4) {
-
-        ctx.beginPath();
-
-        ctx.arc(
-            -2,
-            i,
-            1.2,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.arc(
-            2,
-            i,
-            1.2,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-    }
-
-
-    /* Hojas */
-
-    ctx.fillStyle =
-        '#16a34a';
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        -3,
-        7
-    );
-
-    ctx.lineTo(
-        -8,
-        10
-    );
-
-    ctx.lineTo(
-        -2,
-        3
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        3,
-        7
-    );
-
-    ctx.lineTo(
-        8,
-        10
-    );
-
-    ctx.lineTo(
-        2,
-        3
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    ctx.restore();
-
-}
-
-
-/* =========================================================
-   FONDO ESPACIAL MEJORADO
-========================================================= */
-
-function drawBackground() {
-
-    /* Fondo */
-
-    const bg =
-        ctx.createLinearGradient(
-            0,
-            0,
-            0,
-            canvas.height
-        );
-
-
-    bg.addColorStop(
-        0,
-        '#020617'
-    );
-
-    bg.addColorStop(
-        0.5,
-        '#0b1120'
-    );
-
-    bg.addColorStop(
-        1,
-        '#111827'
-    );
-
-
-    ctx.fillStyle =
-        bg;
-
-    ctx.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    /* Nebulosas */
-
-    const glow1 =
-        ctx.createRadialGradient(
-            80,
-            180,
-            0,
-            80,
-            180,
-            150
-        );
-
-
-    glow1.addColorStop(
-        0,
-        'rgba(56,189,248,0.08)'
-    );
-
-    glow1.addColorStop(
-        1,
-        'rgba(56,189,248,0)'
-    );
-
-
-    ctx.fillStyle =
-        glow1;
-
-    ctx.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    const glow2 =
-        ctx.createRadialGradient(
-            350,
-            430,
-            0,
-            350,
-            430,
-            170
-        );
-
-
-    glow2.addColorStop(
-        0,
-        'rgba(168,85,247,0.07)'
-    );
-
-    glow2.addColorStop(
-        1,
-        'rgba(168,85,247,0)'
-    );
-
-
-    ctx.fillStyle =
-        glow2;
-
-    ctx.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    /* Estrellas */
-
-    for (let s of stars) {
-
-        ctx.globalAlpha =
-            s.alpha;
-
-        ctx.fillStyle =
-            '#e2e8f0';
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            s.x,
-            s.y,
-            s.size,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-    }
-
-
-    ctx.globalAlpha = 1;
-
-}
-
-
-/* =========================================================
-   DIBUJAR TODO
-========================================================= */
-
-function draw() {
-
-    drawBackground();
-
-
-    if (boss)
-        drawBoss(boss);
-
-
-    drawPlayerShip(
-        player.x,
-        player.y
-    );
-
-
-    for (let b of bullets) {
-
-        drawBullet(b);
-
-    }
-
-
-    for (let bb of bossBullets) {
-
-        drawBossBullet(bb);
-
-    }
-
-
-    for (let e of enemies) {
-
-        drawEvilCorn(e);
-
-    }
-
-}
-
-
-/* =========================================================
-   LOOP
-========================================================= */
-
-function loop() {
-
-    update();
-
-    draw();
-
-    requestAnimationFrame(loop);
-
-}
-
-
-/* =========================================================
-   INICIO
-========================================================= */
-
-renderLeaderboard(
-    'startLeaderboardList'
-);
-
-loop();
-
-</script>
-
+        for (let i = 0; i < 40; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 0.8 + 0.3
+            });
+        }
+
+        let keys = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false };
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code in keys) keys[e.code] = true;
+            if (e.code === 'Space' && gameState === 'PLAYING') {
+                shootBullet();
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code in keys) keys[e.code] = false;
+        });
+
+        let isDragging = false;
+        canvas.addEventListener('pointerdown', (e) => {
+            isDragging = true;
+            movePlayerToTouch(e);
+        });
+        canvas.addEventListener('pointermove', (e) => {
+            if (isDragging) movePlayerToTouch(e);
+        });
+        window.addEventListener('pointerup', () => { isDragging = false; });
+
+        function movePlayerToTouch(e) {
+            const rect = canvas.getBoundingClientRect();
+            const touchX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            player.x = touchX - player.width / 2;
+        }
+
+        document.getElementById('fireBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (gameState === 'PLAYING') {
+                shootBullet();
+            }
+        });
+
+        function shootBullet() {
+            let bulletSpeed = 10;
+            let widthSize = 16;
+            let heightSize = 16;
+            let bType = 'chick';
+            if (evolutionStage === 1) bType = 'wool';
+            if (evolutionStage === 2) bType = 'horseshoe';
+            if (evolutionStage === 3) bType = 'milk';
+
+            let bulletDamage = upgrades.bullets === 0 ? 1 : upgrades.bullets;
+
+            if (upgrades.bullets >= 2) {
+                bullets.push({ x: player.x + 4, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: -1.2, type: bType, damage: bulletDamage });
+                bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 14, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
+                bullets.push({ x: player.x + player.width - 20, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 1.2, type: bType, damage: bulletDamage });
+            } else if (upgrades.bullets === 1) {
+                bullets.push({ x: player.x + 8, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
+                bullets.push({ x: player.x + player.width - 24, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
+            } else {
+                bullets.push({ x: player.x + player.width / 2 - 8, y: player.y - 10, width: widthSize, height: heightSize, speed: bulletSpeed, dx: 0, type: bType, damage: bulletDamage });
+            }
+        }
+
+        window.buyUpgrade = function(type) {
+            if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 10) {
+                coins -= 10;
+                upgrades.bullets++;
+            } else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 10) {
+                coins -= 10;
+                upgrades.speed++;
+            } else if (type === 'life' && coins >= 15) {
+                coins -= 15;
+                lives++;
+                updateLivesUI();
+            } else if (type === 'evolve') {
+                if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; }
+                else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; }
+                else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; }
+                document.getElementById('upgEvolve').style.display = 'none';
+            }
+            updateUpgradesHUD();
+        }
+
+        function updateUpgradesHUD() {
+            document.getElementById('coinVal').textContent = coins;
+            document.getElementById('upgBullets').textContent = upgrades.bullets >= maxUpgradeLimit ? 'Daño Disparos: MÁX' : `Daño/Disparos [🪙10] (Lv.${upgrades.bullets})`;
+            document.getElementById('upgSpeed').textContent = upgrades.speed >= maxUpgradeLimit ? 'Velocidad: MÁX' : `Velocidad [🪙10] (Lv.${upgrades.speed})`;
+            document.getElementById('upgLife').textContent = `+1 Vida [🪙15]`;
+
+            let evolveBtn = document.getElementById('upgEvolve');
+            if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) {
+                if (evolutionStage === 0) { evolveBtn.style.display = 'block'; evolveBtn.textContent = '🌟 Evolucionar a Oveja'; }
+                else if (evolutionStage === 1) { evolveBtn.style.display = 'block'; evolveBtn.textContent = '🌟 Evolucionar a Caballo'; }
+                else if (evolutionStage === 2) { evolveBtn.style.display = 'block'; evolveBtn.textContent = '🌟 Evolucionar a Vaca'; }
+                else { evolveBtn.style.display = 'none'; }
+            } else { evolveBtn.style.display = 'none'; }
+        }
+
+        function spawnEnemy() {
+            if (boss) return;
+            const size = 48;
+            const x = Math.random() * (canvas.width - size - 20) + 10;
+            let speedMultiplier = 1 + (gameTime / 30); 
+            let baseCornHp = evolutionStage >= 3 ? 3 : 1;
+
+            enemies.push({
+                x: x, y: -60, width: size, height: size, hp: baseCornHp, maxHp: baseCornHp,
+                speed: (1.5 + Math.random() * 1.5) * speedMultiplier, wobble: Math.random() * Math.PI
+            });
+        }
+
+        function spawnBoss() {
+            let bossLevel = Math.floor(score / 5000);
+            let bossHp = 60 + (bossLevel * 45);
+
+            boss = {
+                x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp,
+                speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0
+            };
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+
+        document.getElementById('saveScoreBtn').addEventListener('click', () => {
+            let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3);
+            if (!initials) initials = 'ABC';
+            leaderboard.push({ name: initials, score: score });
+            leaderboard.sort((a, b) => b.score - a.score);
+            if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5);
+            saveLeaderboard();
+            document.getElementById('saveScoreSection').style.display = 'none';
+            renderLeaderboard('endLeaderboardList');
+        });
+
+        function startGame() {
+            score = 0; coins = 0; lives = 3; gameTime = 0;
+            bullets = []; enemies = []; bossBullets = []; boss = null;
+            evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000;
+            upgrades.bullets = 0; upgrades.speed = 1;
+            player.x = canvas.width / 2 - player.width / 2;
+            
+            document.getElementById('scoreVal').textContent = score;
+            document.getElementById('upgEvolve').style.display = 'none';
+            document.getElementById('saveScoreSection').style.display = 'block';
+            document.getElementById('playerInitials').value = 'AAA';
+            
+            updateLivesUI();
+            updateUpgradesHUD();
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            gameState = 'PLAYING';
+
+            if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
+            window.gameTimerInterval = setInterval(() => {
+                if (gameState === 'PLAYING') gameTime++;
+            }, 1000);
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            clearInterval(window.gameTimerInterval);
+            document.getElementById('finalScore').textContent = score;
+            renderLeaderboard('endLeaderboardList');
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
+        let enemySpawnInterval = 0;
+        function update() {
+            if (gameState !== 'PLAYING') return;
+
+            if (score >= nextBossScoreThreshold && !boss) {
+                spawnBoss();
+                nextBossScoreThreshold += 5000;
+            }
+
+            let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
+            if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed;
+            if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
+
+            if (player.x < 10) player.x = 10;
+            if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
+
+            for (let s of stars) {
+                s.y += s.speed;
+                if (s.y > canvas.height) s.y = 0;
+            }
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].y -= bullets[i].speed;
+                if (bullets[i].dx) bullets[i].x += bullets[i].dx;
+                if (bullets[i].y < -20) bullets.splice(i, 1);
+            }
+
+            for (let i = bossBullets.length - 1; i >= 0; i--) {
+                bossBullets[i].y += bossBullets[i].speed;
+                if (bossBullets[i].y > canvas.height + 20) {
+                    bossBullets.splice(i, 1);
+                    continue;
+                }
+                if (
+                    player.x < bossBullets[i].x + bossBullets[i].width &&
+                    player.x + player.width > bossBullets[i].x &&
+                    player.y < bossBullets[i].y + bossBullets[i].height &&
+                    player.y + player.height > bossBullets[i].y
+                ) {
+                    bossBullets.splice(i, 1);
+                    lives--;
+                    updateLivesUI();
+                    if (lives <= 0) gameOver();
+                }
+            }
+
+            if (!boss) {
+                enemySpawnInterval++;
+                let spawnLimit = Math.max(20, 45 - Math.floor(gameTime / 10));
+                if (enemySpawnInterval > spawnLimit) {
+                    spawnEnemy();
+                    enemySpawnInterval = 0;
+                }
+            }
+
+            if (boss) {
+                if (boss.y < 50) boss.y += 1;
+                boss.x += boss.speed * boss.direction;
+                if (boss.x < 10 || boss.x + boss.width > canvas.width - 10) boss.direction *= -1;
+
+                boss.shootCooldown++;
+                if (boss.shootCooldown >= 35) {
+                    boss.shootCooldown = 0;
+                    bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5 });
+                }
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                enemies[i].y += enemies[i].speed;
+                enemies[i].wobble += 0.05;
+                enemies[i].x += Math.sin(enemies[i].wobble) * 0.8;
+
+                if (enemies[i].y > canvas.height) {
+                    enemies.splice(i, 1);
+                    lives--; updateLivesUI();
+                    if (lives <= 0) gameOver();
+                    continue;
+                }
+
+                if (
+                    player.x < enemies[i].x + enemies[i].width &&
+                    player.x + player.width > enemies[i].x &&
+                    player.y < enemies[i].y + enemies[i].height &&
+                    player.y + player.height > enemies[i].y
+                ) {
+                    enemies.splice(i, 1);
+                    lives--; updateLivesUI();
+                    if (lives <= 0) gameOver();
+                    continue;
+                }
+
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    if (
+                        bullets[j] &&
+                        bullets[j].x < enemies[i].x + enemies[i].width &&
+                        bullets[j].x + bullets[j].width > enemies[i].x &&
+                        bullets[j].y < enemies[i].y + enemies[i].height &&
+                        bullets[j].y + bullets[j].height > enemies[i].y
+                    ) {
+                        enemies[i].hp -= bullets[j].damage;
+                        bullets.splice(j, 1);
+                        if (enemies[i].hp <= 0) {
+                            score += 100; coins += 1;
+                            document.getElementById('scoreVal').textContent = score;
+                            updateUpgradesHUD();
+                            enemies.splice(i, 1);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (boss) {
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    if (
+                        bullets[j] &&
+                        bullets[j].x < boss.x + boss.width &&
+                        bullets[j].x + bullets[j].width > boss.x &&
+                        bullets[j].y < boss.y + boss.height &&
+                        bullets[j].y + bullets[j].height > boss.y
+                    ) {
+                        boss.hp -= bullets[j].damage;
+                        bullets.splice(j, 1);
+                        if (boss.hp <= 0) {
+                            score += 1500; coins += 15;
+                            document.getElementById('scoreVal').textContent = score;
+                            updateUpgradesHUD();
+                            boss = null;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateLivesUI() {
+            let hearts = '';
+            for (let i = 0; i < lives; i++) hearts += '❤️ ';
+            document.getElementById('livesVal').textContent = hearts.trim();
+        }
+
+        // --- SISTEMA DE DIBUJO CON IMÁGENES O VECTORES ---
+
+        function drawPlayerShip(x, y) {
+            let currentImg = assets.gallina;
+            if (evolutionStage === 3) currentImg = assets.vaca;
+            else if (evolutionStage === 2) currentImg = assets.caballo;
+            else if (evolutionStage === 1) currentImg = assets.oveja;
+
+            if (currentImg.complete && currentImg.naturalWidth > 0) {
+                ctx.drawImage(currentImg, x, y, player.width, player.height);
+            } else {
+                ctx.save();
+                ctx.translate(x, y);
+                if (evolutionStage === 3) {
+                    ctx.fillStyle = '#f1f5f9'; ctx.beginPath(); ctx.ellipse(25, 26, 22, 18, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#0f172a'; ctx.fillRect(15, 20, 8, 8); ctx.fillRect(30, 28, 6, 6);
+                } else if (evolutionStage === 2) {
+                    ctx.fillStyle = '#a855f7'; ctx.beginPath(); ctx.ellipse(25, 26, 18, 22, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#c084fc'; ctx.fillRect(20, -4, 10, 16);
+                } else if (evolutionStage === 1) {
+                    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.ellipse(25, 26, 20, 16, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(25, 10, 10, 0, Math.PI * 2); ctx.fill();
+                } else {
+                    ctx.fillStyle = '#38bdf8'; ctx.fillRect(16, 42, 6, 10);
+                    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.ellipse(25, 26, 16, 20, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.lineWidth = 2; ctx.strokeStyle = '#cbd5e1'; ctx.stroke();
+                    ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(25, 17, 9, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.moveTo(21, 8); ctx.lineTo(29, 8); ctx.lineTo(25, 0); ctx.fill();
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(22, 2, 3.5, 0, Math.PI * 2); ctx.arc(27, 1, 4.5, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        function drawEvilCorn(e) {
+            let img = e.maxHp > 1 ? assets.maizFuerte : assets.maiz;
+            if (img.complete && img.naturalWidth > 0) {
+                ctx.drawImage(img, e.x, e.y, e.width, e.height);
+            } else {
+                ctx.save();
+                ctx.translate(e.x, e.y);
+                ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.roundRect(4, 6, 40, 42, [12, 12, 18, 18]); ctx.fill();
+                ctx.lineWidth = 2; ctx.strokeStyle = '#854d0e'; ctx.stroke();
+                if (e.maxHp > 1) { ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.arc(24, 10, 16, Math.PI, 0, false); ctx.fill(); }
+                ctx.fillStyle = '#dc2626'; ctx.fillRect(11, 16, 9, 6); ctx.fillRect(28, 16, 9, 6);
+                ctx.restore();
+            }
+        }
+
+        function drawBoss(b) {
+            if (assets.jefeMaiz.complete && assets.jefeMaiz.naturalWidth > 0) {
+                ctx.drawImage(assets.jefeMaiz, b.x, b.y, b.width, b.height);
+            } else {
+                ctx.save();
+                ctx.translate(b.x, b.y);
+                ctx.fillStyle = '#ca8a04'; ctx.beginPath(); ctx.roundRect(0, 0, b.width, b.height, [20, 20, 30, 30]); ctx.fill();
+                ctx.lineWidth = 3; ctx.strokeStyle = '#713f12'; ctx.stroke();
+                ctx.fillStyle = '#991b1b'; ctx.fillRect(30, 30, 20, 15); ctx.fillRect(70, 30, 20, 15);
+                ctx.restore();
+            }
+            
+            // Barra de vida del jefe (siempre se dibuja)
+            ctx.fillStyle = '#334155'; ctx.fillRect(b.x + 10, b.y - 15, b.width - 20, 8);
+            ctx.fillStyle = '#22c55e'; ctx.fillRect(b.x + 10, b.y - 15, (b.width - 20) * (b.hp / b.maxHp), 8);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#334155';
+            for (let s of stars) { ctx.fillRect(s.x, s.y, s.size, s.size); }
+
+            if (boss) drawBoss(boss);
+
+            drawPlayerShip(player.x, player.y);
+
+            // Proyectiles del jugador
+            for (let b of bullets) {
+                let img;
+                if (b.type === 'milk') img = assets.balaLeche;
+                else if (b.type === 'horseshoe') img = assets.balaHerradura;
+                else if (b.type === 'wool') img = assets.balaLana;
+                else img = assets.balaPollito;
+
+                if (img.complete && img.naturalWidth > 0) {
+                    ctx.drawImage(img, b.x, b.y, b.width, b.height);
+                } else {
+                    ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    let icon = '🐥';
+                    if (b.type === 'wool') icon = '🧶';
+                    if (b.type === 'horseshoe') icon = '🧲';
+                    if (b.type === 'milk') icon = '🥛';
+                    ctx.fillText(icon, b.x + b.width / 2, b.y + b.height / 2);
+                }
+            }
+
+            // Balas del jefe
+            for (let bb of bossBullets) {
+                if (assets.balaJefe.complete && assets.balaJefe.naturalWidth > 0) {
+                    ctx.drawImage(assets.balaJefe, bb.x, bb.y, bb.width, bb.height);
+                } else {
+                    ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText('🌽', bb.x + bb.width / 2, bb.y + bb.height / 2);
+                }
+            }
+
+            for (let e of enemies) drawEvilCorn(e);
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        renderLeaderboard('startLeaderboardList');
+        loop();
+    </script>
 </body>
 </html>
