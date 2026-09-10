@@ -41,7 +41,7 @@
             width: 100%;
             height: 100%;
             background: #090d16;
-            touch-action: none;
+            touch-action: none; /* Fundamental para evitar scroll */
         }
 
         .ui-layer {
@@ -133,6 +133,7 @@
             cursor: pointer;
             box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
             transition: transform 0.08s;
+            touch-action: none; /* Para que responda perfecto al multi-touch */
         }
 
         .btn-fire:active {
@@ -261,7 +262,7 @@
 
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
-            <p>¡Desliza tu dedo en cualquier parte para mover la nave! Desbloquea trofeos y llega a la nave Vaca.</p>
+            <p>¡Usa un dedo para moverte y el otro para disparar a toda velocidad! Llega a la nave Vaca y salva la galaxia.</p>
             
             <div class="leaderboard-box">
                 <h3>🏆 Mejores Récords</h3>
@@ -299,7 +300,6 @@
         canvas.width = 420;
         canvas.height = 640;
 
-        // --- SISTEMA DE IMÁGENES PROFESIONALES ---
         const assets = {
             gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(),
             maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(),
@@ -326,7 +326,6 @@
         let gameTime = 0;
         let gameState = 'START';
         
-        // Trofeos
         let gotTrophy20k = false;
         let gotTrophy50k = false;
         let gotTrophy100k = false;
@@ -390,28 +389,31 @@
 
         window.addEventListener('keydown', (e) => {
             if (e.code in keys) keys[e.code] = true;
-            if (e.code === 'Space' && gameState === 'PLAYING') {
-                shootBullet();
-                e.preventDefault();
-            }
+            if (e.code === 'Space' && gameState === 'PLAYING') shootBullet();
         });
 
         window.addEventListener('keyup', (e) => {
             if (e.code in keys) keys[e.code] = false;
         });
 
-        // MOVIMIENTO TÁCTIL RELATIVO
+        // --- SISTEMA MULTI-TOQUE MEJORADO ---
         let isDragging = false;
+        let dragPointerId = null; // Memoriza qué dedo mueve la nave
         let lastTouchX = 0;
 
         canvas.addEventListener('pointerdown', (e) => {
-            isDragging = true;
-            const rect = canvas.getBoundingClientRect();
-            lastTouchX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            // Solo registramos el primer dedo que toca el canvas para moverse
+            if (dragPointerId === null && gameState === 'PLAYING') {
+                dragPointerId = e.pointerId;
+                isDragging = true;
+                const rect = canvas.getBoundingClientRect();
+                lastTouchX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            }
         });
 
         canvas.addEventListener('pointermove', (e) => {
-            if (!isDragging || gameState !== 'PLAYING') return;
+            // Ignoramos si es un dedo diferente al que está moviendo la nave
+            if (!isDragging || gameState !== 'PLAYING' || e.pointerId !== dragPointerId) return;
             const rect = canvas.getBoundingClientRect();
             const currentTouchX = (e.clientX - rect.left) * (canvas.width / rect.width);
             
@@ -425,11 +427,23 @@
             lastTouchX = currentTouchX;
         });
 
-        window.addEventListener('pointerup', () => { isDragging = false; });
-        window.addEventListener('pointercancel', () => { isDragging = false; });
+        window.addEventListener('pointerup', (e) => { 
+            if (e.pointerId === dragPointerId) {
+                isDragging = false; 
+                dragPointerId = null;
+            }
+        });
+        window.addEventListener('pointercancel', (e) => { 
+            if (e.pointerId === dragPointerId) {
+                isDragging = false; 
+                dragPointerId = null;
+            }
+        });
 
-        document.getElementById('fireBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
+        // --- BOTÓN DE DISPARO OPTIMIZADO (POINTERDOWN EN VEZ DE CLICK) ---
+        document.getElementById('fireBtn').addEventListener('pointerdown', (e) => {
+            e.stopPropagation(); // Evita que este toque llegue al canvas
+            e.preventDefault();  // Evita comportamientos raros del navegador
             if (gameState === 'PLAYING') {
                 shootBullet();
             }
@@ -549,7 +563,7 @@
 
         function showTrophyToast(icon) {
             toastIcon = icon;
-            toastTimer = 180; // 3 segundos
+            toastTimer = 180; 
         }
 
         function updateTrophiesHUD() {
@@ -561,16 +575,22 @@
             document.getElementById('trophiesVal').innerHTML = html;
         }
 
+        // --- VELOCIDAD DE ENEMIGOS BALANCEADA ---
         function spawnEnemy() {
             if (boss) return;
             const size = 48;
             const x = Math.random() * (canvas.width - size - 20) + 10;
-            let speedMultiplier = 1 + (gameTime / 30); 
+            
+            // La dificultad sube mucho más lento (antes era /30, ahora /80)
+            let speedMultiplier = 1 + (gameTime / 80); 
+            // Velocidad base reducida un poco para que no sea imposible
+            let baseSpeed = 1.0 + Math.random() * 1.0;
+            
             let baseCornHp = evolutionStage >= 3 ? 3 : 1;
 
             enemies.push({
                 x: x, y: -60, width: size, height: size, hp: baseCornHp, maxHp: baseCornHp,
-                speed: (1.5 + Math.random() * 1.5) * speedMultiplier, wobble: Math.random() * Math.PI
+                speed: baseSpeed * speedMultiplier, wobble: Math.random() * Math.PI
             });
         }
 
@@ -580,7 +600,7 @@
 
             boss = {
                 x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp,
-                speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0
+                speed: 1.0 + (bossLevel * 0.1), direction: 1, shootCooldown: 0 // Velocidad base bajada a 1.0
             };
         }
 
@@ -608,6 +628,8 @@
             updateTrophiesHUD();
 
             player.x = canvas.width / 2 - player.width / 2;
+            isDragging = false;
+            dragPointerId = null;
             
             document.getElementById('scoreVal').textContent = score;
             document.getElementById('upgEvolve').style.display = 'none';
@@ -639,26 +661,17 @@
         function update() {
             if (gameState !== 'PLAYING') return;
 
-            // Revisar Trofeos y mostrar ícono flotante
             if (score >= 20000 && !gotTrophy20k) {
-                gotTrophy20k = true;
-                showTrophyToast("🥉🐥");
-                updateTrophiesHUD();
+                gotTrophy20k = true; showTrophyToast("🥉🐥"); updateTrophiesHUD();
             }
             if (score >= 50000 && !gotTrophy50k) {
-                gotTrophy50k = true;
-                showTrophyToast("🥈🧶");
-                updateTrophiesHUD();
+                gotTrophy50k = true; showTrophyToast("🥈🧶"); updateTrophiesHUD();
             }
             if (score >= 100000 && !gotTrophy100k) {
-                gotTrophy100k = true;
-                showTrophyToast("🏅🧲");
-                updateTrophiesHUD();
+                gotTrophy100k = true; showTrophyToast("🏅🧲"); updateTrophiesHUD();
             }
             if (score >= 200000 && !gotTrophy200k) {
-                gotTrophy200k = true;
-                showTrophyToast("🏆🥛");
-                updateTrophiesHUD();
+                gotTrophy200k = true; showTrophyToast("🏆🥛"); updateTrophiesHUD();
             }
 
             if (score >= nextBossScoreThreshold && !boss) {
@@ -666,6 +679,7 @@
                 nextBossScoreThreshold += 5000;
             }
 
+            // Movimiento por teclado (el táctil se maneja arriba)
             let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
             if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed;
             if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
@@ -707,7 +721,7 @@
 
             if (!boss) {
                 enemySpawnInterval++;
-                let spawnLimit = Math.max(20, 45 - Math.floor(gameTime / 10));
+                let spawnLimit = Math.max(25, 50 - Math.floor(gameTime / 10)); // También suavizado el tiempo de respawn
                 if (enemySpawnInterval > spawnLimit) {
                     spawnEnemy();
                     enemySpawnInterval = 0;
@@ -903,17 +917,15 @@
 
             for (let e of enemies) drawEvilCorn(e);
 
-            // Ícono flotante de Logro Desbloqueado sin texto
             if (toastTimer > 0) {
                 ctx.save();
-                ctx.globalAlpha = Math.min(1, toastTimer / 30); // Hace que el emoji se vuelva transparente al final
-                ctx.font = '80px sans-serif'; // Ícono bien grande
+                ctx.globalAlpha = Math.min(1, toastTimer / 30); 
+                ctx.font = '80px sans-serif'; 
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; // Brillo dorado
+                ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
                 ctx.shadowBlur = 20;
                 
-                // Efecto de flotación: sube ligeramente mientras desaparece
                 let floatY = 180 - ((180 - toastTimer) * 0.3); 
                 
                 ctx.fillText(toastIcon, canvas.width / 2, floatY);
