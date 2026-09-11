@@ -64,7 +64,6 @@ function loadHudPositions() {
         document.getElementById('hud-damage').style.left = '16px'; document.getElementById('hud-damage').style.top = '280px'; 
         document.getElementById('hud-super-damage').style.left = '16px'; document.getElementById('hud-super-damage').style.top = '160px'; 
         
-        // Cálculo dinámico para la esquina inferior derecha
         let cW = document.getElementById('game-container').clientWidth || 420;
         let cH = document.getElementById('game-container').clientHeight || 640;
         document.getElementById('fireBtn').style.left = (cW - 86) + 'px'; 
@@ -351,7 +350,7 @@ function shootBullet() {
     // Daño base
     let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets;
     
-    // Porcentaje adicional al daño base por skins y misiles pro (afecta la estructura base)
+    // Porcentaje adicional al daño base por skins y misiles pro
     let bonusPro = 0;
     if (gameStats.equippedSkins[evolutionStage]) bonusPro += 0.30;
     if (gameStats.equippedMissiles[evolutionStage]) bonusPro += 0.20;
@@ -389,17 +388,25 @@ window.buyUpgrade = function(type) {
 
 function updateUpgradesHUD() {
     document.getElementById('coinVal').textContent = coins;
-    const btnBullets = document.getElementById('hud-bullets'); if (upgrades.bullets >= maxUpgradeLimit) { btnBullets.querySelector('.hud-lvl').textContent = 'MÁX'; btnBullets.querySelector('.hud-cost').style.display = 'none'; } else { btnBullets.querySelector('.hud-lvl').textContent = `Lv.${upgrades.bullets}`; btnBullets.querySelector('.hud-cost').style.display = 'block'; }
-    const btnSpeed = document.getElementById('hud-speed'); if (upgrades.speed >= maxUpgradeLimit) { btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX'; btnSpeed.querySelector('.hud-cost').style.display = 'none'; } else { btnSpeed.querySelector('.hud-lvl').textContent = `Lv.${upgrades.speed}`; btnSpeed.querySelector('.hud-cost').style.display = 'block'; }
-    const btnLifeEvolve = document.getElementById('hud-life-evolve'); 
     
+    const btnBullets = document.getElementById('hud-bullets'); 
+    if (upgrades.bullets >= maxUpgradeLimit) { btnBullets.querySelector('.hud-lvl').textContent = 'MÁX'; btnBullets.querySelector('.hud-cost').style.display = 'none'; } else { btnBullets.querySelector('.hud-lvl').textContent = `Lv.${upgrades.bullets}`; btnBullets.querySelector('.hud-cost').style.display = 'block'; }
+    btnBullets.classList.toggle('can-upgrade', upgrades.bullets < maxUpgradeLimit && coins >= 10);
+
+    const btnSpeed = document.getElementById('hud-speed'); 
+    if (upgrades.speed >= maxUpgradeLimit) { btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX'; btnSpeed.querySelector('.hud-cost').style.display = 'none'; } else { btnSpeed.querySelector('.hud-lvl').textContent = `Lv.${upgrades.speed}`; btnSpeed.querySelector('.hud-cost').style.display = 'block'; }
+    btnSpeed.classList.toggle('can-upgrade', upgrades.speed < maxUpgradeLimit && coins >= 10);
+
+    const btnLifeEvolve = document.getElementById('hud-life-evolve'); 
     if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { 
         btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; 
+        btnLifeEvolve.classList.toggle('can-upgrade', true); 
     } else { 
         btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; 
         if (lives >= 10) { btnLifeEvolve.querySelector('.hud-lvl').textContent = 'MÁX'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; } 
         else { btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; }
         btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; 
+        btnLifeEvolve.classList.toggle('can-upgrade', lives < 10 && coins >= 15);
     }
     
     document.getElementById('pauseBulletsLvl').textContent = upgrades.bullets >= maxUpgradeLimit ? 'MÁX' : `🪙10`;
@@ -409,15 +416,19 @@ function updateUpgradesHUD() {
     if (evolutionStage >= 3) pauseEv.style.display = 'none'; else pauseEv.style.display = 'flex';
 
     const armorBtn = document.getElementById('hud-armor'); const damageBtn = document.getElementById('hud-damage'); const superDmgBtn = document.getElementById('hud-super-damage'); const pauseSuperDmg = document.getElementById('pauseSuperDmgBtn');
+    
     if (gameRound >= 2) { 
         armorBtn.style.display = 'flex'; damageBtn.style.display = 'flex'; 
         if (upgrades.armor > 0) { armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; armorBtn.querySelector('.hud-cost').style.display = 'none'; } 
         if (upgrades.dmgBoost > 0) { damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; damageBtn.querySelector('.hud-cost').style.display = 'none'; } 
+        armorBtn.classList.toggle('can-upgrade', upgrades.armor === 0 && coins >= 300);
+        damageBtn.classList.toggle('can-upgrade', upgrades.dmgBoost === 0 && coins >= 200);
     } else { armorBtn.style.display = 'none'; damageBtn.style.display = 'none'; }
     
     if (gameRound === 3 || goingToRound === 3) {
         superDmgBtn.style.display = 'flex'; pauseSuperDmg.style.display = 'flex';
         if (upgrades.superDmgBoost > 0) { superDmgBtn.querySelector('.hud-lvl').textContent = 'MÁX'; superDmgBtn.querySelector('.hud-cost').style.display = 'none'; document.getElementById('pauseSuperDmgLvl').textContent = 'MÁX'; }
+        superDmgBtn.classList.toggle('can-upgrade', upgrades.superDmgBoost === 0 && coins >= 1000);
     } else { superDmgBtn.style.display = 'none'; pauseSuperDmg.style.display = 'none'; }
 }
 
@@ -500,6 +511,7 @@ function handleCoinEarned(amount) {
     if (gameStats.totalCoins >= 300) unlockAchievement('a4'); 
     if (gameStats.totalCoins >= 10000) unlockAchievement('a22'); 
     if (coins >= 10000) unlockAchievement('a23'); 
+    updateUpgradesHUD();
 }
 
 document.getElementById('startBtn').addEventListener('click', startGame); document.getElementById('restartBtn').addEventListener('click', startGame);
