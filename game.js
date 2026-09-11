@@ -314,7 +314,7 @@ function spawnEnemy() {
         return;
     }
 
-    let eType = 'corn'; let eHp = 500; let ePts = 150; let eCoin = 1;
+    let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 500;
 
     if (gameRound === 2) {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
