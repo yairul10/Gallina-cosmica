@@ -17,6 +17,12 @@ jobs:
         with:
           node-version: 20
 
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          
       - name: Instalar Capacitor
         run: |
           npm init -y
