@@ -652,3 +652,11 @@ function loop(timestamp) {
 }
 
 renderLeaderboard('startLeaderboardList'); requestAnimationFrame(loop); 
+function trucoMonedas() {
+    coins += 10000;
+    gameStats.savedCoins = coins;
+    gameStats.totalCoins += 10000;
+    saveStats();
+    updateShopUI(); // Actualiza la tienda si está abierta
+    alert("¡Truco activado! +10,000 monedas 🪙");
+}
