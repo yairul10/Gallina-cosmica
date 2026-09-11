@@ -43,7 +43,6 @@
         .initials-input-container input { background: #1e293b; border: 2px solid #38bdf8; color: #fff; font-size: 1.2rem; text-align: center; width: 60px; padding: 6px; border-radius: 8px; text-transform: uppercase; }
         .icon-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 0 6px; pointer-events: auto; }
 
-        /* Estilos Trofeos y Logros */
         .trophy-rack { display: flex; gap: 12px; justify-content: center; align-items: center; margin-bottom: 15px; width: 100%; }
         .trophy-item { position: relative; width: 60px; height: 60px; background: rgba(15, 23, 42, 0.8); border: 2px solid #334155; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.1s, border-color 0.2s; }
         .trophy-item:active { transform: scale(0.9); }
@@ -92,7 +91,6 @@
                 </div>
             </div>
 
-            <!-- Controles Base -->
             <div id="hud-bullets" class="draggable-btn" data-type="bullets">
                 <div class="hud-cost">🪙12</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div>
             </div>
@@ -103,7 +101,6 @@
                 <div class="hud-cost">🪙15</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div>
             </div>
             
-            <!-- Nuevos Controles Ronda 2 -->
             <div id="hud-armor" class="draggable-btn r2-upgrade" data-type="armor" style="display: none; border-color: rgba(59, 130, 246, 0.8);">
                 <div class="hud-cost" style="background:#2563eb;">🪙30</div><div class="hud-emoji">🛡️</div><div class="hud-lvl" style="color:#bfdbfe">+1</div>
             </div>
@@ -129,7 +126,6 @@
             <button class="btn btn-secondary" id="openAchievBtn">🏅 Logros</button>
         </div>
 
-        <!-- VITRINA DE TROFEOS -->
         <div id="trophiesScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 24px;">🏆 Salón de la Fama</h1>
             <div class="trophy-rack">
@@ -144,7 +140,6 @@
             <button class="btn btn-secondary" onclick="closeScreen('trophiesScreen')" style="margin-top: 20px;">🔙 Volver</button>
         </div>
 
-        <!-- PANTALLA DE LOGROS -->
         <div id="achievScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 15px;">🏅 Logros</h1>
             <div class="achievements-list" id="achievListUI"></div>
@@ -154,7 +149,6 @@
             <button class="btn btn-secondary" onclick="closeScreen('achievScreen')">🔙 Volver</button>
         </div>
 
-        <!-- PAUSA Y GAME OVER -->
         <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.85);">
             <h1 style="margin-bottom: 8px;">⏸️ Pausa</h1>
             <p style="color:#fbbf24; margin-bottom: 24px;">Puedes arrastrar y organizar<br>tus botones libremente.</p>
@@ -167,8 +161,6 @@
             <p style="margin-bottom: 15px;">Puntuación final: <strong id="finalScore" style="font-size:1.2rem; color:#38bdf8;">0</strong></p>
             
             <p id="coinsStatus" style="color: #fbbf24; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Tienes: 🪙 0</p>
-            
-            <!-- Botón para Revivir -->
             <button class="btn" id="reviveBtn" style="background-color: #f59e0b; color: #fff; margin-bottom: 15px; border: 2px solid #fbbf24;">❤️ Revivir (500 🪙)</button>
             
             <div id="saveScoreSection">
@@ -191,8 +183,6 @@
         const ctx = canvas.getContext('2d');
         canvas.width = 420; canvas.height = 640;
 
-        // --- ESTADÍSTICAS, LOGROS Y ECONOMÍA PERMANENTE ---
-        // Se añade 'savedCoins' a gameStats
         let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0 };
         function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
 
@@ -206,7 +196,6 @@
 
         function unlockAchievement(key) { if (!pAchiev[key]) { pAchiev[key] = true; localStorage.setItem('farm_space_achievements', JSON.stringify(pAchiev)); document.getElementById('achievToastName').textContent = achievData[key].title; const toast = document.getElementById('achievToast'); toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3500); } }
 
-        // --- SISTEMA DE AUDIO Y MENÚS ---
         function loadHudPositions() {
             const saved = JSON.parse(localStorage.getItem('farm_space_hud_v6'));
             if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'fireBtn'].forEach(id => { if(saved[id] && document.getElementById(id)) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } }); } 
@@ -233,7 +222,6 @@
         window.showTrophyInfo = function(id) { document.querySelectorAll('.trophy-item').forEach(el => el.classList.remove('selected')); document.querySelector(`.trophy-item[data-id="${id}"]`).classList.add('selected'); let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let tName = document.getElementById('trophyName'); let tDesc = document.getElementById('trophyDesc'); if(pT[trophyData[id].key]) { tName.textContent = trophyData[id].name; tName.style.color = '#fbbf24'; tDesc.textContent = `¡Felicidades! Trofeo ganado por lograr ${trophyData[id].req} puntos.`; } else { tName.textContent = trophyData[id].name + ' 🔒'; tName.style.color = '#94a3b8'; tDesc.textContent = `Meta: Consigue ${trophyData[id].req} puntos en una partida.`; } }
         function savePersistentTrophy(key) { let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; if (!pT[key]) { pT[key] = true; localStorage.setItem('farm_space_trophies', JSON.stringify(pT)); } }
 
-        // --- ASSETS Y VARIABLES PRINCIPALES ---
         const assets = { 
             gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(), 
             maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(), superJefeMaiz: new Image(),
@@ -250,7 +238,7 @@
         assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png';
 
         let score = 0; 
-        let coins = gameStats.savedCoins || 0; // LAS MONEDAS AHORA SON PERSISTENTES
+        let coins = gameStats.savedCoins || 0;
         let lives = 3; let gameTime = 0; let gameState = 'START'; 
         let gotTrophy20k = false; let gotTrophy50k = false; let gotTrophy100k = false; let gotTrophy200k = false;
         let toastIcon = ""; let toastImg = null; let toastTimer = 0;
@@ -260,7 +248,6 @@
         let bullets = []; let enemies = []; let bossBullets = []; let boss = null; let stars = [];
         let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || [{ name: 'PRO', score: 200000 }, { name: 'ANA', score: 100000 }, { name: 'BOB', score: 50000 }];
 
-        // SISTEMA RONDA 2 Y ESCUDOS
         let timeAt40k = 0; let shieldUnlocked = false; let shieldActive = false; let gameRound = 1;
         let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0; let sessionCoinsEarned = 0;
 
@@ -296,18 +283,15 @@
             let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
             let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets;
             let finalDamage = upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg;
-
             const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }], 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 24, offY: -10 }], 3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 8, offY: -14 }, { dx: 1.2, offX: player.width - 20, offY: -10 }], 4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 28, offY: -14 }, { dx: 2.0, offX: player.width - 18, offY: -8 }] };
             for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 16, height: 16, speed: 10, dx: p.dx, type: bType, damage: finalDamage }); }
         }
 
-        // Al gastar dinero, guardamos en savedCoins
         window.buyUpgrade = function(type) {
             if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 12) { coins -= 12; gameStats.savedCoins = coins; saveStats(); upgrades.bullets++; if (upgrades.bullets === maxUpgradeLimit) unlockAchievement('a8'); }
             else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 12) { coins -= 12; gameStats.savedCoins = coins; saveStats(); upgrades.speed++; if (upgrades.speed === maxUpgradeLimit) unlockAchievement('a9'); }
             else if (type === 'life' && coins >= 15) { coins -= 15; gameStats.savedCoins = coins; saveStats(); lives++; updateLivesUI(); gameStats.totalLivesBought++; saveStats(); sessionLivesBought++; if (gameStats.totalLivesBought >= 10) unlockAchievement('a15'); if (sessionLivesBought >= 10) unlockAchievement('a16'); }
             else if (type === 'evolve') { if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); } }
-            // Compras Ronda 2
             else if (type === 'armor' && coins >= 30) { coins -= 30; gameStats.savedCoins = coins; saveStats(); upgrades.armor++; }
             else if (type === 'damage' && coins >= 40 && upgrades.dmgBoost === 0) { coins -= 40; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
             updateUpgradesHUD();
@@ -318,12 +302,7 @@
             const btnBullets = document.getElementById('hud-bullets'); if (upgrades.bullets >= maxUpgradeLimit) { btnBullets.querySelector('.hud-lvl').textContent = 'MÁX'; btnBullets.querySelector('.hud-cost').style.display = 'none'; } else { btnBullets.querySelector('.hud-lvl').textContent = `Lv.${upgrades.bullets}`; btnBullets.querySelector('.hud-cost').style.display = 'block'; }
             const btnSpeed = document.getElementById('hud-speed'); if (upgrades.speed >= maxUpgradeLimit) { btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX'; btnSpeed.querySelector('.hud-cost').style.display = 'none'; } else { btnSpeed.querySelector('.hud-lvl').textContent = `Lv.${upgrades.speed}`; btnSpeed.querySelector('.hud-cost').style.display = 'block'; }
             const btnLifeEvolve = document.getElementById('hud-life-evolve'); if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; }
-            
-            if(gameRound === 2) {
-                document.getElementById('hud-armor').style.display = 'flex'; document.getElementById('hud-damage').style.display = 'flex';
-                document.getElementById('hud-armor').querySelector('.hud-lvl').textContent = `+${upgrades.armor}`;
-                if (upgrades.dmgBoost > 0) { document.getElementById('hud-damage').querySelector('.hud-lvl').textContent = 'MÁX'; document.getElementById('hud-damage').querySelector('.hud-cost').style.display = 'none'; }
-            } else { document.getElementById('hud-armor').style.display = 'none'; document.getElementById('hud-damage').style.display = 'none'; }
+            if(gameRound === 2) { document.getElementById('hud-armor').style.display = 'flex'; document.getElementById('hud-damage').style.display = 'flex'; document.getElementById('hud-armor').querySelector('.hud-lvl').textContent = `+${upgrades.armor}`; if (upgrades.dmgBoost > 0) { document.getElementById('hud-damage').querySelector('.hud-lvl').textContent = 'MÁX'; document.getElementById('hud-damage').querySelector('.hud-cost').style.display = 'none'; } } else { document.getElementById('hud-armor').style.display = 'none'; document.getElementById('hud-damage').style.display = 'none'; }
         }
 
         function showTrophyToast(icon, imgObj) { toastIcon = icon; toastImg = imgObj; toastTimer = 180; }
@@ -368,56 +347,24 @@
             lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; updateLivesUI(); if (lives <= 0) gameOver(); 
         }
 
-        // Al ganar dinero, también actualizamos savedCoins
-        function handleCoinEarned(amount) { 
-            coins += amount; 
-            gameStats.savedCoins = coins; 
-            sessionCoinsEarned += amount; gameStats.totalCoins += amount; 
-            saveStats(); 
-            if (gameStats.totalCoins >= 50) unlockAchievement('a4'); 
-            if (sessionCoinsEarned >= 500) unlockAchievement('a17'); 
-        }
+        function handleCoinEarned(amount) { coins += amount; gameStats.savedCoins = coins; sessionCoinsEarned += amount; gameStats.totalCoins += amount; saveStats(); if (gameStats.totalCoins >= 50) unlockAchievement('a4'); if (sessionCoinsEarned >= 500) unlockAchievement('a17'); }
 
         document.getElementById('startBtn').addEventListener('click', startGame); document.getElementById('restartBtn').addEventListener('click', startGame);
         document.getElementById('saveScoreBtn').addEventListener('click', () => { let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); if (!initials) initials = 'ABC'; leaderboard.push({ name: initials, score: score }); leaderboard.sort((a, b) => b.score - a.score); if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); saveLeaderboard(); document.getElementById('saveScoreSection').style.display = 'none'; renderLeaderboard('endLeaderboardList'); });
 
-        // SISTEMA PARA REVIVIR
         document.getElementById('reviveBtn').addEventListener('click', () => {
             if (coins >= 500) {
-                // Cobrar
-                coins -= 500;
-                gameStats.savedCoins = coins;
-                saveStats();
-                
-                // Restaurar Vida y Limpiar Pantalla
-                lives = 3;
-                enemies = []; 
-                bossBullets = [];
-                shieldActive = true; // Escudo temporal de resurrección
-                
-                updateLivesUI();
-                updateUpgradesHUD();
-                
-                // Volver al juego
-                document.getElementById('gameOverScreen').style.display = 'none';
-                document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'flex');
-                
-                gameState = 'PLAYING';
-                if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
-                
-                // Retomar el contador de sesión
+                coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; 
+                updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'flex');
+                gameState = 'PLAYING'; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
                 if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
-                window.gameTimerInterval = setInterval(() => { 
-                    if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } 
-                }, 1000);
+                window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
             }
         });
 
         function startGame() {
             if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
-            score = 0; 
-            coins = gameStats.savedCoins || 0; // Carga las monedas acumuladas
-            lives = 3; gameTime = 0; gameRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false;
+            score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false;
             sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
             bullets = []; enemies = []; bossBullets = []; boss = null;
             evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0;
@@ -432,25 +379,12 @@
 
         function gameOver() { 
             gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); 
-            unlockAchievement('a2'); gameStats.totalGames++; saveStats(); 
-            if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
-            
-            document.getElementById('finalScore').textContent = score; 
-            renderLeaderboard('endLeaderboardList'); 
-            
-            // Actualizar botones de revivir
+            unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
+            document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); 
             document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
             const reviveBtn = document.getElementById('reviveBtn');
-            if (coins >= 500) {
-                reviveBtn.disabled = false;
-                reviveBtn.style.opacity = 1;
-            } else {
-                reviveBtn.disabled = true;
-                reviveBtn.style.opacity = 0.5;
-            }
-
-            document.getElementById('gameOverScreen').style.display = 'flex'; 
-            document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
+            if (coins >= 500) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
+            document.getElementById('gameOverScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
         }
 
         let enemySpawnInterval = 0;
@@ -466,7 +400,13 @@
             if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; }
             if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
 
-            if (score >= nextBossScoreThreshold && !boss) { spawnBoss(); nextBossScoreThreshold += 5000; }
+            // LÓGICA DE JEFES CORREGIDA AQUÍ
+            if (score >= nextBossScoreThreshold && !boss) { 
+                let currentThreshold = nextBossScoreThreshold;
+                spawnBoss(); 
+                if (gameRound === 1) nextBossScoreThreshold += 5000; 
+                else if (gameRound === 2 && currentThreshold === 150000) nextBossScoreThreshold = 9999999; 
+            }
 
             let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
             if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
@@ -561,8 +501,10 @@
                             score += boss.isSuperBoss ? 3000 : 1500; handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
                             document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
                             
+                            // LÓGICA DE TRANSICIÓN CORREGIDA AQUÍ
                             if (boss.isSuperBoss && boss.type === 'corn') {
                                 gameRound = 2;
+                                nextBossScoreThreshold = 150000;
                                 document.getElementById('gameCanvas').style.background = '#06170d';
                                 const flash = document.getElementById('flashOverlay');
                                 flash.classList.add('flash'); setTimeout(() => flash.classList.remove('flash'), 500);
