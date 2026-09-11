@@ -3,9 +3,11 @@ const ctx = canvas.getContext('2d');
 canvas.width = 420; canvas.height = 640;
 
 // SISTEMA DE GUARDADO ACTUALIZADO
-let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0, skins: [false, false, false, false], equippedSkins: [false, false, false, false], pendingBooster: 1.0 };
+let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0, skins: [false, false, false, false], equippedSkins: [false, false, false, false], missiles: [false, false, false, false], equippedMissiles: [false, false, false, false], pendingBooster: 1.0 };
 if (!gameStats.skins) gameStats.skins = [false, false, false, false];
 if (!gameStats.equippedSkins) gameStats.equippedSkins = [false, false, false, false];
+if (!gameStats.missiles) gameStats.missiles = [false, false, false, false];
+if (!gameStats.equippedMissiles) gameStats.equippedMissiles = [false, false, false, false];
 if (!gameStats.pendingBooster) gameStats.pendingBooster = 1.0;
 
 function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
@@ -56,7 +58,6 @@ const playlist = ['assets/musica_1.mp3', 'assets/musica_2.mp3', 'assets/musica_3
 let currentTrackIndex = 0; const bgMusic = new Audio(playlist[currentTrackIndex]); bgMusic.volume = 0.4; 
 bgMusic.addEventListener('ended', () => { currentTrackIndex++; if (currentTrackIndex >= playlist.length) currentTrackIndex = 0; bgMusic.src = playlist[currentTrackIndex]; bgMusic.play().catch(e => console.log(e)); });
 
-// NUEVA LÓGICA DE PAUSA (Permite pausar en transición)
 function pauseGame() { 
     if (gameState === 'PLAYING' || gameState === 'TRANSITION') { 
         previousState = gameState;
@@ -75,7 +76,6 @@ document.getElementById('resumeBtn').addEventListener('click', (e) => {
     } 
 });
 
-// NAVEGACIÓN Y MENÚS
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
 document.getElementById('openShopBtn').addEventListener('click', () => { updateShopUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('shopScreen').style.display = 'flex'; });
 document.getElementById('openRecordsBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('recordsScreen').style.display = 'flex'; });
@@ -88,7 +88,6 @@ document.getElementById('mainMenuBtn').addEventListener('click', () => {
     document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
 });
 
-// LÓGICA DE TIENDA
 window.switchShopTab = function(tab) {
     document.getElementById('tabSkins').classList.remove('active');
     document.getElementById('tabBoosters').classList.remove('active');
@@ -101,7 +100,8 @@ window.switchShopTab = function(tab) {
 function updateShopUI() {
     document.getElementById('shopCoinsVal').textContent = coins;
     
-    // Skins
+    // Skins de Naves (1k, 2k, 4k, 8k)
+    let skinCosts = [1000, 2000, 4000, 8000];
     for(let i=0; i<4; i++) {
         let btn = document.getElementById('btn-skin-'+i);
         if (gameStats.skins[i]) {
@@ -109,8 +109,22 @@ function updateShopUI() {
             else { btn.textContent = 'Usar'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; }
             btn.disabled = false;
         } else {
-            btn.textContent = '🪙 5,000'; btn.className = 'shop-btn'; btn.style.background = '#10b981';
-            btn.disabled = (coins < 5000);
+            btn.textContent = `🪙 ${skinCosts[i].toLocaleString()}`; btn.className = 'shop-btn'; btn.style.background = '#10b981';
+            btn.disabled = (coins < skinCosts[i]);
+        }
+    }
+
+    // Skins de Misiles (2k, 4k, 8k, 15k)
+    let missileCosts = [2000, 4000, 8000, 15000];
+    for(let i=0; i<4; i++) {
+        let btn = document.getElementById('btn-missile-'+i);
+        if (gameStats.missiles[i]) {
+            if (gameStats.equippedMissiles[i]) { btn.textContent = 'Equipado'; btn.className = 'shop-btn equipped'; } 
+            else { btn.textContent = 'Usar'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; }
+            btn.disabled = false;
+        } else {
+            btn.textContent = `🪙 ${missileCosts[i].toLocaleString()}`; btn.className = 'shop-btn'; btn.style.background = '#10b981';
+            btn.disabled = (coins < missileCosts[i]);
         }
     }
     
@@ -135,6 +149,18 @@ window.buyOrEquipSkin = function(index, cost) {
         }
     } else {
         gameStats.equippedSkins[index] = !gameStats.equippedSkins[index];
+        saveStats(); updateShopUI();
+    }
+}
+
+window.buyOrEquipMissile = function(index, cost) {
+    if (!gameStats.missiles[index]) {
+        if (coins >= cost) {
+            coins -= cost; gameStats.savedCoins = coins; gameStats.missiles[index] = true; gameStats.equippedMissiles[index] = true;
+            saveStats(); updateShopUI();
+        }
+    } else {
+        gameStats.equippedMissiles[index] = !gameStats.equippedMissiles[index];
         saveStats(); updateShopUI();
     }
 }
@@ -236,7 +262,6 @@ canvas.addEventListener('pointerdown', (e) => { if (dragPointerId === null && (g
 canvas.addEventListener('pointermove', (e) => { if (!isDraggingShip || (gameState !== 'PLAYING' && gameState !== 'TRANSITION') || e.pointerId !== dragPointerId) return; const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; lastTouchX = currentTouchX; });
 window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } }); window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
 
-// NUEVO DISPARO CON +10% DAÑO EN SKIN PRO
 function shootBullet() {
     let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
     let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
@@ -246,14 +271,16 @@ function shootBullet() {
     if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
     
     if (gameStats.equippedSkins[evolutionStage]) {
-        finalDamage *= 1.10;
+        finalDamage *= 1.10; // +10% de la nave Pro
+    }
+    if (gameStats.equippedMissiles[evolutionStage]) {
+        finalDamage *= 1.20; // +20% extra del misil Pro
     }
     
     const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }], 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 24, offY: -10 }], 3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 8, offY: -14 }, { dx: 1.2, offX: player.width - 20, offY: -10 }], 4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 28, offY: -14 }, { dx: 2.0, offX: player.width - 18, offY: -8 }] };
     for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 16, height: 16, speed: 10, dx: p.dx, type: bType, damage: finalDamage }); }
 }
 
-// COSTOS REDUCIDOS A 10 MONEDAS
 window.buyUpgrade = function(type) {
     if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 10) { coins -= 10; gameStats.savedCoins = coins; saveStats(); upgrades.bullets++; if (upgrades.bullets === maxUpgradeLimit) unlockAchievement('a8'); }
     else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 10) { coins -= 10; gameStats.savedCoins = coins; saveStats(); upgrades.speed++; if (upgrades.speed === maxUpgradeLimit) unlockAchievement('a9'); }
@@ -286,7 +313,6 @@ function updateUpgradesHUD() {
         btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; 
     }
     
-    // VISUALES ACTUALIZADAS A 10
     document.getElementById('pauseBulletsLvl').textContent = upgrades.bullets >= maxUpgradeLimit ? 'MÁX' : `🪙10`;
     document.getElementById('pauseSpeedLvl').textContent = upgrades.speed >= maxUpgradeLimit ? 'MÁX' : `🪙10`;
     
@@ -331,7 +357,7 @@ function spawnEnemy() {
         let eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte';
         let eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale;
         let ePts = eType === 'maiz_jefe' ? 1200 : 1000;
-        let eCoin = eType === 'maiz_jefe' ? 5 : 4;
+        let eCoin = eType === 'maiz_jefe' ? 3 : 4; // Maíz jefe da 3 monedas
         enemies.push({ x: Math.random() * (canvas.width - 56 - 20) + 10, y: -60, width: 56, height: 56, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 0.5) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
         return;
     }
@@ -340,13 +366,20 @@ function spawnEnemy() {
 
     if (gameRound === 2) {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
-        if (score >= 100000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 4; }
-        else if (score >= 85000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 4 : 2; }
+        if (score >= 100000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 3; }
+        else if (score >= 85000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 3 : 2; }
         else if (score >= 70000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 2; }
         else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; }
         else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
     } else {
-        eHp = lastCornHp; eType = eHp > 1 ? 'corn_strong' : 'corn';
+        eHp = lastCornHp; 
+        if (eHp > 1) {
+            eType = 'corn_strong';
+            eCoin = 2; // Maíz fuerte da 2 monedas
+        } else {
+            eType = 'corn';
+            eCoin = 1;
+        }
     }
     enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
 }
@@ -497,8 +530,8 @@ function update() {
             for (let e of enemies) { if (e.type === 'maiz_jefe') hasMaiz = true; if (e.type === 'lechuga_jefe') hasLechuga = true; }
             let baseHp = 1 + Math.floor(timeAt40k / 12) + (evolutionStage * 5); 
             let eHpM = Math.ceil(baseHp * 2.5); let eHpL = Math.ceil(baseHp * 3.5);
-            if (!hasMaiz) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpM, maxHp: eHpM, speed: 1.2, wobble: Math.random() * Math.PI, type: 'maiz_jefe', pts: 800, coin: 4, shootCooldown: 0 });
-            if (!hasLechuga) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpL, maxHp: eHpL, speed: 1.0, wobble: Math.random() * Math.PI, type: 'lechuga_jefe', pts: 1000, coin: 5, shootCooldown: 0 });
+            if (!hasMaiz) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpM, maxHp: eHpM, speed: 1.2, wobble: Math.random() * Math.PI, type: 'maiz_jefe', pts: 800, coin: 3, shootCooldown: 0 });
+            if (!hasLechuga) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpL, maxHp: eHpL, speed: 1.0, wobble: Math.random() * Math.PI, type: 'lechuga_jefe', pts: 1000, coin: 3, shootCooldown: 0 });
         } else {
             enemySpawnInterval++; let spawnRate = 40;
             if (gameRound === 3) { spawnRate = Math.max(15, 30 - Math.floor((score - 250000) / 10000)); } 
@@ -518,7 +551,7 @@ function update() {
                 bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 });
             }
             if (boss.type === 'corn' && boss.minionCooldown >= 110) {
-                boss.minionCooldown = 0; enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: 1, shootCooldown: 0 }); enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: 1, shootCooldown: 0 });
+                boss.minionCooldown = 0; enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: 2, shootCooldown: 0 }); enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: 2, shootCooldown: 0 });
             }
             if (boss.type === 'lechuga' && boss.shootCooldown >= 45) {
                 boss.shootCooldown = 0;
@@ -543,7 +576,9 @@ function update() {
             if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) {
                 boss.hp -= bullets[j].damage; bullets.splice(j, 1);
                 if (boss.hp <= 0) { 
-                    score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
+                    score += boss.isSuperBoss ? 4500 : 2250; 
+                    // Súper jefe da 6 monedas, jefe normal da 3
+                    handleCoinEarned(boss.isSuperBoss ? 6 : 3); 
                     document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
                     if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); } 
                     else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); }
@@ -562,7 +597,7 @@ function update() {
                 enemies[i].shootCooldown = 0; let isL = enemies[i].type.includes('lechuga');
                 bossBullets.push({ x: enemies[i].x + enemies[i].width/2 - 6, y: enemies[i].y + enemies[i].height - 10, width: 12, height: 12, speed: 4.5, dx: 0, isLechugaBala: isL });
                 if (enemies[i].type === 'lechuga_jefe' && gameRound < 3) { enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 1, shootCooldown: 0 }); }
-                if (enemies[i].type === 'maiz_jefe') { enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 1, shootCooldown: 0 }); }
+                if (enemies[i].type === 'maiz_jefe') { enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 2, shootCooldown: 0 }); }
             }
         }
 
@@ -581,7 +616,9 @@ function update() {
     }
 }
 
-function updateLivesUI() { let hearts = ''; for (let i = 0; i < lives; i++) hearts += '❤️ '; document.getElementById('livesVal').textContent = hearts.trim(); }
+function updateLivesUI() { 
+    document.getElementById('livesVal').textContent = `❤️ x${lives}`; 
+}
 
 function drawPlayerShip(x, y) {
     let currentImg;
@@ -590,7 +627,7 @@ function drawPlayerShip(x, y) {
     else if (evolutionStage === 1) currentImg = gameStats.equippedSkins[1] ? assets.ovejaPro : assets.oveja;
     else currentImg = gameStats.equippedSkins[0] ? assets.gallinaPro : assets.gallina;
 
-    let isPro = gameStats.equippedSkins[evolutionStage];
+    let isPro = gameStats.equippedSkins[evolutionStage] || gameStats.equippedMissiles[evolutionStage];
 
     if (shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 38, 0, Math.PI * 2); ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'; ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 10; ctx.stroke(); ctx.restore(); }
     if (upgrades.armor > 0 && !shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 34, 0, Math.PI * 2); ctx.fillStyle = partialHit ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.1)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = partialHit ? 'rgba(239, 68, 68, 0.8)' : 'rgba(37, 99, 235, 0.8)'; ctx.stroke(); ctx.restore(); }
