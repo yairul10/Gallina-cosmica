@@ -78,8 +78,16 @@ document.getElementById('resumeBtn').addEventListener('click', (e) => {
 
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
 
-// HANGAR MENU LOGIC
+// 🛸 LÓGICA DEL HANGAR DINÁMICO
+const baseNames = ['Gallina', 'Oveja', 'Caballo', 'Vaca'];
+const misNames = ['Misil Pollito', 'Misil Lana', 'Misil Herradura', 'Misil Lácteo'];
+const skinSrc = ['assets/gallina.png', 'assets/oveja.png', 'assets/caballo.png', 'assets/vaca.png'];
+const skinProSrc = ['assets/gallina_pro.png', 'assets/oveja_pro.png', 'assets/caballo_pro.png', 'assets/vaca_pro.png'];
+const misSrc = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
+const misProSrc = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
+
 document.getElementById('openHangarBtn').addEventListener('click', () => { updateHangarUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('hangarScreen').style.display = 'flex'; });
+
 window.switchHangarTab = function(tab) {
     document.getElementById('tabHangarSkins').classList.remove('active');
     document.getElementById('tabHangarMissiles').classList.remove('active');
@@ -91,38 +99,31 @@ window.switchHangarTab = function(tab) {
 
 function updateHangarUI() {
     for(let i=0; i<4; i++) {
-        let btn = document.getElementById('btn-hangar-skin-'+i);
+        let btn = document.getElementById('btn-hangar-skin-'+i); let img = document.getElementById('img-hangar-skin-'+i); let name = document.getElementById('name-hangar-skin-'+i); let desc = document.getElementById('desc-hangar-skin-'+i);
         if (gameStats.skins[i]) {
-            if (gameStats.equippedSkins[i]) { btn.textContent = 'Equipado'; btn.className = 'shop-btn equipped'; }
-            else { btn.textContent = 'Usar'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; }
+            if (gameStats.equippedSkins[i]) { btn.textContent = 'Pro Equipado'; btn.className = 'shop-btn equipped'; img.src = skinProSrc[i]; name.textContent = baseNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#fbbf24;">+30% Daño</b>'; } 
+            else { btn.textContent = 'Usar Pro'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; img.src = skinSrc[i]; name.textContent = baseNames[i]; desc.innerHTML = 'Normal'; }
             btn.disabled = false;
         } else {
-            btn.textContent = 'Bloqueado'; btn.className = 'shop-btn'; btn.style.background = '#475569';
-            btn.disabled = true;
+            btn.textContent = 'Bloqueado'; btn.className = 'shop-btn'; btn.style.background = '#475569'; img.src = skinSrc[i]; name.textContent = baseNames[i]; desc.innerHTML = 'Normal'; btn.disabled = true;
         }
     }
     for(let i=0; i<4; i++) {
-        let btn = document.getElementById('btn-hangar-missile-'+i);
+        let btn = document.getElementById('btn-hangar-missile-'+i); let img = document.getElementById('img-hangar-missile-'+i); let name = document.getElementById('name-hangar-missile-'+i); let desc = document.getElementById('desc-hangar-missile-'+i);
         if (gameStats.missiles[i]) {
-            if (gameStats.equippedMissiles[i]) { btn.textContent = 'Equipado'; btn.className = 'shop-btn equipped'; }
-            else { btn.textContent = 'Usar'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; }
+            if (gameStats.equippedMissiles[i]) { btn.textContent = 'Pro Equipado'; btn.className = 'shop-btn equipped'; img.src = misProSrc[i]; name.textContent = misNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#38bdf8;">+20% Daño</b>'; } 
+            else { btn.textContent = 'Usar Pro'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; img.src = misSrc[i]; name.textContent = misNames[i]; desc.innerHTML = 'Normal'; }
             btn.disabled = false;
         } else {
-            btn.textContent = '🔒 Juega para ganar'; btn.className = 'shop-btn'; btn.style.background = '#475569';
-            btn.disabled = true;
+            btn.textContent = '🔒 Gana el trofeo'; btn.className = 'shop-btn'; btn.style.background = '#475569'; img.src = misSrc[i]; name.textContent = misNames[i]; desc.innerHTML = 'Normal'; btn.disabled = true;
         }
     }
 }
 
-window.toggleHangarSkin = function(index) {
-    gameStats.equippedSkins[index] = !gameStats.equippedSkins[index];
-    saveStats(); updateHangarUI();
-}
-window.toggleHangarMissile = function(index) {
-    gameStats.equippedMissiles[index] = !gameStats.equippedMissiles[index];
-    saveStats(); updateHangarUI();
-}
+window.toggleHangarSkin = function(index) { gameStats.equippedSkins[index] = !gameStats.equippedSkins[index]; saveStats(); updateHangarUI(); }
+window.toggleHangarMissile = function(index) { gameStats.equippedMissiles[index] = !gameStats.equippedMissiles[index]; saveStats(); updateHangarUI(); }
 
+// 🛒 LÓGICA DE TIENDA
 document.getElementById('openShopBtn').addEventListener('click', () => { updateShopUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('shopScreen').style.display = 'flex'; });
 document.getElementById('openRecordsBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('recordsScreen').style.display = 'flex'; });
 document.getElementById('openTrophiesBtn').addEventListener('click', () => { updateTrophyMenu(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'flex'; });
@@ -145,28 +146,16 @@ window.switchShopTab = function(tab) {
 
 function updateShopUI() {
     document.getElementById('shopCoinsVal').textContent = coins;
-    
-    // TIENDA: Sólo para comprar Skins
     let skinCosts = [1000, 2000, 4000, 8000];
     for(let i=0; i<4; i++) {
         let btn = document.getElementById('btn-skin-'+i);
-        if (gameStats.skins[i]) {
-            btn.textContent = 'Adquirido'; btn.className = 'shop-btn'; btn.style.background = '#475569';
-            btn.disabled = true;
-        } else {
-            btn.textContent = `🪙 ${skinCosts[i].toLocaleString()}`; btn.className = 'shop-btn'; btn.style.background = '#10b981';
-            btn.disabled = (coins < skinCosts[i]);
-        }
+        if (gameStats.skins[i]) { btn.textContent = 'Adquirido'; btn.className = 'shop-btn'; btn.style.background = '#475569'; btn.disabled = true; } 
+        else { btn.textContent = `🪙 ${skinCosts[i].toLocaleString()}`; btn.className = 'shop-btn'; btn.style.background = '#10b981'; btn.disabled = (coins < skinCosts[i]); }
     }
     
-    // Boosters
     let b20 = document.getElementById('btn-boost-20'); let b50 = document.getElementById('btn-boost-50'); let b100 = document.getElementById('btn-boost-100');
     [b20, b50, b100].forEach(b => { b.textContent = '🪙 ' + b.getAttribute('data-cost'); b.className='shop-btn'; b.style.background = '#10b981'; b.disabled = false; });
-    
-    if (coins < 500) b20.disabled = true;
-    if (coins < 2000) b50.disabled = true;
-    if (coins < 10000) b100.disabled = true;
-
+    if (coins < 500) b20.disabled = true; if (coins < 2000) b50.disabled = true; if (coins < 10000) b100.disabled = true;
     if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVADO'; b20.className = 'shop-btn equipped'; [b50, b100].forEach(b=>b.disabled=true); }
     else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVADO'; b50.className = 'shop-btn equipped'; [b20, b100].forEach(b=>b.disabled=true); }
     else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVADO'; b100.className = 'shop-btn equipped'; [b20, b50].forEach(b=>b.disabled=true); }
@@ -222,6 +211,7 @@ const assets = {
     maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(), superJefeMaiz: new Image(),
     lechuga: new Image(), lechugaFuerte: new Image(), jefeLechuga: new Image(), superJefeLechuga: new Image(),
     balaPollito: new Image(), balaLana: new Image(), balaHerradura: new Image(), balaLeche: new Image(),
+    balaPollitoPro: new Image(), balaLanaPro: new Image(), balaHerraduraPro: new Image(), balaLechePro: new Image(),
     balaJefe: new Image(), balaLechuga: new Image(),
     trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoDiamante: new Image()
 };
@@ -230,6 +220,7 @@ assets.gallinaPro.src = 'assets/gallina_pro.png'; assets.ovejaPro.src = 'assets/
 assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png'; assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
 assets.lechuga.src = 'assets/lechuga.png'; assets.lechugaFuerte.src = 'assets/lechuga_fuerte.png'; assets.jefeLechuga.src = 'assets/lechuga_jefe.png'; assets.superJefeLechuga.src = 'assets/super_jefe_lechuga.png';
 assets.balaPollito.src = 'assets/bala_pollito.png'; assets.balaLana.src = 'assets/bala_lana.png'; assets.balaHerradura.src = 'assets/bala_herradura.png'; assets.balaLeche.src = 'assets/bala_leche.png';
+assets.balaPollitoPro.src = 'assets/bala_pollito_pro.png'; assets.balaLanaPro.src = 'assets/bala_lana_pro.png'; assets.balaHerraduraPro.src = 'assets/bala_herradura_pro.png'; assets.balaLechePro.src = 'assets/bala_leche_pro.png';
 assets.balaJefe.src = 'assets/bala_jefe.png'; assets.balaLechuga.src = 'assets/bala_lechuga.png';
 assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png'; assets.trofeoDiamante.src = 'assets/trofeo_diamante.png';
 
@@ -285,15 +276,19 @@ function shootBullet() {
     let finalDamage = (upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg) * currentMatchBooster;
     if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
     
+    let isProMissile = gameStats.equippedMissiles[evolutionStage];
+    
     if (gameStats.equippedSkins[evolutionStage]) {
-        finalDamage *= 1.30; // +30% de la nave Pro
+        finalDamage *= 1.30; 
     }
-    if (gameStats.equippedMissiles[evolutionStage]) {
-        finalDamage *= 1.20; // +20% extra del misil Pro
+    if (isProMissile) {
+        finalDamage *= 1.20; 
     }
     
     const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }], 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 24, offY: -10 }], 3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 8, offY: -14 }, { dx: 1.2, offX: player.width - 20, offY: -10 }], 4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 28, offY: -14 }, { dx: 2.0, offX: player.width - 18, offY: -8 }] };
-    for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 16, height: 16, speed: 10, dx: p.dx, type: bType, damage: finalDamage }); }
+    for (let p of (patterns[bulletCount] || patterns[3])) { 
+        bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 16, height: 16, speed: 10, dx: p.dx, type: bType, damage: finalDamage, isPro: isProMissile }); 
+    }
 }
 
 window.buyUpgrade = function(type) {
@@ -377,7 +372,7 @@ function spawnEnemy() {
         return;
     }
 
-    let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 999;
+    let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 1;
 
     if (gameRound === 2) {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
@@ -503,20 +498,37 @@ function update() {
 
     if (gameState !== 'PLAYING') return;
 
-    // LÓGICA DE TROFEOS Y RECOMPENSAS
-    if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); showTrophyToast("🥉🐥", assets.trofeoPollito, "¡Skin de Misil Desbloqueada!"); updateTrophiesHUD(); savePersistentTrophy('t20k'); unlockAchievement('a19'); }
-    if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; gameStats.missiles[1] = true; gameStats.equippedMissiles[1] = true; saveStats(); showTrophyToast("🥈🧶", assets.trofeoLana, "¡Skin de Misil Desbloqueada!"); updateTrophiesHUD(); savePersistentTrophy('t50k'); }
-    if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; gameStats.missiles[2] = true; gameStats.equippedMissiles[2] = true; saveStats(); showTrophyToast("🏅🧲", assets.trofeoHerradura, "¡Skin de Misil Desbloqueada!"); updateTrophiesHUD(); savePersistentTrophy('t100k'); }
-    if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; gameStats.missiles[3] = true; gameStats.equippedMissiles[3] = true; saveStats(); showTrophyToast("🏆🥛", assets.trofeoLeche, "¡Skin de Misil Desbloqueada!"); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); }
+    // LÓGICA DE TROFEOS Y RECOMPENSAS (No repite mensajes)
+    if (score >= 20000 && !gotTrophy20k) { 
+        gotTrophy20k = true; let isNew = !gameStats.missiles[0]; 
+        if (isNew) { gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); } 
+        showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Skin Misil Desbloqueada!" : ""); 
+        updateTrophiesHUD(); savePersistentTrophy('t20k'); unlockAchievement('a19'); 
+    }
+    if (score >= 50000 && !gotTrophy50k) { 
+        gotTrophy50k = true; let isNew = !gameStats.missiles[1]; 
+        if (isNew) { gameStats.missiles[1] = true; gameStats.equippedMissiles[1] = true; saveStats(); } 
+        showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Skin Misil Desbloqueada!" : ""); 
+        updateTrophiesHUD(); savePersistentTrophy('t50k'); 
+    }
+    if (score >= 100000 && !gotTrophy100k) { 
+        gotTrophy100k = true; let isNew = !gameStats.missiles[2]; 
+        if (isNew) { gameStats.missiles[2] = true; gameStats.equippedMissiles[2] = true; saveStats(); } 
+        showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Skin Misil Desbloqueada!" : ""); 
+        updateTrophiesHUD(); savePersistentTrophy('t100k'); 
+    }
+    if (score >= 200000 && !gotTrophy200k) { 
+        gotTrophy200k = true; let isNew = !gameStats.missiles[3]; 
+        if (isNew) { gameStats.missiles[3] = true; gameStats.equippedMissiles[3] = true; saveStats(); } 
+        showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Skin Misil Desbloqueada!" : ""); 
+        updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); 
+    }
     if (score >= 300000 && !gotTrophy300k) { 
-        gotTrophy300k = true; 
+        gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {};
         let sub = "";
-        if (gameStats.skins[3]) {
-            coins += 4000; gameStats.savedCoins = coins;
-            sub = "Vaca Pro Reembolsada (+4,000🪙)";
-        } else {
-            gameStats.skins[3] = true; gameStats.equippedSkins[3] = true;
-            sub = "¡Skin Vaca Pro Desbloqueada!";
+        if (!pTrophies['t300k']) { // Si es la primera vez en la vida que saca el trofeo de diamante
+            if (gameStats.skins[3]) { coins += 4000; gameStats.savedCoins = coins; sub = "Vaca Pro Reembolsada (+4,000🪙)"; } 
+            else { gameStats.skins[3] = true; gameStats.equippedSkins[3] = true; sub = "¡Skin Vaca Pro Desbloqueada!"; }
         }
         saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); 
     }
@@ -690,17 +702,24 @@ function draw() {
     ctx.fillStyle = '#334155'; for (let s of stars) { ctx.fillRect(s.x, s.y, s.size, s.size); }
     for (let b of bosses) drawBoss(b); 
     drawPlayerShip(player.x, player.y);
+    
     for (let b of bullets) {
-        let img; if (b.type === 'milk') img = assets.balaLeche; else if (b.type === 'horseshoe') img = assets.balaHerradura; else if (b.type === 'wool') img = assets.balaLana; else img = assets.balaPollito;
-        if (img.complete && img.naturalWidth > 0) { ctx.drawImage(img, b.x, b.y, b.width, b.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (b.type === 'wool') icon = '🧶'; if (b.type === 'horseshoe') icon = '🧲'; if (b.type === 'milk') icon = '🥛'; ctx.fillText(icon, b.x + b.width / 2, b.y + b.height / 2); }
+        let img; 
+        if (b.type === 'milk') img = b.isPro ? assets.balaLechePro : assets.balaLeche; 
+        else if (b.type === 'horseshoe') img = b.isPro ? assets.balaHerraduraPro : assets.balaHerradura; 
+        else if (b.type === 'wool') img = b.isPro ? assets.balaLanaPro : assets.balaLana; 
+        else img = b.isPro ? assets.balaPollitoPro : assets.balaPollito;
+        
+        if (img.complete && img.naturalWidth > 0) { ctx.drawImage(img, b.x, b.y, b.width, b.height); } 
+        else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (b.type === 'wool') icon = '🧶'; if (b.type === 'horseshoe') icon = '🧲'; if (b.type === 'milk') icon = '🥛'; ctx.fillText(icon, b.x + b.width / 2, b.y + b.height / 2); }
     }
+    
     for (let bb of bossBullets) {
         let imgB = bb.isLechugaBala ? assets.balaLechuga : assets.balaJefe;
         if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); }
     }
     for (let e of enemies) drawEnemy(e);
 
-    // DIBUJO DEL TOAST ACTUALIZADO (Acepta subtítulo)
     if (toastTimer > 0 && gameState === 'PLAYING') {
         ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); 
         if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { 
