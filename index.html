@@ -19,12 +19,13 @@
         
         <div class="ui-layer">
             <div class="header-score">
-                <div style="display:flex; align-items:center;">
-                    Pts: <span id="scoreVal">0</span> &nbsp;|&nbsp; 🪙 <span id="coinVal">0</span> <span id="trophiesVal"></span>
+                <div class="header-left">
+                    <div>Pts: <span id="scoreVal">0</span></div>
+                    <div>🪙 <span id="coinVal">0</span> <span id="trophiesVal"></span></div>
                 </div>
-                <div style="display:flex; align-items:center;">
+                <div class="header-right">
                     <button class="icon-btn" id="pauseBtn" title="Pausar Juego">⏸️</button>
-                    Vidas: <span id="livesVal">❤️ ❤️ ❤️</span>
+                    <div id="livesVal">❤️ x3</div>
                 </div>
             </div>
 
@@ -76,25 +77,50 @@
                     <h4>Gallina Pro</h4>
                     <img src="assets/gallina_pro.png" class="shop-img" alt="Gallina Pro">
                     <p>Mejora estética dorada.<br><b style="color: #fbbf24;">+10% Daño</b></p>
-                    <button class="shop-btn" id="btn-skin-0" onclick="buyOrEquipSkin(0, 5000)">🪙 5,000</button>
+                    <button class="shop-btn" id="btn-skin-0" onclick="buyOrEquipSkin(0, 1000)">🪙 1,000</button>
                 </div>
                 <div class="shop-item">
                     <h4>Oveja Pro</h4>
                     <img src="assets/oveja_pro.png" class="shop-img" alt="Oveja Pro">
                     <p>Lana de titanio estelar.<br><b style="color: #fbbf24;">+10% Daño</b></p>
-                    <button class="shop-btn" id="btn-skin-1" onclick="buyOrEquipSkin(1, 5000)">🪙 5,000</button>
+                    <button class="shop-btn" id="btn-skin-1" onclick="buyOrEquipSkin(1, 2000)">🪙 2,000</button>
                 </div>
                 <div class="shop-item">
                     <h4>Caballo Pro</h4>
                     <img src="assets/caballo_pro.png" class="shop-img" alt="Caballo Pro">
                     <p>Armadura de galope.<br><b style="color: #fbbf24;">+10% Daño</b></p>
-                    <button class="shop-btn" id="btn-skin-2" onclick="buyOrEquipSkin(2, 5000)">🪙 5,000</button>
+                    <button class="shop-btn" id="btn-skin-2" onclick="buyOrEquipSkin(2, 4000)">🪙 4,000</button>
                 </div>
                 <div class="shop-item">
                     <h4>Vaca Pro</h4>
                     <img src="assets/vaca_pro.png" class="shop-img" alt="Vaca Pro">
                     <p>Tanque lechero definitivo.<br><b style="color: #fbbf24;">+10% Daño</b></p>
-                    <button class="shop-btn" id="btn-skin-3" onclick="buyOrEquipSkin(3, 5000)">🪙 5,000</button>
+                    <button class="shop-btn" id="btn-skin-3" onclick="buyOrEquipSkin(3, 8000)">🪙 8,000</button>
+                </div>
+
+                <div class="shop-item">
+                    <h4>Misil Pollito Pro</h4>
+                    <span style="font-size: 2rem; margin: 4px 0;">🚀</span>
+                    <p>Misiles estelares.<br><b style="color: #38bdf8;">+20% Daño</b></p>
+                    <button class="shop-btn" id="btn-missile-0" onclick="buyOrEquipMissile(0, 2000)">🪙 2,000</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Misil Lana Pro</h4>
+                    <span style="font-size: 2rem; margin: 4px 0;">💫</span>
+                    <p>Propulsión lanuda.<br><b style="color: #38bdf8;">+20% Daño</b></p>
+                    <button class="shop-btn" id="btn-missile-1" onclick="buyOrEquipMissile(1, 4000)">🪙 4,000</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Misil Herradura Pro</h4>
+                    <span style="font-size: 2rem; margin: 4px 0;">⚡</span>
+                    <p>Carga magnética.<br><b style="color: #38bdf8;">+20% Daño</b></p>
+                    <button class="shop-btn" id="btn-missile-2" onclick="buyOrEquipMissile(2, 8000)">🪙 8,000</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Misil Lácteo Pro</h4>
+                    <span style="font-size: 2rem; margin: 4px 0;">🌟</span>
+                    <p>Energía galáctica.<br><b style="color: #38bdf8;">+20% Daño</b></p>
+                    <button class="shop-btn" id="btn-missile-3" onclick="buyOrEquipMissile(3, 15000)">🪙 15,000</button>
                 </div>
             </div>
 
