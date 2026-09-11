@@ -5,7 +5,32 @@ canvas.width = 420; canvas.height = 640;
 let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0 };
 function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
 
-const achievData = { 'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida.' }, 'a3': { title: 'Cosecha Estelar', desc: 'Destruye 50 maíces malvados.' }, 'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge 50 monedas en total.' }, 'a5': { title: 'Alas de Lana', desc: 'Evoluciona a la Oveja Espacial.' }, 'a6': { title: 'Galope Galáctico', desc: 'Alcanza la Nave Caballo.' }, 'a7': { title: 'La Vaca Sagrada', desc: 'Desbloquea la Vaca Espacial.' }, 'a8': { title: 'Poder de Fuego I', desc: 'Sube los disparos al máximo.' }, 'a9': { title: 'Piloto Veloz', desc: 'Sube la velocidad al máximo.' }, 'a10': { title: 'El Terror del Maizal', desc: 'Derrota a tu primer Jefe Maíz.' }, 'a11': { title: 'Puntería de Granjero', desc: 'Destruye 30 enemigos sin perder vida.' }, 'a12': { title: 'As del Espejo', desc: 'Derrota a un Jefe con 1 corazón.' }, 'a13': { title: 'Vuelo Limpio', desc: '100 segundos sin perder vida.' }, 'a14': { title: 'Sobreviviente del Espacio', desc: 'Aguanta 5 minutos sin perder.' }, 'a15': { title: 'Cliente Frecuente', desc: 'Compra 10 vidas extras (histórico).' }, 'a16': { title: 'Inversión Saludable', desc: 'Compra 10 vidas en una partida.' }, 'a17': { title: 'Multimillonario Épico', desc: '500 monedas en una partida.' }, 'a18': { title: 'Veterano del Pollo', desc: 'Juega 25 partidas.' }, 'a19': { title: 'Leyenda del Vacío', desc: '200,000 puntos en una partida.' }, 'a20': { title: 'Dios del Infinito', desc: '500,000 puntos en una partida.' } };
+// Nuevos Logros Agregados
+const achievData = { 
+    'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 
+    'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida.' }, 
+    'a3': { title: 'Cosecha Estelar', desc: 'Destruye 50 maíces malvados.' }, 
+    'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge 50 monedas en total.' }, 
+    'a5': { title: 'Alas de Lana', desc: 'Evoluciona a la Oveja Espacial.' }, 
+    'a6': { title: 'Galope Galáctico', desc: 'Alcanza la Nave Caballo.' }, 
+    'a7': { title: 'La Vaca Sagrada', desc: 'Desbloquea la Vaca Espacial.' }, 
+    'a8': { title: 'Poder de Fuego I', desc: 'Sube los disparos al máximo.' }, 
+    'a9': { title: 'Piloto Veloz', desc: 'Sube la velocidad al máximo.' }, 
+    'a10': { title: 'El Terror del Maizal', desc: 'Derrota a tu primer Jefe Maíz.' }, 
+    'a11': { title: 'Puntería de Granjero', desc: 'Destruye 30 enemigos sin perder vida.' }, 
+    'a12': { title: 'As del Espejo', desc: 'Derrota a un Jefe con 1 corazón.' }, 
+    'a13': { title: 'Vuelo Limpio', desc: '100 segundos sin perder vida.' }, 
+    'a14': { title: 'Sobreviviente del Espacio', desc: 'Aguanta 5 minutos sin perder.' }, 
+    'a15': { title: 'Cliente Frecuente', desc: 'Compra 10 vidas extras (histórico).' }, 
+    'a16': { title: 'Inversión Saludable', desc: 'Compra 10 vidas en una partida.' }, 
+    'a17': { title: 'Multimillonario Épico', desc: '500 monedas en una partida.' }, 
+    'a18': { title: 'Veterano del Pollo', desc: 'Juega 25 partidas.' }, 
+    'a19': { title: 'Leyenda del Vacío', desc: '200,000 puntos en una partida.' }, 
+    'a20': { title: 'Dios del Infinito', desc: '500,000 puntos en una partida.' },
+    'a21': { title: 'Venciste lo invencible', desc: 'Vence a la dupla Súper Jefe.' },
+    'a22': { title: 'Millonario', desc: 'Consigue 10,000 monedas en total.' },
+    'a23': { title: 'Multimillonario', desc: 'Reúne 10,000 monedas sin gastarlas.' }
+};
 let pAchiev = JSON.parse(localStorage.getItem('farm_space_achievements')) || {};
 
 function renderAchievementsList() {
@@ -31,23 +56,32 @@ function pauseGame() { if (gameState === 'PLAYING') { gameState = 'PAUSED'; bgMu
 document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); pauseGame(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
 document.getElementById('resumeBtn').addEventListener('click', (e) => { e.stopPropagation(); if (gameState === 'PAUSED') { gameState = 'PLAYING'; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); } });
+
+// Gestión de Pantallas del Menú Principal
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
+document.getElementById('openShopBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('shopScreen').style.display = 'flex'; });
+document.getElementById('openRecordsBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('recordsScreen').style.display = 'flex'; });
 document.getElementById('openTrophiesBtn').addEventListener('click', () => { updateTrophyMenu(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'flex'; });
 document.getElementById('openAchievBtn').addEventListener('click', () => { renderAchievementsList(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('achievScreen').style.display = 'flex'; });
-document.getElementById('mainMenuBtn').addEventListener('click', () => { document.getElementById('gameOverScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; gameState = 'START'; });
+document.getElementById('mainMenuBtn').addEventListener('click', () => { 
+    document.getElementById('gameOverScreen').style.display = 'none'; 
+    document.getElementById('startScreen').style.display = 'flex'; 
+    gameState = 'START'; 
+    document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
+});
 
-// Sistema de Trofeos actualizado para descripciones textuales
+// Trofeo Diamante a los 300k
 const trophyData = { 
     '20k': { name: '🥉 Pollito de Bronce', lock: 'Consigue 20,000 pts', unlock: 'Lograste 20,000 pts.', key: 't20k' }, 
     '50k': { name: '🥈 Lana de Plata', lock: 'Consigue 50,000 pts', unlock: 'Lograste 50,000 pts.', key: 't50k' }, 
     '100k': { name: '🏅 Herradura de Oro', lock: 'Consigue 100,000 pts', unlock: 'Lograste 100,000 pts.', key: 't100k' }, 
     '200k': { name: '🏆 Leche Legendaria', lock: 'Consigue 200,000 pts', unlock: 'Lograste 200,000 pts.', key: 't200k' },
-    'imparable': { name: '🔥 Imparable', lock: 'Vence a la dupla Súper Jefe', unlock: 'Venciste lo invencible.', key: 'tImparable' }
+    '300k': { name: '💎 Gallina de Diamante', lock: 'Consigue 300,000 pts', unlock: 'Lograste 300,000 pts.', key: 't300k' }
 };
 
 function updateTrophyMenu() { 
     let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; 
-    ['20k', '50k', '100k', '200k', 'imparable'].forEach(id => { 
+    ['20k', '50k', '100k', '200k', '300k'].forEach(id => { 
         let img = document.getElementById(`img-t${id}`); 
         let emoji = document.getElementById(`fall-${id}`); 
         if(img && emoji) {
@@ -82,18 +116,18 @@ const assets = {
     lechuga: new Image(), lechugaFuerte: new Image(), jefeLechuga: new Image(), superJefeLechuga: new Image(),
     balaPollito: new Image(), balaLana: new Image(), balaHerradura: new Image(), balaLeche: new Image(),
     balaJefe: new Image(), balaLechuga: new Image(),
-    trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoImparable: new Image()
+    trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoDiamante: new Image()
 };
 assets.gallina.src = 'assets/gallina.png'; assets.oveja.src = 'assets/oveja.png'; assets.caballo.src = 'assets/caballo.png'; assets.vaca.src = 'assets/vaca.png'; 
 assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png'; assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
 assets.lechuga.src = 'assets/lechuga.png'; assets.lechugaFuerte.src = 'assets/lechuga_fuerte.png'; assets.jefeLechuga.src = 'assets/lechuga_jefe.png'; assets.superJefeLechuga.src = 'assets/super_jefe_lechuga.png';
 assets.balaPollito.src = 'assets/bala_pollito.png'; assets.balaLana.src = 'assets/bala_lana.png'; assets.balaHerradura.src = 'assets/bala_herradura.png'; assets.balaLeche.src = 'assets/bala_leche.png';
 assets.balaJefe.src = 'assets/bala_jefe.png'; assets.balaLechuga.src = 'assets/bala_lechuga.png';
-assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png'; assets.trofeoImparable.src = 'assets/trofeo_imparable.png';
+assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png'; assets.trofeoDiamante.src = 'assets/trofeo_diamante.png';
 
 let score = 0; let coins = gameStats.savedCoins || 0;
 let lives = 3; let gameTime = 0; let gameState = 'START'; 
-let gotTrophy20k = false; let gotTrophy50k = false; let gotTrophy100k = false; let gotTrophy200k = false; let gotTrophyImparable = false;
+let gotTrophy20k = false; let gotTrophy50k = false; let gotTrophy100k = false; let gotTrophy200k = false; let gotTrophy300k = false;
 let toastIcon = ""; let toastImg = null; let toastTimer = 0;
 let evolutionStage = 0; let maxUpgradeLimit = 3; let nextBossScoreThreshold = 5000;
 let upgrades = { bullets: 0, speed: 1, armor: 0, dmgBoost: 0, superDmgBoost: 0 };
@@ -208,7 +242,7 @@ function updateTrophiesHUD() {
     if (gotTrophy50k) html += getTrophyHTML(assets.trofeoLana, "🥈🧶"); 
     if (gotTrophy100k) html += getTrophyHTML(assets.trofeoHerradura, "🏅🧲"); 
     if (gotTrophy200k) html += getTrophyHTML(assets.trofeoLeche, "🏆🥛"); 
-    if (gotTrophyImparable) html += getTrophyHTML(assets.trofeoImparable, "🔥👑");
+    if (gotTrophy300k) html += getTrophyHTML(assets.trofeoDiamante, "💎🐔");
     document.getElementById('trophiesVal').innerHTML = html; 
 }
 
@@ -275,7 +309,18 @@ function handleDamage() {
     lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; updateLivesUI(); if (lives <= 0) gameOver(); 
 }
 
-function handleCoinEarned(amount) { coins += amount; gameStats.savedCoins = coins; sessionCoinsEarned += amount; gameStats.totalCoins += amount; saveStats(); if (gameStats.totalCoins >= 50) unlockAchievement('a4'); if (sessionCoinsEarned >= 500) unlockAchievement('a17'); }
+function handleCoinEarned(amount) { 
+    coins += amount; 
+    gameStats.savedCoins = coins; 
+    sessionCoinsEarned += amount; 
+    gameStats.totalCoins += amount; 
+    saveStats(); 
+    
+    if (gameStats.totalCoins >= 50) unlockAchievement('a4'); 
+    if (gameStats.totalCoins >= 10000) unlockAchievement('a22'); 
+    if (coins >= 10000) unlockAchievement('a23'); 
+    if (sessionCoinsEarned >= 500) unlockAchievement('a17'); 
+}
 
 document.getElementById('startBtn').addEventListener('click', startGame); document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('saveScoreBtn').addEventListener('click', () => { let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); if (!initials) initials = 'ABC'; leaderboard.push({ name: initials, score: score }); leaderboard.sort((a, b) => b.score - a.score); if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); saveLeaderboard(); document.getElementById('saveScoreSection').style.display = 'none'; renderLeaderboard('endLeaderboardList'); });
@@ -300,7 +345,7 @@ function startGame() {
     sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
     bullets = []; enemies = []; bossBullets = []; bosses = [];
     evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0;
-    gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophyImparable = false;
+    gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false;
     doubleBossSpawned = false; doubleBossDefeated = false;
     updateTrophiesHUD();
     player.x = canvas.width / 2 - player.width / 2; isDraggingShip = false; dragPointerId = null; document.getElementById('gameCanvas').style.background = '#090d16';
@@ -355,17 +400,13 @@ function update() {
     if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; showTrophyToast("🥈🧶", assets.trofeoLana); updateTrophiesHUD(); savePersistentTrophy('t50k'); }
     if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; showTrophyToast("🏅🧲", assets.trofeoHerradura); updateTrophiesHUD(); savePersistentTrophy('t100k'); }
     if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; showTrophyToast("🏆🥛", assets.trofeoLeche); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); }
+    if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; showTrophyToast("💎🐔", assets.trofeoDiamante); updateTrophiesHUD(); savePersistentTrophy('t300k'); }
     if (score >= 500000) unlockAchievement('a20');
     
-    // Trofeo de Derrotar a ambos Jefes Gemelos
+    // Logro de Derrotar a ambos Jefes Gemelos
     if (doubleBossSpawned && !doubleBossDefeated && bosses.length === 0 && score >= 250000) {
         doubleBossDefeated = true;
-        if (!gotTrophyImparable) {
-            gotTrophyImparable = true; 
-            showTrophyToast("🔥👑", assets.trofeoImparable); 
-            updateTrophiesHUD(); 
-            savePersistentTrophy('tImparable'); 
-        }
+        unlockAchievement('a21'); // Logro Venciste lo invencible
     }
 
     if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; }
