@@ -112,7 +112,7 @@ function shootBullet() {
 window.buyUpgrade = function(type) {
     if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 12) { coins -= 12; gameStats.savedCoins = coins; saveStats(); upgrades.bullets++; if (upgrades.bullets === maxUpgradeLimit) unlockAchievement('a8'); }
     else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 12) { coins -= 12; gameStats.savedCoins = coins; saveStats(); upgrades.speed++; if (upgrades.speed === maxUpgradeLimit) unlockAchievement('a9'); }
-    else if (type === 'life' && coins >= 15) { coins -= 15; gameStats.savedCoins = coins; saveStats(); lives++; partialHit = false; updateLivesUI(); gameStats.totalLivesBought++; saveStats(); sessionLivesBought++; if (gameStats.totalLivesBought >= 10) unlockAchievement('a15'); if (sessionLivesBought >= 10) unlockAchievement('a16'); }
+    else if (type === 'life' && coins >= 15 && lives < 10) { coins -= 15; gameStats.savedCoins = coins; saveStats(); lives++; partialHit = false; updateLivesUI(); gameStats.totalLivesBought++; saveStats(); sessionLivesBought++; if (gameStats.totalLivesBought >= 10) unlockAchievement('a15'); if (sessionLivesBought >= 10) unlockAchievement('a16'); }
     else if (type === 'evolve') { 
         if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) {
             if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } 
@@ -130,7 +130,21 @@ function updateUpgradesHUD() {
     document.getElementById('coinVal').textContent = coins;
     const btnBullets = document.getElementById('hud-bullets'); if (upgrades.bullets >= maxUpgradeLimit) { btnBullets.querySelector('.hud-lvl').textContent = 'MÁX'; btnBullets.querySelector('.hud-cost').style.display = 'none'; } else { btnBullets.querySelector('.hud-lvl').textContent = `Lv.${upgrades.bullets}`; btnBullets.querySelector('.hud-cost').style.display = 'block'; }
     const btnSpeed = document.getElementById('hud-speed'); if (upgrades.speed >= maxUpgradeLimit) { btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX'; btnSpeed.querySelector('.hud-cost').style.display = 'none'; } else { btnSpeed.querySelector('.hud-lvl').textContent = `Lv.${upgrades.speed}`; btnSpeed.querySelector('.hud-cost').style.display = 'block'; }
-    const btnLifeEvolve = document.getElementById('hud-life-evolve'); if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; }
+    const btnLifeEvolve = document.getElementById('hud-life-evolve'); 
+    
+    if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { 
+        btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; 
+    } else { 
+        btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; 
+        if (lives >= 10) {
+            btnLifeEvolve.querySelector('.hud-lvl').textContent = 'MÁX'; 
+            btnLifeEvolve.querySelector('.hud-cost').style.display = 'none';
+        } else {
+            btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; 
+            btnLifeEvolve.querySelector('.hud-cost').style.display = 'block';
+        }
+        btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; 
+    }
     
     document.getElementById('pauseBulletsLvl').textContent = upgrades.bullets >= maxUpgradeLimit ? 'MÁX' : `🪙12`;
     document.getElementById('pauseSpeedLvl').textContent = upgrades.speed >= maxUpgradeLimit ? 'MÁX' : `🪙12`;
@@ -223,7 +237,7 @@ document.getElementById('saveScoreBtn').addEventListener('click', () => { let in
 
 document.getElementById('reviveBtn').addEventListener('click', () => {
     if (coins >= 500) {
-        coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; partialHit = false; bosses = [];
+        coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; partialHit = false; 
         updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
         
         document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
@@ -365,9 +379,10 @@ function update() {
             }
             if (boss.type === 'lechuga' && boss.shootCooldown >= 45) {
                 boss.shootCooldown = 0;
-                bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 0, isLechugaBala: true });
-                bossBullets.push({ x: boss.x + 20, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -1.5, isLechugaBala: true });
-                bossBullets.push({ x: boss.x + boss.width - 20, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 1.5, isLechugaBala: true });
+                bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -2.0, isLechugaBala: true });
+                bossBullets.push({ x: boss.x + boss.width / 2 - 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -0.6, isLechugaBala: true });
+                bossBullets.push({ x: boss.x + boss.width / 2 + 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 0.6, isLechugaBala: true });
+                bossBullets.push({ x: boss.x + boss.width / 2 + 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 2.0, isLechugaBala: true });
             }
             if (boss.type === 'lechuga' && boss.minionCooldown >= 90) {
                 boss.minionCooldown = 0; enemies.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 48, height: 48, hp: 5, maxHp: 5, type: 'lechuga_fuerte', speed: 1.5, wobble: 0, pts: 300, coin: 2, shootCooldown: 0 });
@@ -438,7 +453,11 @@ function update() {
     }
 }
 
-function updateLivesUI() { let hearts = ''; for (let i = 0; i < lives; i++) hearts += '❤️ '; document.getElementById('livesVal').textContent = hearts.trim(); }
+function updateLivesUI() { 
+    let hearts = ''; 
+    for (let i = 0; i < lives; i++) hearts += '❤️ '; 
+    document.getElementById('livesVal').textContent = hearts.trim(); 
+}
 
 function drawPlayerShip(x, y) {
     let currentImg = assets.gallina; if (evolutionStage === 3) currentImg = assets.vaca; else if (evolutionStage === 2) currentImg = assets.caballo; else if (evolutionStage === 1) currentImg = assets.oveja;
