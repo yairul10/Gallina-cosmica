@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nave Gallina vs Maíces y Lechugas</title>
-    <!-- AQUÍ CONECTAMOS EL ARCHIVO DE ESTILOS CSS -->
+    <!-- Aquí conectamos el archivo de estilos CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -29,7 +29,7 @@
                 </div>
             </div>
 
-            <!-- Controles -->
+            <!-- Controles Base -->
             <div id="hud-bullets" class="draggable-btn" data-type="bullets">
                 <div class="hud-cost">🪙12</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div>
             </div>
@@ -39,12 +39,16 @@
             <div id="hud-life-evolve" class="draggable-btn" data-type="btn3">
                 <div class="hud-cost">🪙15</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div>
             </div>
+            
+            <!-- Controles Ronda 2 -->
             <div id="hud-armor" class="draggable-btn r2-upgrade" data-type="armor" style="display: none; border-color: rgba(59, 130, 246, 0.8);">
                 <div class="hud-cost" style="background:#2563eb;">🪙300</div><div class="hud-emoji">🛡️</div><div class="hud-lvl" style="color:#bfdbfe">DUR.</div>
             </div>
             <div id="hud-damage" class="draggable-btn r2-upgrade" data-type="damage" style="display: none; border-color: rgba(239, 68, 68, 0.8);">
                 <div class="hud-cost">🪙200</div><div class="hud-emoji">🔥</div><div class="hud-lvl" style="color:#fecaca">+50%</div>
             </div>
+
+            <!-- Controles Ronda 3 -->
             <div id="hud-super-damage" class="draggable-btn r3-upgrade" data-type="superDamage" style="display: none; border-color: #8b5cf6;">
                 <div class="hud-cost" style="background:#6d28d9;">🪙1000</div><div class="hud-emoji">☢️</div><div class="hud-lvl" style="color:#ddd6fe">+50%</div>
             </div>
@@ -54,7 +58,7 @@
             </div>
         </div>
 
-        <!-- PANTALLAS (Menús, Trofeos, Logros, Pausa, GameOver) -->
+        <!-- Pantalla de Inicio -->
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
             <p>Mejora tu nave tocando los íconos de la izquierda.<br>💡 <b>Tip:</b> Pon Pausa para organizar tus controles.</p>
@@ -67,6 +71,7 @@
             <button class="btn btn-secondary" id="openAchievBtn">🏅 Logros</button>
         </div>
 
+        <!-- Pantalla de Trofeos -->
         <div id="trophiesScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 24px;">🏆 Salón de la Fama</h1>
             <div class="trophy-rack">
@@ -74,6 +79,7 @@
                 <div class="trophy-item" data-id="50k" onclick="showTrophyInfo('50k')"><span id="fall-50k" class="trophy-emoji-fallback">🥈</span><img src="assets/trofeo_lana.png" id="img-t50k" class="trophy-img" onload="document.getElementById('fall-50k').style.display='none'" onerror="this.style.display='none'"></div>
                 <div class="trophy-item" data-id="100k" onclick="showTrophyInfo('100k')"><span id="fall-100k" class="trophy-emoji-fallback">🏅</span><img src="assets/trofeo_herradura.png" id="img-t100k" class="trophy-img" onload="document.getElementById('fall-100k').style.display='none'" onerror="this.style.display='none'"></div>
                 <div class="trophy-item" data-id="200k" onclick="showTrophyInfo('200k')"><span id="fall-200k" class="trophy-emoji-fallback">🏆</span><img src="assets/trofeo_leche.png" id="img-t200k" class="trophy-img" onload="document.getElementById('fall-200k').style.display='none'" onerror="this.style.display='none'"></div>
+                <div class="trophy-item" data-id="imparable" onclick="showTrophyInfo('imparable')"><span id="fall-imparable" class="trophy-emoji-fallback">🔥</span><img src="assets/trofeo_imparable.png" id="img-timparable" class="trophy-img" onload="document.getElementById('fall-imparable').style.display='none'" onerror="this.style.display='none'"></div>
             </div>
             <div id="trophyInfoBox" class="leaderboard-box" style="margin-top: 15px; text-align: center; min-height: 80px;">
                 <h3 id="trophyName" style="color: #fff; margin-bottom: 8px;">Toca un trofeo</h3><p id="trophyDesc" style="font-size: 0.85rem; color: #94a3b8;">Para ver la información y requisitos.</p>
@@ -81,6 +87,7 @@
             <button class="btn btn-secondary" onclick="closeScreen('trophiesScreen')" style="margin-top: 20px;">🔙 Volver</button>
         </div>
 
+        <!-- Pantalla de Logros -->
         <div id="achievScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 15px;">🏅 Logros</h1>
             <div class="achievements-list" id="achievListUI"></div>
@@ -90,6 +97,7 @@
             <button class="btn btn-secondary" onclick="closeScreen('achievScreen')">🔙 Volver</button>
         </div>
 
+        <!-- Pantalla de Pausa -->
         <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.92);">
             <h1 style="margin-bottom: 4px;">⏸️ Pausa</h1>
             <p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p>
@@ -106,6 +114,7 @@
             <button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button>
         </div>
 
+        <!-- Pantalla de Game Over -->
         <div id="gameOverScreen" class="screen-overlay" style="display: none;">
             <h1 style="margin-bottom: 4px;">¡Nave Destruida!</h1>
             <p style="margin-bottom: 15px;">Puntuación final: <strong id="finalScore" style="font-size:1.2rem; color:#38bdf8;">0</strong></p>
@@ -128,7 +137,7 @@
         </div>
     </div>
 
-    <!-- AQUÍ CONECTAMOS EL ARCHIVO DE LÓGICA DE JAVASCRIPT -->
+    <!-- Aquí conectamos el archivo de lógica JavaScript -->
     <script src="game.js"></script>
 </body>
 </html>
