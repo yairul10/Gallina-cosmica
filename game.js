@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = 420; canvas.height = 640;
 
 // SISTEMA DE GUARDADO ACTUALIZADO
-let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 10000, totalLivesBought: 0, savedCoins: 0, skins: [false, false, false, false], equippedSkins: [false, false, false, false], pendingBooster: 1.0 };
+let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0, skins: [false, false, false, false], equippedSkins: [false, false, false, false], pendingBooster: 1.0 };
 if (!gameStats.skins) gameStats.skins = [false, false, false, false];
 if (!gameStats.equippedSkins) gameStats.equippedSkins = [false, false, false, false];
 if (!gameStats.pendingBooster) gameStats.pendingBooster = 1.0;
@@ -314,7 +314,7 @@ function spawnEnemy() {
         return;
     }
 
-    let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 1;
+    let eType = 'corn'; let eHp = 500; let ePts = 150; let eCoin = 1;
 
     if (gameRound === 2) {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
