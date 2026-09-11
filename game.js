@@ -104,7 +104,7 @@ document.getElementById('resumeBtn').addEventListener('click', (e) => {
 
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
 
-// 🛸 LÓGICA DEL HANGAR DINÁMICO
+// 🛸 LÓGICA DEL HANGAR DINÁMICO Y TUTORIAL
 const baseNames = ['Gallina', 'Oveja', 'Caballo', 'Vaca'];
 const misNames = ['Misil Pollito', 'Misil Lana', 'Misil Herradura', 'Misil Lácteo'];
 const skinSrc = ['assets/gallina.png', 'assets/oveja.png', 'assets/caballo.png', 'assets/vaca.png'];
@@ -112,6 +112,7 @@ const skinProSrc = ['assets/gallina_pro.png', 'assets/oveja_pro.png', 'assets/ca
 const misSrc = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
 const misProSrc = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
 
+document.getElementById('openTutorialBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('tutorialScreen').style.display = 'flex'; });
 document.getElementById('openHangarBtn').addEventListener('click', () => { updateHangarUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('hangarScreen').style.display = 'flex'; });
 
 window.switchHangarTab = function(tab) {
