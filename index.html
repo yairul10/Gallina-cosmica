@@ -67,6 +67,11 @@
 
         #flashOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.5s; display: none; }
         #flashOverlay.flash { display: block; opacity: 1; }
+
+        /* Estilo para los botones de compra dentro del menú de pausa */
+        .pause-shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 260px; margin-bottom: 16px; }
+        .pause-shop-btn { background: #1e293b; border: 1px solid #38bdf8; border-radius: 8px; padding: 6px; color: #fff; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+        .pause-shop-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -101,7 +106,6 @@
                 <div class="hud-cost">🪙15</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div>
             </div>
             
-            <!-- Nuevos Controles Ronda 2: Precios 300 y 200 -->
             <div id="hud-armor" class="draggable-btn r2-upgrade" data-type="armor" style="display: none; border-color: rgba(59, 130, 246, 0.8);">
                 <div class="hud-cost" style="background:#2563eb;">🪙300</div><div class="hud-emoji">🛡️</div><div class="hud-lvl" style="color:#bfdbfe">DUR.</div>
             </div>
@@ -114,6 +118,7 @@
             </div>
         </div>
 
+        <!-- MENÚ DE INICIO -->
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
             <p>Mejora tu nave tocando los íconos de la izquierda.<br>💡 <b>Tip:</b> Pon Pausa para organizar tus controles.</p>
@@ -149,9 +154,18 @@
             <button class="btn btn-secondary" onclick="closeScreen('achievScreen')">🔙 Volver</button>
         </div>
 
-        <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.85);">
-            <h1 style="margin-bottom: 8px;">⏸️ Pausa</h1>
-            <p style="color:#fbbf24; margin-bottom: 24px;">Puedes arrastrar y organizar<br>tus botones libremente.</p>
+        <!-- MENÚ DE PAUSA (Con tienda integrada) -->
+        <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.92);">
+            <h1 style="margin-bottom: 4px;">⏸️ Pausa</h1>
+            <p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p>
+            
+            <div class="pause-shop-grid">
+                <button class="pause-shop-btn" onclick="buyUpgrade('bullets')"><span>⚔️ Daño Disparos</span><span id="pauseBulletsLvl" style="color:#38bdf8;">🪙12</span></button>
+                <button class="pause-shop-btn" onclick="buyUpgrade('speed')"><span>⚡ Velocidad</span><span id="pauseSpeedLvl" style="color:#38bdf8;">🪙12</span></button>
+                <button class="pause-shop-btn" onclick="buyUpgrade('life')"><span>❤️ Vida Extra</span><span style="color:#38bdf8;">🪙15</span></button>
+                <button class="pause-shop-btn" onclick="buyUpgrade('evolve')" id="pauseEvolveBtn"><span>🌟 Evolución</span><span style="color:#fbbf24;">Condición</span></button>
+            </div>
+
             <button class="btn" id="resumeBtn">▶️ Reanudar</button>
             <button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button>
         </div>
@@ -250,8 +264,6 @@
 
         let timeAt40k = 0; let shieldUnlocked = false; let shieldActive = false; let gameRound = 1;
         let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0; let sessionCoinsEarned = 0;
-        
-        // Nuevas variables (Vida permanente + Transición)
         let partialHit = false;
         let transitionTimer = 0; 
 
@@ -295,10 +307,15 @@
             if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 12) { coins -= 12; gameStats.savedCoins = coins; saveStats(); upgrades.bullets++; if (upgrades.bullets === maxUpgradeLimit) unlockAchievement('a8'); }
             else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 12) { coins -= 12; gameStats.savedCoins = coins; saveStats(); upgrades.speed++; if (upgrades.speed === maxUpgradeLimit) unlockAchievement('a9'); }
             else if (type === 'life' && coins >= 15) { coins -= 15; gameStats.savedCoins = coins; saveStats(); lives++; partialHit = false; updateLivesUI(); gameStats.totalLivesBought++; saveStats(); sessionLivesBought++; if (gameStats.totalLivesBought >= 10) unlockAchievement('a15'); if (sessionLivesBought >= 10) unlockAchievement('a16'); }
-            else if (type === 'evolve') { if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); } }
-            // Nuevos Precios: 300 la vida (permanente), 200 el daño
-            else if (type === 'armor' && coins >= 300 && upgrades.armor === 0) { coins -= 300; gameStats.savedCoins = coins; saveStats(); upgrades.armor = 1; }
-            else if (type === 'damage' && coins >= 200 && upgrades.dmgBoost === 0) { coins -= 200; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
+            else if (type === 'evolve') { 
+                if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) {
+                    if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } 
+                    else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } 
+                    else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); }
+                }
+            }
+            else if (type === 'armor' && gameRound === 2 && coins >= 300 && upgrades.armor === 0) { coins -= 300; gameStats.savedCoins = coins; saveStats(); upgrades.armor = 1; }
+            else if (type === 'damage' && gameRound === 2 && coins >= 200 && upgrades.dmgBoost === 0) { coins -= 200; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
             updateUpgradesHUD();
         }
 
@@ -308,12 +325,24 @@
             const btnSpeed = document.getElementById('hud-speed'); if (upgrades.speed >= maxUpgradeLimit) { btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX'; btnSpeed.querySelector('.hud-cost').style.display = 'none'; } else { btnSpeed.querySelector('.hud-lvl').textContent = `Lv.${upgrades.speed}`; btnSpeed.querySelector('.hud-cost').style.display = 'block'; }
             const btnLifeEvolve = document.getElementById('hud-life-evolve'); if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; }
             
-            if(gameRound === 2) { 
-                document.getElementById('hud-armor').style.display = 'flex'; 
-                document.getElementById('hud-damage').style.display = 'flex'; 
-                if (upgrades.armor > 0) { document.getElementById('hud-armor').querySelector('.hud-lvl').textContent = 'MÁX'; document.getElementById('hud-armor').querySelector('.hud-cost').style.display = 'none'; } 
-                if (upgrades.dmgBoost > 0) { document.getElementById('hud-damage').querySelector('.hud-lvl').textContent = 'MÁX'; document.getElementById('hud-damage').querySelector('.hud-cost').style.display = 'none'; } 
-            } else { document.getElementById('hud-armor').style.display = 'none'; document.getElementById('hud-damage').style.display = 'none'; }
+            // Textos del menú de pausa
+            document.getElementById('pauseBulletsLvl').textContent = upgrades.bullets >= maxUpgradeLimit ? 'MÁX' : `🪙12 (Lv.${upgrades.bullets})`;
+            document.getElementById('pauseSpeedLvl').textContent = upgrades.speed >= maxUpgradeLimit ? 'MÁX' : `🪙12 (Lv.${upgrades.speed})`;
+            const pauseEv = document.getElementById('pauseEvolveBtn');
+            if (evolutionStage >= 3) pauseEv.style.display = 'none';
+            else pauseEv.style.display = 'flex';
+
+            const armorBtn = document.getElementById('hud-armor');
+            const damageBtn = document.getElementById('hud-damage');
+            if (gameRound === 2) { 
+                armorBtn.style.display = 'flex'; 
+                damageBtn.style.display = 'flex'; 
+                if (upgrades.armor > 0) { armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; armorBtn.querySelector('.hud-cost').style.display = 'none'; } 
+                if (upgrades.dmgBoost > 0) { damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; damageBtn.querySelector('.hud-cost').style.display = 'none'; } 
+            } else { 
+                armorBtn.style.display = 'none'; 
+                damageBtn.style.display = 'none'; 
+            }
         }
 
         function showTrophyToast(icon, imgObj) { toastIcon = icon; toastImg = imgObj; toastTimer = 180; }
@@ -325,7 +354,6 @@
             let difficultyTime = score >= 40000 ? timeAt40k : gameTime;
             let speedMultiplier = 1 + ((difficultyTime / 70) * 0.3); 
             
-            // Calculo de Vida Escalonada
             let lastCornHp = 1 + Math.floor((timeAt40k > 0 ? timeAt40k : gameTime) / 12) + (evolutionStage * 5);
             if (lastCornHp < 1) lastCornHp = 1;
 
@@ -350,11 +378,11 @@
 
         function spawnBoss() { 
             if (nextBossScoreThreshold === 150000 && gameRound === 2) {
-                let bossHp = 960; // 4 veces la super mazorca
+                let bossHp = 960; 
                 boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga' };
             }
             else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
-                let bossHp = 240; // Doble de vida de antes
+                let bossHp = 240; 
                 boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' };
             } 
             else {
@@ -366,7 +394,6 @@
         function handleDamage() { 
             if (shieldActive) { shieldActive = false; sessionTimeNoHit = 0; return; }
             
-            // Vida Permanente Ronda 2: 2 golpes quitan 1 vida
             if (upgrades.armor > 0) { 
                 if (!partialHit) { partialHit = true; sessionTimeNoHit = 0; return; }
                 else { partialHit = false; }
@@ -383,7 +410,10 @@
         document.getElementById('reviveBtn').addEventListener('click', () => {
             if (coins >= 500) {
                 coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; partialHit = false;
-                updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'flex');
+                updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => {
+                    if (b.classList.contains('r2-upgrade') && gameRound !== 2) return;
+                    b.style.display = 'flex';
+                });
                 gameState = 'PLAYING'; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
                 if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
                 window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
@@ -400,7 +430,14 @@
             player.x = canvas.width / 2 - player.width / 2; isDraggingShip = false; dragPointerId = null; document.getElementById('gameCanvas').style.background = '#090d16';
             document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'block'; document.getElementById('playerInitials').value = 'AAA';
             updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
-            document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'flex'); gameState = 'PLAYING';
+            
+            // Mostrar solo botones base al iniciar
+            document.querySelectorAll('.draggable-btn').forEach(b => {
+                if (b.classList.contains('r2-upgrade')) b.style.display = 'none';
+                else b.style.display = 'flex';
+            });
+            
+            gameState = 'PLAYING';
             if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
             window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
         }
@@ -432,7 +469,7 @@
                     const flash = document.getElementById('flashOverlay');
                     flash.classList.add('flash'); setTimeout(() => flash.classList.remove('flash'), 500);
                     updateUpgradesHUD();
-                    bgMusic.volume = 0.4; // Restaurar música
+                    bgMusic.volume = 0.4;
                     gameState = 'PLAYING';
                 }
                 return;
@@ -549,11 +586,10 @@
                             score += boss.isSuperBoss ? 3000 : 1500; handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
                             document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
                             
-                            // TRANSICIÓN A RONDA 2
                             if (boss.isSuperBoss && boss.type === 'corn') {
                                 gameState = 'TRANSITION';
-                                transitionTimer = 300; // 5 segundos
-                                bgMusic.volume = 0.15; // Baja música
+                                transitionTimer = 300; 
+                                bgMusic.volume = 0.15; 
                                 document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none');
                             }
                             boss = null; 
@@ -571,7 +607,6 @@
             let currentImg = assets.gallina; if (evolutionStage === 3) currentImg = assets.vaca; else if (evolutionStage === 2) currentImg = assets.caballo; else if (evolutionStage === 1) currentImg = assets.oveja;
             if (shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 38, 0, Math.PI * 2); ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'; ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 10; ctx.stroke(); ctx.restore(); }
             
-            // HUD Visual Vida Permanente: Escudo Azul (Normal) o Rojo (Golpeado)
             if (upgrades.armor > 0 && !shieldActive) { 
                 ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 34, 0, Math.PI * 2); 
                 ctx.fillStyle = partialHit ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.1)'; 
