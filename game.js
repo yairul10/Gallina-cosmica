@@ -36,9 +36,44 @@ document.getElementById('openTrophiesBtn').addEventListener('click', () => { upd
 document.getElementById('openAchievBtn').addEventListener('click', () => { renderAchievementsList(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('achievScreen').style.display = 'flex'; });
 document.getElementById('mainMenuBtn').addEventListener('click', () => { document.getElementById('gameOverScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; gameState = 'START'; });
 
-const trophyData = { '20k': { name: '🥉 Pollito de Bronce', req: 20000, key: 't20k' }, '50k': { name: '🥈 Lana de Plata', req: 50000, key: 't50k' }, '100k': { name: '🏅 Herradura de Oro', req: 100000, key: 't100k' }, '200k': { name: '🏆 Leche Legendaria', req: 200000, key: 't200k' } };
-function updateTrophyMenu() { let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; ['20k', '50k', '100k', '200k'].forEach(id => { let img = document.getElementById(`img-t${id}`); let emoji = document.getElementById(`fall-${id}`); if(pTrophies[trophyData[id].key]) { img.className = 'trophy-img trophy-unlocked'; emoji.style.filter = 'none'; emoji.style.opacity = '1'; } else { img.className = 'trophy-img trophy-locked'; emoji.style.filter = 'grayscale(100%)'; emoji.style.opacity = '0.3'; } }); }
-window.showTrophyInfo = function(id) { document.querySelectorAll('.trophy-item').forEach(el => el.classList.remove('selected')); document.querySelector(`.trophy-item[data-id="${id}"]`).classList.add('selected'); let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let tName = document.getElementById('trophyName'); let tDesc = document.getElementById('trophyDesc'); if(pT[trophyData[id].key]) { tName.textContent = trophyData[id].name; tName.style.color = '#fbbf24'; tDesc.textContent = `¡Felicidades! Trofeo ganado por lograr ${trophyData[id].req} puntos.`; } else { tName.textContent = trophyData[id].name + ' 🔒'; tName.style.color = '#94a3b8'; tDesc.textContent = `Meta: Consigue ${trophyData[id].req} puntos en una partida.`; } }
+// Sistema de Trofeos actualizado para descripciones textuales
+const trophyData = { 
+    '20k': { name: '🥉 Pollito de Bronce', lock: 'Consigue 20,000 pts', unlock: 'Lograste 20,000 pts.', key: 't20k' }, 
+    '50k': { name: '🥈 Lana de Plata', lock: 'Consigue 50,000 pts', unlock: 'Lograste 50,000 pts.', key: 't50k' }, 
+    '100k': { name: '🏅 Herradura de Oro', lock: 'Consigue 100,000 pts', unlock: 'Lograste 100,000 pts.', key: 't100k' }, 
+    '200k': { name: '🏆 Leche Legendaria', lock: 'Consigue 200,000 pts', unlock: 'Lograste 200,000 pts.', key: 't200k' },
+    'imparable': { name: '🔥 Imparable', lock: 'Vence a la dupla Súper Jefe', unlock: 'Venciste lo invencible.', key: 'tImparable' }
+};
+
+function updateTrophyMenu() { 
+    let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; 
+    ['20k', '50k', '100k', '200k', 'imparable'].forEach(id => { 
+        let img = document.getElementById(`img-t${id}`); 
+        let emoji = document.getElementById(`fall-${id}`); 
+        if(img && emoji) {
+            if(pTrophies[trophyData[id].key]) { 
+                img.className = 'trophy-img trophy-unlocked'; emoji.style.filter = 'none'; emoji.style.opacity = '1'; 
+            } else { 
+                img.className = 'trophy-img trophy-locked'; emoji.style.filter = 'grayscale(100%)'; emoji.style.opacity = '0.3'; 
+            } 
+        }
+    }); 
+}
+
+window.showTrophyInfo = function(id) { 
+    document.querySelectorAll('.trophy-item').forEach(el => el.classList.remove('selected')); 
+    document.querySelector(`.trophy-item[data-id="${id}"]`).classList.add('selected'); 
+    let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; 
+    let tName = document.getElementById('trophyName'); 
+    let tDesc = document.getElementById('trophyDesc'); 
+    if(pT[trophyData[id].key]) { 
+        tName.textContent = trophyData[id].name; tName.style.color = '#fbbf24'; 
+        tDesc.textContent = `¡Felicidades! ${trophyData[id].unlock}`; 
+    } else { 
+        tName.textContent = trophyData[id].name + ' 🔒'; tName.style.color = '#94a3b8'; 
+        tDesc.textContent = `Meta: ${trophyData[id].lock}`; 
+    } 
+}
 function savePersistentTrophy(key) { let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; if (!pT[key]) { pT[key] = true; localStorage.setItem('farm_space_trophies', JSON.stringify(pT)); } }
 
 const assets = { 
@@ -47,18 +82,18 @@ const assets = {
     lechuga: new Image(), lechugaFuerte: new Image(), jefeLechuga: new Image(), superJefeLechuga: new Image(),
     balaPollito: new Image(), balaLana: new Image(), balaHerradura: new Image(), balaLeche: new Image(),
     balaJefe: new Image(), balaLechuga: new Image(),
-    trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image() 
+    trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoImparable: new Image()
 };
 assets.gallina.src = 'assets/gallina.png'; assets.oveja.src = 'assets/oveja.png'; assets.caballo.src = 'assets/caballo.png'; assets.vaca.src = 'assets/vaca.png'; 
 assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png'; assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
 assets.lechuga.src = 'assets/lechuga.png'; assets.lechugaFuerte.src = 'assets/lechuga_fuerte.png'; assets.jefeLechuga.src = 'assets/lechuga_jefe.png'; assets.superJefeLechuga.src = 'assets/super_jefe_lechuga.png';
 assets.balaPollito.src = 'assets/bala_pollito.png'; assets.balaLana.src = 'assets/bala_lana.png'; assets.balaHerradura.src = 'assets/bala_herradura.png'; assets.balaLeche.src = 'assets/bala_leche.png';
 assets.balaJefe.src = 'assets/bala_jefe.png'; assets.balaLechuga.src = 'assets/bala_lechuga.png';
-assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png';
+assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png'; assets.trofeoImparable.src = 'assets/trofeo_imparable.png';
 
 let score = 0; let coins = gameStats.savedCoins || 0;
 let lives = 3; let gameTime = 0; let gameState = 'START'; 
-let gotTrophy20k = false; let gotTrophy50k = false; let gotTrophy100k = false; let gotTrophy200k = false;
+let gotTrophy20k = false; let gotTrophy50k = false; let gotTrophy100k = false; let gotTrophy200k = false; let gotTrophyImparable = false;
 let toastIcon = ""; let toastImg = null; let toastTimer = 0;
 let evolutionStage = 0; let maxUpgradeLimit = 3; let nextBossScoreThreshold = 5000;
 let upgrades = { bullets: 0, speed: 1, armor: 0, dmgBoost: 0, superDmgBoost: 0 };
@@ -70,6 +105,7 @@ let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || 
 let timeAt40k = 0; let shieldUnlocked = false; let shieldActive = false; let gameRound = 1; let goingToRound = 1;
 let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0; let sessionCoinsEarned = 0;
 let partialHit = false; let transitionTimer = 0; 
+let doubleBossSpawned = false; let doubleBossDefeated = false;
 
 function saveLeaderboard() { localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard)); }
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
@@ -166,7 +202,15 @@ function updateUpgradesHUD() {
 
 function showTrophyToast(icon, imgObj) { toastIcon = icon; toastImg = imgObj; toastTimer = 180; }
 function getTrophyHTML(imgObj, emoji) { return (imgObj.complete && imgObj.naturalWidth > 0) ? `<img src="${imgObj.src}" style="height:18px; margin-left:4px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.5));">` : `<span style="margin-left:4px;">${emoji}</span>`; }
-function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTrophyHTML(assets.trofeoPollito, "🥉🐥"); if (gotTrophy50k) html += getTrophyHTML(assets.trofeoLana, "🥈🧶"); if (gotTrophy100k) html += getTrophyHTML(assets.trofeoHerradura, "🏅🧲"); if (gotTrophy200k) html += getTrophyHTML(assets.trofeoLeche, "🏆🥛"); document.getElementById('trophiesVal').innerHTML = html; }
+function updateTrophiesHUD() { 
+    let html = ""; 
+    if (gotTrophy20k) html += getTrophyHTML(assets.trofeoPollito, "🥉🐥"); 
+    if (gotTrophy50k) html += getTrophyHTML(assets.trofeoLana, "🥈🧶"); 
+    if (gotTrophy100k) html += getTrophyHTML(assets.trofeoHerradura, "🏅🧲"); 
+    if (gotTrophy200k) html += getTrophyHTML(assets.trofeoLeche, "🏆🥛"); 
+    if (gotTrophyImparable) html += getTrophyHTML(assets.trofeoImparable, "🔥👑");
+    document.getElementById('trophiesVal').innerHTML = html; 
+}
 
 function spawnEnemy() {
     if (bosses.length > 0) return; 
@@ -209,6 +253,7 @@ function spawnBoss() {
         let bossHpL = 6720 * 2; 
         bosses.push({ x: 20, y: -120, width: 140, height: 110, maxHp: bossHpM, hp: bossHpM, speed: 1.5, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' });
         bosses.push({ x: canvas.width - 160, y: -180, width: 140, height: 110, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: -1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga' });
+        doubleBossSpawned = true;
     }
     else if (nextBossScoreThreshold === 150000 && gameRound === 2) {
         let bossHp = 6720; 
@@ -255,7 +300,9 @@ function startGame() {
     sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
     bullets = []; enemies = []; bossBullets = []; bosses = [];
     evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0;
-    gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; updateTrophiesHUD();
+    gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophyImparable = false;
+    doubleBossSpawned = false; doubleBossDefeated = false;
+    updateTrophiesHUD();
     player.x = canvas.width / 2 - player.width / 2; isDraggingShip = false; dragPointerId = null; document.getElementById('gameCanvas').style.background = '#090d16';
     document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'block'; document.getElementById('playerInitials').value = 'AAA';
     updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
@@ -309,6 +356,17 @@ function update() {
     if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; showTrophyToast("🏅🧲", assets.trofeoHerradura); updateTrophiesHUD(); savePersistentTrophy('t100k'); }
     if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; showTrophyToast("🏆🥛", assets.trofeoLeche); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); }
     if (score >= 500000) unlockAchievement('a20');
+    
+    // Trofeo de Derrotar a ambos Jefes Gemelos
+    if (doubleBossSpawned && !doubleBossDefeated && bosses.length === 0 && score >= 250000) {
+        doubleBossDefeated = true;
+        if (!gotTrophyImparable) {
+            gotTrophyImparable = true; 
+            showTrophyToast("🔥👑", assets.trofeoImparable); 
+            updateTrophiesHUD(); 
+            savePersistentTrophy('tImparable'); 
+        }
+    }
 
     if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; }
     if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
