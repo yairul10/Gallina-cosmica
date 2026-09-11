@@ -65,7 +65,6 @@
         #achievToast { position: absolute; top: -80px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); border: 2px solid #fbbf24; padding: 10px 20px; border-radius: 12px; z-index: 100; text-align: center; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
         #achievToast.show { top: 20px; }
 
-        /* Estilo para los botones de compra dentro del menú de pausa */
         .pause-shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 260px; margin-bottom: 16px; }
         .pause-shop-btn { background: #1e293b; border: 1px solid #38bdf8; border-radius: 8px; padding: 6px; color: #fff; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
         .pause-shop-btn:active { transform: scale(0.95); }
@@ -350,18 +349,18 @@
             let lastCornHp = 1 + Math.floor((timeAt40k > 0 ? timeAt40k : gameTime) / 12) + (evolutionStage * 5);
             if (lastCornHp < 1) lastCornHp = 1;
 
-            let eType = 'corn'; let eHp = 1; let ePts = 300; let eCoin = 1;
+            let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 1;
 
             if (gameRound === 2) {
                 let baseLechugaHp = Math.ceil(lastCornHp * 1.2);
                 let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5);
                 let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
 
-                if (score >= 100000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 400; eCoin = 4; }
-                else if (score >= 85000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 400 : 200; eCoin = eType === 'lechuga_jefe' ? 4 : 2; }
-                else if (score >= 70000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 200; eCoin = 2; }
-                else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 200 : 100; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; }
-                else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 100; eCoin = 1; }
+                if (score >= 100000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 4; }
+                else if (score >= 85000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 4 : 2; }
+                else if (score >= 70000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 2; }
+                else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; }
+                else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
             } else {
                 eHp = lastCornHp;
                 eType = eHp > 1 ? 'corn_strong' : 'corn';
@@ -371,15 +370,15 @@
 
         function spawnBoss() { 
             if (nextBossScoreThreshold === 150000 && gameRound === 2) {
-                let bossHp = 960; 
+                let bossHp = 6720; 
                 boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga' };
             }
             else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
-                let bossHp = 240; 
+                let bossHp = 1680; 
                 boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' };
             } 
             else {
-                let bossLevel = Math.floor(score / 5000); let bossHp = 60 + (bossLevel * 45); 
+                let bossLevel = Math.floor(score / 5000); let bossHp = Math.floor((60 + (bossLevel * 45)) * 1.5); 
                 boss = { x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: gameRound===2 ? 'lechuga':'corn' }; 
             }
         }
@@ -405,7 +404,6 @@
                 coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; partialHit = false;
                 updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
                 
-                // Mostrar botones de nuevo
                 document.querySelectorAll('.draggable-btn').forEach(b => {
                     b.style.display = 'flex';
                 });
@@ -429,7 +427,7 @@
             updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
             
             document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
-            updateUpgradesHUD(); // Esto ocultará correctamente las mejoras de ronda 2 si es ronda 1
+            updateUpgradesHUD(); 
             
             gameState = 'PLAYING';
             if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
@@ -461,9 +459,8 @@
                     nextBossScoreThreshold = 150000;
                     document.getElementById('gameCanvas').style.background = '#06170d';
                     
-                    // Restaurar los botones de la interfaz
                     document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
-                    updateUpgradesHUD(); // Se encargará de mostrar u ocultar correctamente los botones de ronda 2
+                    updateUpgradesHUD(); 
                     
                     bgMusic.volume = 0.4;
                     gameState = 'PLAYING';
@@ -521,7 +518,7 @@
                         bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 });
                     }
                     if (boss.type === 'corn' && boss.minionCooldown >= 110) {
-                        boss.minionCooldown = 0; enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 100, coin: 1, shootCooldown: 0 }); enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 100, coin: 1, shootCooldown: 0 });
+                        boss.minionCooldown = 0; enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: 1, shootCooldown: 0 }); enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: 1, shootCooldown: 0 });
                     }
                     if (boss.type === 'lechuga' && boss.shootCooldown >= 45) {
                         boss.shootCooldown = 0;
@@ -530,7 +527,7 @@
                         bossBullets.push({ x: boss.x + boss.width - 20, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 1.5, isLechugaBala: true });
                     }
                     if (boss.type === 'lechuga' && boss.minionCooldown >= 90) {
-                        boss.minionCooldown = 0; enemies.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 48, height: 48, hp: 5, maxHp: 5, type: 'lechuga_fuerte', speed: 1.5, wobble: 0, pts: 200, coin: 2, shootCooldown: 0 });
+                        boss.minionCooldown = 0; enemies.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 48, height: 48, hp: 5, maxHp: 5, type: 'lechuga_fuerte', speed: 1.5, wobble: 0, pts: 300, coin: 2, shootCooldown: 0 });
                     }
                 } else {
                     if (boss.shootCooldown >= 40) {
@@ -553,7 +550,7 @@
                         enemies[i].shootCooldown = 0;
                         bossBullets.push({ x: enemies[i].x + 20, y: enemies[i].y + 40, width: 12, height: 12, speed: 4.5, dx: 0, isLechugaBala: true });
                         if (enemies[i].type === 'lechuga_jefe') {
-                            enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 100, coin: 1, shootCooldown: 0 });
+                            enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 1, shootCooldown: 0 });
                         }
                     }
                 }
@@ -579,7 +576,7 @@
                     if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) {
                         boss.hp -= bullets[j].damage; bullets.splice(j, 1);
                         if (boss.hp <= 0) { 
-                            score += boss.isSuperBoss ? 3000 : 1500; handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
+                            score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
                             document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
                             
                             if (boss.isSuperBoss && boss.type === 'corn') {
