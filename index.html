@@ -68,11 +68,15 @@
         .pause-shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 260px; margin-bottom: 16px; }
         .pause-shop-btn { background: #1e293b; border: 1px solid #38bdf8; border-radius: 8px; padding: 6px; color: #fff; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
         .pause-shop-btn:active { transform: scale(0.95); }
+
+        #flashOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.5s; display: none; }
+        #flashOverlay.flash { display: block; opacity: 1; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
+        <div id="flashOverlay"></div>
         <div id="achievToast">
             <div style="color: #fbbf24; font-size: 0.65rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px;">🏅 LOGRO DESBLOQUEADO</div>
             <div id="achievToastName" style="color: #fff; font-size: 0.95rem; font-weight: bold;">Nombre del Logro</div>
@@ -91,6 +95,7 @@
                 </div>
             </div>
 
+            <!-- Controles Base -->
             <div id="hud-bullets" class="draggable-btn" data-type="bullets">
                 <div class="hud-cost">🪙12</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div>
             </div>
@@ -101,11 +106,17 @@
                 <div class="hud-cost">🪙15</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div>
             </div>
             
+            <!-- Controles Ronda 2 -->
             <div id="hud-armor" class="draggable-btn r2-upgrade" data-type="armor" style="display: none; border-color: rgba(59, 130, 246, 0.8);">
                 <div class="hud-cost" style="background:#2563eb;">🪙300</div><div class="hud-emoji">🛡️</div><div class="hud-lvl" style="color:#bfdbfe">DUR.</div>
             </div>
             <div id="hud-damage" class="draggable-btn r2-upgrade" data-type="damage" style="display: none; border-color: rgba(239, 68, 68, 0.8);">
                 <div class="hud-cost">🪙200</div><div class="hud-emoji">🔥</div><div class="hud-lvl" style="color:#fecaca">+50%</div>
+            </div>
+
+            <!-- Controles Ronda 3 -->
+            <div id="hud-super-damage" class="draggable-btn r3-upgrade" data-type="superDamage" style="display: none; border-color: #8b5cf6;">
+                <div class="hud-cost" style="background:#6d28d9;">🪙1000</div><div class="hud-emoji">☢️</div><div class="hud-lvl" style="color:#ddd6fe">+50%</div>
             </div>
 
             <div id="fireBtn" class="draggable-btn" data-type="fire">
@@ -157,6 +168,7 @@
                 <button class="pause-shop-btn" onclick="buyUpgrade('speed')"><span>⚡ Velocidad</span><span id="pauseSpeedLvl" style="color:#38bdf8;">🪙12</span></button>
                 <button class="pause-shop-btn" onclick="buyUpgrade('life')"><span>❤️ Vida Extra</span><span style="color:#38bdf8;">🪙15</span></button>
                 <button class="pause-shop-btn" onclick="buyUpgrade('evolve')" id="pauseEvolveBtn"><span>🌟 Evolución</span><span style="color:#fbbf24;">Condición</span></button>
+                <button class="pause-shop-btn" id="pauseSuperDmgBtn" style="display:none;" onclick="buyUpgrade('superDamage')"><span>☢️ Daño Omega</span><span id="pauseSuperDmgLvl" style="color:#8b5cf6;">🪙1000</span></button>
             </div>
 
             <button class="btn" id="resumeBtn">▶️ Reanudar</button>
@@ -204,11 +216,11 @@
         function unlockAchievement(key) { if (!pAchiev[key]) { pAchiev[key] = true; localStorage.setItem('farm_space_achievements', JSON.stringify(pAchiev)); document.getElementById('achievToastName').textContent = achievData[key].title; const toast = document.getElementById('achievToast'); toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3500); } }
 
         function loadHudPositions() {
-            const saved = JSON.parse(localStorage.getItem('farm_space_hud_v6'));
-            if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'fireBtn'].forEach(id => { if(saved[id] && document.getElementById(id)) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } }); } 
-            else { document.getElementById('hud-bullets').style.left = '16px'; document.getElementById('hud-bullets').style.top = '340px'; document.getElementById('hud-speed').style.left = '16px'; document.getElementById('hud-speed').style.top = '400px'; document.getElementById('hud-life-evolve').style.left = '16px'; document.getElementById('hud-life-evolve').style.top = '460px'; document.getElementById('hud-armor').style.left = '16px'; document.getElementById('hud-armor').style.top = '220px'; document.getElementById('hud-damage').style.left = '16px'; document.getElementById('hud-damage').style.top = '280px'; document.getElementById('fireBtn').style.left = '334px'; document.getElementById('fireBtn').style.top = '540px'; }
+            const saved = JSON.parse(localStorage.getItem('farm_space_hud_v7'));
+            if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn'].forEach(id => { if(saved[id] && document.getElementById(id)) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } }); } 
+            else { document.getElementById('hud-bullets').style.left = '16px'; document.getElementById('hud-bullets').style.top = '340px'; document.getElementById('hud-speed').style.left = '16px'; document.getElementById('hud-speed').style.top = '400px'; document.getElementById('hud-life-evolve').style.left = '16px'; document.getElementById('hud-life-evolve').style.top = '460px'; document.getElementById('hud-armor').style.left = '16px'; document.getElementById('hud-armor').style.top = '220px'; document.getElementById('hud-damage').style.left = '16px'; document.getElementById('hud-damage').style.top = '280px'; document.getElementById('hud-super-damage').style.left = '16px'; document.getElementById('hud-super-damage').style.top = '160px'; document.getElementById('fireBtn').style.left = '334px'; document.getElementById('fireBtn').style.top = '540px'; }
         }
-        function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'fireBtn'].forEach(id => { const el = document.getElementById(id); if(el) positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v6', JSON.stringify(positions)); }
+        function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn'].forEach(id => { const el = document.getElementById(id); if(el) positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v7', JSON.stringify(positions)); }
         loadHudPositions();
 
         const playlist = ['assets/musica_1.mp3', 'assets/musica_2.mp3', 'assets/musica_3.mp3'];
@@ -244,21 +256,20 @@
         assets.balaJefe.src = 'assets/bala_jefe.png'; assets.balaLechuga.src = 'assets/bala_lechuga.png';
         assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png';
 
-        let score = 0; 
-        let coins = gameStats.savedCoins || 0;
+        let score = 0; let coins = gameStats.savedCoins || 0;
         let lives = 3; let gameTime = 0; let gameState = 'START'; 
         let gotTrophy20k = false; let gotTrophy50k = false; let gotTrophy100k = false; let gotTrophy200k = false;
         let toastIcon = ""; let toastImg = null; let toastTimer = 0;
         let evolutionStage = 0; let maxUpgradeLimit = 3; let nextBossScoreThreshold = 5000;
-        let upgrades = { bullets: 0, speed: 1, armor: 0, dmgBoost: 0 };
+        let upgrades = { bullets: 0, speed: 1, armor: 0, dmgBoost: 0, superDmgBoost: 0 };
         const player = { x: canvas.width / 2 - 25, y: canvas.height - 110, width: 50, height: 50, baseSpeed: 5.5 };
-        let bullets = []; let enemies = []; let bossBullets = []; let boss = null; let stars = [];
+        let bullets = []; let enemies = []; let bossBullets = []; let stars = [];
+        let bosses = [];
         let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || [{ name: 'PRO', score: 200000 }, { name: 'ANA', score: 100000 }, { name: 'BOB', score: 50000 }];
 
-        let timeAt40k = 0; let shieldUnlocked = false; let shieldActive = false; let gameRound = 1;
+        let timeAt40k = 0; let shieldUnlocked = false; let shieldActive = false; let gameRound = 1; let goingToRound = 1;
         let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0; let sessionCoinsEarned = 0;
-        let partialHit = false;
-        let transitionTimer = 0; 
+        let partialHit = false; let transitionTimer = 0; 
 
         function saveLeaderboard() { localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard)); }
         function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
@@ -292,6 +303,8 @@
             let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
             let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets;
             let finalDamage = upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg;
+            if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
+            
             const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }], 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 24, offY: -10 }], 3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 8, offY: -14 }, { dx: 1.2, offX: player.width - 20, offY: -10 }], 4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 28, offY: -14 }, { dx: 2.0, offX: player.width - 18, offY: -8 }] };
             for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 16, height: 16, speed: 10, dx: p.dx, type: bType, damage: finalDamage }); }
         }
@@ -307,8 +320,9 @@
                     else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); }
                 }
             }
-            else if (type === 'armor' && gameRound === 2 && coins >= 300 && upgrades.armor === 0) { coins -= 300; gameStats.savedCoins = coins; saveStats(); upgrades.armor = 1; }
-            else if (type === 'damage' && gameRound === 2 && coins >= 200 && upgrades.dmgBoost === 0) { coins -= 200; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
+            else if (type === 'armor' && gameRound >= 2 && coins >= 300 && upgrades.armor === 0) { coins -= 300; gameStats.savedCoins = coins; saveStats(); upgrades.armor = 1; }
+            else if (type === 'damage' && gameRound >= 2 && coins >= 200 && upgrades.dmgBoost === 0) { coins -= 200; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
+            else if (type === 'superDamage' && (gameRound === 3 || goingToRound === 3) && coins >= 1000 && upgrades.superDmgBoost === 0) { coins -= 1000; gameStats.savedCoins = coins; saveStats(); upgrades.superDmgBoost = 1; }
             updateUpgradesHUD();
         }
 
@@ -318,23 +332,22 @@
             const btnSpeed = document.getElementById('hud-speed'); if (upgrades.speed >= maxUpgradeLimit) { btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX'; btnSpeed.querySelector('.hud-cost').style.display = 'none'; } else { btnSpeed.querySelector('.hud-lvl').textContent = `Lv.${upgrades.speed}`; btnSpeed.querySelector('.hud-cost').style.display = 'block'; }
             const btnLifeEvolve = document.getElementById('hud-life-evolve'); if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; }
             
-            document.getElementById('pauseBulletsLvl').textContent = upgrades.bullets >= maxUpgradeLimit ? 'MÁX' : `🪙12 (Lv.${upgrades.bullets})`;
-            document.getElementById('pauseSpeedLvl').textContent = upgrades.speed >= maxUpgradeLimit ? 'MÁX' : `🪙12 (Lv.${upgrades.speed})`;
+            document.getElementById('pauseBulletsLvl').textContent = upgrades.bullets >= maxUpgradeLimit ? 'MÁX' : `🪙12`;
+            document.getElementById('pauseSpeedLvl').textContent = upgrades.speed >= maxUpgradeLimit ? 'MÁX' : `🪙12`;
             const pauseEv = document.getElementById('pauseEvolveBtn');
-            if (evolutionStage >= 3) pauseEv.style.display = 'none';
-            else pauseEv.style.display = 'flex';
+            if (evolutionStage >= 3) pauseEv.style.display = 'none'; else pauseEv.style.display = 'flex';
 
-            const armorBtn = document.getElementById('hud-armor');
-            const damageBtn = document.getElementById('hud-damage');
-            if (gameRound === 2) { 
-                armorBtn.style.display = 'flex'; 
-                damageBtn.style.display = 'flex'; 
+            const armorBtn = document.getElementById('hud-armor'); const damageBtn = document.getElementById('hud-damage'); const superDmgBtn = document.getElementById('hud-super-damage'); const pauseSuperDmg = document.getElementById('pauseSuperDmgBtn');
+            if (gameRound >= 2) { 
+                armorBtn.style.display = 'flex'; damageBtn.style.display = 'flex'; 
                 if (upgrades.armor > 0) { armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; armorBtn.querySelector('.hud-cost').style.display = 'none'; } 
                 if (upgrades.dmgBoost > 0) { damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; damageBtn.querySelector('.hud-cost').style.display = 'none'; } 
-            } else { 
-                armorBtn.style.display = 'none'; 
-                damageBtn.style.display = 'none'; 
-            }
+            } else { armorBtn.style.display = 'none'; damageBtn.style.display = 'none'; }
+            
+            if (gameRound === 3 || goingToRound === 3) {
+                superDmgBtn.style.display = 'flex'; pauseSuperDmg.style.display = 'flex';
+                if (upgrades.superDmgBoost > 0) { superDmgBtn.querySelector('.hud-lvl').textContent = 'MÁX'; superDmgBtn.querySelector('.hud-cost').style.display = 'none'; document.getElementById('pauseSuperDmgLvl').textContent = 'MÁX'; }
+            } else { superDmgBtn.style.display = 'none'; pauseSuperDmg.style.display = 'none'; }
         }
 
         function showTrophyToast(icon, imgObj) { toastIcon = icon; toastImg = imgObj; toastTimer = 180; }
@@ -342,55 +355,64 @@
         function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTrophyHTML(assets.trofeoPollito, "🥉🐥"); if (gotTrophy50k) html += getTrophyHTML(assets.trofeoLana, "🥈🧶"); if (gotTrophy100k) html += getTrophyHTML(assets.trofeoHerradura, "🏅🧲"); if (gotTrophy200k) html += getTrophyHTML(assets.trofeoLeche, "🏆🥛"); document.getElementById('trophiesVal').innerHTML = html; }
 
         function spawnEnemy() {
-            if (boss) return; 
+            if (bosses.length > 0) return; 
+            
             let difficultyTime = score >= 40000 ? timeAt40k : gameTime;
             let speedMultiplier = 1 + ((difficultyTime / 70) * 0.3); 
             
             let lastCornHp = 1 + Math.floor((timeAt40k > 0 ? timeAt40k : gameTime) / 12) + (evolutionStage * 5);
             if (lastCornHp < 1) lastCornHp = 1;
 
+            if (gameRound === 3) {
+                let scale = Math.floor((score - 250000) / 2000); 
+                if (scale < 0) scale = 0;
+                let eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte';
+                let eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale;
+                let ePts = eType === 'maiz_jefe' ? 1200 : 1000;
+                let eCoin = eType === 'maiz_jefe' ? 5 : 4;
+                enemies.push({ x: Math.random() * (canvas.width - 56 - 20) + 10, y: -60, width: 56, height: 56, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 0.5) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
+                return;
+            }
+
             let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 1;
 
             if (gameRound === 2) {
-                let baseLechugaHp = Math.ceil(lastCornHp * 1.2);
-                let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5);
-                let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
-
+                let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
                 if (score >= 100000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 4; }
                 else if (score >= 85000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 4 : 2; }
                 else if (score >= 70000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 2; }
                 else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; }
                 else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
             } else {
-                eHp = lastCornHp;
-                eType = eHp > 1 ? 'corn_strong' : 'corn';
+                eHp = lastCornHp; eType = eHp > 1 ? 'corn_strong' : 'corn';
             }
             enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
         }
 
         function spawnBoss() { 
-            if (nextBossScoreThreshold === 150000 && gameRound === 2) {
+            if (nextBossScoreThreshold === 250000 && gameRound === 3) {
+                let bossHpM = 1680 * 2; 
+                let bossHpL = 6720 * 2; 
+                bosses.push({ x: 20, y: -120, width: 140, height: 110, maxHp: bossHpM, hp: bossHpM, speed: 1.5, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' });
+                bosses.push({ x: canvas.width - 160, y: -180, width: 140, height: 110, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: -1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga' });
+            }
+            else if (nextBossScoreThreshold === 150000 && gameRound === 2) {
                 let bossHp = 6720; 
-                boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga' };
+                bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga' });
             }
             else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
                 let bossHp = 1680; 
-                boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' };
+                bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' });
             } 
-            else {
+            else if (gameRound === 1) {
                 let bossLevel = Math.floor(score / 5000); let bossHp = Math.floor((60 + (bossLevel * 45)) * 1.5); 
-                boss = { x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: gameRound===2 ? 'lechuga':'corn' }; 
+                bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'corn' }); 
             }
         }
 
         function handleDamage() { 
             if (shieldActive) { shieldActive = false; sessionTimeNoHit = 0; return; }
-            
-            if (upgrades.armor > 0) { 
-                if (!partialHit) { partialHit = true; sessionTimeNoHit = 0; return; }
-                else { partialHit = false; }
-            }
-            
+            if (upgrades.armor > 0) { if (!partialHit) { partialHit = true; sessionTimeNoHit = 0; return; } else { partialHit = false; } }
             lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; updateLivesUI(); if (lives <= 0) gameOver(); 
         }
 
@@ -401,12 +423,10 @@
 
         document.getElementById('reviveBtn').addEventListener('click', () => {
             if (coins >= 500) {
-                coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; partialHit = false;
+                coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; partialHit = false; bosses = [];
                 updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
                 
-                document.querySelectorAll('.draggable-btn').forEach(b => {
-                    b.style.display = 'flex';
-                });
+                document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
                 updateUpgradesHUD();
 
                 gameState = 'PLAYING'; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
@@ -417,10 +437,10 @@
 
         function startGame() {
             if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
-            score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false;
+            score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; goingToRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false;
             sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
-            bullets = []; enemies = []; bossBullets = []; boss = null;
-            evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0;
+            bullets = []; enemies = []; bossBullets = []; bosses = [];
+            evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0;
             gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; updateTrophiesHUD();
             player.x = canvas.width / 2 - player.width / 2; isDraggingShip = false; dragPointerId = null; document.getElementById('gameCanvas').style.background = '#090d16';
             document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'block'; document.getElementById('playerInitials').value = 'AAA';
@@ -455,15 +475,15 @@
                 if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
                 
                 if (transitionTimer <= 0) {
-                    gameRound = 2;
-                    nextBossScoreThreshold = 150000;
-                    document.getElementById('gameCanvas').style.background = '#06170d';
+                    gameRound = goingToRound;
+                    if (gameRound === 2) nextBossScoreThreshold = 150000;
+                    else if (gameRound === 3) nextBossScoreThreshold = 250000;
+                    
+                    document.getElementById('gameCanvas').style.background = gameRound === 3 ? '#1f0d0d' : '#06170d';
                     
                     document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
                     updateUpgradesHUD(); 
-                    
-                    bgMusic.volume = 0.4;
-                    gameState = 'PLAYING';
+                    bgMusic.volume = 0.4; gameState = 'PLAYING';
                 }
                 return;
             }
@@ -479,11 +499,12 @@
             if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; }
             if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
 
-            if (score >= nextBossScoreThreshold && !boss) { 
+            if (score >= nextBossScoreThreshold && bosses.length === 0) { 
                 let currentThreshold = nextBossScoreThreshold;
                 spawnBoss(); 
                 if (gameRound === 1) nextBossScoreThreshold += 5000; 
                 else if (gameRound === 2 && currentThreshold === 150000) nextBossScoreThreshold = 9999999; 
+                else if (gameRound === 3 && currentThreshold === 250000) nextBossScoreThreshold = 9999999; 
             }
 
             let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
@@ -501,13 +522,35 @@
                 }
             }
 
-            if (!boss) { 
-                enemySpawnInterval++; let diffTime = score >= 40000 ? timeAt40k : gameTime; 
-                let spawnRate = gameRound === 2 ? Math.max(25, 50 - Math.floor(diffTime / 10)) : Math.max(20, 45 - Math.floor(diffTime / 10));
-                if (enemySpawnInterval > spawnRate) { spawnEnemy(); enemySpawnInterval = 0; } 
+            if (bosses.length === 0) { 
+                if (gameRound === 3 && score < 250000 && nextBossScoreThreshold === 250000) {
+                    let hasMaiz = false, hasLechuga = false;
+                    for (let e of enemies) {
+                        if (e.type === 'maiz_jefe') hasMaiz = true;
+                        if (e.type === 'lechuga_jefe') hasLechuga = true;
+                    }
+                    
+                    let baseHp = 1 + Math.floor(timeAt40k / 12) + (evolutionStage * 5); 
+                    let eHpM = Math.ceil(baseHp * 2.5);
+                    let eHpL = Math.ceil(baseHp * 3.5);
+
+                    if (!hasMaiz) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpM, maxHp: eHpM, speed: 1.2, wobble: Math.random() * Math.PI, type: 'maiz_jefe', pts: 800, coin: 4, shootCooldown: 0 });
+                    if (!hasLechuga) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpL, maxHp: eHpL, speed: 1.0, wobble: Math.random() * Math.PI, type: 'lechuga_jefe', pts: 1000, coin: 5, shootCooldown: 0 });
+                } else {
+                    enemySpawnInterval++; 
+                    let spawnRate = 40;
+                    if (gameRound === 3) {
+                        spawnRate = Math.max(15, 30 - Math.floor((score - 250000) / 10000));
+                    } else {
+                        let diffTime = score >= 40000 ? timeAt40k : gameTime; 
+                        spawnRate = gameRound >= 2 ? Math.max(25, 50 - Math.floor(diffTime / 10)) : Math.max(20, 45 - Math.floor(diffTime / 10));
+                    }
+                    if (enemySpawnInterval > spawnRate) { spawnEnemy(); enemySpawnInterval = 0; } 
+                }
             }
             
-            if (boss) {
+            for (let bIndex = bosses.length - 1; bIndex >= 0; bIndex--) {
+                let boss = bosses[bIndex];
                 if (boss.y < 50) boss.y += 1; boss.x += boss.speed * boss.direction; if (boss.x < 10 || boss.x + boss.width > canvas.width - 10) boss.direction *= -1;
                 boss.shootCooldown++;
                 
@@ -539,18 +582,41 @@
                         else { bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2.5, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 18, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2.5, isLechugaBala: isLB }); }
                     }
                 }
+
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) {
+                        boss.hp -= bullets[j].damage; bullets.splice(j, 1);
+                        if (boss.hp <= 0) { 
+                            score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
+                            document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
+                            
+                            if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) {
+                                gameState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD();
+                            } else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2) {
+                                gameState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD();
+                            }
+                            bosses.splice(bIndex, 1); 
+                            unlockAchievement('a10'); if (lives === 1) unlockAchievement('a12');
+                            break; 
+                        }
+                    }
+                }
             }
 
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += enemies[i].speed; enemies[i].wobble += 0.06; enemies[i].x += Math.sin(enemies[i].wobble) * 2.2; 
                 
-                if (enemies[i].type === 'lechuga_fuerte' || enemies[i].type === 'lechuga_jefe') {
+                if (enemies[i].type.includes('jefe') || enemies[i].type === 'lechuga_fuerte') {
                     enemies[i].shootCooldown++;
                     if (enemies[i].shootCooldown >= 60) {
                         enemies[i].shootCooldown = 0;
-                        bossBullets.push({ x: enemies[i].x + 20, y: enemies[i].y + 40, width: 12, height: 12, speed: 4.5, dx: 0, isLechugaBala: true });
-                        if (enemies[i].type === 'lechuga_jefe') {
+                        let isL = enemies[i].type.includes('lechuga');
+                        bossBullets.push({ x: enemies[i].x + enemies[i].width/2 - 6, y: enemies[i].y + enemies[i].height - 10, width: 12, height: 12, speed: 4.5, dx: 0, isLechugaBala: isL });
+                        if (enemies[i].type === 'lechuga_jefe' && gameRound < 3) {
                             enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 1, shootCooldown: 0 });
+                        }
+                        if (enemies[i].type === 'maiz_jefe') {
+                            enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 1, shootCooldown: 0 });
                         }
                     }
                 }
@@ -567,28 +633,6 @@
                             enemies.splice(i, 1); gameStats.totalKills++; saveStats(); sessionKillsNoHit++;
                             if (gameStats.totalKills >= 50) unlockAchievement('a3'); if (sessionKillsNoHit >= 30) unlockAchievement('a11');
                         } break;
-                    }
-                }
-            }
-
-            if (boss) {
-                for (let j = bullets.length - 1; j >= 0; j--) {
-                    if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) {
-                        boss.hp -= bullets[j].damage; bullets.splice(j, 1);
-                        if (boss.hp <= 0) { 
-                            score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
-                            document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
-                            
-                            if (boss.isSuperBoss && boss.type === 'corn') {
-                                gameState = 'TRANSITION';
-                                transitionTimer = 300; 
-                                bgMusic.volume = 0.15; 
-                                document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none');
-                            }
-                            boss = null; 
-                            unlockAchievement('a10'); if (lives === 1) unlockAchievement('a12');
-                            break; 
-                        }
                     }
                 }
             }
@@ -620,18 +664,23 @@
 
         function drawEnemy(e) {
             let img = null;
-            if (e.type === 'corn') img = assets.maiz; else if (e.type === 'corn_strong') img = assets.maizFuerte;
-            else if (e.type === 'lechuga') img = assets.lechuga; else if (e.type === 'lechuga_fuerte') img = assets.lechugaFuerte; else if (e.type === 'lechuga_jefe') img = assets.jefeLechuga;
+            if (e.type === 'corn') img = assets.maiz; 
+            else if (e.type === 'corn_strong') img = assets.maizFuerte;
+            else if (e.type === 'maiz_jefe') img = assets.jefeMaiz; 
+            else if (e.type === 'lechuga') img = assets.lechuga; 
+            else if (e.type === 'lechuga_fuerte') img = assets.lechugaFuerte; 
+            else if (e.type === 'lechuga_jefe') img = assets.jefeLechuga;
 
             if (img && img.complete && img.naturalWidth > 0) { ctx.drawImage(img, e.x, e.y, e.width, e.height); } else {
                 ctx.save(); ctx.translate(e.x, e.y); 
                 if (e.type.includes('lechuga')) {
                     ctx.fillStyle = e.type === 'lechuga' ? '#22c55e' : (e.type === 'lechuga_fuerte' ? '#166534' : '#14532d');
-                    ctx.beginPath(); ctx.arc(24, 24, 20, 0, Math.PI*2); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#052e16'; ctx.stroke();
-                    if(e.type !== 'lechuga') { ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(24, 10, 10, 0, Math.PI*2); ctx.fill(); }
+                    ctx.beginPath(); ctx.arc(e.width/2, e.height/2, e.width/2 - 4, 0, Math.PI*2); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#052e16'; ctx.stroke();
+                    if(e.type !== 'lechuga') { ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(e.width/2, 10, 10, 0, Math.PI*2); ctx.fill(); }
                 } else {
-                    ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.roundRect(4, 6, 40, 42, [12, 12, 18, 18]); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#854d0e'; ctx.stroke();
-                    if (e.maxHp > 1) { ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.arc(24, 10, 16, Math.PI, 0, false); ctx.fill(); }
+                    ctx.fillStyle = e.type === 'maiz_jefe' ? '#ca8a04' : '#eab308'; 
+                    ctx.beginPath(); ctx.roundRect(4, 6, e.width-8, e.height-8, [12, 12, 18, 18]); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#854d0e'; ctx.stroke();
+                    if (e.maxHp > 1) { ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.arc(e.width/2, 10, 16, Math.PI, 0, false); ctx.fill(); }
                 }
                 ctx.restore();
             }
@@ -657,7 +706,8 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = '#334155'; for (let s of stars) { ctx.fillRect(s.x, s.y, s.size, s.size); }
-            if (boss) drawBoss(boss); drawPlayerShip(player.x, player.y);
+            for (let b of bosses) drawBoss(b); 
+            drawPlayerShip(player.x, player.y);
             for (let b of bullets) {
                 let img; if (b.type === 'milk') img = assets.balaLeche; else if (b.type === 'horseshoe') img = assets.balaHerradura; else if (b.type === 'wool') img = assets.balaLana; else img = assets.balaPollito;
                 if (img.complete && img.naturalWidth > 0) { ctx.drawImage(img, b.x, b.y, b.width, b.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (b.type === 'wool') icon = '🧶'; if (b.type === 'horseshoe') icon = '🧲'; if (b.type === 'milk') icon = '🥛'; ctx.fillText(icon, b.x + b.width / 2, b.y + b.height / 2); }
@@ -677,17 +727,21 @@
 
             if (gameState === 'TRANSITION') {
                 ctx.save();
-                ctx.fillStyle = 'rgba(2, 6, 23, 0.7)';
+                ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.textAlign = 'center';
                 
-                ctx.fillStyle = '#fbbf24';
-                ctx.font = 'bold 26px sans-serif';
-                ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50);
-                
-                ctx.fillStyle = '#fff';
-                ctx.font = '18px sans-serif';
-                ctx.fillText('LISTO PARA LA SIGUIENTE RONDA', canvas.width / 2, canvas.height / 2 - 10);
+                if (goingToRound === 2) {
+                    ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif';
+                    ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50);
+                    ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif';
+                    ctx.fillText('LISTO PARA LA SIGUIENTE RONDA', canvas.width / 2, canvas.height / 2 - 10);
+                } else if (goingToRound === 3) {
+                    ctx.fillStyle = '#ef4444'; ctx.font = 'bold 36px sans-serif'; ctx.shadowColor = '#b91c1c'; ctx.shadowBlur = 10;
+                    ctx.fillText('¡MUERTE SÚBITA!', canvas.width / 2, canvas.height / 2 - 50);
+                    ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0;
+                    ctx.fillText('¿CUÁL ES EL MÁXIMO PUNTAJE QUE PUEDES HACER?', canvas.width / 2, canvas.height / 2 - 10);
+                }
                 
                 let seconds = Math.ceil(transitionTimer / 60);
                 ctx.fillStyle = '#38bdf8';
