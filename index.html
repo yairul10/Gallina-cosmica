@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nave Gallina vs Maíces y Lechugas</title>
-    <!-- Conectamos el archivo de estilos CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -29,7 +28,6 @@
                 </div>
             </div>
 
-            <!-- Controles (Ahora ocultos por defecto al abrir el juego) -->
             <div id="hud-bullets" class="draggable-btn" data-type="bullets" style="display: none;">
                 <div class="hud-cost">🪙12</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div>
             </div>
@@ -39,14 +37,12 @@
             <div id="hud-life-evolve" class="draggable-btn" data-type="btn3" style="display: none;">
                 <div class="hud-cost">🪙15</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div>
             </div>
-            
             <div id="hud-armor" class="draggable-btn r2-upgrade" data-type="armor" style="display: none; border-color: rgba(59, 130, 246, 0.8);">
                 <div class="hud-cost" style="background:#2563eb;">🪙300</div><div class="hud-emoji">🛡️</div><div class="hud-lvl" style="color:#bfdbfe">DUR.</div>
             </div>
             <div id="hud-damage" class="draggable-btn r2-upgrade" data-type="damage" style="display: none; border-color: rgba(239, 68, 68, 0.8);">
                 <div class="hud-cost">🪙200</div><div class="hud-emoji">🔥</div><div class="hud-lvl" style="color:#fecaca">+50%</div>
             </div>
-
             <div id="hud-super-damage" class="draggable-btn r3-upgrade" data-type="superDamage" style="display: none; border-color: #8b5cf6;">
                 <div class="hud-cost" style="background:#6d28d9;">🪙1000</div><div class="hud-emoji">☢️</div><div class="hud-lvl" style="color:#ddd6fe">+50%</div>
             </div>
@@ -56,26 +52,63 @@
             </div>
         </div>
 
-        <!-- Pantalla de Inicio (Limpia) -->
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
             <p>Mejora tu nave tocando los íconos de la izquierda.<br>💡 <b>Tip:</b> Pon Pausa para organizar tus controles.</p>
-            
-            <button class="btn" id="startBtn">🚀 ¡Despegar!</button>
-            <button class="btn btn-secondary" id="openShopBtn">🛒 Tienda (Pronto)</button>
+            <button class="btn" id="startBtn" style="margin-top: 10px;">🚀 ¡Despegar!</button>
+            <button class="btn btn-secondary" id="openShopBtn">🛒 Tienda</button>
             <button class="btn btn-secondary" id="openRecordsBtn">🥇 Récords</button>
             <button class="btn btn-secondary" id="openTrophiesBtn">🏆 Trofeos</button>
             <button class="btn btn-secondary" id="openAchievBtn">🏅 Logros</button>
         </div>
 
-        <!-- Pantalla de Tienda -->
+        <!-- NUEVA TIENDA GALÁCTICA -->
         <div id="shopScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
-            <h1 style="margin-bottom: 15px;">🛒 Tienda de Naves</h1>
-            <p style="color: #fbbf24; margin-bottom: 25px;">¡Próximamente podrás comprar nuevas skins para tu nave aquí!</p>
-            <button class="btn btn-secondary" onclick="closeScreen('shopScreen')">🔙 Volver</button>
+            <h1 style="margin-bottom: 5px;">🛒 Tienda Galáctica</h1>
+            <div style="color: #fbbf24; font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;">Tus Monedas: 🪙 <span id="shopCoinsVal">0</span></div>
+            
+            <div class="shop-tabs">
+                <button class="shop-tab active" id="tabSkins" onclick="switchShopTab('skins')">Skins</button>
+                <button class="shop-tab" id="tabBoosters" onclick="switchShopTab('boosters')">Potenciadores</button>
+            </div>
+
+            <div id="shopSkins" class="shop-grid">
+                <div class="shop-item">
+                    <h4>Gallina Pro</h4><p>Mejora estética dorada.</p>
+                    <button class="shop-btn" id="btn-skin-0" onclick="buyOrEquipSkin(0, 5000)">🪙 5,000</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Oveja Pro</h4><p>Lana de titanio estelar.</p>
+                    <button class="shop-btn" id="btn-skin-1" onclick="buyOrEquipSkin(1, 5000)">🪙 5,000</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Caballo Pro</h4><p>Armadura de galope.</p>
+                    <button class="shop-btn" id="btn-skin-2" onclick="buyOrEquipSkin(2, 5000)">🪙 5,000</button>
+                </div>
+                <div class="shop-item">
+                    <h4>Vaca Pro</h4><p>Tanque lechero definitivo.</p>
+                    <button class="shop-btn" id="btn-skin-3" onclick="buyOrEquipSkin(3, 5000)">🪙 5,000</button>
+                </div>
+            </div>
+
+            <div id="shopBoosters" class="shop-grid" style="display: none;">
+                <div class="shop-item" style="grid-column: span 2;">
+                    <h4>+20% Daño (1 Partida)</h4><p>Ligera ventaja bélica.</p>
+                    <button class="shop-btn" id="btn-boost-20" data-cost="500" onclick="buyBooster(1.2, 500)">🪙 500</button>
+                </div>
+                <div class="shop-item" style="grid-column: span 2;">
+                    <h4>+50% Daño (1 Partida)</h4><p>Potencia destructiva alta.</p>
+                    <button class="shop-btn" id="btn-boost-50" data-cost="2000" onclick="buyBooster(1.5, 2000)">🪙 2,000</button>
+                </div>
+                <div class="shop-item" style="grid-column: span 2;">
+                    <h4>+100% Daño (1 Partida)</h4><p>Aniquilación total asegurada.</p>
+                    <button class="shop-btn" id="btn-boost-100" data-cost="10000" onclick="buyBooster(2.0, 10000)">🪙 10,000</button>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="closeScreen('shopScreen')" style="margin-top: 10px;">🔙 Volver</button>
         </div>
 
-        <!-- Pantalla de Récords -->
         <div id="recordsScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 24px;">🥇 Récords Mundiales</h1>
             <div class="leaderboard-box">
@@ -85,7 +118,6 @@
             <button class="btn btn-secondary" onclick="closeScreen('recordsScreen')" style="margin-top: 15px;">🔙 Volver</button>
         </div>
 
-        <!-- Pantalla de Trofeos -->
         <div id="trophiesScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 24px;">🏆 Salón de la Fama</h1>
             <div class="trophy-rack">
@@ -101,7 +133,6 @@
             <button class="btn btn-secondary" onclick="closeScreen('trophiesScreen')" style="margin-top: 20px;">🔙 Volver</button>
         </div>
 
-        <!-- Pantalla de Logros -->
         <div id="achievScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 15px;">🏅 Logros</h1>
             <div class="achievements-list" id="achievListUI"></div>
