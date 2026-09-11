@@ -12,7 +12,6 @@ if (!gameStats.pendingBooster) gameStats.pendingBooster = 1.0;
 
 function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
 
-// LOGROS ACTUALIZADOS (Se eliminó Multimillonario Épico a17 y se actualizó a4)
 const achievData = { 
     'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 
     'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida.' }, 
@@ -317,22 +316,26 @@ canvas.addEventListener('pointerdown', (e) => { if (dragPointerId === null && (g
 canvas.addEventListener('pointermove', (e) => { if (!isDraggingShip || (gameState !== 'PLAYING' && gameState !== 'TRANSITION') || e.pointerId !== dragPointerId) return; const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; lastTouchX = currentTouchX; });
 window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } }); window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
 
+// DISPAROS CON DAÑO BASE REAL MODIFICADO
 function shootBullet() {
     let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
     let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
+    
+    // Daño base
     let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets;
     
+    // Porcentaje adicional al daño base por skins y misiles pro (afecta la estructura base)
+    let bonusPro = 0;
+    if (gameStats.equippedSkins[evolutionStage]) bonusPro += 0.30;
+    if (gameStats.equippedMissiles[evolutionStage]) bonusPro += 0.20;
+    
+    baseDmg = baseDmg + (baseDmg * bonusPro);
+    
+    // Multiplicadores finales de partida
     let finalDamage = (upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg) * currentMatchBooster;
     if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
     
     let isProMissile = gameStats.equippedMissiles[evolutionStage];
-    
-    if (gameStats.equippedSkins[evolutionStage]) {
-        finalDamage *= 1.30; 
-    }
-    if (isProMissile) {
-        finalDamage *= 1.20; 
-    }
     
     const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }], 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 24, offY: -10 }], 3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 8, offY: -14 }, { dx: 1.2, offX: player.width - 20, offY: -10 }], 4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 28, offY: -14 }, { dx: 2.0, offX: player.width - 18, offY: -8 }] };
     for (let p of (patterns[bulletCount] || patterns[3])) { 
@@ -501,7 +504,11 @@ function startGame() {
     doubleBossSpawned = false; doubleBossDefeated = false;
     updateTrophiesHUD();
     player.x = canvas.width / 2 - player.width / 2; isDraggingShip = false; dragPointerId = null; document.getElementById('gameCanvas').style.background = '#090d16';
-    document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'block'; document.getElementById('playerInitials').value = 'AAA';
+    
+    document.getElementById('scoreVal').textContent = score; 
+    document.getElementById('saveScoreSection').style.display = 'none'; // Se oculta por defecto al jugar
+    document.getElementById('playerInitials').value = 'AAA';
+    
     updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
     
     document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
@@ -519,6 +526,21 @@ function gameOver() {
     document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
     const reviveBtn = document.getElementById('reviveBtn');
     if (coins >= 500) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
+    
+    // LÓGICA DE NUEVO RÉCORD
+    let isTop5 = false;
+    if (leaderboard.length < 5) {
+        isTop5 = true;
+    } else {
+        isTop5 = score > leaderboard[leaderboard.length - 1].score;
+    }
+    
+    if (isTop5 && score > 0) {
+        document.getElementById('saveScoreSection').style.display = 'block';
+    } else {
+        document.getElementById('saveScoreSection').style.display = 'none';
+    }
+
     document.getElementById('gameOverScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
 }
 
@@ -550,7 +572,7 @@ function update() {
         gotTrophy20k = true; let isNew = !gameStats.missiles[0]; 
         if (isNew) { gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); } 
         showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Skin Misil Desbloqueada!" : ""); 
-        updateTrophiesHUD(); savePersistentTrophy('t20k'); unlockAchievement('a19'); 
+        updateTrophiesHUD(); savePersistentTrophy('t20k'); 
     }
     if (score >= 50000 && !gotTrophy50k) { 
         gotTrophy50k = true; let isNew = !gameStats.missiles[1]; 
@@ -568,7 +590,7 @@ function update() {
         gotTrophy200k = true; let isNew = !gameStats.missiles[3]; 
         if (isNew) { gameStats.missiles[3] = true; gameStats.equippedMissiles[3] = true; saveStats(); } 
         showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Skin Misil Desbloqueada!" : ""); 
-        updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); 
+        updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); // Logro arreglado aquí
     }
     if (score >= 300000 && !gotTrophy300k) { 
         gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {};
