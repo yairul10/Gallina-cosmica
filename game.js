@@ -77,6 +77,52 @@ document.getElementById('resumeBtn').addEventListener('click', (e) => {
 });
 
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
+
+// HANGAR MENU LOGIC
+document.getElementById('openHangarBtn').addEventListener('click', () => { updateHangarUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('hangarScreen').style.display = 'flex'; });
+window.switchHangarTab = function(tab) {
+    document.getElementById('tabHangarSkins').classList.remove('active');
+    document.getElementById('tabHangarMissiles').classList.remove('active');
+    document.getElementById('hangarSkins').style.display = 'none';
+    document.getElementById('hangarMissiles').style.display = 'none';
+    if (tab === 'skins') { document.getElementById('tabHangarSkins').classList.add('active'); document.getElementById('hangarSkins').style.display = 'grid'; }
+    else { document.getElementById('tabHangarMissiles').classList.add('active'); document.getElementById('hangarMissiles').style.display = 'grid'; }
+}
+
+function updateHangarUI() {
+    for(let i=0; i<4; i++) {
+        let btn = document.getElementById('btn-hangar-skin-'+i);
+        if (gameStats.skins[i]) {
+            if (gameStats.equippedSkins[i]) { btn.textContent = 'Equipado'; btn.className = 'shop-btn equipped'; }
+            else { btn.textContent = 'Usar'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; }
+            btn.disabled = false;
+        } else {
+            btn.textContent = 'Bloqueado'; btn.className = 'shop-btn'; btn.style.background = '#475569';
+            btn.disabled = true;
+        }
+    }
+    for(let i=0; i<4; i++) {
+        let btn = document.getElementById('btn-hangar-missile-'+i);
+        if (gameStats.missiles[i]) {
+            if (gameStats.equippedMissiles[i]) { btn.textContent = 'Equipado'; btn.className = 'shop-btn equipped'; }
+            else { btn.textContent = 'Usar'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; }
+            btn.disabled = false;
+        } else {
+            btn.textContent = '🔒 Juega para ganar'; btn.className = 'shop-btn'; btn.style.background = '#475569';
+            btn.disabled = true;
+        }
+    }
+}
+
+window.toggleHangarSkin = function(index) {
+    gameStats.equippedSkins[index] = !gameStats.equippedSkins[index];
+    saveStats(); updateHangarUI();
+}
+window.toggleHangarMissile = function(index) {
+    gameStats.equippedMissiles[index] = !gameStats.equippedMissiles[index];
+    saveStats(); updateHangarUI();
+}
+
 document.getElementById('openShopBtn').addEventListener('click', () => { updateShopUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('shopScreen').style.display = 'flex'; });
 document.getElementById('openRecordsBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('recordsScreen').style.display = 'flex'; });
 document.getElementById('openTrophiesBtn').addEventListener('click', () => { updateTrophyMenu(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'flex'; });
@@ -100,31 +146,16 @@ window.switchShopTab = function(tab) {
 function updateShopUI() {
     document.getElementById('shopCoinsVal').textContent = coins;
     
-    // Skins de Naves (1k, 2k, 4k, 8k)
+    // TIENDA: Sólo para comprar Skins
     let skinCosts = [1000, 2000, 4000, 8000];
     for(let i=0; i<4; i++) {
         let btn = document.getElementById('btn-skin-'+i);
         if (gameStats.skins[i]) {
-            if (gameStats.equippedSkins[i]) { btn.textContent = 'Equipado'; btn.className = 'shop-btn equipped'; } 
-            else { btn.textContent = 'Usar'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; }
-            btn.disabled = false;
+            btn.textContent = 'Adquirido'; btn.className = 'shop-btn'; btn.style.background = '#475569';
+            btn.disabled = true;
         } else {
             btn.textContent = `🪙 ${skinCosts[i].toLocaleString()}`; btn.className = 'shop-btn'; btn.style.background = '#10b981';
             btn.disabled = (coins < skinCosts[i]);
-        }
-    }
-
-    // Skins de Misiles (2k, 4k, 8k, 15k)
-    let missileCosts = [2000, 4000, 8000, 15000];
-    for(let i=0; i<4; i++) {
-        let btn = document.getElementById('btn-missile-'+i);
-        if (gameStats.missiles[i]) {
-            if (gameStats.equippedMissiles[i]) { btn.textContent = 'Equipado'; btn.className = 'shop-btn equipped'; } 
-            else { btn.textContent = 'Usar'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; }
-            btn.disabled = false;
-        } else {
-            btn.textContent = `🪙 ${missileCosts[i].toLocaleString()}`; btn.className = 'shop-btn'; btn.style.background = '#10b981';
-            btn.disabled = (coins < missileCosts[i]);
         }
     }
     
@@ -141,26 +172,10 @@ function updateShopUI() {
     else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVADO'; b100.className = 'shop-btn equipped'; [b20, b50].forEach(b=>b.disabled=true); }
 }
 
-window.buyOrEquipSkin = function(index, cost) {
-    if (!gameStats.skins[index]) {
-        if (coins >= cost) {
-            coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; gameStats.equippedSkins[index] = true;
-            saveStats(); updateShopUI();
-        }
-    } else {
-        gameStats.equippedSkins[index] = !gameStats.equippedSkins[index];
-        saveStats(); updateShopUI();
-    }
-}
-
-window.buyOrEquipMissile = function(index, cost) {
-    if (!gameStats.missiles[index]) {
-        if (coins >= cost) {
-            coins -= cost; gameStats.savedCoins = coins; gameStats.missiles[index] = true; gameStats.equippedMissiles[index] = true;
-            saveStats(); updateShopUI();
-        }
-    } else {
-        gameStats.equippedMissiles[index] = !gameStats.equippedMissiles[index];
+window.buySkin = function(index, cost) {
+    if (!gameStats.skins[index] && coins >= cost) {
+        coins -= cost; gameStats.savedCoins = coins; 
+        gameStats.skins[index] = true; gameStats.equippedSkins[index] = true;
         saveStats(); updateShopUI();
     }
 }
@@ -222,7 +237,7 @@ let score = 0; let coins = gameStats.savedCoins || 0;
 let lives = 3; let gameTime = 0; let gameState = 'START'; let previousState = 'PLAYING';
 let currentMatchBooster = 1.0;
 let gotTrophy20k = false; let gotTrophy50k = false; let gotTrophy100k = false; let gotTrophy200k = false; let gotTrophy300k = false;
-let toastIcon = ""; let toastImg = null; let toastTimer = 0;
+let toastIcon = ""; let toastImg = null; let toastTimer = 0; let toastSubtitle = "";
 let evolutionStage = 0; let maxUpgradeLimit = 3; let nextBossScoreThreshold = 5000;
 let upgrades = { bullets: 0, speed: 1, armor: 0, dmgBoost: 0, superDmgBoost: 0 };
 const player = { x: canvas.width / 2 - 25, y: canvas.height - 110, width: 50, height: 50, baseSpeed: 5.5 };
@@ -271,7 +286,7 @@ function shootBullet() {
     if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
     
     if (gameStats.equippedSkins[evolutionStage]) {
-        finalDamage *= 1.10; // +10% de la nave Pro
+        finalDamage *= 1.30; // +30% de la nave Pro
     }
     if (gameStats.equippedMissiles[evolutionStage]) {
         finalDamage *= 1.20; // +20% extra del misil Pro
@@ -332,7 +347,7 @@ function updateUpgradesHUD() {
     } else { superDmgBtn.style.display = 'none'; pauseSuperDmg.style.display = 'none'; }
 }
 
-function showTrophyToast(icon, imgObj) { toastIcon = icon; toastImg = imgObj; toastTimer = 180; }
+function showTrophyToast(icon, imgObj, subtitle = "") { toastIcon = icon; toastImg = imgObj; toastSubtitle = subtitle; toastTimer = 200; }
 function getTrophyHTML(imgObj, emoji) { return (imgObj.complete && imgObj.naturalWidth > 0) ? `<img src="${imgObj.src}" style="height:18px; margin-left:4px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.5));">` : `<span style="margin-left:4px;">${emoji}</span>`; }
 function updateTrophiesHUD() { 
     let html = ""; 
@@ -357,7 +372,7 @@ function spawnEnemy() {
         let eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte';
         let eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale;
         let ePts = eType === 'maiz_jefe' ? 1200 : 1000;
-        let eCoin = eType === 'maiz_jefe' ? 3 : 4; // Maíz jefe da 3 monedas
+        let eCoin = eType === 'maiz_jefe' ? 3 : 4;
         enemies.push({ x: Math.random() * (canvas.width - 56 - 20) + 10, y: -60, width: 56, height: 56, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 0.5) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
         return;
     }
@@ -373,13 +388,8 @@ function spawnEnemy() {
         else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
     } else {
         eHp = lastCornHp; 
-        if (eHp > 1) {
-            eType = 'corn_strong';
-            eCoin = 2; // Maíz fuerte da 2 monedas
-        } else {
-            eType = 'corn';
-            eCoin = 1;
-        }
+        if (eHp > 1) { eType = 'corn_strong'; eCoin = 2; } 
+        else { eType = 'corn'; eCoin = 1; }
     }
     enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
 }
@@ -493,11 +503,24 @@ function update() {
 
     if (gameState !== 'PLAYING') return;
 
-    if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; showTrophyToast("🥉🐥", assets.trofeoPollito); updateTrophiesHUD(); savePersistentTrophy('t20k'); unlockAchievement('a19'); }
-    if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; showTrophyToast("🥈🧶", assets.trofeoLana); updateTrophiesHUD(); savePersistentTrophy('t50k'); }
-    if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; showTrophyToast("🏅🧲", assets.trofeoHerradura); updateTrophiesHUD(); savePersistentTrophy('t100k'); }
-    if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; showTrophyToast("🏆🥛", assets.trofeoLeche); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); }
-    if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; showTrophyToast("💎🐔", assets.trofeoDiamante); updateTrophiesHUD(); savePersistentTrophy('t300k'); }
+    // LÓGICA DE TROFEOS Y RECOMPENSAS
+    if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); showTrophyToast("🥉🐥", assets.trofeoPollito, "¡Skin de Misil Desbloqueada!"); updateTrophiesHUD(); savePersistentTrophy('t20k'); unlockAchievement('a19'); }
+    if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; gameStats.missiles[1] = true; gameStats.equippedMissiles[1] = true; saveStats(); showTrophyToast("🥈🧶", assets.trofeoLana, "¡Skin de Misil Desbloqueada!"); updateTrophiesHUD(); savePersistentTrophy('t50k'); }
+    if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; gameStats.missiles[2] = true; gameStats.equippedMissiles[2] = true; saveStats(); showTrophyToast("🏅🧲", assets.trofeoHerradura, "¡Skin de Misil Desbloqueada!"); updateTrophiesHUD(); savePersistentTrophy('t100k'); }
+    if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; gameStats.missiles[3] = true; gameStats.equippedMissiles[3] = true; saveStats(); showTrophyToast("🏆🥛", assets.trofeoLeche, "¡Skin de Misil Desbloqueada!"); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); }
+    if (score >= 300000 && !gotTrophy300k) { 
+        gotTrophy300k = true; 
+        let sub = "";
+        if (gameStats.skins[3]) {
+            coins += 4000; gameStats.savedCoins = coins;
+            sub = "Vaca Pro Reembolsada (+4,000🪙)";
+        } else {
+            gameStats.skins[3] = true; gameStats.equippedSkins[3] = true;
+            sub = "¡Skin Vaca Pro Desbloqueada!";
+        }
+        saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); 
+    }
+    
     if (score >= 500000) unlockAchievement('a20');
     
     if (doubleBossSpawned && !doubleBossDefeated && bosses.length === 0 && score >= 250000) { doubleBossDefeated = true; unlockAchievement('a21'); }
@@ -576,9 +599,7 @@ function update() {
             if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) {
                 boss.hp -= bullets[j].damage; bullets.splice(j, 1);
                 if (boss.hp <= 0) { 
-                    score += boss.isSuperBoss ? 4500 : 2250; 
-                    // Súper jefe da 6 monedas, jefe normal da 3
-                    handleCoinEarned(boss.isSuperBoss ? 6 : 3); 
+                    score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 6 : 3); 
                     document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
                     if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); } 
                     else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); }
@@ -679,10 +700,22 @@ function draw() {
     }
     for (let e of enemies) drawEnemy(e);
 
+    // DIBUJO DEL TOAST ACTUALIZADO (Acepta subtítulo)
     if (toastTimer > 0 && gameState === 'PLAYING') {
         ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); 
-        if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } 
-        else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); }
+        if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { 
+            ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; 
+            ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); 
+        } else { 
+            ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
+            ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; 
+            ctx.fillText(toastIcon, canvas.width / 2, floatY); 
+        }
+        if (toastSubtitle) {
+            ctx.shadowBlur = 4; ctx.shadowColor = 'black';
+            ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center';
+            ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60);
+        }
         ctx.restore(); toastTimer--;
     }
 
