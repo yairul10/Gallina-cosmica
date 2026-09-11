@@ -314,7 +314,7 @@ function spawnEnemy() {
         return;
     }
 
-    let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 999;
+    let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 1;
 
     if (gameRound === 2) {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
@@ -652,11 +652,3 @@ function loop(timestamp) {
 }
 
 renderLeaderboard('startLeaderboardList'); requestAnimationFrame(loop); 
-function trucoMonedas() {
-    coins += 10000;
-    gameStats.savedCoins = coins;
-    gameStats.totalCoins += 10000;
-    saveStats();
-    updateShopUI(); // Actualiza la tienda si está abierta
-    alert("¡Truco activado! +10,000 monedas 🪙");
-}
