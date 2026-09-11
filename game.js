@@ -12,11 +12,12 @@ if (!gameStats.pendingBooster) gameStats.pendingBooster = 1.0;
 
 function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
 
+// LOGROS ACTUALIZADOS (Se eliminó Multimillonario Épico a17 y se actualizó a4)
 const achievData = { 
     'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 
     'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida.' }, 
     'a3': { title: 'Cosecha Estelar', desc: 'Destruye 50 maíces malvados.' }, 
-    'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge 50 monedas en total.' }, 
+    'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge 300 monedas en total.' }, 
     'a5': { title: 'Alas de Lana', desc: 'Evoluciona a la Oveja Espacial.' }, 
     'a6': { title: 'Galope Galáctico', desc: 'Alcanza la Nave Caballo.' }, 
     'a7': { title: 'La Vaca Sagrada', desc: 'Desbloquea la Vaca Espacial.' }, 
@@ -29,7 +30,6 @@ const achievData = {
     'a14': { title: 'Sobreviviente del Espacio', desc: 'Aguanta 5 minutos sin perder.' }, 
     'a15': { title: 'Cliente Frecuente', desc: 'Compra 10 vidas extras (histórico).' }, 
     'a16': { title: 'Inversión Saludable', desc: 'Compra 10 vidas en una partida.' }, 
-    'a17': { title: 'Multimillonario Épico', desc: '500 monedas en una partida.' }, 
     'a18': { title: 'Veterano del Pollo', desc: 'Juega 25 partidas.' }, 
     'a19': { title: 'Leyenda del Vacío', desc: '200,000 puntos en una partida.' }, 
     'a20': { title: 'Dios del Infinito', desc: '500,000 puntos en una partida.' },
@@ -99,23 +99,64 @@ window.switchHangarTab = function(tab) {
 
 function updateHangarUI() {
     for(let i=0; i<4; i++) {
-        let btn = document.getElementById('btn-hangar-skin-'+i); let img = document.getElementById('img-hangar-skin-'+i); let name = document.getElementById('name-hangar-skin-'+i); let desc = document.getElementById('desc-hangar-skin-'+i);
+        let btn = document.getElementById('btn-hangar-skin-'+i); 
+        let img = document.getElementById('img-hangar-skin-'+i); 
+        let name = document.getElementById('name-hangar-skin-'+i); 
+        let desc = document.getElementById('desc-hangar-skin-'+i);
+        
         if (gameStats.skins[i]) {
-            if (gameStats.equippedSkins[i]) { btn.textContent = 'Pro Equipado'; btn.className = 'shop-btn equipped'; img.src = skinProSrc[i]; name.textContent = baseNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#fbbf24;">+30% Daño</b>'; } 
-            else { btn.textContent = 'Usar Pro'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; img.src = skinSrc[i]; name.textContent = baseNames[i]; desc.innerHTML = 'Normal'; }
+            if (gameStats.equippedSkins[i]) { 
+                btn.textContent = 'Usar Normal'; 
+                btn.style.background = '#f59e0b'; 
+                img.src = skinProSrc[i]; 
+                name.textContent = baseNames[i] + ' Pro'; 
+                desc.innerHTML = '<b style="color:#fbbf24;">+30% Daño</b>'; 
+            } else { 
+                btn.textContent = 'Equipar Pro'; 
+                btn.style.background = '#10b981'; 
+                img.src = skinSrc[i]; 
+                name.textContent = baseNames[i]; 
+                desc.innerHTML = 'Normal'; 
+            }
             btn.disabled = false;
         } else {
-            btn.textContent = 'Bloqueado'; btn.className = 'shop-btn'; btn.style.background = '#475569'; img.src = skinSrc[i]; name.textContent = baseNames[i]; desc.innerHTML = 'Normal'; btn.disabled = true;
+            btn.textContent = 'Pro Bloqueada'; 
+            btn.style.background = '#475569'; 
+            img.src = skinSrc[i]; 
+            name.textContent = baseNames[i]; 
+            desc.innerHTML = 'Normal'; 
+            btn.disabled = true;
         }
     }
+    
     for(let i=0; i<4; i++) {
-        let btn = document.getElementById('btn-hangar-missile-'+i); let img = document.getElementById('img-hangar-missile-'+i); let name = document.getElementById('name-hangar-missile-'+i); let desc = document.getElementById('desc-hangar-missile-'+i);
+        let btn = document.getElementById('btn-hangar-missile-'+i); 
+        let img = document.getElementById('img-hangar-missile-'+i); 
+        let name = document.getElementById('name-hangar-missile-'+i); 
+        let desc = document.getElementById('desc-hangar-missile-'+i);
+        
         if (gameStats.missiles[i]) {
-            if (gameStats.equippedMissiles[i]) { btn.textContent = 'Pro Equipado'; btn.className = 'shop-btn equipped'; img.src = misProSrc[i]; name.textContent = misNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#38bdf8;">+20% Daño</b>'; } 
-            else { btn.textContent = 'Usar Pro'; btn.className = 'shop-btn'; btn.style.background = '#f59e0b'; img.src = misSrc[i]; name.textContent = misNames[i]; desc.innerHTML = 'Normal'; }
+            if (gameStats.equippedMissiles[i]) { 
+                btn.textContent = 'Usar Normal'; 
+                btn.style.background = '#f59e0b'; 
+                img.src = misProSrc[i]; 
+                name.textContent = misNames[i] + ' Pro'; 
+                desc.innerHTML = '<b style="color:#38bdf8;">+20% Daño</b>'; 
+            } else { 
+                btn.textContent = 'Equipar Pro'; 
+                btn.style.background = '#10b981'; 
+                img.src = misSrc[i]; 
+                name.textContent = misNames[i]; 
+                desc.innerHTML = 'Normal'; 
+            }
             btn.disabled = false;
         } else {
-            btn.textContent = '🔒 Gana el trofeo'; btn.className = 'shop-btn'; btn.style.background = '#475569'; img.src = misSrc[i]; name.textContent = misNames[i]; desc.innerHTML = 'Normal'; btn.disabled = true;
+            btn.textContent = '🔒 Gana el trofeo'; 
+            btn.style.background = '#475569'; 
+            img.src = misSrc[i]; 
+            name.textContent = misNames[i]; 
+            desc.innerHTML = 'Normal'; 
+            btn.disabled = true;
         }
     }
 }
@@ -149,16 +190,24 @@ function updateShopUI() {
     let skinCosts = [1000, 2000, 4000, 8000];
     for(let i=0; i<4; i++) {
         let btn = document.getElementById('btn-skin-'+i);
-        if (gameStats.skins[i]) { btn.textContent = 'Adquirido'; btn.className = 'shop-btn'; btn.style.background = '#475569'; btn.disabled = true; } 
-        else { btn.textContent = `🪙 ${skinCosts[i].toLocaleString()}`; btn.className = 'shop-btn'; btn.style.background = '#10b981'; btn.disabled = (coins < skinCosts[i]); }
+        if (gameStats.skins[i]) { 
+            btn.textContent = 'Adquirido'; 
+            btn.style.background = '#475569'; 
+            btn.disabled = true; 
+        } else { 
+            btn.textContent = `🪙 ${skinCosts[i].toLocaleString()}`; 
+            btn.style.background = '#10b981'; 
+            btn.disabled = (coins < skinCosts[i]); 
+        }
     }
     
     let b20 = document.getElementById('btn-boost-20'); let b50 = document.getElementById('btn-boost-50'); let b100 = document.getElementById('btn-boost-100');
-    [b20, b50, b100].forEach(b => { b.textContent = '🪙 ' + b.getAttribute('data-cost'); b.className='shop-btn'; b.style.background = '#10b981'; b.disabled = false; });
+    [b20, b50, b100].forEach(b => { b.textContent = '🪙 ' + b.getAttribute('data-cost'); b.style.background = '#10b981'; b.disabled = false; });
     if (coins < 500) b20.disabled = true; if (coins < 2000) b50.disabled = true; if (coins < 10000) b100.disabled = true;
-    if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVADO'; b20.className = 'shop-btn equipped'; [b50, b100].forEach(b=>b.disabled=true); }
-    else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVADO'; b50.className = 'shop-btn equipped'; [b20, b100].forEach(b=>b.disabled=true); }
-    else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVADO'; b100.className = 'shop-btn equipped'; [b20, b50].forEach(b=>b.disabled=true); }
+    
+    if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVADO'; b20.style.background = '#3b82f6'; [b50, b100].forEach(b=>b.disabled=true); }
+    else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVADO'; b50.style.background = '#3b82f6'; [b20, b100].forEach(b=>b.disabled=true); }
+    else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVADO'; b100.style.background = '#3b82f6'; [b20, b50].forEach(b=>b.disabled=true); }
 }
 
 window.buySkin = function(index, cost) {
@@ -418,10 +467,9 @@ function handleDamage() {
 
 function handleCoinEarned(amount) { 
     coins += amount; gameStats.savedCoins = coins; sessionCoinsEarned += amount; gameStats.totalCoins += amount; saveStats(); 
-    if (gameStats.totalCoins >= 50) unlockAchievement('a4'); 
+    if (gameStats.totalCoins >= 300) unlockAchievement('a4'); 
     if (gameStats.totalCoins >= 10000) unlockAchievement('a22'); 
     if (coins >= 10000) unlockAchievement('a23'); 
-    if (sessionCoinsEarned >= 500) unlockAchievement('a17'); 
 }
 
 document.getElementById('startBtn').addEventListener('click', startGame); document.getElementById('restartBtn').addEventListener('click', startGame);
@@ -498,7 +546,6 @@ function update() {
 
     if (gameState !== 'PLAYING') return;
 
-    // LÓGICA DE TROFEOS Y RECOMPENSAS (No repite mensajes)
     if (score >= 20000 && !gotTrophy20k) { 
         gotTrophy20k = true; let isNew = !gameStats.missiles[0]; 
         if (isNew) { gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); } 
@@ -526,7 +573,7 @@ function update() {
     if (score >= 300000 && !gotTrophy300k) { 
         gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {};
         let sub = "";
-        if (!pTrophies['t300k']) { // Si es la primera vez en la vida que saca el trofeo de diamante
+        if (!pTrophies['t300k']) {
             if (gameStats.skins[3]) { coins += 4000; gameStats.savedCoins = coins; sub = "Vaca Pro Reembolsada (+4,000🪙)"; } 
             else { gameStats.skins[3] = true; gameStats.equippedSkins[3] = true; sub = "¡Skin Vaca Pro Desbloqueada!"; }
         }
