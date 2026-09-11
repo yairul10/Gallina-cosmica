@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nave Gallina vs Maíces Malvados</title>
+    <title>Nave Gallina vs Maíces y Lechugas</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background-color: #020617; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
         #game-container { position: relative; width: 100%; max-width: 420px; height: 640px; background: #0f172a; box-shadow: 0 25px 35px -5px rgb(0 0 0 / 0.9); overflow: hidden; border-radius: 20px; border: 3px solid #334155; }
-        canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-action: none; }
+        canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-action: none; transition: background 1s ease; }
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; pointer-events: none; }
         
         .header-score { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(15, 23, 42, 0.85); padding: 8px 14px; border-radius: 12px; margin: 16px; border: 1px solid rgba(255,255,255,0.15); pointer-events: auto; }
@@ -64,11 +64,16 @@
 
         #achievToast { position: absolute; top: -80px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); border: 2px solid #fbbf24; padding: 10px 20px; border-radius: 12px; z-index: 100; text-align: center; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
         #achievToast.show { top: 20px; }
+
+        /* Efecto de Flash Blanco para cambio de Ronda */
+        #flashOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.5s; display: none; }
+        #flashOverlay.flash { display: block; opacity: 1; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
+        <div id="flashOverlay"></div>
         <div id="achievToast">
             <div style="color: #fbbf24; font-size: 0.65rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px;">🏅 LOGRO DESBLOQUEADO</div>
             <div id="achievToastName" style="color: #fff; font-size: 0.95rem; font-weight: bold;">Nombre del Logro</div>
@@ -87,6 +92,7 @@
                 </div>
             </div>
 
+            <!-- Controles Base -->
             <div id="hud-bullets" class="draggable-btn" data-type="bullets">
                 <div class="hud-cost">🪙12</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div>
             </div>
@@ -96,6 +102,15 @@
             <div id="hud-life-evolve" class="draggable-btn" data-type="btn3">
                 <div class="hud-cost">🪙15</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div>
             </div>
+            
+            <!-- Nuevos Controles Ronda 2 -->
+            <div id="hud-armor" class="draggable-btn r2-upgrade" data-type="armor" style="display: none; border-color: rgba(59, 130, 246, 0.8);">
+                <div class="hud-cost" style="background:#2563eb;">🪙30</div><div class="hud-emoji">🛡️</div><div class="hud-lvl" style="color:#bfdbfe">+1</div>
+            </div>
+            <div id="hud-damage" class="draggable-btn r2-upgrade" data-type="damage" style="display: none; border-color: rgba(239, 68, 68, 0.8);">
+                <div class="hud-cost">🪙40</div><div class="hud-emoji">🔥</div><div class="hud-lvl" style="color:#fecaca">+50%</div>
+            </div>
+
             <div id="fireBtn" class="draggable-btn" data-type="fire">
                 <div class="hud-emoji">🚀</div>
             </div>
@@ -105,12 +120,10 @@
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
             <p>Mejora tu nave tocando los íconos de la izquierda.<br>💡 <b>Tip:</b> Pon Pausa para organizar tus controles.</p>
-            
             <div class="leaderboard-box">
                 <h3>🏆 Mejores Récords</h3>
                 <div id="startLeaderboardList"></div>
             </div>
-
             <button class="btn" id="startBtn">¡Despegar!</button>
             <button class="btn btn-secondary" id="openTrophiesBtn">🏆 Trofeos</button>
             <button class="btn btn-secondary" id="openAchievBtn">🏅 Logros</button>
@@ -120,26 +133,13 @@
         <div id="trophiesScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 24px;">🏆 Salón de la Fama</h1>
             <div class="trophy-rack">
-                <div class="trophy-item" data-id="20k" onclick="showTrophyInfo('20k')">
-                    <span id="fall-20k" class="trophy-emoji-fallback">🥉</span>
-                    <img src="assets/trofeo_pollito.png" id="img-t20k" class="trophy-img" onload="document.getElementById('fall-20k').style.display='none'" onerror="this.style.display='none'">
-                </div>
-                <div class="trophy-item" data-id="50k" onclick="showTrophyInfo('50k')">
-                    <span id="fall-50k" class="trophy-emoji-fallback">🥈</span>
-                    <img src="assets/trofeo_lana.png" id="img-t50k" class="trophy-img" onload="document.getElementById('fall-50k').style.display='none'" onerror="this.style.display='none'">
-                </div>
-                <div class="trophy-item" data-id="100k" onclick="showTrophyInfo('100k')">
-                    <span id="fall-100k" class="trophy-emoji-fallback">🏅</span>
-                    <img src="assets/trofeo_herradura.png" id="img-t100k" class="trophy-img" onload="document.getElementById('fall-100k').style.display='none'" onerror="this.style.display='none'">
-                </div>
-                <div class="trophy-item" data-id="200k" onclick="showTrophyInfo('200k')">
-                    <span id="fall-200k" class="trophy-emoji-fallback">🏆</span>
-                    <img src="assets/trofeo_leche.png" id="img-t200k" class="trophy-img" onload="document.getElementById('fall-200k').style.display='none'" onerror="this.style.display='none'">
-                </div>
+                <div class="trophy-item" data-id="20k" onclick="showTrophyInfo('20k')"><span id="fall-20k" class="trophy-emoji-fallback">🥉</span><img src="assets/trofeo_pollito.png" id="img-t20k" class="trophy-img" onload="document.getElementById('fall-20k').style.display='none'" onerror="this.style.display='none'"></div>
+                <div class="trophy-item" data-id="50k" onclick="showTrophyInfo('50k')"><span id="fall-50k" class="trophy-emoji-fallback">🥈</span><img src="assets/trofeo_lana.png" id="img-t50k" class="trophy-img" onload="document.getElementById('fall-50k').style.display='none'" onerror="this.style.display='none'"></div>
+                <div class="trophy-item" data-id="100k" onclick="showTrophyInfo('100k')"><span id="fall-100k" class="trophy-emoji-fallback">🏅</span><img src="assets/trofeo_herradura.png" id="img-t100k" class="trophy-img" onload="document.getElementById('fall-100k').style.display='none'" onerror="this.style.display='none'"></div>
+                <div class="trophy-item" data-id="200k" onclick="showTrophyInfo('200k')"><span id="fall-200k" class="trophy-emoji-fallback">🏆</span><img src="assets/trofeo_leche.png" id="img-t200k" class="trophy-img" onload="document.getElementById('fall-200k').style.display='none'" onerror="this.style.display='none'"></div>
             </div>
             <div id="trophyInfoBox" class="leaderboard-box" style="margin-top: 15px; text-align: center; min-height: 80px;">
-                <h3 id="trophyName" style="color: #fff; margin-bottom: 8px;">Toca un trofeo</h3>
-                <p id="trophyDesc" style="font-size: 0.85rem; color: #94a3b8;">Para ver la información y requisitos.</p>
+                <h3 id="trophyName" style="color: #fff; margin-bottom: 8px;">Toca un trofeo</h3><p id="trophyDesc" style="font-size: 0.85rem; color: #94a3b8;">Para ver la información y requisitos.</p>
             </div>
             <button class="btn btn-secondary" onclick="closeScreen('trophiesScreen')" style="margin-top: 20px;">🔙 Volver</button>
         </div>
@@ -149,13 +149,12 @@
             <h1 style="margin-bottom: 15px;">🏅 Logros</h1>
             <div class="achievements-list" id="achievListUI"></div>
             <div class="leaderboard-box" style="margin-top: 10px; text-align: center; min-height: 70px; margin-bottom: 5px;">
-                <h3 id="achievNameUI" style="color: #fff; margin-bottom: 6px;">Toca un logro</h3>
-                <p id="achievDescUI" style="font-size: 0.8rem; color: #94a3b8;">Para ver su información detallada.</p>
+                <h3 id="achievNameUI" style="color: #fff; margin-bottom: 6px;">Toca un logro</h3><p id="achievDescUI" style="font-size: 0.8rem; color: #94a3b8;">Para ver su información detallada.</p>
             </div>
             <button class="btn btn-secondary" onclick="closeScreen('achievScreen')">🔙 Volver</button>
         </div>
 
-        <!-- PAUSA Y GAME OVER (Sin cambios visuales) -->
+        <!-- PAUSA Y GAME OVER -->
         <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.85);">
             <h1 style="margin-bottom: 8px;">⏸️ Pausa</h1>
             <p style="color:#fbbf24; margin-bottom: 24px;">Puedes arrastrar y organizar<br>tus botones libremente.</p>
@@ -174,12 +173,10 @@
                 </div>
             </div>
             <div class="leaderboard-box">
-                <h3>🏆 Top Puntajes</h3>
-                <div id="endLeaderboardList"></div>
+                <h3>🏆 Top Puntajes</h3><div id="endLeaderboardList"></div>
             </div>
             <button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button>
             <button class="btn btn-secondary" id="mainMenuBtn">Menú Principal</button>
-            <button class="btn" id="shareScoreBtn" style="background-color: #10b981; color: #fff;">📱 Compartir Récord</button>
         </div>
     </div>
 
@@ -188,121 +185,78 @@
         const ctx = canvas.getContext('2d');
         canvas.width = 420; canvas.height = 640;
 
-        // --- SISTEMA DE ESTADÍSTICAS Y LOGROS ---
+        // --- ESTADÍSTICAS Y LOGROS ---
         let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0 };
         function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
 
-        const achievData = {
-            'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo de posición los botones.' },
-            'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida en el espacio.' },
-            'a3': { title: 'Cosecha Estelar', desc: 'Destruye tus primeros 50 maíces malvados.' },
-            'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge un total de 50 monedas en tus partidas.' },
-            'a5': { title: 'Alas de Lana', desc: 'Evoluciona la nave por primera vez a la Oveja Espacial.' },
-            'a6': { title: 'Galope Galáctico', desc: 'Alcanza la evolución de la Nave Caballo.' },
-            'a7': { title: 'La Vaca Sagrada', desc: 'Desbloquea la evolución máxima de la Vaca Espacial.' },
-            'a8': { title: 'Poder de Fuego I', desc: 'Sube el nivel de los disparos al máximo.' },
-            'a9': { title: 'Piloto Veloz', desc: 'Sube la velocidad de la nave al máximo.' },
-            'a10': { title: 'El Terror del Maizal', desc: 'Derrota a tu primer Jefe Maíz.' },
-            'a11': { title: 'Puntería de Granjero', desc: 'Destruye 30 enemigos seguidos sin perder una vida.' },
-            'a12': { title: 'As del Espejo', desc: 'Derrota a un Jefe Maíz habiendo quedado con un solo corazón de vida.' },
-            'a13': { title: 'Vuelo Limpio', desc: 'Permanece más de 100 segundos seguidos sin perder ninguna vida.' },
-            'a14': { title: 'Sobreviviente del Espacio', desc: 'Aguanta al menos 5 minutos en una sola partida sin perder.' },
-            'a15': { title: 'Cliente Frecuente', desc: 'Compra un total de 10 vidas extras a lo largo de tus partidas.' },
-            'a16': { title: 'Inversión Saludable', desc: 'Compra 10 vidas en una misma partida.' },
-            'a17': { title: 'Multimillonario Épico', desc: 'Gana un total de 500 monedas acumuladas en una sola partida.' },
-            'a18': { title: 'Veterano del Pollo', desc: 'Juega un total de 25 partidas.' },
-            'a19': { title: 'Leyenda del Vacío', desc: 'Alcanza los 200,000 puntos en una sola partida.' },
-            'a20': { title: 'Dios del Infinito', desc: 'Alcanza la imponente cifra de 500,000 puntos en una sola partida.' }
-        };
+        const achievData = { 'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida.' }, 'a3': { title: 'Cosecha Estelar', desc: 'Destruye 50 maíces malvados.' }, 'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge 50 monedas en total.' }, 'a5': { title: 'Alas de Lana', desc: 'Evoluciona a la Oveja Espacial.' }, 'a6': { title: 'Galope Galáctico', desc: 'Alcanza la Nave Caballo.' }, 'a7': { title: 'La Vaca Sagrada', desc: 'Desbloquea la Vaca Espacial.' }, 'a8': { title: 'Poder de Fuego I', desc: 'Sube los disparos al máximo.' }, 'a9': { title: 'Piloto Veloz', desc: 'Sube la velocidad al máximo.' }, 'a10': { title: 'El Terror del Maizal', desc: 'Derrota a tu primer Jefe Maíz.' }, 'a11': { title: 'Puntería de Granjero', desc: 'Destruye 30 enemigos sin perder vida.' }, 'a12': { title: 'As del Espejo', desc: 'Derrota a un Jefe con 1 corazón.' }, 'a13': { title: 'Vuelo Limpio', desc: '100 segundos sin perder vida.' }, 'a14': { title: 'Sobreviviente del Espacio', desc: 'Aguanta 5 minutos sin perder.' }, 'a15': { title: 'Cliente Frecuente', desc: 'Compra 10 vidas extras (histórico).' }, 'a16': { title: 'Inversión Saludable', desc: 'Compra 10 vidas en una partida.' }, 'a17': { title: 'Multimillonario Épico', desc: '500 monedas en una partida.' }, 'a18': { title: 'Veterano del Pollo', desc: 'Juega 25 partidas.' }, 'a19': { title: 'Leyenda del Vacío', desc: '200,000 puntos en una partida.' }, 'a20': { title: 'Dios del Infinito', desc: '500,000 puntos en una partida.' } };
         let pAchiev = JSON.parse(localStorage.getItem('farm_space_achievements')) || {};
 
         function renderAchievementsList() {
-            const listUI = document.getElementById('achievListUI');
-            listUI.innerHTML = '';
-            Object.keys(achievData).forEach(key => {
-                let isUnlocked = pAchiev[key];
-                let div = document.createElement('div');
-                div.className = 'achiev-item ' + (isUnlocked ? 'unlocked' : '');
-                div.innerHTML = (isUnlocked ? '✅ ' : '🔒 ') + achievData[key].title;
-                div.onclick = () => {
-                    document.querySelectorAll('.achiev-item').forEach(el => el.classList.remove('selected'));
-                    div.classList.add('selected');
-                    document.getElementById('achievNameUI').textContent = achievData[key].title + (isUnlocked ? '' : ' 🔒');
-                    document.getElementById('achievNameUI').style.color = isUnlocked ? '#fbbf24' : '#94a3b8';
-                    document.getElementById('achievDescUI').textContent = achievData[key].desc;
-                };
-                listUI.appendChild(div);
-            });
+            const listUI = document.getElementById('achievListUI'); listUI.innerHTML = '';
+            Object.keys(achievData).forEach(key => { let isUnlocked = pAchiev[key]; let div = document.createElement('div'); div.className = 'achiev-item ' + (isUnlocked ? 'unlocked' : ''); div.innerHTML = (isUnlocked ? '✅ ' : '🔒 ') + achievData[key].title; div.onclick = () => { document.querySelectorAll('.achiev-item').forEach(el => el.classList.remove('selected')); div.classList.add('selected'); document.getElementById('achievNameUI').textContent = achievData[key].title + (isUnlocked ? '' : ' 🔒'); document.getElementById('achievNameUI').style.color = isUnlocked ? '#fbbf24' : '#94a3b8'; document.getElementById('achievDescUI').textContent = achievData[key].desc; }; listUI.appendChild(div); });
         }
 
-        function unlockAchievement(key) {
-            if (!pAchiev[key]) {
-                pAchiev[key] = true;
-                localStorage.setItem('farm_space_achievements', JSON.stringify(pAchiev));
-                document.getElementById('achievToastName').textContent = achievData[key].title;
-                const toast = document.getElementById('achievToast');
-                toast.classList.add('show');
-                setTimeout(() => { toast.classList.remove('show'); }, 3500);
-            }
-        }
+        function unlockAchievement(key) { if (!pAchiev[key]) { pAchiev[key] = true; localStorage.setItem('farm_space_achievements', JSON.stringify(pAchiev)); document.getElementById('achievToastName').textContent = achievData[key].title; const toast = document.getElementById('achievToast'); toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3500); } }
 
-        // --- SISTEMA DE AUDIO, MENÚS Y HUD ---
+        // --- SISTEMA DE AUDIO Y MENÚS ---
         function loadHudPositions() {
-            const saved = JSON.parse(localStorage.getItem('farm_space_hud_v5'));
-            if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'fireBtn'].forEach(id => { if(saved[id]) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } }); } 
-            else { document.getElementById('hud-bullets').style.left = '16px'; document.getElementById('hud-bullets').style.top = '340px'; document.getElementById('hud-speed').style.left = '16px'; document.getElementById('hud-speed').style.top = '400px'; document.getElementById('hud-life-evolve').style.left = '16px'; document.getElementById('hud-life-evolve').style.top = '460px'; document.getElementById('fireBtn').style.left = '334px'; document.getElementById('fireBtn').style.top = '540px'; }
+            const saved = JSON.parse(localStorage.getItem('farm_space_hud_v6'));
+            if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'fireBtn'].forEach(id => { if(saved[id] && document.getElementById(id)) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } }); } 
+            else { document.getElementById('hud-bullets').style.left = '16px'; document.getElementById('hud-bullets').style.top = '340px'; document.getElementById('hud-speed').style.left = '16px'; document.getElementById('hud-speed').style.top = '400px'; document.getElementById('hud-life-evolve').style.left = '16px'; document.getElementById('hud-life-evolve').style.top = '460px'; document.getElementById('hud-armor').style.left = '16px'; document.getElementById('hud-armor').style.top = '220px'; document.getElementById('hud-damage').style.left = '16px'; document.getElementById('hud-damage').style.top = '280px'; document.getElementById('fireBtn').style.left = '334px'; document.getElementById('fireBtn').style.top = '540px'; }
         }
-        function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'fireBtn'].forEach(id => { const el = document.getElementById(id); positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v5', JSON.stringify(positions)); }
+        function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'fireBtn'].forEach(id => { const el = document.getElementById(id); if(el) positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v6', JSON.stringify(positions)); }
         loadHudPositions();
 
         const playlist = ['assets/musica_1.mp3', 'assets/musica_2.mp3', 'assets/musica_3.mp3'];
         let currentTrackIndex = 0; const bgMusic = new Audio(playlist[currentTrackIndex]); bgMusic.volume = 0.4; 
         bgMusic.addEventListener('ended', () => { currentTrackIndex++; if (currentTrackIndex >= playlist.length) currentTrackIndex = 0; bgMusic.src = playlist[currentTrackIndex]; bgMusic.play().catch(e => console.log(e)); });
         document.getElementById('muteMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); bgMusic.muted = !bgMusic.muted; e.target.textContent = bgMusic.muted ? '🔇 Activar Música' : '🔊 Silenciar Música'; });
-
         function pauseGame() { if (gameState === 'PLAYING') { gameState = 'PAUSED'; bgMusic.pause(); document.getElementById('pauseScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.add('paused')); isDraggingShip = false; dragPointerId = null; } }
         document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); pauseGame(); });
         document.addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
         document.getElementById('resumeBtn').addEventListener('click', (e) => { e.stopPropagation(); if (gameState === 'PAUSED') { gameState = 'PLAYING'; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); } });
-
         function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
-        document.getElementById('openTrophiesBtn').addEventListener('click', () => { updateTrophyMenu(); document.querySelectorAll('.trophy-item').forEach(el => el.classList.remove('selected')); document.getElementById('trophyName').textContent = 'Toca un trofeo'; document.getElementById('trophyName').style.color = '#fff'; document.getElementById('trophyDesc').textContent = 'Para ver su información y requisitos.'; document.getElementById('startScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'flex'; });
-        document.getElementById('openAchievBtn').addEventListener('click', () => { renderAchievementsList(); document.getElementById('achievNameUI').textContent = 'Toca un logro'; document.getElementById('achievNameUI').style.color = '#fff'; document.getElementById('achievDescUI').textContent = 'Para ver su información detallada.'; document.getElementById('startScreen').style.display = 'none'; document.getElementById('achievScreen').style.display = 'flex'; });
+        document.getElementById('openTrophiesBtn').addEventListener('click', () => { updateTrophyMenu(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'flex'; });
+        document.getElementById('openAchievBtn').addEventListener('click', () => { renderAchievementsList(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('achievScreen').style.display = 'flex'; });
         document.getElementById('mainMenuBtn').addEventListener('click', () => { document.getElementById('gameOverScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; gameState = 'START'; });
-        document.getElementById('shareScoreBtn').addEventListener('click', async () => { const shareText = `¡Acabo de conseguir ${score} puntos en Granja Espacial Épica! 🐔🚀 ¿Puedes superar mi récord?`; if (navigator.share) { try { await navigator.share({ title: 'Granja Espacial', text: shareText }); } catch (error) { console.log(error); } } else { alert(`¡Lograste ${score} puntos! (Toma captura para compartir)`); } });
 
         const trophyData = { '20k': { name: '🥉 Pollito de Bronce', req: 20000, key: 't20k' }, '50k': { name: '🥈 Lana de Plata', req: 50000, key: 't50k' }, '100k': { name: '🏅 Herradura de Oro', req: 100000, key: 't100k' }, '200k': { name: '🏆 Leche Legendaria', req: 200000, key: 't200k' } };
         function updateTrophyMenu() { let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; ['20k', '50k', '100k', '200k'].forEach(id => { let img = document.getElementById(`img-t${id}`); let emoji = document.getElementById(`fall-${id}`); if(pTrophies[trophyData[id].key]) { img.className = 'trophy-img trophy-unlocked'; emoji.style.filter = 'none'; emoji.style.opacity = '1'; } else { img.className = 'trophy-img trophy-locked'; emoji.style.filter = 'grayscale(100%)'; emoji.style.opacity = '0.3'; } }); }
-        window.showTrophyInfo = function(id) { document.querySelectorAll('.trophy-item').forEach(el => el.classList.remove('selected')); document.querySelector(`.trophy-item[data-id="${id}"]`).classList.add('selected'); let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let isUnlocked = pT[trophyData[id].key]; let tName = document.getElementById('trophyName'); let tDesc = document.getElementById('trophyDesc'); if(isUnlocked) { tName.textContent = trophyData[id].name; tName.style.color = '#fbbf24'; tDesc.textContent = `¡Felicidades! Trofeo ganado por lograr ${trophyData[id].req} puntos.`; } else { tName.textContent = trophyData[id].name + ' 🔒'; tName.style.color = '#94a3b8'; tDesc.textContent = `Meta: Consigue ${trophyData[id].req} puntos en una partida.`; } }
+        window.showTrophyInfo = function(id) { document.querySelectorAll('.trophy-item').forEach(el => el.classList.remove('selected')); document.querySelector(`.trophy-item[data-id="${id}"]`).classList.add('selected'); let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let tName = document.getElementById('trophyName'); let tDesc = document.getElementById('trophyDesc'); if(pT[trophyData[id].key]) { tName.textContent = trophyData[id].name; tName.style.color = '#fbbf24'; tDesc.textContent = `¡Felicidades! Trofeo ganado por lograr ${trophyData[id].req} puntos.`; } else { tName.textContent = trophyData[id].name + ' 🔒'; tName.style.color = '#94a3b8'; tDesc.textContent = `Meta: Consigue ${trophyData[id].req} puntos en una partida.`; } }
         function savePersistentTrophy(key) { let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; if (!pT[key]) { pT[key] = true; localStorage.setItem('farm_space_trophies', JSON.stringify(pT)); } }
 
         // --- ASSETS Y VARIABLES PRINCIPALES ---
-        const assets = { gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(), maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(), balaPollito: new Image(), balaLana: new Image(), balaHerradura: new Image(), balaLeche: new Image(), balaJefe: new Image(), trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image() };
-        assets.gallina.src = 'assets/gallina.png'; assets.oveja.src = 'assets/oveja.png'; assets.caballo.src = 'assets/caballo.png'; assets.vaca.src = 'assets/vaca.png'; assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png'; assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.balaPollito.src = 'assets/bala_pollito.png'; assets.balaLana.src = 'assets/bala_lana.png'; assets.balaHerradura.src = 'assets/bala_herradura.png'; assets.balaLeche.src = 'assets/bala_leche.png'; assets.balaJefe.src = 'assets/bala_jefe.png'; assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png';
+        const assets = { 
+            gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(), 
+            maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(), superJefeMaiz: new Image(),
+            lechuga: new Image(), lechugaFuerte: new Image(), jefeLechuga: new Image(), superJefeLechuga: new Image(),
+            balaPollito: new Image(), balaLana: new Image(), balaHerradura: new Image(), balaLeche: new Image(),
+            balaJefe: new Image(), balaLechuga: new Image(),
+            trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image() 
+        };
+        assets.gallina.src = 'assets/gallina.png'; assets.oveja.src = 'assets/oveja.png'; assets.caballo.src = 'assets/caballo.png'; assets.vaca.src = 'assets/vaca.png'; 
+        assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png'; assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
+        assets.lechuga.src = 'assets/lechuga.png'; assets.lechugaFuerte.src = 'assets/lechuga_fuerte.png'; assets.jefeLechuga.src = 'assets/lechuga_jefe.png'; assets.superJefeLechuga.src = 'assets/super_jefe_lechuga.png';
+        assets.balaPollito.src = 'assets/bala_pollito.png'; assets.balaLana.src = 'assets/bala_lana.png'; assets.balaHerradura.src = 'assets/bala_herradura.png'; assets.balaLeche.src = 'assets/bala_leche.png';
+        assets.balaJefe.src = 'assets/bala_jefe.png'; assets.balaLechuga.src = 'assets/bala_lechuga.png';
+        assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png';
 
         let score = 0; let coins = 0; let lives = 3; let gameTime = 0; let gameState = 'START'; 
         let gotTrophy20k = false; let gotTrophy50k = false; let gotTrophy100k = false; let gotTrophy200k = false;
         let toastIcon = ""; let toastImg = null; let toastTimer = 0;
         let evolutionStage = 0; let maxUpgradeLimit = 3; let nextBossScoreThreshold = 5000;
-        let upgrades = { bullets: 0, speed: 1 };
+        let upgrades = { bullets: 0, speed: 1, armor: 0, dmgBoost: 0 };
         const player = { x: canvas.width / 2 - 25, y: canvas.height - 110, width: 50, height: 50, baseSpeed: 5.5 };
         let bullets = []; let enemies = []; let bossBullets = []; let boss = null; let stars = [];
         let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || [{ name: 'PRO', score: 200000 }, { name: 'ANA', score: 100000 }, { name: 'BOB', score: 50000 }];
 
-        // NUEVAS VARIABLES: Dificultad Cappeada, Escudo y Rondas
-        let timeAt40k = 0;
-        let shieldUnlocked = false;
-        let shieldActive = false;
-        let gameRound = 1;
-
+        // SISTEMA RONDA 2 Y ESCUDOS
+        let timeAt40k = 0; let shieldUnlocked = false; let shieldActive = false; let gameRound = 1;
         let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0; let sessionCoinsEarned = 0;
 
         function saveLeaderboard() { localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard)); }
-        function renderLeaderboard(elementId) {
-            const container = document.getElementById(elementId); container.innerHTML = '';
-            if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; }
-            leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); });
-        }
+        function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
         for (let i = 0; i < 40; i++) { stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2 + 1, speed: Math.random() * 0.8 + 0.3 }); }
 
@@ -316,50 +270,38 @@
                 e.stopPropagation(); e.preventDefault();
                 if (gameState === 'PLAYING') {
                     const type = btn.getAttribute('data-type');
-                    if (type === 'fire') shootBullet();
-                    else if (type === 'btn3') { (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); }
-                    else buyUpgrade(type);
+                    if (type === 'fire') shootBullet(); else if (type === 'btn3') { (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); } else buyUpgrade(type);
                 } else if (gameState === 'PAUSED') { dragObj = btn; const rect = btn.getBoundingClientRect(); dragOffX = e.clientX - rect.left; dragOffY = e.clientY - rect.top; }
             });
         });
-        document.addEventListener('pointermove', (e) => {
-            if (dragObj && gameState === 'PAUSED') {
-                const containerRect = document.getElementById('game-container').getBoundingClientRect(); let newX = e.clientX - containerRect.left - dragOffX; let newY = e.clientY - containerRect.top - dragOffY;
-                if (newX < 0) newX = 0; if (newY < 0) newY = 0; if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight;
-                dragObj.style.left = newX + 'px'; dragObj.style.top = newY + 'px';
-            }
-        });
+        document.addEventListener('pointermove', (e) => { if (dragObj && gameState === 'PAUSED') { const containerRect = document.getElementById('game-container').getBoundingClientRect(); let newX = e.clientX - containerRect.left - dragOffX; let newY = e.clientY - containerRect.top - dragOffY; if (newX < 0) newX = 0; if (newY < 0) newY = 0; if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight; dragObj.style.left = newX + 'px'; dragObj.style.top = newY + 'px'; } });
         document.addEventListener('pointerup', (e) => { if (dragObj && gameState === 'PAUSED') { dragObj = null; saveHudPositions(); unlockAchievement('a1'); } });
 
         let isDraggingShip = false; let dragPointerId = null; let lastTouchX = 0;
         canvas.addEventListener('pointerdown', (e) => { if (dragPointerId === null && gameState === 'PLAYING') { dragPointerId = e.pointerId; isDraggingShip = true; lastTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); } });
-        canvas.addEventListener('pointermove', (e) => {
-            if (!isDraggingShip || gameState !== 'PLAYING' || e.pointerId !== dragPointerId) return;
-            const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15));
-            if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; lastTouchX = currentTouchX;
-        });
-        window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
-        window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
+        canvas.addEventListener('pointermove', (e) => { if (!isDraggingShip || gameState !== 'PLAYING' || e.pointerId !== dragPointerId) return; const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; lastTouchX = currentTouchX; });
+        window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } }); window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
 
         function shootBullet() {
             let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
             let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
+            
+            // Calculo de Daño con la mejora de la Ronda 2 (+50%)
+            let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets;
+            let finalDamage = upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg;
+
             const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }], 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 24, offY: -10 }], 3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 8, offY: -14 }, { dx: 1.2, offX: player.width - 20, offY: -10 }], 4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 28, offY: -14 }, { dx: 2.0, offX: player.width - 18, offY: -8 }] };
-            for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 16, height: 16, speed: 10, dx: p.dx, type: bType, damage: upgrades.bullets === 0 ? 1 : upgrades.bullets }); }
+            for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 16, height: 16, speed: 10, dx: p.dx, type: bType, damage: finalDamage }); }
         }
 
         window.buyUpgrade = function(type) {
             if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 12) { coins -= 12; upgrades.bullets++; if (upgrades.bullets === maxUpgradeLimit) unlockAchievement('a8'); }
             else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 12) { coins -= 12; upgrades.speed++; if (upgrades.speed === maxUpgradeLimit) unlockAchievement('a9'); }
-            else if (type === 'life' && coins >= 15) { 
-                coins -= 15; lives++; updateLivesUI(); gameStats.totalLivesBought++; saveStats(); sessionLivesBought++;
-                if (gameStats.totalLivesBought >= 10) unlockAchievement('a15'); if (sessionLivesBought >= 10) unlockAchievement('a16');
-            }
-            else if (type === 'evolve') {
-                if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); }
-                else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); }
-                else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); }
-            }
+            else if (type === 'life' && coins >= 15) { coins -= 15; lives++; updateLivesUI(); gameStats.totalLivesBought++; saveStats(); sessionLivesBought++; if (gameStats.totalLivesBought >= 10) unlockAchievement('a15'); if (sessionLivesBought >= 10) unlockAchievement('a16'); }
+            else if (type === 'evolve') { if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); } }
+            // Compras Ronda 2
+            else if (type === 'armor' && coins >= 30) { coins -= 30; upgrades.armor++; }
+            else if (type === 'damage' && coins >= 40 && upgrades.dmgBoost === 0) { coins -= 40; upgrades.dmgBoost = 1; }
             updateUpgradesHUD();
         }
 
@@ -367,151 +309,113 @@
             document.getElementById('coinVal').textContent = coins;
             const btnBullets = document.getElementById('hud-bullets'); if (upgrades.bullets >= maxUpgradeLimit) { btnBullets.querySelector('.hud-lvl').textContent = 'MÁX'; btnBullets.querySelector('.hud-cost').style.display = 'none'; } else { btnBullets.querySelector('.hud-lvl').textContent = `Lv.${upgrades.bullets}`; btnBullets.querySelector('.hud-cost').style.display = 'block'; }
             const btnSpeed = document.getElementById('hud-speed'); if (upgrades.speed >= maxUpgradeLimit) { btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX'; btnSpeed.querySelector('.hud-cost').style.display = 'none'; } else { btnSpeed.querySelector('.hud-lvl').textContent = `Lv.${upgrades.speed}`; btnSpeed.querySelector('.hud-cost').style.display = 'block'; }
-            const btnLifeEvolve = document.getElementById('hud-life-evolve');
-            if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; }
+            const btnLifeEvolve = document.getElementById('hud-life-evolve'); if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; }
+            
+            if(gameRound === 2) {
+                document.getElementById('hud-armor').style.display = 'flex'; document.getElementById('hud-damage').style.display = 'flex';
+                document.getElementById('hud-armor').querySelector('.hud-lvl').textContent = `+${upgrades.armor}`;
+                if (upgrades.dmgBoost > 0) { document.getElementById('hud-damage').querySelector('.hud-lvl').textContent = 'MÁX'; document.getElementById('hud-damage').querySelector('.hud-cost').style.display = 'none'; }
+            } else { document.getElementById('hud-armor').style.display = 'none'; document.getElementById('hud-damage').style.display = 'none'; }
         }
 
         function showTrophyToast(icon, imgObj) { toastIcon = icon; toastImg = imgObj; toastTimer = 180; }
         function getTrophyHTML(imgObj, emoji) { return (imgObj.complete && imgObj.naturalWidth > 0) ? `<img src="${imgObj.src}" style="height:18px; margin-left:4px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.5));">` : `<span style="margin-left:4px;">${emoji}</span>`; }
-        function updateTrophiesHUD() {
-            let html = "";
-            if (gotTrophy20k) html += getTrophyHTML(assets.trofeoPollito, "🥉🐥"); if (gotTrophy50k) html += getTrophyHTML(assets.trofeoLana, "🥈🧶");
-            if (gotTrophy100k) html += getTrophyHTML(assets.trofeoHerradura, "🏅🧲"); if (gotTrophy200k) html += getTrophyHTML(assets.trofeoLeche, "🏆🥛");
-            document.getElementById('trophiesVal').innerHTML = html;
-        }
+        function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTrophyHTML(assets.trofeoPollito, "🥉🐥"); if (gotTrophy50k) html += getTrophyHTML(assets.trofeoLana, "🥈🧶"); if (gotTrophy100k) html += getTrophyHTML(assets.trofeoHerradura, "🏅🧲"); if (gotTrophy200k) html += getTrophyHTML(assets.trofeoLeche, "🏆🥛"); document.getElementById('trophiesVal').innerHTML = html; }
 
-        // --- SISTEMA CONGELADO A LOS 40K ---
+        // --- SISTEMA DE GENERACIÓN (Ronda 1 y Ronda 2) ---
         function spawnEnemy() {
             if (boss) return; 
             
-            // Calculamos el tiempo base. Si ya superaste los 40k, la dificultad se congela.
-            let difficultyTime = gameTime;
-            if (score >= 40000) {
-                if (timeAt40k === 0) timeAt40k = gameTime;
-                difficultyTime = timeAt40k;
-            }
-
+            let difficultyTime = score >= 40000 ? timeAt40k : gameTime;
             let speedMultiplier = 1 + ((difficultyTime / 70) * 0.3); 
-            let progressiveHp = 1 + Math.floor(difficultyTime / 12) + (evolutionStage * 5);
             
-            enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: progressiveHp, maxHp: progressiveHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI });
+            let eType = 'corn'; let eHp = 1; let ePts = 100; let eCoin = 1;
+
+            if (gameRound === 2) {
+                // Fases de Lechugas
+                if (score >= 100000) { eType = 'lechuga_jefe'; eHp = 8; ePts = 400; eCoin = 4; }
+                else if (score >= 85000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? 8 : 5; ePts = eType === 'lechuga_jefe' ? 400 : 200; eCoin = eType === 'lechuga_jefe' ? 4 : 2; }
+                else if (score >= 70000) { eType = 'lechuga_fuerte'; eHp = 5; ePts = 200; eCoin = 2; }
+                else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? 5 : 3; ePts = eType === 'lechuga_fuerte' ? 200 : 100; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; }
+                else { eType = 'lechuga'; eHp = 3; ePts = 100; eCoin = 1; }
+            } else {
+                eHp = 1 + Math.floor(difficultyTime / 12) + (evolutionStage * 5);
+                eType = eHp > 1 ? 'corn_strong' : 'corn';
+            }
+            
+            enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
         }
 
         function spawnBoss() { 
-            if (nextBossScoreThreshold === 50000) {
+            if (nextBossScoreThreshold === 150000 && gameRound === 2) {
+                // SÚPER JEFE LECHUGA
+                let bossHp = 450;
+                boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga' };
+            }
+            else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
                 // SÚPER JEFE MAZORCA
-                let bossLevel = Math.floor(score / 5000); 
-                let bossHp = (60 + (bossLevel * 45)) * 2; // Doble Vida
-                boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true };
-            } else {
-                // Jefe Normal
-                let bossLevel = Math.floor(score / 5000); 
-                let bossHp = 60 + (bossLevel * 45); 
-                boss = { x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false }; 
+                let bossHp = 120; // x2 de un jefe normal de nivel 10
+                boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' };
+            } 
+            else {
+                // Jefe Normal de Trancisión (si aplica)
+                let bossLevel = Math.floor(score / 5000); let bossHp = 60 + (bossLevel * 45); 
+                boss = { x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: gameRound===2 ? 'lechuga':'corn' }; 
             }
         }
 
-        // --- SISTEMA DEL ESCUDO (Absorbe Daño) ---
+        // --- SISTEMA DE DAÑO (Escudo Regenerativo + Blindaje) ---
         function handleDamage() { 
-            if (shieldActive) {
-                // El Escudo nos salva
-                shieldActive = false;
-                sessionTimeNoHit = 0; // Reiniciamos el timer para que tenga que aguantar 5s de nuevo
-                return; 
-            }
+            if (shieldActive) { shieldActive = false; sessionTimeNoHit = 0; return; }
+            if (upgrades.armor > 0) { upgrades.armor--; updateUpgradesHUD(); sessionTimeNoHit = 0; return; }
             
-            // Si no hay escudo, recibimos daño normal
-            lives--; 
-            sessionKillsNoHit = 0; sessionTimeNoHit = 0; 
-            updateLivesUI(); 
-            if (lives <= 0) gameOver(); 
+            lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; updateLivesUI(); if (lives <= 0) gameOver(); 
         }
 
-        function handleCoinEarned(amount) {
-            coins += amount; sessionCoinsEarned += amount; gameStats.totalCoins += amount; saveStats();
-            if (gameStats.totalCoins >= 50) unlockAchievement('a4');
-            if (sessionCoinsEarned >= 500) unlockAchievement('a17');
-        }
+        function handleCoinEarned(amount) { coins += amount; sessionCoinsEarned += amount; gameStats.totalCoins += amount; saveStats(); if (gameStats.totalCoins >= 50) unlockAchievement('a4'); if (sessionCoinsEarned >= 500) unlockAchievement('a17'); }
 
-        document.getElementById('startBtn').addEventListener('click', startGame);
-        document.getElementById('restartBtn').addEventListener('click', startGame);
-        document.getElementById('saveScoreBtn').addEventListener('click', () => {
-            let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); if (!initials) initials = 'ABC';
-            leaderboard.push({ name: initials, score: score }); leaderboard.sort((a, b) => b.score - a.score); if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5);
-            saveLeaderboard(); document.getElementById('saveScoreSection').style.display = 'none'; renderLeaderboard('endLeaderboardList');
-        });
+        document.getElementById('startBtn').addEventListener('click', startGame); document.getElementById('restartBtn').addEventListener('click', startGame);
+        document.getElementById('saveScoreBtn').addEventListener('click', () => { let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); if (!initials) initials = 'ABC'; leaderboard.push({ name: initials, score: score }); leaderboard.sort((a, b) => b.score - a.score); if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); saveLeaderboard(); document.getElementById('saveScoreSection').style.display = 'none'; renderLeaderboard('endLeaderboardList'); });
 
         function startGame() {
             if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
             score = 0; coins = 0; lives = 3; gameTime = 0; gameRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false;
             sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
             bullets = []; enemies = []; bossBullets = []; boss = null;
-            evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1;
+            evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0;
             gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; updateTrophiesHUD();
-            player.x = canvas.width / 2 - player.width / 2; isDraggingShip = false; dragPointerId = null;
+            player.x = canvas.width / 2 - player.width / 2; isDraggingShip = false; dragPointerId = null; document.getElementById('gameCanvas').style.background = '#090d16';
             document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'block'; document.getElementById('playerInitials').value = 'AAA';
-            updateLivesUI(); updateUpgradesHUD();
-            document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none'; document.getElementById('pauseScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'none'; document.getElementById('achievScreen').style.display = 'none';
-            document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'flex');
-            gameState = 'PLAYING';
-            
+            updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
+            document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'flex'); gameState = 'PLAYING';
             if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
-            window.gameTimerInterval = setInterval(() => { 
-                if (gameState === 'PLAYING') {
-                    gameTime++; sessionTimeNoHit++;
-                    if (sessionTimeNoHit >= 100) unlockAchievement('a13');
-                    if (gameTime >= 300) unlockAchievement('a14');
-                } 
-            }, 1000);
+            window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
         }
 
-        function gameOver() {
-            gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval);
-            unlockAchievement('a2');
-            gameStats.totalGames++; saveStats();
-            if (gameStats.totalGames >= 25) unlockAchievement('a18');
-            document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList');
-            document.getElementById('gameOverScreen').style.display = 'flex';
-            document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none');
-        }
+        function gameOver() { gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('gameOverScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); }
 
         let enemySpawnInterval = 0;
         function update() {
             if (gameState !== 'PLAYING') return;
 
-            // Logros de Puntos
             if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; showTrophyToast("🥉🐥", assets.trofeoPollito); updateTrophiesHUD(); savePersistentTrophy('t20k'); unlockAchievement('a19'); }
             if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; showTrophyToast("🥈🧶", assets.trofeoLana); updateTrophiesHUD(); savePersistentTrophy('t50k'); }
             if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; showTrophyToast("🏅🧲", assets.trofeoHerradura); updateTrophiesHUD(); savePersistentTrophy('t100k'); }
             if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; showTrophyToast("🏆🥛", assets.trofeoLeche); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); }
             if (score >= 500000) unlockAchievement('a20');
 
-            // --- LÓGICA DEL ESCUDO (Activación y Recarga) ---
-            if (score >= 40000 && !shieldUnlocked) {
-                shieldUnlocked = true;
-                shieldActive = true; 
-            }
-            // Si el escudo se rompió, recarga al llevar 5s sin recibir daño
-            if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) {
-                shieldActive = true;
-            }
+            if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; }
+            if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
 
-            // --- APARICIÓN DE JEFES ---
-            if (score >= nextBossScoreThreshold && !boss) { 
-                spawnBoss(); 
-                nextBossScoreThreshold += 5000; 
-            }
+            if (score >= nextBossScoreThreshold && !boss) { spawnBoss(); nextBossScoreThreshold += 5000; }
 
-            // Movimiento del jugador
             let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
             if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
             if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
             for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; }
             
-            // Balas Aliadas
             for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].y -= bullets[i].speed; if (bullets[i].dx) bullets[i].x += bullets[i].dx; if (bullets[i].y < -20 || bullets[i].x < -30 || bullets[i].x > canvas.width + 30) bullets.splice(i, 1); }
             
-            // Balas Enemigas
             for (let i = bossBullets.length - 1; i >= 0; i--) {
                 bossBullets[i].y += bossBullets[i].speed; if (bossBullets[i].dx) bossBullets[i].x += bossBullets[i].dx;
                 if (bossBullets[i].y > canvas.height + 20 || bossBullets[i].x < -20 || bossBullets[i].x > canvas.width + 20) { bossBullets.splice(i, 1); continue; }
@@ -520,52 +424,62 @@
                 }
             }
 
-            // Aparición de enemigos normales
             if (!boss) { 
-                enemySpawnInterval++; 
-                let diffTime = score >= 40000 ? timeAt40k : gameTime;
-                if (enemySpawnInterval > Math.max(20, 45 - Math.floor(diffTime / 10))) { spawnEnemy(); enemySpawnInterval = 0; } 
+                enemySpawnInterval++; let diffTime = score >= 40000 ? timeAt40k : gameTime; 
+                let spawnRate = gameRound === 2 ? Math.max(25, 50 - Math.floor(diffTime / 10)) : Math.max(20, 45 - Math.floor(diffTime / 10)); // Lechugas salen un poco más espaciadas
+                if (enemySpawnInterval > spawnRate) { spawnEnemy(); enemySpawnInterval = 0; } 
             }
             
-            // Movimiento y Ataque del Jefe
             if (boss) {
                 if (boss.y < 50) boss.y += 1; boss.x += boss.speed * boss.direction; if (boss.x < 10 || boss.x + boss.width > canvas.width - 10) boss.direction *= -1;
-                
                 boss.shootCooldown++;
                 
-                // Lógica Especial del SÚPER JEFE MAZORCA
                 if (boss.isSuperBoss) {
                     boss.minionCooldown++;
-                    
-                    // Dispara 4 balas lentas pero mortales en abanico
-                    if (boss.shootCooldown >= 55) {
+                    if (boss.type === 'corn' && boss.shootCooldown >= 55) {
                         boss.shootCooldown = 0;
-                        bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 });
-                        bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 });
-                        bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 });
-                        bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 });
+                        bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 });
                     }
-                    // Lanza 2 Mazorcas Fuertes como refuerzos
-                    if (boss.minionCooldown >= 110) {
-                        boss.minionCooldown = 0;
-                        enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0 });
-                        enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI });
+                    if (boss.type === 'corn' && boss.minionCooldown >= 110) {
+                        boss.minionCooldown = 0; enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 100, coin: 1, shootCooldown: 0 }); enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 100, coin: 1, shootCooldown: 0 });
                     }
-                } 
-                // Lógica del Jefe Normal
-                else {
-                    if (boss.shootCooldown >= 35) {
-                        boss.shootCooldown = 0; let bossBulletCount = Math.min(4, Math.max(1, score >= 20000 ? 2 + Math.floor((score - 20000) / 20000) : 1));
-                        if (bossBulletCount === 1) { bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0 }); }
-                        else if (bossBulletCount === 2) { bossBullets.push({ x: boss.x + boss.width / 2 - 16, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -1.2 }); bossBullets.push({ x: boss.x + boss.width / 2 + 4, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 1.2 }); }
-                        else if (bossBulletCount === 3) { bossBullets.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2 }); bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0 }); bossBullets.push({ x: boss.x + boss.width / 2 + 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2 }); }
-                        else { bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 18, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2.5 }); }
+                    // Súper Jefe Lechuga (150k)
+                    if (boss.type === 'lechuga' && boss.shootCooldown >= 45) {
+                        boss.shootCooldown = 0;
+                        bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 0, isLechugaBala: true });
+                        bossBullets.push({ x: boss.x + 20, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -1.5, isLechugaBala: true });
+                        bossBullets.push({ x: boss.x + boss.width - 20, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 1.5, isLechugaBala: true });
+                    }
+                    if (boss.type === 'lechuga' && boss.minionCooldown >= 90) {
+                        boss.minionCooldown = 0; enemies.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 48, height: 48, hp: 5, maxHp: 5, type: 'lechuga_fuerte', speed: 1.5, wobble: 0, pts: 200, coin: 2, shootCooldown: 0 });
+                    }
+                } else {
+                    if (boss.shootCooldown >= 40) {
+                        boss.shootCooldown = 0; let bc = Math.min(4, Math.max(1, score >= 20000 ? 2 + Math.floor((score - 20000) / 20000) : 1));
+                        let isLB = boss.type === 'lechuga';
+                        if (bc === 1) { bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0, isLechugaBala: isLB }); }
+                        else if (bc === 2) { bossBullets.push({ x: boss.x + boss.width / 2 - 16, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -1.2, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 4, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 1.2, isLechugaBala: isLB }); }
+                        else if (bc === 3) { bossBullets.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2, isLechugaBala: isLB }); }
+                        else { bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2.5, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 18, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2.5, isLechugaBala: isLB }); }
                     }
                 }
             }
 
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += enemies[i].speed; enemies[i].wobble += 0.06; enemies[i].x += Math.sin(enemies[i].wobble) * 2.2; 
+                
+                // Disparo de las Lechugas Fuertes y Jefes
+                if (enemies[i].type === 'lechuga_fuerte' || enemies[i].type === 'lechuga_jefe') {
+                    enemies[i].shootCooldown++;
+                    if (enemies[i].shootCooldown >= 60) {
+                        enemies[i].shootCooldown = 0;
+                        bossBullets.push({ x: enemies[i].x + 20, y: enemies[i].y + 40, width: 12, height: 12, speed: 4.5, dx: 0, isLechugaBala: true });
+                        if (enemies[i].type === 'lechuga_jefe') {
+                            enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 100, coin: 1, shootCooldown: 0 });
+                        }
+                    }
+                }
+
                 if (enemies[i].y > canvas.height) { enemies.splice(i, 1); handleDamage(); continue; }
                 if (player.x < enemies[i].x + enemies[i].width && player.x + player.width > enemies[i].x && player.y < enemies[i].y + enemies[i].height && player.y + player.height > enemies[i].y) {
                     enemies.splice(i, 1); handleDamage(); continue;
@@ -574,8 +488,8 @@
                     if (bullets[j] && bullets[j].x < enemies[i].x + enemies[i].width && bullets[j].x + bullets[j].width > enemies[i].x && bullets[j].y < enemies[i].y + enemies[i].height && bullets[j].y + bullets[j].height > enemies[i].y) {
                         enemies[i].hp -= bullets[j].damage; bullets.splice(j, 1);
                         if (enemies[i].hp <= 0) { 
-                            score += 100; handleCoinEarned(1); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); enemies.splice(i, 1); 
-                            gameStats.totalKills++; saveStats(); sessionKillsNoHit++;
+                            score += enemies[i].pts; handleCoinEarned(enemies[i].coin); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
+                            enemies.splice(i, 1); gameStats.totalKills++; saveStats(); sessionKillsNoHit++;
                             if (gameStats.totalKills >= 50) unlockAchievement('a3'); if (sessionKillsNoHit >= 30) unlockAchievement('a11');
                         } break;
                     }
@@ -587,16 +501,18 @@
                     if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) {
                         boss.hp -= bullets[j].damage; bullets.splice(j, 1);
                         if (boss.hp <= 0) { 
-                            score += boss.isSuperBoss ? 3000 : 1500; 
-                            handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
+                            score += boss.isSuperBoss ? 3000 : 1500; handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
                             document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
                             
-                            // Si era el súper jefe de los 50k, preparamos la Ronda 2
-                            if (boss.isSuperBoss) {
-                                gameRound = 2; // Listo para ser usado con las Lechugas en la próxima actu
+                            // PASO A LA RONDA 2
+                            if (boss.isSuperBoss && boss.type === 'corn') {
+                                gameRound = 2;
+                                document.getElementById('gameCanvas').style.background = '#06170d'; // Fondo verde oscuro galáctico
+                                const flash = document.getElementById('flashOverlay');
+                                flash.classList.add('flash'); setTimeout(() => flash.classList.remove('flash'), 500);
+                                updateUpgradesHUD();
                             }
                             boss = null; 
-                            
                             unlockAchievement('a10'); if (lives === 1) unlockAchievement('a12');
                             break; 
                         }
@@ -608,27 +524,10 @@
         function updateLivesUI() { let hearts = ''; for (let i = 0; i < lives; i++) hearts += '❤️ '; document.getElementById('livesVal').textContent = hearts.trim(); }
 
         function drawPlayerShip(x, y) {
-            let currentImg = assets.gallina;
-            if (evolutionStage === 3) currentImg = assets.vaca; else if (evolutionStage === 2) currentImg = assets.caballo; else if (evolutionStage === 1) currentImg = assets.oveja;
+            let currentImg = assets.gallina; if (evolutionStage === 3) currentImg = assets.vaca; else if (evolutionStage === 2) currentImg = assets.caballo; else if (evolutionStage === 1) currentImg = assets.oveja;
+            if (shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 38, 0, Math.PI * 2); ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'; ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 10; ctx.stroke(); ctx.restore(); }
+            if (upgrades.armor > 0 && !shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 34, 0, Math.PI * 2); ctx.fillStyle = 'rgba(59, 130, 246, 0.1)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(37, 99, 235, 0.8)'; ctx.stroke(); ctx.restore(); }
             
-            // Dibujamos el halo del ESCUDO (si está activo)
-            if (shieldActive) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(x + player.width / 2, y + player.height / 2, 38, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; // Brillo interno suave
-                ctx.fill();
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'; // Borde azul brillante
-                ctx.stroke();
-                // Destello exterior
-                ctx.shadowColor = '#38bdf8';
-                ctx.shadowBlur = 10;
-                ctx.stroke();
-                ctx.restore();
-            }
-
-            // Dibujamos la nave normal
             if (currentImg.complete && currentImg.naturalWidth > 0) { ctx.drawImage(currentImg, x, y, player.width, player.height); } else {
                 ctx.save(); ctx.translate(x, y);
                 if (evolutionStage === 3) { ctx.fillStyle = '#f1f5f9'; ctx.beginPath(); ctx.ellipse(25, 26, 22, 18, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#0f172a'; ctx.fillRect(15, 20, 8, 8); ctx.fillRect(30, 28, 6, 6); } 
@@ -639,38 +538,40 @@
             }
         }
 
-        function drawEvilCorn(e) {
-            let img = e.maxHp > 1 ? assets.maizFuerte : assets.maiz;
-            if (img.complete && img.naturalWidth > 0) { ctx.drawImage(img, e.x, e.y, e.width, e.height); } else {
-                ctx.save(); ctx.translate(e.x, e.y); ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.roundRect(4, 6, 40, 42, [12, 12, 18, 18]); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#854d0e'; ctx.stroke();
-                if (e.maxHp > 1) { ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.arc(24, 10, 16, Math.PI, 0, false); ctx.fill(); }
-                ctx.fillStyle = '#dc2626'; ctx.fillRect(11, 16, 9, 6); ctx.fillRect(28, 16, 9, 6); ctx.restore();
+        function drawEnemy(e) {
+            let img = null;
+            if (e.type === 'corn') img = assets.maiz; else if (e.type === 'corn_strong') img = assets.maizFuerte;
+            else if (e.type === 'lechuga') img = assets.lechuga; else if (e.type === 'lechuga_fuerte') img = assets.lechugaFuerte; else if (e.type === 'lechuga_jefe') img = assets.jefeLechuga;
+
+            if (img && img.complete && img.naturalWidth > 0) { ctx.drawImage(img, e.x, e.y, e.width, e.height); } else {
+                ctx.save(); ctx.translate(e.x, e.y); 
+                if (e.type.includes('lechuga')) {
+                    ctx.fillStyle = e.type === 'lechuga' ? '#22c55e' : (e.type === 'lechuga_fuerte' ? '#166534' : '#14532d');
+                    ctx.beginPath(); ctx.arc(24, 24, 20, 0, Math.PI*2); ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#052e16'; ctx.stroke();
+                    if(e.type !== 'lechuga') { ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(24, 10, 10, 0, Math.PI*2); ctx.fill(); }
+                } else {
+                    ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.roundRect(4, 6, 40, 42, [12, 12, 18, 18]); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#854d0e'; ctx.stroke();
+                    if (e.maxHp > 1) { ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.arc(24, 10, 16, Math.PI, 0, false); ctx.fill(); }
+                }
+                ctx.restore();
             }
         }
 
         function drawBoss(b) {
-            ctx.save();
-            ctx.translate(b.x, b.y);
+            ctx.save(); ctx.translate(b.x, b.y);
+            if (b.isSuperBoss) { ctx.shadowColor = b.type==='lechuga' ? 'rgba(34, 197, 94, 0.9)' : 'rgba(220, 38, 38, 0.9)'; ctx.shadowBlur = 20; }
             
-            // Efecto de aura para Súper Jefe
-            if (b.isSuperBoss) {
-                ctx.shadowColor = 'rgba(220, 38, 38, 0.9)'; // Brillo rojo sangre
-                ctx.shadowBlur = 20;
-            }
+            let bImg = null;
+            if (b.type === 'corn') bImg = b.isSuperBoss ? assets.superJefeMaiz : assets.jefeMaiz;
+            else bImg = b.isSuperBoss ? assets.superJefeLechuga : assets.jefeLechuga;
 
-            if (assets.jefeMaiz.complete && assets.jefeMaiz.naturalWidth > 0) { 
-                ctx.drawImage(assets.jefeMaiz, 0, 0, b.width, b.height); 
-            } else {
-                ctx.fillStyle = b.isSuperBoss ? '#991b1b' : '#ca8a04'; 
+            if (bImg && bImg.complete && bImg.naturalWidth > 0) { ctx.drawImage(bImg, 0, 0, b.width, b.height); } else {
+                ctx.fillStyle = b.type==='corn' ? (b.isSuperBoss ? '#991b1b' : '#ca8a04') : (b.isSuperBoss ? '#064e3b' : '#166534'); 
                 ctx.beginPath(); ctx.roundRect(0, 0, b.width, b.height, [20, 20, 30, 30]); ctx.fill(); 
-                ctx.lineWidth = 3; ctx.strokeStyle = '#713f12'; ctx.stroke(); 
-                ctx.fillStyle = b.isSuperBoss ? '#f87171' : '#991b1b'; 
-                ctx.fillRect(30, 30, 20, 15); ctx.fillRect(70, 30, 20, 15); 
+                ctx.lineWidth = 3; ctx.strokeStyle = '#020617'; ctx.stroke(); 
             }
             ctx.restore();
-            
-            ctx.fillStyle = '#334155'; ctx.fillRect(b.x + 10, b.y - 15, b.width - 20, 8); 
-            ctx.fillStyle = b.isSuperBoss ? '#ef4444' : '#22c55e'; ctx.fillRect(b.x + 10, b.y - 15, (b.width - 20) * (b.hp / b.maxHp), 8);
+            ctx.fillStyle = '#334155'; ctx.fillRect(b.x + 10, b.y - 15, b.width - 20, 8); ctx.fillStyle = b.isSuperBoss ? '#ef4444' : '#22c55e'; ctx.fillRect(b.x + 10, b.y - 15, (b.width - 20) * (b.hp / b.maxHp), 8);
         }
 
         function draw() {
@@ -682,9 +583,10 @@
                 if (img.complete && img.naturalWidth > 0) { ctx.drawImage(img, b.x, b.y, b.width, b.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (b.type === 'wool') icon = '🧶'; if (b.type === 'horseshoe') icon = '🧲'; if (b.type === 'milk') icon = '🥛'; ctx.fillText(icon, b.x + b.width / 2, b.y + b.height / 2); }
             }
             for (let bb of bossBullets) {
-                if (assets.balaJefe.complete && assets.balaJefe.naturalWidth > 0) { ctx.drawImage(assets.balaJefe, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); }
+                let imgB = bb.isLechugaBala ? assets.balaLechuga : assets.balaJefe;
+                if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); }
             }
-            for (let e of enemies) drawEvilCorn(e);
+            for (let e of enemies) drawEnemy(e);
 
             if (toastTimer > 0 && gameState === 'PLAYING') {
                 ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); 
