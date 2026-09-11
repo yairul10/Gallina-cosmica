@@ -33,6 +33,7 @@
         .btn { background-color: #38bdf8; color: #0f172a; border: none; padding: 10px 24px; font-size: 0.95rem; font-weight: 700; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); transition: transform 0.1s; width: 100%; max-width: 200px; margin-bottom: 8px; }
         .btn.btn-secondary { background-color: #1e293b; color: #e2e8f0; border: 1px solid #38bdf8; box-shadow: none; }
         .btn:active { transform: scale(0.95); }
+        .btn:disabled { background-color: #475569; color: #94a3b8; box-shadow: none; transform: none; cursor: not-allowed; }
 
         .leaderboard-box { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 8px 16px; margin-bottom: 14px; width: 100%; max-width: 260px; text-align: left; }
         .leaderboard-box h3 { font-size: 0.9rem; color: #fbbf24; margin-bottom: 4px; text-align: center; }
@@ -65,7 +66,6 @@
         #achievToast { position: absolute; top: -80px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); border: 2px solid #fbbf24; padding: 10px 20px; border-radius: 12px; z-index: 100; text-align: center; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
         #achievToast.show { top: 20px; }
 
-        /* Efecto de Flash Blanco para cambio de Ronda */
         #flashOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.5s; display: none; }
         #flashOverlay.flash { display: block; opacity: 1; }
     </style>
@@ -163,16 +163,22 @@
         </div>
 
         <div id="gameOverScreen" class="screen-overlay" style="display: none;">
-            <h1>¡Nave Destruida!</h1>
-            <p>Puntuación final: <strong id="finalScore">0</strong></p>
+            <h1 style="margin-bottom: 4px;">¡Nave Destruida!</h1>
+            <p style="margin-bottom: 15px;">Puntuación final: <strong id="finalScore" style="font-size:1.2rem; color:#38bdf8;">0</strong></p>
+            
+            <p id="coinsStatus" style="color: #fbbf24; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Tienes: 🪙 0</p>
+            
+            <!-- Botón para Revivir -->
+            <button class="btn" id="reviveBtn" style="background-color: #f59e0b; color: #fff; margin-bottom: 15px; border: 2px solid #fbbf24;">❤️ Revivir (500 🪙)</button>
+            
             <div id="saveScoreSection">
                 <p style="font-size:0.8rem; margin-bottom:4px;">¡Nuevo Récord! Ingresa tus 3 iniciales:</p>
                 <div class="initials-input-container">
                     <input type="text" id="playerInitials" maxlength="3" value="AAA">
-                    <button class="btn" id="saveScoreBtn" style="padding: 8px 14px; font-size: 0.85rem;">Guardar</button>
+                    <button class="btn" id="saveScoreBtn" style="padding: 8px 14px; font-size: 0.85rem; margin-bottom: 0;">Guardar</button>
                 </div>
             </div>
-            <div class="leaderboard-box">
+            <div class="leaderboard-box" style="margin-bottom: 10px;">
                 <h3>🏆 Top Puntajes</h3><div id="endLeaderboardList"></div>
             </div>
             <button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button>
@@ -185,8 +191,9 @@
         const ctx = canvas.getContext('2d');
         canvas.width = 420; canvas.height = 640;
 
-        // --- ESTADÍSTICAS Y LOGROS ---
-        let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0 };
+        // --- ESTADÍSTICAS, LOGROS Y ECONOMÍA PERMANENTE ---
+        // Se añade 'savedCoins' a gameStats
+        let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0 };
         function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
 
         const achievData = { 'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida.' }, 'a3': { title: 'Cosecha Estelar', desc: 'Destruye 50 maíces malvados.' }, 'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge 50 monedas en total.' }, 'a5': { title: 'Alas de Lana', desc: 'Evoluciona a la Oveja Espacial.' }, 'a6': { title: 'Galope Galáctico', desc: 'Alcanza la Nave Caballo.' }, 'a7': { title: 'La Vaca Sagrada', desc: 'Desbloquea la Vaca Espacial.' }, 'a8': { title: 'Poder de Fuego I', desc: 'Sube los disparos al máximo.' }, 'a9': { title: 'Piloto Veloz', desc: 'Sube la velocidad al máximo.' }, 'a10': { title: 'El Terror del Maizal', desc: 'Derrota a tu primer Jefe Maíz.' }, 'a11': { title: 'Puntería de Granjero', desc: 'Destruye 30 enemigos sin perder vida.' }, 'a12': { title: 'As del Espejo', desc: 'Derrota a un Jefe con 1 corazón.' }, 'a13': { title: 'Vuelo Limpio', desc: '100 segundos sin perder vida.' }, 'a14': { title: 'Sobreviviente del Espacio', desc: 'Aguanta 5 minutos sin perder.' }, 'a15': { title: 'Cliente Frecuente', desc: 'Compra 10 vidas extras (histórico).' }, 'a16': { title: 'Inversión Saludable', desc: 'Compra 10 vidas en una partida.' }, 'a17': { title: 'Multimillonario Épico', desc: '500 monedas en una partida.' }, 'a18': { title: 'Veterano del Pollo', desc: 'Juega 25 partidas.' }, 'a19': { title: 'Leyenda del Vacío', desc: '200,000 puntos en una partida.' }, 'a20': { title: 'Dios del Infinito', desc: '500,000 puntos en una partida.' } };
@@ -242,7 +249,9 @@
         assets.balaJefe.src = 'assets/bala_jefe.png'; assets.balaLechuga.src = 'assets/bala_lechuga.png';
         assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png'; assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png';
 
-        let score = 0; let coins = 0; let lives = 3; let gameTime = 0; let gameState = 'START'; 
+        let score = 0; 
+        let coins = gameStats.savedCoins || 0; // LAS MONEDAS AHORA SON PERSISTENTES
+        let lives = 3; let gameTime = 0; let gameState = 'START'; 
         let gotTrophy20k = false; let gotTrophy50k = false; let gotTrophy100k = false; let gotTrophy200k = false;
         let toastIcon = ""; let toastImg = null; let toastTimer = 0;
         let evolutionStage = 0; let maxUpgradeLimit = 3; let nextBossScoreThreshold = 5000;
@@ -285,8 +294,6 @@
         function shootBullet() {
             let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
             let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
-            
-            // Calculo de Daño con la mejora de la Ronda 2 (+50%)
             let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets;
             let finalDamage = upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg;
 
@@ -294,14 +301,15 @@
             for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 16, height: 16, speed: 10, dx: p.dx, type: bType, damage: finalDamage }); }
         }
 
+        // Al gastar dinero, guardamos en savedCoins
         window.buyUpgrade = function(type) {
-            if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 12) { coins -= 12; upgrades.bullets++; if (upgrades.bullets === maxUpgradeLimit) unlockAchievement('a8'); }
-            else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 12) { coins -= 12; upgrades.speed++; if (upgrades.speed === maxUpgradeLimit) unlockAchievement('a9'); }
-            else if (type === 'life' && coins >= 15) { coins -= 15; lives++; updateLivesUI(); gameStats.totalLivesBought++; saveStats(); sessionLivesBought++; if (gameStats.totalLivesBought >= 10) unlockAchievement('a15'); if (sessionLivesBought >= 10) unlockAchievement('a16'); }
+            if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 12) { coins -= 12; gameStats.savedCoins = coins; saveStats(); upgrades.bullets++; if (upgrades.bullets === maxUpgradeLimit) unlockAchievement('a8'); }
+            else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 12) { coins -= 12; gameStats.savedCoins = coins; saveStats(); upgrades.speed++; if (upgrades.speed === maxUpgradeLimit) unlockAchievement('a9'); }
+            else if (type === 'life' && coins >= 15) { coins -= 15; gameStats.savedCoins = coins; saveStats(); lives++; updateLivesUI(); gameStats.totalLivesBought++; saveStats(); sessionLivesBought++; if (gameStats.totalLivesBought >= 10) unlockAchievement('a15'); if (sessionLivesBought >= 10) unlockAchievement('a16'); }
             else if (type === 'evolve') { if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); } }
             // Compras Ronda 2
-            else if (type === 'armor' && coins >= 30) { coins -= 30; upgrades.armor++; }
-            else if (type === 'damage' && coins >= 40 && upgrades.dmgBoost === 0) { coins -= 40; upgrades.dmgBoost = 1; }
+            else if (type === 'armor' && coins >= 30) { coins -= 30; gameStats.savedCoins = coins; saveStats(); upgrades.armor++; }
+            else if (type === 'damage' && coins >= 40 && upgrades.dmgBoost === 0) { coins -= 40; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
             updateUpgradesHUD();
         }
 
@@ -322,17 +330,13 @@
         function getTrophyHTML(imgObj, emoji) { return (imgObj.complete && imgObj.naturalWidth > 0) ? `<img src="${imgObj.src}" style="height:18px; margin-left:4px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.5));">` : `<span style="margin-left:4px;">${emoji}</span>`; }
         function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTrophyHTML(assets.trofeoPollito, "🥉🐥"); if (gotTrophy50k) html += getTrophyHTML(assets.trofeoLana, "🥈🧶"); if (gotTrophy100k) html += getTrophyHTML(assets.trofeoHerradura, "🏅🧲"); if (gotTrophy200k) html += getTrophyHTML(assets.trofeoLeche, "🏆🥛"); document.getElementById('trophiesVal').innerHTML = html; }
 
-        // --- SISTEMA DE GENERACIÓN (Ronda 1 y Ronda 2) ---
         function spawnEnemy() {
             if (boss) return; 
-            
             let difficultyTime = score >= 40000 ? timeAt40k : gameTime;
             let speedMultiplier = 1 + ((difficultyTime / 70) * 0.3); 
-            
             let eType = 'corn'; let eHp = 1; let ePts = 100; let eCoin = 1;
 
             if (gameRound === 2) {
-                // Fases de Lechugas
                 if (score >= 100000) { eType = 'lechuga_jefe'; eHp = 8; ePts = 400; eCoin = 4; }
                 else if (score >= 85000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? 8 : 5; ePts = eType === 'lechuga_jefe' ? 400 : 200; eCoin = eType === 'lechuga_jefe' ? 4 : 2; }
                 else if (score >= 70000) { eType = 'lechuga_fuerte'; eHp = 5; ePts = 200; eCoin = 2; }
@@ -342,44 +346,78 @@
                 eHp = 1 + Math.floor(difficultyTime / 12) + (evolutionStage * 5);
                 eType = eHp > 1 ? 'corn_strong' : 'corn';
             }
-            
             enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
         }
 
         function spawnBoss() { 
             if (nextBossScoreThreshold === 150000 && gameRound === 2) {
-                // SÚPER JEFE LECHUGA
-                let bossHp = 450;
-                boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga' };
+                let bossHp = 450; boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga' };
             }
             else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
-                // SÚPER JEFE MAZORCA
-                let bossHp = 120; // x2 de un jefe normal de nivel 10
-                boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' };
+                let bossHp = 120; boss = { x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' };
             } 
             else {
-                // Jefe Normal de Trancisión (si aplica)
                 let bossLevel = Math.floor(score / 5000); let bossHp = 60 + (bossLevel * 45); 
                 boss = { x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: gameRound===2 ? 'lechuga':'corn' }; 
             }
         }
 
-        // --- SISTEMA DE DAÑO (Escudo Regenerativo + Blindaje) ---
         function handleDamage() { 
             if (shieldActive) { shieldActive = false; sessionTimeNoHit = 0; return; }
             if (upgrades.armor > 0) { upgrades.armor--; updateUpgradesHUD(); sessionTimeNoHit = 0; return; }
-            
             lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; updateLivesUI(); if (lives <= 0) gameOver(); 
         }
 
-        function handleCoinEarned(amount) { coins += amount; sessionCoinsEarned += amount; gameStats.totalCoins += amount; saveStats(); if (gameStats.totalCoins >= 50) unlockAchievement('a4'); if (sessionCoinsEarned >= 500) unlockAchievement('a17'); }
+        // Al ganar dinero, también actualizamos savedCoins
+        function handleCoinEarned(amount) { 
+            coins += amount; 
+            gameStats.savedCoins = coins; 
+            sessionCoinsEarned += amount; gameStats.totalCoins += amount; 
+            saveStats(); 
+            if (gameStats.totalCoins >= 50) unlockAchievement('a4'); 
+            if (sessionCoinsEarned >= 500) unlockAchievement('a17'); 
+        }
 
         document.getElementById('startBtn').addEventListener('click', startGame); document.getElementById('restartBtn').addEventListener('click', startGame);
         document.getElementById('saveScoreBtn').addEventListener('click', () => { let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); if (!initials) initials = 'ABC'; leaderboard.push({ name: initials, score: score }); leaderboard.sort((a, b) => b.score - a.score); if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); saveLeaderboard(); document.getElementById('saveScoreSection').style.display = 'none'; renderLeaderboard('endLeaderboardList'); });
 
+        // SISTEMA PARA REVIVIR
+        document.getElementById('reviveBtn').addEventListener('click', () => {
+            if (coins >= 500) {
+                // Cobrar
+                coins -= 500;
+                gameStats.savedCoins = coins;
+                saveStats();
+                
+                // Restaurar Vida y Limpiar Pantalla
+                lives = 3;
+                enemies = []; 
+                bossBullets = [];
+                shieldActive = true; // Escudo temporal de resurrección
+                
+                updateLivesUI();
+                updateUpgradesHUD();
+                
+                // Volver al juego
+                document.getElementById('gameOverScreen').style.display = 'none';
+                document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'flex');
+                
+                gameState = 'PLAYING';
+                if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
+                
+                // Retomar el contador de sesión
+                if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
+                window.gameTimerInterval = setInterval(() => { 
+                    if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } 
+                }, 1000);
+            }
+        });
+
         function startGame() {
             if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
-            score = 0; coins = 0; lives = 3; gameTime = 0; gameRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false;
+            score = 0; 
+            coins = gameStats.savedCoins || 0; // Carga las monedas acumuladas
+            lives = 3; gameTime = 0; gameRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false;
             sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
             bullets = []; enemies = []; bossBullets = []; boss = null;
             evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0;
@@ -392,7 +430,28 @@
             window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
         }
 
-        function gameOver() { gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('gameOverScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); }
+        function gameOver() { 
+            gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); 
+            unlockAchievement('a2'); gameStats.totalGames++; saveStats(); 
+            if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
+            
+            document.getElementById('finalScore').textContent = score; 
+            renderLeaderboard('endLeaderboardList'); 
+            
+            // Actualizar botones de revivir
+            document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
+            const reviveBtn = document.getElementById('reviveBtn');
+            if (coins >= 500) {
+                reviveBtn.disabled = false;
+                reviveBtn.style.opacity = 1;
+            } else {
+                reviveBtn.disabled = true;
+                reviveBtn.style.opacity = 0.5;
+            }
+
+            document.getElementById('gameOverScreen').style.display = 'flex'; 
+            document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
+        }
 
         let enemySpawnInterval = 0;
         function update() {
@@ -426,7 +485,7 @@
 
             if (!boss) { 
                 enemySpawnInterval++; let diffTime = score >= 40000 ? timeAt40k : gameTime; 
-                let spawnRate = gameRound === 2 ? Math.max(25, 50 - Math.floor(diffTime / 10)) : Math.max(20, 45 - Math.floor(diffTime / 10)); // Lechugas salen un poco más espaciadas
+                let spawnRate = gameRound === 2 ? Math.max(25, 50 - Math.floor(diffTime / 10)) : Math.max(20, 45 - Math.floor(diffTime / 10));
                 if (enemySpawnInterval > spawnRate) { spawnEnemy(); enemySpawnInterval = 0; } 
             }
             
@@ -443,7 +502,6 @@
                     if (boss.type === 'corn' && boss.minionCooldown >= 110) {
                         boss.minionCooldown = 0; enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 100, coin: 1, shootCooldown: 0 }); enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 100, coin: 1, shootCooldown: 0 });
                     }
-                    // Súper Jefe Lechuga (150k)
                     if (boss.type === 'lechuga' && boss.shootCooldown >= 45) {
                         boss.shootCooldown = 0;
                         bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 0, isLechugaBala: true });
@@ -468,7 +526,6 @@
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += enemies[i].speed; enemies[i].wobble += 0.06; enemies[i].x += Math.sin(enemies[i].wobble) * 2.2; 
                 
-                // Disparo de las Lechugas Fuertes y Jefes
                 if (enemies[i].type === 'lechuga_fuerte' || enemies[i].type === 'lechuga_jefe') {
                     enemies[i].shootCooldown++;
                     if (enemies[i].shootCooldown >= 60) {
@@ -504,10 +561,9 @@
                             score += boss.isSuperBoss ? 3000 : 1500; handleCoinEarned(boss.isSuperBoss ? 30 : 15); 
                             document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
                             
-                            // PASO A LA RONDA 2
                             if (boss.isSuperBoss && boss.type === 'corn') {
                                 gameRound = 2;
-                                document.getElementById('gameCanvas').style.background = '#06170d'; // Fondo verde oscuro galáctico
+                                document.getElementById('gameCanvas').style.background = '#06170d';
                                 const flash = document.getElementById('flashOverlay');
                                 flash.classList.add('flash'); setTimeout(() => flash.classList.remove('flash'), 500);
                                 updateUpgradesHUD();
