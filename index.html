@@ -57,11 +57,36 @@
             <h1>🐔 Granja Espacial Épica</h1>
             <p>Mejora tu nave tocando los íconos de la izquierda.</p>
             <button class="btn" id="startBtn" style="margin-top: 10px;">🚀 ¡Despegar!</button>
+            <button class="btn btn-secondary" id="openTutorialBtn">📖 Cómo Jugar</button>
             <button class="btn btn-secondary" id="openHangarBtn">🛸 Hangar (Equipo)</button>
             <button class="btn btn-secondary" id="openShopBtn">🛒 Tienda</button>
-            <button class="btn btn-secondary" id="openRecordsBtn">🥇 Récords</button>
-            <button class="btn btn-secondary" id="openTrophiesBtn">🏆 Trofeos</button>
-            <button class="btn btn-secondary" id="openAchievBtn">🏅 Logros</button>
+            
+            <div style="display: flex; gap: 8px; width: 100%; max-width: 200px;">
+                <button class="btn btn-secondary" id="openRecordsBtn" title="Récords" style="flex: 1; font-size: 1.2rem; padding: 6px;">🥇</button>
+                <button class="btn btn-secondary" id="openTrophiesBtn" title="Trofeos" style="flex: 1; font-size: 1.2rem; padding: 6px;">🏆</button>
+                <button class="btn btn-secondary" id="openAchievBtn" title="Logros" style="flex: 1; font-size: 1.2rem; padding: 6px;">🏅</button>
+            </div>
+        </div>
+
+        <!-- NUEVA PANTALLA DE TUTORIAL -->
+        <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
+            <h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1>
+            
+            <div class="tutorial-content">
+                <h3 style="color: #38bdf8;">🕹️ Movimiento</h3>
+                <p>• <b>Táctil:</b> Arrastra el dedo sobre la pantalla para mover la nave.<br>• <b>PC:</b> Usa las flechas del teclado o las letras A y D.</p>
+                
+                <h3 style="color: #ef4444;">🚀 Disparo</h3>
+                <p>• <b>Táctil:</b> Toca el botón rojo flotante (cohete).<br>• <b>PC:</b> Presiona la barra espaciadora.</p>
+                
+                <h3 style="color: #10b981;">⚙️ Mejoras (¡Atento al Brillo!)</h3>
+                <p>• Destruye enemigos para conseguir 🪙 monedas.<br>• Cuando tengas monedas suficientes, los botones de la izquierda <b>comenzarán a brillar ✨</b>.<br>• Tócalos para subir de nivel tus armas ⚔️ y velocidad ⚡.<br>• Al llegar al MÁX, podrás <b>🌟 Evolucionar</b>.</p>
+
+                <h3 style="color: #fbbf24;">✨ Personalizar Botones</h3>
+                <p>¿Los botones te estorban? Toca <b>Pausa ⏸️</b> arriba a la derecha. ¡Mientras el juego está en pausa, <b>puedes arrastrar</b> los botones a donde quieras y esa posición se guardará!</p>
+            </div>
+
+            <button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button>
         </div>
 
         <div id="hangarScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
