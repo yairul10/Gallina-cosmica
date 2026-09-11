@@ -29,10 +29,10 @@
             </div>
 
             <div id="hud-bullets" class="draggable-btn" data-type="bullets" style="display: none;">
-                <div class="hud-cost">🪙12</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div>
+                <div class="hud-cost">🪙10</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div>
             </div>
             <div id="hud-speed" class="draggable-btn" data-type="speed" style="display: none;">
-                <div class="hud-cost">🪙12</div><div class="hud-emoji">⚡</div><div class="hud-lvl">Lv.1</div>
+                <div class="hud-cost">🪙10</div><div class="hud-emoji">⚡</div><div class="hud-lvl">Lv.1</div>
             </div>
             <div id="hud-life-evolve" class="draggable-btn" data-type="btn3" style="display: none;">
                 <div class="hud-cost">🪙15</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div>
@@ -62,7 +62,6 @@
             <button class="btn btn-secondary" id="openAchievBtn">🏅 Logros</button>
         </div>
 
-        <!-- NUEVA TIENDA GALÁCTICA -->
         <div id="shopScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 5px;">🛒 Tienda Galáctica</h1>
             <div style="color: #fbbf24; font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;">Tus Monedas: 🪙 <span id="shopCoinsVal">0</span></div>
@@ -74,19 +73,27 @@
 
             <div id="shopSkins" class="shop-grid">
                 <div class="shop-item">
-                    <h4>Gallina Pro</h4><p>Mejora estética dorada.</p>
+                    <h4>Gallina Pro</h4>
+                    <img src="assets/gallina_pro.png" class="shop-img" alt="Gallina Pro">
+                    <p>Mejora estética dorada.<br><b style="color: #fbbf24;">+10% Daño</b></p>
                     <button class="shop-btn" id="btn-skin-0" onclick="buyOrEquipSkin(0, 5000)">🪙 5,000</button>
                 </div>
                 <div class="shop-item">
-                    <h4>Oveja Pro</h4><p>Lana de titanio estelar.</p>
+                    <h4>Oveja Pro</h4>
+                    <img src="assets/oveja_pro.png" class="shop-img" alt="Oveja Pro">
+                    <p>Lana de titanio estelar.<br><b style="color: #fbbf24;">+10% Daño</b></p>
                     <button class="shop-btn" id="btn-skin-1" onclick="buyOrEquipSkin(1, 5000)">🪙 5,000</button>
                 </div>
                 <div class="shop-item">
-                    <h4>Caballo Pro</h4><p>Armadura de galope.</p>
+                    <h4>Caballo Pro</h4>
+                    <img src="assets/caballo_pro.png" class="shop-img" alt="Caballo Pro">
+                    <p>Armadura de galope.<br><b style="color: #fbbf24;">+10% Daño</b></p>
                     <button class="shop-btn" id="btn-skin-2" onclick="buyOrEquipSkin(2, 5000)">🪙 5,000</button>
                 </div>
                 <div class="shop-item">
-                    <h4>Vaca Pro</h4><p>Tanque lechero definitivo.</p>
+                    <h4>Vaca Pro</h4>
+                    <img src="assets/vaca_pro.png" class="shop-img" alt="Vaca Pro">
+                    <p>Tanque lechero definitivo.<br><b style="color: #fbbf24;">+10% Daño</b></p>
                     <button class="shop-btn" id="btn-skin-3" onclick="buyOrEquipSkin(3, 5000)">🪙 5,000</button>
                 </div>
             </div>
@@ -147,8 +154,8 @@
             <p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p>
             
             <div class="pause-shop-grid">
-                <button class="pause-shop-btn" onclick="buyUpgrade('bullets')"><span>⚔️ Daño Disparos</span><span id="pauseBulletsLvl" style="color:#38bdf8;">🪙12</span></button>
-                <button class="pause-shop-btn" onclick="buyUpgrade('speed')"><span>⚡ Velocidad</span><span id="pauseSpeedLvl" style="color:#38bdf8;">🪙12</span></button>
+                <button class="pause-shop-btn" onclick="buyUpgrade('bullets')"><span>⚔️ Daño Disparos</span><span id="pauseBulletsLvl" style="color:#38bdf8;">🪙10</span></button>
+                <button class="pause-shop-btn" onclick="buyUpgrade('speed')"><span>⚡ Velocidad</span><span id="pauseSpeedLvl" style="color:#38bdf8;">🪙10</span></button>
                 <button class="pause-shop-btn" onclick="buyUpgrade('life')"><span>❤️ Vida Extra</span><span style="color:#38bdf8;">🪙15</span></button>
                 <button class="pause-shop-btn" onclick="buyUpgrade('evolve')" id="pauseEvolveBtn"><span>🌟 Evolución</span><span style="color:#fbbf24;">Condición</span></button>
                 <button class="pause-shop-btn" id="pauseSuperDmgBtn" style="display:none;" onclick="buyUpgrade('superDamage')"><span>☢️ Daño Omega</span><span id="pauseSuperDmgLvl" style="color:#8b5cf6;">🪙1000</span></button>
