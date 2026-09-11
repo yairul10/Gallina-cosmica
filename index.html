@@ -65,9 +65,6 @@
         #achievToast { position: absolute; top: -80px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); border: 2px solid #fbbf24; padding: 10px 20px; border-radius: 12px; z-index: 100; text-align: center; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
         #achievToast.show { top: 20px; }
 
-        #flashOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.5s; display: none; }
-        #flashOverlay.flash { display: block; opacity: 1; }
-
         /* Estilo para los botones de compra dentro del menú de pausa */
         .pause-shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 260px; margin-bottom: 16px; }
         .pause-shop-btn { background: #1e293b; border: 1px solid #38bdf8; border-radius: 8px; padding: 6px; color: #fff; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
@@ -77,7 +74,6 @@
 <body>
 
     <div id="game-container">
-        <div id="flashOverlay"></div>
         <div id="achievToast">
             <div style="color: #fbbf24; font-size: 0.65rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px;">🏅 LOGRO DESBLOQUEADO</div>
             <div id="achievToastName" style="color: #fff; font-size: 0.95rem; font-weight: bold;">Nombre del Logro</div>
@@ -118,7 +114,6 @@
             </div>
         </div>
 
-        <!-- MENÚ DE INICIO -->
         <div id="startScreen" class="screen-overlay">
             <h1>🐔 Granja Espacial Épica</h1>
             <p>Mejora tu nave tocando los íconos de la izquierda.<br>💡 <b>Tip:</b> Pon Pausa para organizar tus controles.</p>
@@ -154,7 +149,6 @@
             <button class="btn btn-secondary" onclick="closeScreen('achievScreen')">🔙 Volver</button>
         </div>
 
-        <!-- MENÚ DE PAUSA (Con tienda integrada) -->
         <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.92);">
             <h1 style="margin-bottom: 4px;">⏸️ Pausa</h1>
             <p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p>
@@ -325,7 +319,6 @@
             const btnSpeed = document.getElementById('hud-speed'); if (upgrades.speed >= maxUpgradeLimit) { btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX'; btnSpeed.querySelector('.hud-cost').style.display = 'none'; } else { btnSpeed.querySelector('.hud-lvl').textContent = `Lv.${upgrades.speed}`; btnSpeed.querySelector('.hud-cost').style.display = 'block'; }
             const btnLifeEvolve = document.getElementById('hud-life-evolve'); if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; }
             
-            // Textos del menú de pausa
             document.getElementById('pauseBulletsLvl').textContent = upgrades.bullets >= maxUpgradeLimit ? 'MÁX' : `🪙12 (Lv.${upgrades.bullets})`;
             document.getElementById('pauseSpeedLvl').textContent = upgrades.speed >= maxUpgradeLimit ? 'MÁX' : `🪙12 (Lv.${upgrades.speed})`;
             const pauseEv = document.getElementById('pauseEvolveBtn');
@@ -410,10 +403,14 @@
         document.getElementById('reviveBtn').addEventListener('click', () => {
             if (coins >= 500) {
                 coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; partialHit = false;
-                updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => {
-                    if (b.classList.contains('r2-upgrade') && gameRound !== 2) return;
+                updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
+                
+                // Mostrar botones de nuevo
+                document.querySelectorAll('.draggable-btn').forEach(b => {
                     b.style.display = 'flex';
                 });
+                updateUpgradesHUD();
+
                 gameState = 'PLAYING'; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
                 if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
                 window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
@@ -431,11 +428,8 @@
             document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'block'; document.getElementById('playerInitials').value = 'AAA';
             updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
             
-            // Mostrar solo botones base al iniciar
-            document.querySelectorAll('.draggable-btn').forEach(b => {
-                if (b.classList.contains('r2-upgrade')) b.style.display = 'none';
-                else b.style.display = 'flex';
-            });
+            document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
+            updateUpgradesHUD(); // Esto ocultará correctamente las mejoras de ronda 2 si es ronda 1
             
             gameState = 'PLAYING';
             if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
@@ -466,9 +460,11 @@
                     gameRound = 2;
                     nextBossScoreThreshold = 150000;
                     document.getElementById('gameCanvas').style.background = '#06170d';
-                    const flash = document.getElementById('flashOverlay');
-                    flash.classList.add('flash'); setTimeout(() => flash.classList.remove('flash'), 500);
-                    updateUpgradesHUD();
+                    
+                    // Restaurar los botones de la interfaz
+                    document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
+                    updateUpgradesHUD(); // Se encargará de mostrar u ocultar correctamente los botones de ronda 2
+                    
                     bgMusic.volume = 0.4;
                     gameState = 'PLAYING';
                 }
