@@ -45,12 +45,40 @@ function renderAchievementsList() {
 
 function unlockAchievement(key) { if (!pAchiev[key]) { pAchiev[key] = true; localStorage.setItem('farm_space_achievements', JSON.stringify(pAchiev)); document.getElementById('achievToastName').textContent = achievData[key].title; const toast = document.getElementById('achievToast'); toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3500); } }
 
+// POSICIÓN DINÁMICA DEL BOTÓN AL INICIAR
 function loadHudPositions() {
-    const saved = JSON.parse(localStorage.getItem('farm_space_hud_v7'));
-    if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn'].forEach(id => { if(saved[id] && document.getElementById(id)) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } }); } 
-    else { document.getElementById('hud-bullets').style.left = '16px'; document.getElementById('hud-bullets').style.top = '340px'; document.getElementById('hud-speed').style.left = '16px'; document.getElementById('hud-speed').style.top = '400px'; document.getElementById('hud-life-evolve').style.left = '16px'; document.getElementById('hud-life-evolve').style.top = '460px'; document.getElementById('hud-armor').style.left = '16px'; document.getElementById('hud-armor').style.top = '220px'; document.getElementById('hud-damage').style.left = '16px'; document.getElementById('hud-damage').style.top = '280px'; document.getElementById('hud-super-damage').style.left = '16px'; document.getElementById('hud-super-damage').style.top = '160px'; document.getElementById('fireBtn').style.left = '334px'; document.getElementById('fireBtn').style.top = '540px'; }
+    const saved = JSON.parse(localStorage.getItem('farm_space_hud_v9'));
+    if (saved) { 
+        ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn'].forEach(id => { 
+            if(saved[id] && document.getElementById(id)) { 
+                document.getElementById(id).style.left = saved[id].left; 
+                document.getElementById(id).style.top = saved[id].top; 
+            } 
+        }); 
+    } 
+    else { 
+        document.getElementById('hud-bullets').style.left = '16px'; document.getElementById('hud-bullets').style.top = '340px'; 
+        document.getElementById('hud-speed').style.left = '16px'; document.getElementById('hud-speed').style.top = '400px'; 
+        document.getElementById('hud-life-evolve').style.left = '16px'; document.getElementById('hud-life-evolve').style.top = '460px'; 
+        document.getElementById('hud-armor').style.left = '16px'; document.getElementById('hud-armor').style.top = '220px'; 
+        document.getElementById('hud-damage').style.left = '16px'; document.getElementById('hud-damage').style.top = '280px'; 
+        document.getElementById('hud-super-damage').style.left = '16px'; document.getElementById('hud-super-damage').style.top = '160px'; 
+        
+        // Cálculo dinámico para la esquina inferior derecha
+        let cW = document.getElementById('game-container').clientWidth || 420;
+        let cH = document.getElementById('game-container').clientHeight || 640;
+        document.getElementById('fireBtn').style.left = (cW - 86) + 'px'; 
+        document.getElementById('fireBtn').style.top = (cH - 86) + 'px'; 
+    }
 }
-function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn'].forEach(id => { const el = document.getElementById(id); if(el) positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v7', JSON.stringify(positions)); }
+function saveHudPositions() { 
+    const positions = {}; 
+    ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn'].forEach(id => { 
+        const el = document.getElementById(id); 
+        if(el) positions[id] = { left: el.style.left, top: el.style.top }; 
+    }); 
+    localStorage.setItem('farm_space_hud_v9', JSON.stringify(positions)); 
+}
 loadHudPositions();
 
 const playlist = ['assets/musica_1.mp3', 'assets/musica_2.mp3', 'assets/musica_3.mp3'];
@@ -316,7 +344,6 @@ canvas.addEventListener('pointerdown', (e) => { if (dragPointerId === null && (g
 canvas.addEventListener('pointermove', (e) => { if (!isDraggingShip || (gameState !== 'PLAYING' && gameState !== 'TRANSITION') || e.pointerId !== dragPointerId) return; const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; lastTouchX = currentTouchX; });
 window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } }); window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
 
-// DISPAROS CON DAÑO BASE REAL MODIFICADO
 function shootBullet() {
     let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
     let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
@@ -506,7 +533,7 @@ function startGame() {
     player.x = canvas.width / 2 - player.width / 2; isDraggingShip = false; dragPointerId = null; document.getElementById('gameCanvas').style.background = '#090d16';
     
     document.getElementById('scoreVal').textContent = score; 
-    document.getElementById('saveScoreSection').style.display = 'none'; // Se oculta por defecto al jugar
+    document.getElementById('saveScoreSection').style.display = 'none';
     document.getElementById('playerInitials').value = 'AAA';
     
     updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
@@ -527,7 +554,6 @@ function gameOver() {
     const reviveBtn = document.getElementById('reviveBtn');
     if (coins >= 500) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
     
-    // LÓGICA DE NUEVO RÉCORD
     let isTop5 = false;
     if (leaderboard.length < 5) {
         isTop5 = true;
@@ -590,7 +616,7 @@ function update() {
         gotTrophy200k = true; let isNew = !gameStats.missiles[3]; 
         if (isNew) { gameStats.missiles[3] = true; gameStats.equippedMissiles[3] = true; saveStats(); } 
         showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Skin Misil Desbloqueada!" : ""); 
-        updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); // Logro arreglado aquí
+        updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); 
     }
     if (score >= 300000 && !gotTrophy300k) { 
         gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {};
