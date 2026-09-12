@@ -45,9 +45,9 @@ function renderAchievementsList() {
 
 function unlockAchievement(key) { if (!pAchiev[key]) { pAchiev[key] = true; localStorage.setItem('farm_space_achievements', JSON.stringify(pAchiev)); document.getElementById('achievToastName').textContent = achievData[key].title; const toast = document.getElementById('achievToast'); toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3500); } }
 
-// POSICIÓN DINÁMICA DEL BOTÓN AL INICIAR
+// 💡 SOLUCIÓN A LOS BOTONES EN HORIZONTAL (Guarda en porcentajes %)
 function loadHudPositions() {
-    const saved = JSON.parse(localStorage.getItem('farm_space_hud_v9'));
+    const saved = JSON.parse(localStorage.getItem('farm_space_hud_v10'));
     if (saved) { 
         ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn'].forEach(id => { 
             if(saved[id] && document.getElementById(id)) { 
@@ -57,17 +57,15 @@ function loadHudPositions() {
         }); 
     } 
     else { 
-        document.getElementById('hud-bullets').style.left = '16px'; document.getElementById('hud-bullets').style.top = '340px'; 
-        document.getElementById('hud-speed').style.left = '16px'; document.getElementById('hud-speed').style.top = '400px'; 
-        document.getElementById('hud-life-evolve').style.left = '16px'; document.getElementById('hud-life-evolve').style.top = '460px'; 
-        document.getElementById('hud-armor').style.left = '16px'; document.getElementById('hud-armor').style.top = '220px'; 
-        document.getElementById('hud-damage').style.left = '16px'; document.getElementById('hud-damage').style.top = '280px'; 
-        document.getElementById('hud-super-damage').style.left = '16px'; document.getElementById('hud-super-damage').style.top = '160px'; 
+        document.getElementById('hud-super-damage').style.left = '4%'; document.getElementById('hud-super-damage').style.top = '25%'; 
+        document.getElementById('hud-armor').style.left = '4%'; document.getElementById('hud-armor').style.top = '35%'; 
+        document.getElementById('hud-damage').style.left = '4%'; document.getElementById('hud-damage').style.top = '45%'; 
+        document.getElementById('hud-bullets').style.left = '4%'; document.getElementById('hud-bullets').style.top = '55%'; 
+        document.getElementById('hud-speed').style.left = '4%'; document.getElementById('hud-speed').style.top = '65%'; 
+        document.getElementById('hud-life-evolve').style.left = '4%'; document.getElementById('hud-life-evolve').style.top = '75%'; 
         
-        let cW = document.getElementById('game-container').clientWidth || 420;
-        let cH = document.getElementById('game-container').clientHeight || 640;
-        document.getElementById('fireBtn').style.left = (cW - 86) + 'px'; 
-        document.getElementById('fireBtn').style.top = (cH - 86) + 'px'; 
+        // Fuego anclado siempre al 78% del ancho y 82% del alto
+        document.getElementById('fireBtn').style.left = '78%'; document.getElementById('fireBtn').style.top = '82%'; 
     }
 }
 function saveHudPositions() { 
@@ -76,7 +74,7 @@ function saveHudPositions() {
         const el = document.getElementById(id); 
         if(el) positions[id] = { left: el.style.left, top: el.style.top }; 
     }); 
-    localStorage.setItem('farm_space_hud_v9', JSON.stringify(positions)); 
+    localStorage.setItem('farm_space_hud_v10', JSON.stringify(positions)); 
 }
 loadHudPositions();
 
@@ -327,17 +325,51 @@ window.addEventListener('keydown', (e) => { if (e.code in keys) keys[e.code] = t
 window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = false; });
 
 let dragObj = null; let dragOffX = 0; let dragOffY = 0;
+
+// 💡 LÓGICA DE ARRASTRE DE BOTONES AJUSTADA A PORCENTAJES (%)
 document.querySelectorAll('.draggable-btn').forEach(btn => {
     btn.addEventListener('pointerdown', (e) => {
         e.stopPropagation(); e.preventDefault();
         if (gameState === 'PLAYING' || gameState === 'TRANSITION') {
             const type = btn.getAttribute('data-type');
             if (type === 'fire') shootBullet(); else if (type === 'btn3') { (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); } else buyUpgrade(type);
-        } else if (gameState === 'PAUSED') { dragObj = btn; const rect = btn.getBoundingClientRect(); dragOffX = e.clientX - rect.left; dragOffY = e.clientY - rect.top; }
+        } else if (gameState === 'PAUSED') { 
+            dragObj = btn; 
+            const rect = btn.getBoundingClientRect(); 
+            dragOffX = e.clientX - rect.left; 
+            dragOffY = e.clientY - rect.top; 
+        }
     });
 });
-document.addEventListener('pointermove', (e) => { if (dragObj && gameState === 'PAUSED') { const containerRect = document.getElementById('game-container').getBoundingClientRect(); let newX = e.clientX - containerRect.left - dragOffX; let newY = e.clientY - containerRect.top - dragOffY; if (newX < 0) newX = 0; if (newY < 0) newY = 0; if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight; dragObj.style.left = newX + 'px'; dragObj.style.top = newY + 'px'; } });
-document.addEventListener('pointerup', (e) => { if (dragObj && gameState === 'PAUSED') { dragObj = null; saveHudPositions(); unlockAchievement('a1'); } });
+
+document.addEventListener('pointermove', (e) => { 
+    if (dragObj && gameState === 'PAUSED') { 
+        const containerRect = document.getElementById('game-container').getBoundingClientRect(); 
+        
+        let newX = e.clientX - containerRect.left - dragOffX; 
+        let newY = e.clientY - containerRect.top - dragOffY; 
+        
+        if (newX < 0) newX = 0; 
+        if (newY < 0) newY = 0; 
+        if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; 
+        if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight; 
+        
+        // Convertimos a porcentaje de la pantalla
+        let pctX = (newX / containerRect.width) * 100;
+        let pctY = (newY / containerRect.height) * 100;
+        
+        dragObj.style.left = pctX + '%'; 
+        dragObj.style.top = pctY + '%'; 
+    } 
+});
+
+document.addEventListener('pointerup', (e) => { 
+    if (dragObj && gameState === 'PAUSED') { 
+        dragObj = null; 
+        saveHudPositions(); 
+        unlockAchievement('a1'); 
+    } 
+});
 
 let isDraggingShip = false; let dragPointerId = null; let lastTouchX = 0;
 canvas.addEventListener('pointerdown', (e) => { if (dragPointerId === null && (gameState === 'PLAYING' || gameState === 'TRANSITION')) { dragPointerId = e.pointerId; isDraggingShip = true; lastTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); } });
