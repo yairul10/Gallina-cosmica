@@ -46,9 +46,9 @@ function renderAchievementsList() {
 function unlockAchievement(key) { if (!pAchiev[key]) { pAchiev[key] = true; localStorage.setItem('farm_space_achievements', JSON.stringify(pAchiev)); document.getElementById('achievToastName').textContent = achievData[key].title; const toast = document.getElementById('achievToast'); toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3500); } }
 
 function loadHudPositions() {
-    const saved = JSON.parse(localStorage.getItem('farm_space_hud_v10'));
+    const saved = JSON.parse(localStorage.getItem('farm_space_hud_v11'));
     if (saved) { 
-        ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn'].forEach(id => { 
+        ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn'].forEach(id => { 
             if(saved[id] && document.getElementById(id)) { 
                 document.getElementById(id).style.left = saved[id].left; 
                 document.getElementById(id).style.top = saved[id].top; 
@@ -64,15 +64,16 @@ function loadHudPositions() {
         document.getElementById('hud-life-evolve').style.left = '4%'; document.getElementById('hud-life-evolve').style.top = '75%'; 
         
         document.getElementById('fireBtn').style.left = '78%'; document.getElementById('fireBtn').style.top = '82%'; 
+        document.getElementById('missileBtn').style.left = '60%'; document.getElementById('missileBtn').style.top = '84%'; 
     }
 }
 function saveHudPositions() { 
     const positions = {}; 
-    ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn'].forEach(id => { 
+    ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn'].forEach(id => { 
         const el = document.getElementById(id); 
         if(el) positions[id] = { left: el.style.left, top: el.style.top }; 
     }); 
-    localStorage.setItem('farm_space_hud_v10', JSON.stringify(positions)); 
+    localStorage.setItem('farm_space_hud_v11', JSON.stringify(positions)); 
 }
 loadHudPositions();
 
@@ -123,7 +124,7 @@ function updateHangarUI() {
     for(let i=0; i<4; i++) {
         let btn = document.getElementById('btn-hangar-skin-'+i); let img = document.getElementById('img-hangar-skin-'+i); let name = document.getElementById('name-hangar-skin-'+i); let desc = document.getElementById('desc-hangar-skin-'+i);
         if (gameStats.skins[i]) {
-            if (gameStats.equippedSkins[i]) { btn.textContent = 'Usar Normal'; btn.style.background = '#f59e0b'; img.src = skinProSrc[i]; name.textContent = baseNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#fbbf24;">+30% Daño</b>'; } 
+            if (gameStats.equippedSkins[i]) { btn.textContent = 'Usar Normal'; btn.style.background = '#f59e0b'; img.src = skinProSrc[i]; name.textContent = baseNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#fbbf24;">+30% Daño Láser</b>'; } 
             else { btn.textContent = 'Equipar Pro'; btn.style.background = '#10b981'; img.src = skinSrc[i]; name.textContent = baseNames[i]; desc.innerHTML = 'Normal'; }
             btn.disabled = false;
         } else {
@@ -134,7 +135,7 @@ function updateHangarUI() {
     for(let i=0; i<4; i++) {
         let btn = document.getElementById('btn-hangar-missile-'+i); let img = document.getElementById('img-hangar-missile-'+i); let name = document.getElementById('name-hangar-missile-'+i); let desc = document.getElementById('desc-hangar-missile-'+i);
         if (gameStats.missiles[i]) {
-            if (gameStats.equippedMissiles[i]) { btn.textContent = 'Usar Normal'; btn.style.background = '#f59e0b'; img.src = misProSrc[i]; name.textContent = misNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#38bdf8;">+20% Daño</b>'; } 
+            if (gameStats.equippedMissiles[i]) { btn.textContent = 'Usar Normal'; btn.style.background = '#f59e0b'; img.src = misProSrc[i]; name.textContent = misNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#38bdf8;">+20% Daño Misil</b>'; } 
             else { btn.textContent = 'Equipar Pro'; btn.style.background = '#10b981'; img.src = misSrc[i]; name.textContent = misNames[i]; desc.innerHTML = 'Normal'; }
             btn.disabled = false;
         } else {
@@ -240,7 +241,7 @@ const assets = {
     trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoDiamante: new Image()
 };
 
-assets.fondoGalaxia.src = 'assets/fondo_galaxia.jpg';
+assets.fondoGalaxia.src = 'assets/fondo_galaxia.png';
 assets.gallina.src = 'assets/gallina.png'; assets.oveja.src = 'assets/oveja.png'; assets.caballo.src = 'assets/caballo.png'; assets.vaca.src = 'assets/vaca.png'; 
 assets.gallinaPro.src = 'assets/gallina_pro.png'; assets.ovejaPro.src = 'assets/oveja_pro.png'; assets.caballoPro.src = 'assets/caballo_pro.png'; assets.vacaPro.src = 'assets/vaca_pro.png'; 
 assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png'; assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
@@ -258,7 +259,13 @@ let toastIcon = ""; let toastImg = null; let toastTimer = 0; let toastSubtitle =
 let evolutionStage = 0; let maxUpgradeLimit = 3; let nextBossScoreThreshold = 5000;
 let upgrades = { bullets: 0, speed: 1, armor: 0, dmgBoost: 0, superDmgBoost: 0 };
 const player = { x: canvas.width / 2 - 25, y: canvas.height - 110, width: 50, height: 50, baseSpeed: 5.5 };
-let bullets = []; let enemies = []; let bossBullets = []; 
+
+// NUEVAS ARMAS
+let bullets = []; 
+let homingMissiles = [];
+let missileCooldownTimer = 0; const MISSILE_COOLDOWN = 480; // 8 segundos a 60 FPS
+
+let enemies = []; let bossBullets = []; 
 let bosses = [];
 let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || [{ name: 'PRO', score: 200000 }, { name: 'ANA', score: 100000 }, { name: 'BOB', score: 50000 }];
 
@@ -271,22 +278,18 @@ let bgScrollY = 0;
 let stars = [];
 const starColors = ['#ffffff', '#fde047', '#38bdf8', '#f472b6', '#a78bfa'];
 for (let i = 0; i < 50; i++) { 
-    stars.push({ 
-        x: Math.random() * canvas.width, 
-        y: Math.random() * canvas.height, 
-        size: Math.random() * 2.5 + 1, 
-        speed: Math.random() * 1.5 + 0.3,
-        color: starColors[Math.floor(Math.random() * starColors.length)],
-        opacity: Math.random() * 0.6 + 0.4
-    }); 
+    stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2.5 + 1, speed: Math.random() * 1.5 + 0.3, color: starColors[Math.floor(Math.random() * starColors.length)], opacity: Math.random() * 0.6 + 0.4 }); 
 }
 
 function saveLeaderboard() { localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard)); }
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
-// TECLAS ACTUALIZADAS PARA MOVIMIENTO VERTICAL
 let keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false, KeyA: false, KeyD: false, KeyW: false, KeyS: false };
-window.addEventListener('keydown', (e) => { if (e.code in keys) keys[e.code] = true; if (e.code === 'Space' && (gameState === 'PLAYING' || gameState === 'TRANSITION')) shootBullet(); });
+window.addEventListener('keydown', (e) => { 
+    if (e.code in keys) keys[e.code] = true; 
+    if (e.code === 'Space' && (gameState === 'PLAYING' || gameState === 'TRANSITION')) shootBullet(); 
+    if (e.code === 'KeyM' && (gameState === 'PLAYING' || gameState === 'TRANSITION')) shootMissile(); 
+});
 window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = false; });
 
 let dragObj = null; let dragOffX = 0; let dragOffY = 0;
@@ -295,7 +298,10 @@ document.querySelectorAll('.draggable-btn').forEach(btn => {
         e.stopPropagation(); e.preventDefault();
         if (gameState === 'PLAYING' || gameState === 'TRANSITION') {
             const type = btn.getAttribute('data-type');
-            if (type === 'fire') shootBullet(); else if (type === 'btn3') { (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); } else buyUpgrade(type);
+            if (type === 'fire') shootBullet(); 
+            else if (type === 'missile') shootMissile();
+            else if (type === 'btn3') { (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); } 
+            else buyUpgrade(type);
         } else if (gameState === 'PAUSED') { dragObj = btn; const rect = btn.getBoundingClientRect(); dragOffX = e.clientX - rect.left; dragOffY = e.clientY - rect.top; }
     });
 });
@@ -310,7 +316,6 @@ document.addEventListener('pointermove', (e) => {
 });
 document.addEventListener('pointerup', (e) => { if (dragObj && gameState === 'PAUSED') { dragObj = null; saveHudPositions(); unlockAchievement('a1'); } });
 
-// LÓGICA TÁCTIL ACTUALIZADA PARA MOVER ARRIBA Y ABAJO
 let isDraggingShip = false; let dragPointerId = null; let lastTouchX = 0; let lastTouchY = 0;
 canvas.addEventListener('pointerdown', (e) => { 
     if (dragPointerId === null && (gameState === 'PLAYING' || gameState === 'TRANSITION')) { 
@@ -324,32 +329,57 @@ canvas.addEventListener('pointermove', (e) => {
     const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); 
     const currentTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height);
     
-    player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); 
-    player.y += (currentTouchY - lastTouchY) * (1 + (upgrades.speed * 0.15)); 
-    
-    if (player.x < 10) player.x = 10; 
-    if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; 
-    if (player.y < canvas.height / 2) player.y = canvas.height / 2; // Límite medio de pantalla
-    if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
-    
-    lastTouchX = currentTouchX; 
-    lastTouchY = currentTouchY;
+    player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); player.y += (currentTouchY - lastTouchY) * (1 + (upgrades.speed * 0.15)); 
+    if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; 
+    if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
+    lastTouchX = currentTouchX; lastTouchY = currentTouchY;
 });
 window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } }); window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
 
-function shootBullet() {
-    let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
+// LÁSERES PRINCIPALES
+window.shootBullet = function() {
     let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
     let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets;
-    let bonusPro = 0;
-    if (gameStats.equippedSkins[evolutionStage]) bonusPro += 0.30;
-    if (gameStats.equippedMissiles[evolutionStage]) bonusPro += 0.20;
+    
+    let bonusPro = gameStats.equippedSkins[evolutionStage] ? 0.30 : 0;
     baseDmg = baseDmg + (baseDmg * bonusPro);
+    
     let finalDamage = (upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg) * currentMatchBooster;
     if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
-    let isProMissile = gameStats.equippedMissiles[evolutionStage];
-    const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 8, offY: -10 }], 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 24, offY: -10 }], 3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 8, offY: -14 }, { dx: 1.2, offX: player.width - 20, offY: -10 }], 4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 28, offY: -14 }, { dx: 2.0, offX: player.width - 18, offY: -8 }] };
-    for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 16, height: 16, speed: 10, dx: p.dx, type: bType, damage: finalDamage, isPro: isProMissile }); }
+    
+    const patterns = { 
+        1: [{ dx: 0, offX: player.width / 2 - 2, offY: -10 }], 
+        2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 12, offY: -10 }], 
+        3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 2, offY: -14 }, { dx: 1.2, offX: player.width - 8, offY: -10 }], 
+        4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 16, offY: -14 }, { dx: 2.0, offX: player.width - 6, offY: -8 }] 
+    };
+    for (let p of (patterns[bulletCount] || patterns[3])) { 
+        bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 4, height: 20, speed: 14, dx: p.dx, type: 'laser', damage: finalDamage }); 
+    }
+}
+
+// NUEVO MISIL RASTREADOR
+window.shootMissile = function() {
+    if (missileCooldownTimer > 0) return;
+    
+    let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
+    
+    // Daño masivo base para el misil
+    let baseDmg = (upgrades.bullets === 0 ? 1 : upgrades.bullets) * 15;
+    
+    let bonusPro = gameStats.equippedMissiles[evolutionStage] ? 0.20 : 0;
+    baseDmg = baseDmg + (baseDmg * bonusPro);
+    
+    let finalDamage = (upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg) * currentMatchBooster;
+    if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
+    
+    homingMissiles.push({ 
+        x: player.x + player.width/2 - 12, y: player.y - 10, 
+        width: 24, height: 24, speed: 7.5, vx: 0, vy: -5, 
+        type: bType, damage: finalDamage, isPro: gameStats.equippedMissiles[evolutionStage] 
+    });
+    
+    missileCooldownTimer = MISSILE_COOLDOWN;
 }
 
 window.buyUpgrade = function(type) {
@@ -448,7 +478,6 @@ function spawnEnemy() {
     enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
 }
 
-// SPAWN DE JEFES ACTUALIZADO (Añade dirY: 1 y entered: false)
 function spawnBoss() { 
     if (nextBossScoreThreshold === 250000 && gameRound === 3) {
         let bossHpM = 1680 * 2; let bossHpL = 6720 * 2; 
@@ -484,6 +513,30 @@ function handleCoinEarned(amount) {
     updateUpgradesHUD();
 }
 
+function damageBoss(bIndex, dmg) {
+    let boss = bosses[bIndex];
+    boss.hp -= dmg;
+    if (boss.hp <= 0) { 
+        score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 6 : 3); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
+        if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); } 
+        else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); }
+        bosses.splice(bIndex, 1); unlockAchievement('a10'); if (lives === 1) unlockAchievement('a12'); return true; 
+    }
+    return false;
+}
+
+function damageEnemy(eIndex, dmg) {
+    let e = enemies[eIndex];
+    e.hp -= dmg;
+    if (e.hp <= 0) { 
+        score += e.pts; handleCoinEarned(e.coin); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
+        enemies.splice(eIndex, 1); gameStats.totalKills++; saveStats(); sessionKillsNoHit++;
+        if (gameStats.totalKills >= 50) unlockAchievement('a3'); if (sessionKillsNoHit >= 30) unlockAchievement('a11');
+        return true;
+    }
+    return false;
+}
+
 document.getElementById('startBtn').addEventListener('click', startGame); document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('saveScoreBtn').addEventListener('click', () => { let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); if (!initials) initials = 'ABC'; leaderboard.push({ name: initials, score: score }); leaderboard.sort((a, b) => b.score - a.score); if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); saveLeaderboard(); document.getElementById('saveScoreSection').style.display = 'none'; renderLeaderboard('endLeaderboardList'); });
 
@@ -507,15 +560,13 @@ function startGame() {
     
     score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; goingToRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false;
     sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
-    bullets = []; enemies = []; bossBullets = []; bosses = [];
+    bullets = []; homingMissiles = []; enemies = []; bossBullets = []; bosses = [];
     evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0;
-    gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false;
+    missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false;
     doubleBossSpawned = false; doubleBossDefeated = false;
     updateTrophiesHUD();
     
-    // REINICIA LA POSICIÓN ABAJO Y CENTRADO
-    player.x = canvas.width / 2 - player.width / 2; 
-    player.y = canvas.height - 110; 
+    player.x = canvas.width / 2 - player.width / 2; player.y = canvas.height - 110; 
     isDraggingShip = false; dragPointerId = null; 
     
     document.getElementById('scoreVal').textContent = score; 
@@ -551,7 +602,7 @@ let enemySpawnInterval = 0;
 function update() {
     if (gameState === 'TRANSITION') {
         transitionTimer--;
-        bullets = []; bossBullets = []; enemies = [];
+        bullets = []; homingMissiles = []; bossBullets = []; enemies = [];
         for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; }
         
         let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
@@ -573,6 +624,16 @@ function update() {
     }
 
     if (gameState !== 'PLAYING') return;
+
+    if (missileCooldownTimer > 0) {
+        missileCooldownTimer--;
+        let sec = Math.ceil(missileCooldownTimer / 60);
+        document.getElementById('missileCooldown').textContent = sec + 's';
+        document.getElementById('missileBtn').classList.remove('missile-ready');
+    } else {
+        document.getElementById('missileCooldown').textContent = 'LISTO';
+        document.getElementById('missileBtn').classList.add('missile-ready');
+    }
 
     if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; let isNew = !gameStats.missiles[0]; if (isNew) { gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); } showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t20k'); }
     if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.missiles[1]; if (isNew) { gameStats.missiles[1] = true; gameStats.equippedMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); }
@@ -600,7 +661,49 @@ function update() {
     
     for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; }
     
-    for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].y -= bullets[i].speed; if (bullets[i].dx) bullets[i].x += bullets[i].dx; if (bullets[i].y < -20 || bullets[i].x < -30 || bullets[i].x > canvas.width + 30) bullets.splice(i, 1); }
+    for (let i = bullets.length - 1; i >= 0; i--) { 
+        bullets[i].y -= bullets[i].speed; if (bullets[i].dx) bullets[i].x += bullets[i].dx; 
+        if (bullets[i].y < -20 || bullets[i].x < -30 || bullets[i].x > canvas.width + 30) bullets.splice(i, 1); 
+    }
+
+    // LÓGICA DE MISIL DIRIGIDO (Rastrea y Persigue)
+    for (let i = homingMissiles.length - 1; i >= 0; i--) {
+        let m = homingMissiles[i];
+        let target = null;
+        
+        if (bosses.length > 0) { target = bosses[0]; } 
+        else if (enemies.length > 0) { target = enemies.reduce((prev, curr) => (prev.hp > curr.hp) ? prev : curr); }
+        
+        if (target) {
+            let tx = target.x + target.width / 2;
+            let ty = target.y + target.height / 2;
+            let angle = Math.atan2(ty - (m.y + m.height / 2), tx - (m.x + m.width / 2));
+            m.vx += (Math.cos(angle) * m.speed - m.vx) * 0.08;
+            m.vy += (Math.sin(angle) * m.speed - m.vy) * 0.08;
+        } else {
+            m.vy -= 0.2; 
+        }
+        
+        m.x += m.vx; m.y += m.vy;
+        
+        if (m.y < -50 || m.x < -50 || m.x > canvas.width + 50 || m.y > canvas.height + 50) { homingMissiles.splice(i, 1); continue; }
+        
+        let hit = false;
+        for (let j = bosses.length - 1; j >= 0; j--) {
+            if (m.x < bosses[j].x + bosses[j].width && m.x + m.width > bosses[j].x && m.y < bosses[j].y + bosses[j].height && m.y + m.height > bosses[j].y) {
+                hit = true; damageBoss(j, m.damage); break;
+            }
+        }
+        if (hit) { homingMissiles.splice(i, 1); continue; }
+        
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            if (m.x < enemies[j].x + enemies[j].width && m.x + m.width > enemies[j].x && m.y < enemies[j].y + enemies[j].height && m.y + m.height > enemies[j].y) {
+                hit = true; damageEnemy(j, m.damage); break;
+            }
+        }
+        if (hit) { homingMissiles.splice(i, 1); continue; }
+    }
+
     for (let i = bossBullets.length - 1; i >= 0; i--) { bossBullets[i].y += bossBullets[i].speed; if (bossBullets[i].dx) bossBullets[i].x += bossBullets[i].dx; if (bossBullets[i].y > canvas.height + 20 || bossBullets[i].x < -20 || bossBullets[i].x > canvas.width + 20) { bossBullets.splice(i, 1); continue; } if (player.x < bossBullets[i].x + bossBullets[i].width && player.x + player.width > bossBullets[i].x && player.y < bossBullets[i].y + bossBullets[i].height && player.y + player.height > bossBullets[i].y) { bossBullets.splice(i, 1); handleDamage(); } }
 
     if (bosses.length === 0) { 
@@ -619,7 +722,6 @@ function update() {
         }
     }
     
-    // PATRÓN DIAGONAL DE JEFES ACTUALIZADO
     for (let bIndex = bosses.length - 1; bIndex >= 0; bIndex--) {
         let boss = bosses[bIndex];
         
@@ -652,13 +754,8 @@ function update() {
 
         for (let j = bullets.length - 1; j >= 0; j--) {
             if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) {
-                boss.hp -= bullets[j].damage; bullets.splice(j, 1);
-                if (boss.hp <= 0) { 
-                    score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 6 : 3); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
-                    if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); } 
-                    else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); }
-                    bosses.splice(bIndex, 1); unlockAchievement('a10'); if (lives === 1) unlockAchievement('a12'); break; 
-                }
+                let dmg = bullets[j].damage; bullets.splice(j, 1);
+                damageBoss(bIndex, dmg);
             }
         }
     }
@@ -680,12 +777,8 @@ function update() {
         if (player.x < enemies[i].x + enemies[i].width && player.x + player.width > enemies[i].x && player.y < enemies[i].y + enemies[i].height && player.y + player.height > enemies[i].y) { enemies.splice(i, 1); handleDamage(); continue; }
         for (let j = bullets.length - 1; j >= 0; j--) {
             if (bullets[j] && bullets[j].x < enemies[i].x + enemies[i].width && bullets[j].x + bullets[j].width > enemies[i].x && bullets[j].y < enemies[i].y + enemies[i].height && bullets[j].y + bullets[j].height > enemies[i].y) {
-                enemies[i].hp -= bullets[j].damage; bullets.splice(j, 1);
-                if (enemies[i].hp <= 0) { 
-                    score += enemies[i].pts; handleCoinEarned(enemies[i].coin); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
-                    enemies.splice(i, 1); gameStats.totalKills++; saveStats(); sessionKillsNoHit++;
-                    if (gameStats.totalKills >= 50) unlockAchievement('a3'); if (sessionKillsNoHit >= 30) unlockAchievement('a11');
-                } break;
+                let dmg = bullets[j].damage; bullets.splice(j, 1);
+                damageEnemy(i, dmg); break;
             }
         }
     }
@@ -772,15 +865,36 @@ function draw() {
     for (let b of bosses) drawBoss(b); 
     drawPlayerShip(player.x, player.y);
     
+    // DIBUJAR LÁSERES AZULES
     for (let b of bullets) {
-        let img; 
-        if (b.type === 'milk') img = b.isPro ? assets.balaLechePro : assets.balaLeche; 
-        else if (b.type === 'horseshoe') img = b.isPro ? assets.balaHerraduraPro : assets.balaHerradura; 
-        else if (b.type === 'wool') img = b.isPro ? assets.balaLanaPro : assets.balaLana; 
-        else img = b.isPro ? assets.balaPollitoPro : assets.balaPollito;
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowColor = '#0ea5e9';
+        ctx.shadowBlur = 8;
+        ctx.fillRect(b.x, b.y, b.width, b.height);
+        ctx.shadowBlur = 0;
+    }
+    
+    // DIBUJAR MISILES DIRIGIDOS
+    for (let m of homingMissiles) {
+        ctx.save();
+        ctx.translate(m.x + m.width/2, m.y + m.height/2);
+        let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; 
+        ctx.rotate(angle);
         
-        if (img.complete && img.naturalWidth > 0) { ctx.drawImage(img, b.x, b.y, b.width, b.height); } 
-        else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (b.type === 'wool') icon = '🧶'; if (b.type === 'horseshoe') icon = '🧲'; if (b.type === 'milk') icon = '🥛'; ctx.fillText(icon, b.x + b.width / 2, b.y + b.height / 2); }
+        let img; 
+        if (m.type === 'milk') img = m.isPro ? assets.balaLechePro : assets.balaLeche; 
+        else if (m.type === 'horseshoe') img = m.isPro ? assets.balaHerraduraPro : assets.balaHerradura; 
+        else if (m.type === 'wool') img = m.isPro ? assets.balaLanaPro : assets.balaLana; 
+        else img = m.isPro ? assets.balaPollitoPro : assets.balaPollito;
+        
+        if (img.complete && img.naturalWidth > 0) { 
+            ctx.drawImage(img, -m.width/2, -m.height/2, m.width, m.height); 
+        } else { 
+            ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
+            let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; 
+            ctx.fillText(icon, 0, 0); 
+        }
+        ctx.restore();
     }
     
     for (let bb of bossBullets) {
