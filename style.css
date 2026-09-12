@@ -1,7 +1,6 @@
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 body { background-color: #020617; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
 
-/* AJUSTADO PARA SER RESPONSIVE EN HORIZONTAL Y VERTICAL */
 #game-container { 
     position: relative; 
     width: 100%; 
@@ -33,8 +32,12 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .hud-emoji { font-size: 1.1rem; line-height: 1; margin-top: 2px; }
 .hud-lvl { font-size: 0.5rem; font-weight: 800; color: #e2e8f0; margin-top: 0; }
 
-#fireBtn { background: linear-gradient(135deg, rgba(239, 68, 68, 0.75), rgba(185, 28, 28, 0.75)); border-color: rgba(254, 226, 226, 0.6); width: 70px; height: 70px; }
-#fireBtn .hud-emoji { font-size: 1.8rem; margin-top: 0; }
+#fireBtn { background: linear-gradient(135deg, rgba(239, 68, 68, 0.75), rgba(185, 28, 28, 0.75)); border-color: rgba(254, 226, 226, 0.6); width: 65px; height: 65px; }
+#fireBtn .hud-emoji { font-size: 1.6rem; margin-top: 0; }
+
+#missileBtn { background: linear-gradient(135deg, rgba(245, 158, 11, 0.75), rgba(180, 83, 9, 0.75)); width: 55px; height: 55px; }
+#missileBtn .hud-emoji { font-size: 1.4rem; margin-top: -8px; }
+.missile-ready { animation: glowUpgrade 1.2s infinite !important; border-color: #fcd34d !important; }
 
 .screen-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(9, 13, 22, 0.96); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; pointer-events: auto; z-index: 10; }
 .screen-overlay h1 { font-size: 1.6rem; color: #38bdf8; margin-bottom: 8px; }
@@ -95,17 +98,13 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .shop-btn:disabled { background: #475569 !important; color: #94a3b8; cursor: not-allowed; transform: none; }
 .shop-img { height: 45px; object-fit: contain; margin: 4px 0; filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5)); }
 
-/* ANIMACIÓN PARA BOTONES DE MEJORA DISPONIBLES */
 @keyframes glowUpgrade {
     0% { box-shadow: 0 0 5px #10b981; border-color: #10b981; }
     50% { box-shadow: 0 0 20px #34d399; border-color: #34d399; }
     100% { box-shadow: 0 0 5px #10b981; border-color: #10b981; }
 }
-.can-upgrade {
-    animation: glowUpgrade 1.2s infinite !important;
-}
+.can-upgrade { animation: glowUpgrade 1.2s infinite !important; }
 
-/* ESTILOS DEL TUTORIAL */
 .tutorial-content { text-align: left; max-width: 320px; overflow-y: auto; max-height: 400px; padding-right: 8px; margin-top: 10px; }
 .tutorial-content::-webkit-scrollbar { width: 6px; }
 .tutorial-content::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
