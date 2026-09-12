@@ -14,7 +14,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Configurar Java
         uses: actions/setup-java@v4
@@ -22,140 +22,73 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Instalar herramientas de imágenes
-        run: |
-          python3 -m pip install Pillow
-
       - name: Instalar Capacitor
         run: |
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npm install @capacitor/splash-screen
+          npm install @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8
+          npm install @capacitor/splash-screen@8
+          npm install --save-dev @capacitor/assets
 
       - name: Preparar aplicación web
         run: |
           mkdir -p www
+
           cp index.html www/
           cp game.js www/
           cp style.css www/
+
           cp -r assets www/
+
+      - name: Preparar imágenes para Android
+        run: |
+          python3 -m pip install Pillow
+
+          python3 - <<'PY'
+          from PIL import Image
+          import os
+
+          os.makedirs("assets", exist_ok=True)
+
+          # ICONO
+          icon = Image.open("assets/icon.png").convert("RGBA")
+          icon = icon.resize((1024, 1024), Image.Resampling.LANCZOS)
+
+          icon.save("assets/icon-only.png")
+          icon.save("assets/icon-foreground.png")
+
+          # Fondo del icono
+          background = Image.new("RGBA", (1024, 1024), (0, 0, 0, 255))
+          background.save("assets/icon-background.png")
+
+          # SPLASH
+          splash = Image.open("assets/splash.png").convert("RGB")
+
+          # La herramienta recomienda al menos 2732x2732
+          splash = splash.resize((2732, 2732), Image.Resampling.LANCZOS)
+
+          splash.save("assets/splash.png", quality=100)
+          splash.save("assets/splash-dark.png", quality=100)
+
+          print("Iconos y splash preparados correctamente.")
+          PY
 
       - name: Configurar Capacitor
         run: |
           npx cap init "Gallina Cosmica" "com.gallinacosmica.app" --web-dir www
           npx cap add android
 
-      - name: Configurar icono y splash
+      - name: Generar icono y splash de Android
         run: |
-          mkdir -p android/app/src/main/res/drawable
-          mkdir -p android/app/src/main/res/mipmap-mdpi
-          mkdir -p android/app/src/main/res/mipmap-hdpi
-          mkdir -p android/app/src/main/res/mipmap-xhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+          npx capacitor-assets generate \
+            --android \
+            --iconBackgroundColor "#000000" \
+            --iconBackgroundColorDark "#000000" \
+            --splashBackgroundColor "#000000" \
+            --splashBackgroundColorDark "#000000"
 
-          cp assets/splash.png android/app/src/main/res/drawable/splash.png
-
-          python3 - <<'PY'
-          from PIL import Image
-          import os
-
-          img = Image.open("assets/icon.png").convert("RGBA")
-
-          sizes = {
-              "mipmap-mdpi": 48,
-              "mipmap-hdpi": 72,
-              "mipmap-xhdpi": 96,
-              "mipmap-xxhdpi": 144,
-              "mipmap-xxxhdpi": 192
-          }
-
-          for folder, size in sizes.items():
-              path = f"android/app/src/main/res/{folder}"
-              os.makedirs(path, exist_ok=True)
-
-              resized = img.resize(
-                  (size, size),
-                  Image.Resampling.LANCZOS
-              )
-
-              resized.save(f"{path}/icon.png")
-              resized.save(f"{path}/ic_launcher.png")
-              resized.save(f"{path}/ic_launcher_round.png")
-          PY
-
-      - name: Configurar pantalla de inicio
+      - name: Sincronizar Capacitor
         run: |
-          cat > android/app/src/main/res/drawable/splash_background.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-
-              <item>
-                  <color android:color="#000000"/>
-              </item>
-
-              <item>
-                  <bitmap
-                      android:src="@drawable/splash"
-                      android:gravity="center"
-                      android:tileMode="disabled"/>
-              </item>
-
-          </layer-list>
-          EOF
-
-          mkdir -p android/app/src/main/res/values
-
-          cat > android/app/src/main/res/values/styles.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-
-              <style
-                  name="AppTheme"
-                  parent="android:style/Theme.Material.Light.NoActionBar">
-
-                  <item name="android:fontFamily">sans</item>
-                  <item name="android:windowActionModeOverlay">true</item>
-                  <item name="android:windowNoTitle">true</item>
-                  <item name="android:windowFullscreen">true</item>
-                  <item name="android:windowBackground">
-                      @drawable/splash_background
-                  </item>
-
-              </style>
-
-          </resources>
-          EOF
-
-      - name: Configurar icono de la aplicación
-        run: |
-          python3 - <<'PY'
-          import xml.etree.ElementTree as ET
-
-          path = "android/app/src/main/AndroidManifest.xml"
-
-          tree = ET.parse(path)
-          root = tree.getroot()
-
-          application = root.find("application")
-
-          if application is not None:
-              application.set(
-                  "{http://schemas.android.com/apk/res/android}icon",
-                  "@mipmap/ic_launcher"
-              )
-
-              application.set(
-                  "{http://schemas.android.com/apk/res/android}roundIcon",
-                  "@mipmap/ic_launcher_round"
-              )
-
-          tree.write(
-              path,
-              encoding="utf-8",
-              xml_declaration=True
-          )
-          PY
+          npx cap sync android
 
       - name: Compilar APK
         run: |
