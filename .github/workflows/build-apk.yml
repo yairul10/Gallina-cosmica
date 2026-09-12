@@ -1,7 +1,10 @@
-name: Crear APK de Gallina Cosmica
+name: Crear AAB de Gallina Cosmica
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -29,55 +32,45 @@ jobs:
           npm install @capacitor/splash-screen@8
           npm install --save-dev @capacitor/assets
 
-      - name: Preparar aplicación web
+      - name: Preparar juego
         run: |
           mkdir -p www
-
           cp index.html www/
           cp game.js www/
           cp style.css www/
-
           cp -r assets www/
 
-      - name: Preparar imágenes para Android
+      - name: Preparar imágenes
         run: |
           python3 -m pip install Pillow
-
           python3 - <<'PY'
           from PIL import Image
           import os
 
           os.makedirs("assets", exist_ok=True)
 
-          # ICONO
-          icon = Image.open("assets/icon.png").convert("RGBA")
-          icon = icon.resize((1024, 1024), Image.Resampling.LANCZOS)
+          if os.path.exists("assets/icon.png"):
+              icon = Image.open("assets/icon.png").convert("RGBA")
+              icon = icon.resize((1024, 1024), Image.Resampling.LANCZOS)
+              icon.save("assets/icon-only.png")
+              icon.save("assets/icon-foreground.png")
 
-          icon.save("assets/icon-only.png")
-          icon.save("assets/icon-foreground.png")
+              background = Image.new("RGBA", (1024, 1024), (0, 0, 0, 255))
+              background.save("assets/icon-background.png")
 
-          # Fondo del icono
-          background = Image.new("RGBA", (1024, 1024), (0, 0, 0, 255))
-          background.save("assets/icon-background.png")
-
-          # SPLASH
-          splash = Image.open("assets/splash.png").convert("RGB")
-
-          # La herramienta recomienda al menos 2732x2732
-          splash = splash.resize((2732, 2732), Image.Resampling.LANCZOS)
-
-          splash.save("assets/splash.png", quality=100)
-          splash.save("assets/splash-dark.png", quality=100)
-
-          print("Iconos y splash preparados correctamente.")
+          if os.path.exists("assets/splash.png"):
+              splash = Image.open("assets/splash.png").convert("RGB")
+              splash = splash.resize((2732, 2732), Image.Resampling.LANCZOS)
+              splash.save("assets/splash.png", quality=100)
+              splash.save("assets/splash-dark.png", quality=100)
           PY
 
-      - name: Configurar Capacitor
+      - name: Crear proyecto Android
         run: |
           npx cap init "Gallina Cosmica" "com.gallinacosmica.app" --web-dir www
           npx cap add android
 
-      - name: Generar icono y splash de Android
+      - name: Generar icono
         run: |
           npx capacitor-assets generate \
             --android \
@@ -90,14 +83,70 @@ jobs:
         run: |
           npx cap sync android
 
-      - name: Compilar APK
+      - name: Configurar version de la app
+        run: |
+          python3 - <<'PY2'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          s = s.replace("versionCode 1", "versionCode 1")
+          s = s.replace('versionName "1.0"', 'versionName "1.0"')
+          p.write_text(s)
+          PY2
+
+      - name: Configurar firma de Google Play
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/gallina-cosmica-upload.jks
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("android/app/build.gradle")
+          text = path.read_text()
+
+          signing = '''
+          signingConfigs {
+              release {
+                  storeFile file("gallina-cosmica-upload.jks")
+                  storePassword System.getenv("KEYSTORE_PASSWORD")
+                  keyAlias System.getenv("KEY_ALIAS")
+                  keyPassword System.getenv("KEYSTORE_PASSWORD")
+              }
+          }
+
+          '''
+
+          text = text.replace("buildTypes {", signing + "buildTypes {", 1)
+
+          text = text.replace(
+              "release {\n",
+              "release {\n            signingConfig signingConfigs.release\n",
+              1
+          )
+
+          path.write_text(text)
+          PY
+
+      - name: Compilar AAB Release
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew bundleRelease
 
-      - name: Guardar APK
+      - name: Guardar AAB
         uses: actions/upload-artifact@v4
         with:
-          name: Gallina-Cosmica-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Gallina-Cosmica-AAB
+          path: android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Guardar APK Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gallina-Cosmica-APK-Release
+          path: android/app/build/outputs/apk/release/app-release.apk
