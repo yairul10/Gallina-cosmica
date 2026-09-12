@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nave Gallina vs Maíces y Lechugas</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -48,8 +48,15 @@
                 <div class="hud-cost" style="background:#6d28d9;">🪙1000</div><div class="hud-emoji">☢️</div><div class="hud-lvl" style="color:#ddd6fe">+50%</div>
             </div>
 
+            <!-- BOTÓN DE LÁSER PRINCIPAL -->
             <div id="fireBtn" class="draggable-btn" data-type="fire" style="display: none;">
                 <div class="hud-emoji">🚀</div>
+            </div>
+            
+            <!-- NUEVO BOTÓN DE MISIL DIRIGIDO -->
+            <div id="missileBtn" class="draggable-btn" data-type="missile" style="display: none; border-color: #f59e0b;">
+                <div class="hud-emoji">🎯</div>
+                <div id="missileCooldown" style="position:absolute; bottom:2px; font-size:0.5rem; color:#fbbf24; font-weight:bold;">LISTO</div>
             </div>
         </div>
 
@@ -68,22 +75,21 @@
             </div>
         </div>
 
-        <!-- NUEVA PANTALLA DE TUTORIAL -->
         <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1>
             
             <div class="tutorial-content">
                 <h3 style="color: #38bdf8;">🕹️ Movimiento</h3>
-                <p>• <b>Táctil:</b> Arrastra el dedo sobre la pantalla para mover la nave.<br>• <b>PC:</b> Usa las flechas del teclado o las letras A y D.</p>
+                <p>• <b>Táctil:</b> Arrastra el dedo sobre la pantalla para mover la nave en 4 direcciones.<br>• <b>PC:</b> Usa las flechas del teclado o W, A, S, D.</p>
                 
-                <h3 style="color: #ef4444;">🚀 Disparo</h3>
-                <p>• <b>Táctil:</b> Toca el botón rojo flotante (cohete).<br>• <b>PC:</b> Presiona la barra espaciadora.</p>
+                <h3 style="color: #ef4444;">🚀 Combate</h3>
+                <p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparar múltiples láseres.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯). Busca y destruye automáticamente, ¡pero tarda 8s en recargar!</p>
                 
-                <h3 style="color: #10b981;">⚙️ Mejoras (¡Atento al Brillo!)</h3>
-                <p>• Destruye enemigos para conseguir 🪙 monedas.<br>• Cuando tengas monedas suficientes, los botones de la izquierda <b>comenzarán a brillar ✨</b>.<br>• Tócalos para subir de nivel tus armas ⚔️ y velocidad ⚡.<br>• Al llegar al MÁX, podrás <b>🌟 Evolucionar</b>.</p>
+                <h3 style="color: #10b981;">⚙️ Mejoras</h3>
+                <p>• Los botones de la izquierda <b>brillarán ✨</b> cuando tengas monedas suficientes. Tócalos para mejorar y <b>🌟 Evolucionar</b> al máximo nivel.</p>
 
                 <h3 style="color: #fbbf24;">✨ Personalizar Botones</h3>
-                <p>¿Los botones te estorban? Toca <b>Pausa ⏸️</b> arriba a la derecha. ¡Mientras el juego está en pausa, <b>puedes arrastrar</b> los botones a donde quieras y esa posición se guardará!</p>
+                <p>Toca <b>Pausa ⏸️</b> arriba a la derecha. ¡Mientras el juego está en pausa, <b>puedes arrastrar</b> todos los botones a donde quieras!</p>
             </div>
 
             <button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button>
@@ -95,7 +101,7 @@
             
             <div class="shop-tabs">
                 <button class="shop-tab active" id="tabHangarSkins" onclick="switchHangarTab('skins')">Skins Naves</button>
-                <button class="shop-tab" id="tabHangarMissiles" onclick="switchHangarTab('missiles')">Skins Misiles</button>
+                <button class="shop-tab" id="tabHangarMissiles" onclick="switchHangarTab('missiles')">Skins Misiles (🎯)</button>
             </div>
 
             <div id="hangarSkins" class="shop-grid">
@@ -127,22 +133,22 @@
             <div id="shopSkins" class="shop-grid">
                 <div class="shop-item">
                     <h4>Gallina Pro</h4><img src="assets/gallina_pro.png" class="shop-img" alt="Gallina Pro">
-                    <p>Mejora estética dorada.<br><b style="color: #fbbf24;">+30% Daño</b></p>
+                    <p>Mejora estética dorada.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p>
                     <button class="shop-btn" id="btn-skin-0" onclick="buySkin(0, 1000)">🪙 1,000</button>
                 </div>
                 <div class="shop-item">
                     <h4>Oveja Pro</h4><img src="assets/oveja_pro.png" class="shop-img" alt="Oveja Pro">
-                    <p>Lana de titanio estelar.<br><b style="color: #fbbf24;">+30% Daño</b></p>
+                    <p>Lana de titanio estelar.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p>
                     <button class="shop-btn" id="btn-skin-1" onclick="buySkin(1, 2000)">🪙 2,000</button>
                 </div>
                 <div class="shop-item">
                     <h4>Caballo Pro</h4><img src="assets/caballo_pro.png" class="shop-img" alt="Caballo Pro">
-                    <p>Armadura de galope.<br><b style="color: #fbbf24;">+30% Daño</b></p>
+                    <p>Armadura de galope.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p>
                     <button class="shop-btn" id="btn-skin-2" onclick="buySkin(2, 4000)">🪙 4,000</button>
                 </div>
                 <div class="shop-item">
                     <h4>Vaca Pro</h4><img src="assets/vaca_pro.png" class="shop-img" alt="Vaca Pro">
-                    <p>Tanque lechero definitivo.<br><b style="color: #fbbf24;">+30% Daño</b></p>
+                    <p>Tanque lechero definitivo.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p>
                     <button class="shop-btn" id="btn-skin-3" onclick="buySkin(3, 8000)">🪙 8,000</button>
                 </div>
             </div>
@@ -203,7 +209,7 @@
             <p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p>
             
             <div class="pause-shop-grid">
-                <button class="pause-shop-btn" onclick="buyUpgrade('bullets')"><span>⚔️ Daño Disparos</span><span id="pauseBulletsLvl" style="color:#38bdf8;">🪙10</span></button>
+                <button class="pause-shop-btn" onclick="buyUpgrade('bullets')"><span>⚔️ Daño Láser</span><span id="pauseBulletsLvl" style="color:#38bdf8;">🪙10</span></button>
                 <button class="pause-shop-btn" onclick="buyUpgrade('speed')"><span>⚡ Velocidad</span><span id="pauseSpeedLvl" style="color:#38bdf8;">🪙10</span></button>
                 <button class="pause-shop-btn" onclick="buyUpgrade('life')"><span>❤️ Vida Extra</span><span style="color:#38bdf8;">🪙15</span></button>
                 <button class="pause-shop-btn" onclick="buyUpgrade('evolve')" id="pauseEvolveBtn"><span>🌟 Evolución</span><span style="color:#fbbf24;">Condición</span></button>
@@ -236,6 +242,6 @@
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <script src="game.js?v=6"></script>
 </body>
 </html>
