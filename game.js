@@ -229,6 +229,7 @@ window.showTrophyInfo = function(id) {
 function savePersistentTrophy(key) { let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; if (!pT[key]) { pT[key] = true; localStorage.setItem('farm_space_trophies', JSON.stringify(pT)); } }
 
 const assets = { 
+    fondoGalaxia: new Image(),
     gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(), 
     gallinaPro: new Image(), ovejaPro: new Image(), caballoPro: new Image(), vacaPro: new Image(),
     maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(), superJefeMaiz: new Image(),
@@ -238,6 +239,8 @@ const assets = {
     balaJefe: new Image(), balaLechuga: new Image(),
     trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoDiamante: new Image()
 };
+
+assets.fondoGalaxia.src = 'assets/fondo_galaxia.jpg';
 assets.gallina.src = 'assets/gallina.png'; assets.oveja.src = 'assets/oveja.png'; assets.caballo.src = 'assets/caballo.png'; assets.vaca.src = 'assets/vaca.png'; 
 assets.gallinaPro.src = 'assets/gallina_pro.png'; assets.ovejaPro.src = 'assets/oveja_pro.png'; assets.caballoPro.src = 'assets/caballo_pro.png'; assets.vacaPro.src = 'assets/vaca_pro.png'; 
 assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png'; assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
@@ -264,7 +267,7 @@ let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0;
 let partialHit = false; let transitionTimer = 0; 
 let doubleBossSpawned = false; let doubleBossDefeated = false;
 
-// ✨ NUEVO SISTEMA DE ESTRELLAS DE COLORES
+let bgScrollY = 0;
 let stars = [];
 const starColors = ['#ffffff', '#fde047', '#38bdf8', '#f472b6', '#a78bfa'];
 for (let i = 0; i < 50; i++) { 
@@ -281,7 +284,8 @@ for (let i = 0; i < 50; i++) {
 function saveLeaderboard() { localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard)); }
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
-let keys = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false };
+// TECLAS ACTUALIZADAS PARA MOVIMIENTO VERTICAL
+let keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false, KeyA: false, KeyD: false, KeyW: false, KeyS: false };
 window.addEventListener('keydown', (e) => { if (e.code in keys) keys[e.code] = true; if (e.code === 'Space' && (gameState === 'PLAYING' || gameState === 'TRANSITION')) shootBullet(); });
 window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = false; });
 
@@ -306,9 +310,31 @@ document.addEventListener('pointermove', (e) => {
 });
 document.addEventListener('pointerup', (e) => { if (dragObj && gameState === 'PAUSED') { dragObj = null; saveHudPositions(); unlockAchievement('a1'); } });
 
-let isDraggingShip = false; let dragPointerId = null; let lastTouchX = 0;
-canvas.addEventListener('pointerdown', (e) => { if (dragPointerId === null && (gameState === 'PLAYING' || gameState === 'TRANSITION')) { dragPointerId = e.pointerId; isDraggingShip = true; lastTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); } });
-canvas.addEventListener('pointermove', (e) => { if (!isDraggingShip || (gameState !== 'PLAYING' && gameState !== 'TRANSITION') || e.pointerId !== dragPointerId) return; const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; lastTouchX = currentTouchX; });
+// LÓGICA TÁCTIL ACTUALIZADA PARA MOVER ARRIBA Y ABAJO
+let isDraggingShip = false; let dragPointerId = null; let lastTouchX = 0; let lastTouchY = 0;
+canvas.addEventListener('pointerdown', (e) => { 
+    if (dragPointerId === null && (gameState === 'PLAYING' || gameState === 'TRANSITION')) { 
+        dragPointerId = e.pointerId; isDraggingShip = true; 
+        lastTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); 
+        lastTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height);
+    } 
+});
+canvas.addEventListener('pointermove', (e) => { 
+    if (!isDraggingShip || (gameState !== 'PLAYING' && gameState !== 'TRANSITION') || e.pointerId !== dragPointerId) return; 
+    const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); 
+    const currentTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height);
+    
+    player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); 
+    player.y += (currentTouchY - lastTouchY) * (1 + (upgrades.speed * 0.15)); 
+    
+    if (player.x < 10) player.x = 10; 
+    if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; 
+    if (player.y < canvas.height / 2) player.y = canvas.height / 2; // Límite medio de pantalla
+    if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
+    
+    lastTouchX = currentTouchX; 
+    lastTouchY = currentTouchY;
+});
 window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } }); window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
 
 function shootBullet() {
@@ -422,24 +448,25 @@ function spawnEnemy() {
     enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
 }
 
+// SPAWN DE JEFES ACTUALIZADO (Añade dirY: 1 y entered: false)
 function spawnBoss() { 
     if (nextBossScoreThreshold === 250000 && gameRound === 3) {
         let bossHpM = 1680 * 2; let bossHpL = 6720 * 2; 
-        bosses.push({ x: 20, y: -120, width: 140, height: 110, maxHp: bossHpM, hp: bossHpM, speed: 1.5, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' });
-        bosses.push({ x: canvas.width - 160, y: -180, width: 140, height: 110, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: -1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga' });
+        bosses.push({ x: 20, y: -120, width: 140, height: 110, maxHp: bossHpM, hp: bossHpM, speed: 1.5, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
+        bosses.push({ x: canvas.width - 160, y: -180, width: 140, height: 110, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: -1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
         doubleBossSpawned = true;
     }
     else if (nextBossScoreThreshold === 150000 && gameRound === 2) {
         let bossHp = 6720; 
-        bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga' });
+        bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
     }
     else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
         let bossHp = 1680; 
-        bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn' });
+        bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
     } 
     else if (gameRound === 1) {
         let bossLevel = Math.floor(score / 5000); let bossHp = Math.floor((60 + (bossLevel * 45)) * 1.5); 
-        bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'corn' }); 
+        bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'corn', entered: false, dirY: 1 }); 
     }
 }
 
@@ -485,7 +512,11 @@ function startGame() {
     gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false;
     doubleBossSpawned = false; doubleBossDefeated = false;
     updateTrophiesHUD();
-    player.x = canvas.width / 2 - player.width / 2; isDraggingShip = false; dragPointerId = null; 
+    
+    // REINICIA LA POSICIÓN ABAJO Y CENTRADO
+    player.x = canvas.width / 2 - player.width / 2; 
+    player.y = canvas.height - 110; 
+    isDraggingShip = false; dragPointerId = null; 
     
     document.getElementById('scoreVal').textContent = score; 
     document.getElementById('saveScoreSection').style.display = 'none';
@@ -522,9 +553,13 @@ function update() {
         transitionTimer--;
         bullets = []; bossBullets = []; enemies = [];
         for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; }
+        
         let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
         if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
+        if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed;
+        
         if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
+        if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10;
         
         if (transitionTimer <= 0) {
             gameRound = goingToRound;
@@ -558,7 +593,11 @@ function update() {
 
     let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5;
     if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed;
+    if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed;
+    
     if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10;
+    if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10;
+    
     for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; }
     
     for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].y -= bullets[i].speed; if (bullets[i].dx) bullets[i].x += bullets[i].dx; if (bullets[i].y < -20 || bullets[i].x < -30 || bullets[i].x > canvas.width + 30) bullets.splice(i, 1); }
@@ -580,9 +619,20 @@ function update() {
         }
     }
     
+    // PATRÓN DIAGONAL DE JEFES ACTUALIZADO
     for (let bIndex = bosses.length - 1; bIndex >= 0; bIndex--) {
         let boss = bosses[bIndex];
-        if (boss.y < 50) boss.y += 1; boss.x += boss.speed * boss.direction; if (boss.x < 10 || boss.x + boss.width > canvas.width - 10) boss.direction *= -1;
+        
+        if (!boss.entered) {
+            boss.y += 1.5;
+            if (boss.y >= 50) boss.entered = true;
+        } else {
+            boss.x += boss.speed * boss.direction;
+            boss.y += (boss.speed * 0.4) * boss.dirY;
+            if (boss.x < 10 || boss.x + boss.width > canvas.width - 10) boss.direction *= -1;
+            if (boss.y < 50 || boss.y + boss.height > canvas.height / 2 - 20) boss.dirY *= -1;
+        }
+        
         boss.shootCooldown++;
         if (boss.isSuperBoss) {
             boss.minionCooldown++;
@@ -689,22 +739,27 @@ function drawBoss(b) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 🌌 FONDO CON GRADIENTE DINÁMICO CÓSMICO
+    if (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0) {
+        bgScrollY += 0.5; 
+        if (bgScrollY >= canvas.height) bgScrollY = 0;
+        ctx.drawImage(assets.fondoGalaxia, 0, bgScrollY, canvas.width, canvas.height);
+        ctx.drawImage(assets.fondoGalaxia, 0, bgScrollY - canvas.height, canvas.width, canvas.height);
+    }
+    
     let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     if (gameRound === 1) { 
-        bgGradient.addColorStop(0, '#090b14'); // Azul ultra oscuro
-        bgGradient.addColorStop(1, '#1e1b4b'); // Indigo espacial
+        bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); 
+        bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); 
     } else if (gameRound === 2) { 
-        bgGradient.addColorStop(0, '#1a0b2e'); // Morado muy oscuro
-        bgGradient.addColorStop(1, '#4a144b'); // Magenta espacial
+        bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); 
+        bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); 
     } else { 
-        bgGradient.addColorStop(0, '#2a0808'); // Carmesí oscuro
-        bgGradient.addColorStop(1, '#050000'); // Negro puro
+        bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); 
+        bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); 
     }
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // ✨ ESTRELLAS MULTICOLORES REDONDAS
     for (let s of stars) { 
         ctx.globalAlpha = s.opacity;
         ctx.fillStyle = s.color;
