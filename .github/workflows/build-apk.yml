@@ -142,6 +142,10 @@ jobs:
           chmod +x gradlew
           ./gradlew bundleRelease
 
+          jarsigner             -keystore app/gallina-cosmica-upload.jks             -storepass "$KEYSTORE_PASSWORD"             -keypass "$KEYSTORE_PASSWORD"             app/build/outputs/bundle/release/app-release.aab             "$KEY_ALIAS"
+
+          jarsigner -verify -verbose -certs             app/build/outputs/bundle/release/app-release.aab
+
       - name: Guardar AAB
         uses: actions/upload-artifact@v4
         with:
