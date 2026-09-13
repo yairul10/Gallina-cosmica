@@ -1,108 +1,148 @@
-function spawnEnemy() {
-    if (bosses.length > 0) return; 
-    let difficultyTime = score >= 40000 ? timeAt40k : gameTime;
-    let speedMultiplier = 1 + ((difficultyTime / 70) * 0.3); 
-    let lastCornHp = 1 + Math.floor((timeAt40k > 0 ? timeAt40k : gameTime) / 12) + (evolutionStage * 5);
-    if (lastCornHp < 1) lastCornHp = 1;
+document.getElementById('startBtn').addEventListener('click', startGame); document.getElementById('restartBtn').addEventListener('click', startGame);
+document.getElementById('saveScoreBtn').addEventListener('click', () => { let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); if (!initials) initials = 'ABC'; leaderboard.push({ name: initials, score: score }); leaderboard.sort((a, b) => b.score - a.score); if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); saveLeaderboard(); document.getElementById('saveScoreSection').style.display = 'none'; renderLeaderboard('endLeaderboardList'); });
+document.getElementById('reviveBtn').addEventListener('click', () => { if (coins >= 500) { coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; partialHit = false; updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); gameState = 'PLAYING'; previousState = 'PLAYING'; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000); } });
 
-    if (gameRound === 3) {
-        let scale = Math.floor((score - 250000) / 2000); 
-        if (scale < 0) scale = 0;
-        let eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte';
-        let eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale;
-        let ePts = eType === 'maiz_jefe' ? 1200 : 1000;
-        let eCoin = eType === 'maiz_jefe' ? 3 : 4;
-        enemies.push({ x: Math.random() * (canvas.width - 56 - 20) + 10, y: -60, width: 56, height: 56, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 0.5) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
-        return;
-    }
-
-    let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 1;
-
-    if (gameRound === 2) {
-        let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
-        if (score >= 100000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 3; }
-        else if (score >= 85000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 3 : 2; }
-        else if (score >= 70000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 2; }
-        else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; }
-        else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
-    } else {
-        eHp = lastCornHp; 
-        if (eHp > 1) { eType = 'corn_strong'; eCoin = 2; } 
-        else { eType = 'corn'; eCoin = 1; }
-    }
-    enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
-}
-
-function spawnBoss() { 
-    if (nextBossScoreThreshold === 250000 && gameRound === 3) {
-        let bossHpM = 1680 * 2; let bossHpL = 6720 * 2; 
-        bosses.push({ x: 20, y: -120, width: 140, height: 110, maxHp: bossHpM, hp: bossHpM, speed: 1.5, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
-        bosses.push({ x: canvas.width - 160, y: -180, width: 140, height: 110, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: -1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
-        setDoubleBossSpawned(true);
-    }
-    else if (nextBossScoreThreshold === 150000 && gameRound === 2) {
-        let bossHp = 6720; 
-        bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
-    }
-    else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
-        let bossHp = 1680; 
-        bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
-    } 
-    else if (gameRound === 1) {
-        let bossLevel = Math.floor(score / 5000); let bossHp = Math.floor((60 + (bossLevel * 45)) * 1.5); 
-        bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'corn', entered: false, dirY: 1 }); 
-    }
-}
-
-function handleDamage() { 
-    if (shieldActive) { setShieldActive(false); setSessionTimeNoHit(0); return; }
-    if (upgrades.armor > 0) { if (!partialHit) { setPartialHit(true); setSessionTimeNoHit(0); return; } else { setPartialHit(false); } }
-    setLives(lives - 1); setSessionKillsNoHit(0); setSessionTimeNoHit(0); updateLivesUI(); if (lives <= 0) gameOver(); 
-}
-
-function handleCoinEarned(amount) { 
-    setCoins(coins + amount); gameStats.savedCoins = coins; gameStats.totalCoins += amount; saveStats(); 
-    if (gameStats.totalCoins >= 300) unlockAchievement('a4'); 
-    if (gameStats.totalCoins >= 10000) unlockAchievement('a22'); 
-    if (coins >= 10000) unlockAchievement('a23'); 
+window.startGame = function() {
+    if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
+    currentMatchBooster = gameStats.pendingBooster || 1.0; gameStats.pendingBooster = 1.0; saveStats();
+    score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; goingToRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false; sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
+    bullets = []; homingMissiles = []; enemies = []; bossBullets = []; bosses = []; evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0; missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false; doubleBossSpawned = false; doubleBossDefeated = false;
+    updateTrophiesHUD(); player.x = canvas.width / 2 - player.width / 2; player.y = canvas.height - 110; isDraggingShip = false; dragPointerId = null; 
+    document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'none'; document.getElementById('playerInitials').value = 'AAA';
+    updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
+    document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); 
+    gameState = 'PLAYING'; previousState = 'PLAYING';
     
-    if (tutorialStep === 1.5 && coins >= 10) {
-        setTutorialStep(2);
-        activateTutorial("¡Conseguiste 10 monedas!<br><br>Toca el botón brillante para <b>Mejorar el Daño</b> (⚔️).", 'hud-bullets');
-    } else if (tutorialStep === 2.5 && coins >= 10) {
-        setTutorialStep(3);
-        activateTutorial("¡Otras 10 monedas!<br><br>Toca el botón para <b>Mejorar Velocidad</b> (⚡).", 'hud-speed');
-    } else if (tutorialStep === 3.5) {
-        let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10;
-        if (coins >= needed && needed > 0) {
-            setTutorialStep(4);
-            activateTutorial("¡Tienes las monedas necesarias!<br><br>Mejora al <b>MÁXIMO</b> el Daño y Velocidad para ascender.", ['hud-bullets', 'hud-speed']);
+    if (!gameStats.tutorialCompleted) { tutorialStep = 1; activateTutorial("¡Bienvenido Granero Espacial!<br><br>Toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); } else { tutorialStep = 0; }
+    if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
+    window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
+}
+
+window.gameOver = function() { 
+    gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
+    document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
+    const reviveBtn = document.getElementById('reviveBtn'); if (coins >= 500) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
+    let isTop5 = false; if (leaderboard.length < 5) { isTop5 = true; } else { isTop5 = score > leaderboard[leaderboard.length - 1].score; }
+    if (isTop5 && score > 0) { document.getElementById('saveScoreSection').style.display = 'block'; } else { document.getElementById('saveScoreSection').style.display = 'none'; }
+    document.getElementById('gameOverScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
+}
+
+let enemySpawnInterval = 0;
+function update() {
+    if (gameState === 'TUTORIAL') return;
+    if (gameState === 'TRANSITION') { transitionTimer--; bullets = []; homingMissiles = []; bossBullets = []; enemies = []; for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; } let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; if (transitionTimer <= 0) { gameRound = goingToRound; if (gameRound === 2) nextBossScoreThreshold = 150000; else if (gameRound === 3) nextBossScoreThreshold = 250000; document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); bgMusic.volume = 0.4; gameState = 'PLAYING'; previousState = 'PLAYING'; } return; }
+    if (gameState !== 'PLAYING') return;
+
+    if (missileCooldownTimer > 0) { missileCooldownTimer--; let sec = Math.ceil(missileCooldownTimer / 60); document.getElementById('missileCooldown').textContent = sec + 's'; document.getElementById('missileBtn').classList.remove('missile-ready'); } else { document.getElementById('missileCooldown').textContent = 'LISTO'; document.getElementById('missileBtn').classList.add('missile-ready'); }
+    if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; let isNew = !gameStats.missiles[0]; if (isNew) { gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); } showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t20k'); } if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.missiles[1]; if (isNew) { gameStats.missiles[1] = true; gameStats.equippedMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); } if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; let isNew = !gameStats.missiles[2]; if (isNew) { gameStats.missiles[2] = true; gameStats.equippedMissiles[2] = true; saveStats(); } showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t100k'); } if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; let isNew = !gameStats.missiles[3]; if (isNew) { gameStats.missiles[3] = true; gameStats.equippedMissiles[3] = true; saveStats(); } showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); } if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let sub = ""; if (!pTrophies['t300k']) { if (gameStats.skins[3]) { coins += 4000; gameStats.savedCoins = coins; sub = "Vaca Pro Reembolsada (+4,000🪙)"; } else { gameStats.skins[3] = true; gameStats.equippedSkins[3] = true; sub = "¡Skin Vaca Pro Desbloqueada!"; } } saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); } if (score >= 500000) unlockAchievement('a20'); if (doubleBossSpawned && !doubleBossDefeated && bosses.length === 0 && score >= 250000) { doubleBossDefeated = true; unlockAchievement('a21'); } if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; } if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
+    if (score >= nextBossScoreThreshold && bosses.length === 0) { let currentThreshold = nextBossScoreThreshold; spawnBoss(); if (gameRound === 1) nextBossScoreThreshold += 5000; else if (gameRound === 2 && currentThreshold === 150000) nextBossScoreThreshold = 9999999; else if (gameRound === 3 && currentThreshold === 250000) nextBossScoreThreshold = 9999999; }
+
+    let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10;
+    
+    for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; }
+    for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].y -= bullets[i].speed; if (bullets[i].dx) bullets[i].x += bullets[i].dx; if (bullets[i].y < -20 || bullets[i].x < -30 || bullets[i].x > canvas.width + 30) bullets.splice(i, 1); }
+    for (let i = homingMissiles.length - 1; i >= 0; i--) {
+        let m = homingMissiles[i]; let target = null;
+        if (bosses.length > 0) { target = bosses[0]; } else if (enemies.length > 0) { target = enemies.reduce((prev, curr) => (prev.hp > curr.hp) ? prev : curr); }
+        if (target) { let tx = target.x + target.width / 2; let ty = target.y + target.height / 2; let angle = Math.atan2(ty - (m.y + m.height / 2), tx - (m.x + m.width / 2)); m.vx += (Math.cos(angle) * m.speed - m.vx) * 0.08; m.vy += (Math.sin(angle) * m.speed - m.vy) * 0.08; } else { m.vy -= 0.2; }
+        m.x += m.vx; m.y += m.vy;
+        if (m.y < -50 || m.x < -50 || m.x > canvas.width + 50 || m.y > canvas.height + 50) { homingMissiles.splice(i, 1); continue; }
+        let hit = false;
+        for (let j = bosses.length - 1; j >= 0; j--) { if (m.x < bosses[j].x + bosses[j].width && m.x + m.width > bosses[j].x && m.y < bosses[j].y + bosses[j].height && m.y + m.height > bosses[j].y) { hit = true; damageBoss(j, m.damage); break; } }
+        if (hit) { homingMissiles.splice(i, 1); continue; }
+        for (let j = enemies.length - 1; j >= 0; j--) { if (m.x < enemies[j].x + enemies[j].width && m.x + m.width > enemies[j].x && m.y < enemies[j].y + enemies[j].height && m.y + m.height > enemies[j].y) { hit = true; damageEnemy(j, m.damage); break; } }
+        if (hit) { homingMissiles.splice(i, 1); continue; }
+    }
+    for (let i = bossBullets.length - 1; i >= 0; i--) { bossBullets[i].y += bossBullets[i].speed; if (bossBullets[i].dx) bossBullets[i].x += bossBullets[i].dx; if (bossBullets[i].y > canvas.height + 20 || bossBullets[i].x < -20 || bossBullets[i].x > canvas.width + 20) { bossBullets.splice(i, 1); continue; } if (player.x < bossBullets[i].x + bossBullets[i].width && player.x + player.width > bossBullets[i].x && player.y < bossBullets[i].y + bossBullets[i].height && player.y + player.height > bossBullets[i].y) { bossBullets.splice(i, 1); handleDamage(); } }
+
+    if (bosses.length === 0) { 
+        if (gameRound === 3 && score < 250000 && nextBossScoreThreshold === 250000) {
+            let hasMaiz = false, hasLechuga = false; for (let e of enemies) { if (e.type === 'maiz_jefe') hasMaiz = true; if (e.type === 'lechuga_jefe') hasLechuga = true; } let baseHp = 1 + Math.floor(timeAt40k / 12) + (evolutionStage * 5); let eHpM = Math.ceil(baseHp * 2.5); let eHpL = Math.ceil(baseHp * 3.5); if (!hasMaiz) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpM, maxHp: eHpM, speed: 1.2, wobble: Math.random() * Math.PI, type: 'maiz_jefe', pts: 800, coin: 3, shootCooldown: 0 }); if (!hasLechuga) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpL, maxHp: eHpL, speed: 1.0, wobble: Math.random() * Math.PI, type: 'lechuga_jefe', pts: 1000, coin: 3, shootCooldown: 0 });
+        } else {
+            enemySpawnInterval++; let spawnRate = 40; if (gameRound === 3) { spawnRate = Math.max(15, 30 - Math.floor((score - 250000) / 10000)); } else { let diffTime = score >= 40000 ? timeAt40k : gameTime; spawnRate = gameRound >= 2 ? Math.max(25, 50 - Math.floor(diffTime / 10)) : Math.max(20, 45 - Math.floor(diffTime / 10)); }
+            if (enemySpawnInterval > spawnRate) { spawnEnemy(); enemySpawnInterval = 0; } 
         }
     }
     
-    updateUpgradesHUD();
+    for (let bIndex = bosses.length - 1; bIndex >= 0; bIndex--) {
+        let boss = bosses[bIndex];
+        if (!boss.entered) { boss.y += 1.5; if (boss.y >= 50) boss.entered = true; } else { boss.x += boss.speed * boss.direction; boss.y += (boss.speed * 0.4) * boss.dirY; if (boss.x < 10 || boss.x + boss.width > canvas.width - 10) boss.direction *= -1; if (boss.y < 50 || boss.y + boss.height > canvas.height / 2 - 20) boss.dirY *= -1; }
+        boss.shootCooldown++;
+        if (boss.isSuperBoss) {
+            boss.minionCooldown++;
+            if (boss.type === 'corn' && boss.shootCooldown >= 55) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 }); }
+            if (boss.type === 'corn' && boss.minionCooldown >= 110) { boss.minionCooldown = 0; enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: 2, shootCooldown: 0 }); enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: 2, shootCooldown: 0 }); }
+            if (boss.type === 'lechuga' && boss.shootCooldown >= 45) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -2.0, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 - 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 2.0, isLechugaBala: true }); }
+            if (boss.type === 'lechuga' && boss.minionCooldown >= 90) { boss.minionCooldown = 0; enemies.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 48, height: 48, hp: 5, maxHp: 5, type: 'lechuga_fuerte', speed: 1.5, wobble: 0, pts: 300, coin: 2, shootCooldown: 0 }); }
+        } else {
+            if (boss.shootCooldown >= 40) {
+                boss.shootCooldown = 0; let bc = Math.min(4, Math.max(1, score >= 20000 ? 2 + Math.floor((score - 20000) / 20000) : 1)); let isLB = boss.type === 'lechuga';
+                if (bc === 1) { bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0, isLechugaBala: isLB }); }
+                else if (bc === 2) { bossBullets.push({ x: boss.x + boss.width / 2 - 16, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -1.2, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 4, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 1.2, isLechugaBala: isLB }); }
+                else if (bc === 3) { bossBullets.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2, isLechugaBala: isLB }); }
+                else { bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2.5, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 18, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2.5, isLechugaBala: isLB }); }
+            }
+        }
+        for (let j = bullets.length - 1; j >= 0; j--) { if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) { let dmg = bullets[j].damage; bullets.splice(j, 1); damageBoss(bIndex, dmg); } }
+    }
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        enemies[i].y += enemies[i].speed; enemies[i].wobble += 0.06; enemies[i].x += Math.sin(enemies[i].wobble) * 2.2; 
+        if (enemies[i].type.includes('jefe') || enemies[i].type === 'lechuga_fuerte') {
+            enemies[i].shootCooldown++;
+            if (enemies[i].shootCooldown >= 60) {
+                enemies[i].shootCooldown = 0; let isL = enemies[i].type.includes('lechuga');
+                bossBullets.push({ x: enemies[i].x + enemies[i].width/2 - 6, y: enemies[i].y + enemies[i].height - 10, width: 12, height: 12, speed: 4.5, dx: 0, isLechugaBala: isL });
+                if (enemies[i].type === 'lechuga_jefe' && gameRound < 3) { enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 1, shootCooldown: 0 }); }
+                if (enemies[i].type === 'maiz_jefe') { enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 2, shootCooldown: 0 }); }
+            }
+        }
+        if (enemies[i].y > canvas.height) { enemies.splice(i, 1); handleDamage(); continue; }
+        if (player.x < enemies[i].x + enemies[i].width && player.x + player.width > enemies[i].x && player.y < enemies[i].y + enemies[i].height && player.y + player.height > enemies[i].y) { enemies.splice(i, 1); handleDamage(); continue; }
+        for (let j = bullets.length - 1; j >= 0; j--) { if (bullets[j] && bullets[j].x < enemies[i].x + enemies[i].width && bullets[j].x + bullets[j].width > enemies[i].x && bullets[j].y < enemies[i].y + enemies[i].height && bullets[j].y + bullets[j].height > enemies[i].y) { let dmg = bullets[j].damage; bullets.splice(j, 1); damageEnemy(i, dmg); break; } }
+    }
 }
 
-function damageBoss(bIndex, dmg) {
-    let boss = bosses[bIndex];
-    boss.hp -= dmg;
-    if (boss.hp <= 0) { 
-        setScore(score + (boss.isSuperBoss ? 4500 : 2250)); handleCoinEarned(boss.isSuperBoss ? 6 : 3); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
-        if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { setGameState('TRANSITION'); setPreviousState('TRANSITION'); setGoingToRound(2); setTransitionTimer(300); bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); } 
-        else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2) { setGameState('TRANSITION'); setPreviousState('TRANSITION'); setGoingToRound(3); setTransitionTimer(300); bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); }
-        bosses.splice(bIndex, 1); unlockAchievement('a10'); if (lives === 1) unlockAchievement('a12'); return true; 
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0) { bgScrollY += 0.5; if (bgScrollY >= canvas.height) bgScrollY = 0; ctx.drawImage(assets.fondoGalaxia, 0, bgScrollY, canvas.width, canvas.height); ctx.drawImage(assets.fondoGalaxia, 0, bgScrollY - canvas.height, canvas.width, canvas.height); }
+    let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    if (gameRound === 1) { bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); } else if (gameRound === 2) { bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); } else { bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); }
+    ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (let s of stars) { ctx.globalAlpha = s.opacity; ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1.0;
+    for (let b of bosses) drawBoss(b); 
+    drawPlayerShip(player.x, player.y);
+    for (let b of bullets) { ctx.fillStyle = '#38bdf8'; ctx.shadowColor = '#0ea5e9'; ctx.shadowBlur = 8; ctx.fillRect(b.x, b.y, b.width, b.height); ctx.shadowBlur = 0; }
+    for (let m of homingMissiles) {
+        ctx.save(); ctx.translate(m.x + m.width/2, m.y + m.height/2); let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; ctx.rotate(angle);
+        let imgNormal, imgPro; if (m.type === 'milk') { imgNormal = assets.balaLeche; imgPro = assets.balaLechePro; } else if (m.type === 'horseshoe') { imgNormal = assets.balaHerradura; imgPro = assets.balaHerraduraPro; } else if (m.type === 'wool') { imgNormal = assets.balaLana; imgPro = assets.balaLanaPro; } else { imgNormal = assets.balaPollito; imgPro = assets.balaPollitoPro; }
+        let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal;
+        if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; ctx.fillText(icon, 0, 0); }
+        ctx.restore();
     }
-    return false;
+    for (let bb of bossBullets) { let imgB = bb.isLechugaBala ? assets.balaLechuga : assets.balaJefe; if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); } }
+    for (let e of enemies) drawEnemy(e);
+
+    if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') {
+        let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10;
+        if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); }
+    }
+
+    if (toastTimer > 0 && gameState === 'PLAYING') {
+        ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); 
+        if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); }
+        if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); }
+        ctx.restore(); toastTimer--;
+    }
+
+    if (gameState === 'TRANSITION') {
+        ctx.save(); ctx.fillStyle = 'rgba(2, 6, 23, 0.85)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.textAlign = 'center';
+        if (goingToRound === 2) { ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif'; ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; ctx.fillText('LISTO PARA LA SIGUIENTE RONDA', canvas.width / 2, canvas.height / 2 - 10); } else if (goingToRound === 3) { ctx.fillStyle = '#ef4444'; ctx.font = 'bold 36px sans-serif'; ctx.shadowColor = '#b91c1c'; ctx.shadowBlur = 10; ctx.fillText('¡MUERTE SÚBITA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0; ctx.fillText('¿CUÁL ES EL MÁXIMO PUNTAJE QUE PUEDES HACER?', canvas.width / 2, canvas.height / 2 - 10); }
+        let seconds = Math.ceil(transitionTimer / 60); ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 64px sans-serif'; ctx.fillText(seconds, canvas.width / 2, canvas.height / 2 + 70);
+        ctx.restore();
+    }
 }
 
-function damageEnemy(eIndex, dmg) {
-    let e = enemies[eIndex];
-    e.hp -= dmg;
-    if (e.hp <= 0) { 
-        setScore(score + e.pts); handleCoinEarned(e.coin); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
-        enemies.splice(eIndex, 1); gameStats.totalKills++; saveStats(); setSessionKillsNoHit(sessionKillsNoHit + 1);
-        if (gameStats.totalKills >= 50) unlockAchievement('a3'); if (sessionKillsNoHit >= 30) unlockAchievement('a11');
-        return true;
-    }
-    return false;
-}
+let lastFrameTime = 0; const fpsInterval = 1000 / 60; 
+function loop(timestamp) { requestAnimationFrame(loop); if (!lastFrameTime) lastFrameTime = timestamp; let elapsed = timestamp - lastFrameTime; if (elapsed > 200) { lastFrameTime = timestamp; elapsed = 0; } if (elapsed >= fpsInterval) { lastFrameTime = timestamp - (elapsed % fpsInterval); update(); draw(); } }
+renderLeaderboard('startLeaderboardList'); requestAnimationFrame(loop);
