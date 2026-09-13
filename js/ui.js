@@ -7,19 +7,20 @@ function unlockAchievement(key) { if (!pAchiev[key]) { pAchiev[key] = true; loca
 
 function loadHudPositions() {
     const saved = JSON.parse(localStorage.getItem('farm_space_hud_v11'));
-    if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn'].forEach(id => { if(saved[id] && document.getElementById(id)) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } }); } 
-    else { document.getElementById('hud-super-damage').style.left = '4%'; document.getElementById('hud-super-damage').style.top = '25%'; document.getElementById('hud-armor').style.left = '4%'; document.getElementById('hud-armor').style.top = '35%'; document.getElementById('hud-damage').style.left = '4%'; document.getElementById('hud-damage').style.top = '45%'; document.getElementById('hud-bullets').style.left = '4%'; document.getElementById('hud-bullets').style.top = '55%'; document.getElementById('hud-speed').style.left = '4%'; document.getElementById('hud-speed').style.top = '65%'; document.getElementById('hud-life-evolve').style.left = '4%'; document.getElementById('hud-life-evolve').style.top = '75%'; document.getElementById('fireBtn').style.left = '78%'; document.getElementById('fireBtn').style.top = '82%'; document.getElementById('missileBtn').style.left = '60%'; document.getElementById('missileBtn').style.top = '84%'; }
+    if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn', 'hud-joystick'].forEach(id => { if(saved[id] && document.getElementById(id)) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } }); } 
+    else { document.getElementById('hud-super-damage').style.left = '4%'; document.getElementById('hud-super-damage').style.top = '25%'; document.getElementById('hud-armor').style.left = '4%'; document.getElementById('hud-armor').style.top = '35%'; document.getElementById('hud-damage').style.left = '4%'; document.getElementById('hud-damage').style.top = '45%'; document.getElementById('hud-bullets').style.left = '4%'; document.getElementById('hud-bullets').style.top = '55%'; document.getElementById('hud-speed').style.left = '4%'; document.getElementById('hud-speed').style.top = '65%'; document.getElementById('hud-life-evolve').style.left = '4%'; document.getElementById('hud-life-evolve').style.top = '75%'; document.getElementById('fireBtn').style.left = '78%'; document.getElementById('fireBtn').style.top = '82%'; document.getElementById('missileBtn').style.left = '60%'; document.getElementById('missileBtn').style.top = '84%'; document.getElementById('hud-joystick').style.left = '12%'; document.getElementById('hud-joystick').style.top = '70%'; }
 }
-function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn'].forEach(id => { const el = document.getElementById(id); if(el) positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v11', JSON.stringify(positions)); }
+function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn', 'hud-joystick'].forEach(id => { const el = document.getElementById(id); if(el) positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v11', JSON.stringify(positions)); }
 loadHudPositions();
 
 window.toggleControlMode = function() {
     gameStats.controlMode = gameStats.controlMode === 'drag' ? 'joystick' : 'drag';
     saveStats();
     document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick';
+    document.getElementById('hud-joystick').style.display = gameStats.controlMode === 'drag' ? 'none' : 'flex';
 };
 
-function pauseGame() { if (gameState === 'PLAYING' || gameState === 'TRANSITION') { previousState = gameState; gameState = 'PAUSED'; bgMusic.pause(); document.getElementById('pauseScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.add('paused')); isDraggingShip = false; dragPointerId = null; document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick'; } }
+function pauseGame() { if (gameState === 'PLAYING' || gameState === 'TRANSITION') { previousState = gameState; gameState = 'PAUSED'; bgMusic.pause(); document.getElementById('pauseScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.add('paused')); isDraggingShip = false; document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick'; } }
 document.getElementById('muteMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); bgMusic.muted = !bgMusic.muted; e.target.textContent = bgMusic.muted ? '🔇 Activar Música' : '🔊 Silenciar Música'; });
 document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); pauseGame(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
@@ -80,35 +81,16 @@ function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTroph
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
 function activateTutorial(text, targetBtnId) {
-    gameState = 'TUTORIAL'; 
-    let overlay = document.getElementById('activeTutorialOverlay');
-    overlay.style.display = 'flex'; 
-    document.getElementById('activeTutorialText').innerHTML = text;
-    
-    if (targetBtnId === 'none') { 
-        document.getElementById('tutorialOkBtn').style.display = 'none'; 
-        overlay.style.pointerEvents = 'none'; 
-    } 
-    else if (targetBtnId) { 
-        if (Array.isArray(targetBtnId)) { targetBtnId.forEach(id => document.getElementById(id).classList.add('tutorial-highlight')); } 
-        else { document.getElementById(targetBtnId).classList.add('tutorial-highlight'); } 
-        document.getElementById('tutorialOkBtn').style.display = 'none'; 
-        overlay.style.pointerEvents = 'auto'; 
-    } 
-    else { 
-        document.getElementById('tutorialOkBtn').style.display = 'block'; 
-        overlay.style.pointerEvents = 'auto';
-    }
+    gameState = 'TUTORIAL'; let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'flex'; document.getElementById('activeTutorialText').innerHTML = text;
+    if (targetBtnId === 'none') { document.getElementById('tutorialOkBtn').style.display = 'none'; overlay.style.pointerEvents = 'none'; } 
+    else if (targetBtnId) { if (Array.isArray(targetBtnId)) { targetBtnId.forEach(id => document.getElementById(id).classList.add('tutorial-highlight')); } else { document.getElementById(targetBtnId).classList.add('tutorial-highlight'); } document.getElementById('tutorialOkBtn').style.display = 'none'; overlay.style.pointerEvents = 'auto'; } 
+    else { document.getElementById('tutorialOkBtn').style.display = 'block'; overlay.style.pointerEvents = 'auto'; }
 }
 
 function completeTutorialStep(step) {
     if (tutorialStep !== step) return;
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
-    let overlay = document.getElementById('activeTutorialOverlay');
-    overlay.style.display = 'none'; 
-    overlay.style.pointerEvents = 'auto';
-    gameState = 'PLAYING';
-    
+    let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'none'; overlay.style.pointerEvents = 'auto'; gameState = 'PLAYING';
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
     if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo (🎯).", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
@@ -123,6 +105,11 @@ document.querySelectorAll('.draggable-btn').forEach(btn => {
         e.stopPropagation(); e.preventDefault();
         if (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL') {
             const type = btn.getAttribute('data-type');
+            if (type === 'joystick') {
+                joystick.active = true; joystick.pointerId = e.pointerId;
+                const rect = btn.getBoundingClientRect(); joystick.baseX = rect.left + rect.width / 2; joystick.baseY = rect.top + rect.height / 2;
+                document.getElementById('joystick-knob').style.transition = 'none'; return;
+            }
             if (gameState === 'TUTORIAL') {
                 if (tutorialStep === 1 && type === 'fire') { completeTutorialStep(1); shootBullet(); }
                 else if (tutorialStep === 1.1 && type === 'missile') { completeTutorialStep(1.1); shootMissile(); }
@@ -136,8 +123,29 @@ document.querySelectorAll('.draggable-btn').forEach(btn => {
         } else if (gameState === 'PAUSED') { dragObj = btn; const rect = btn.getBoundingClientRect(); dragOffX = e.clientX - rect.left; dragOffY = e.clientY - rect.top; }
     });
 });
-document.addEventListener('pointermove', (e) => { if (dragObj && gameState === 'PAUSED') { const containerRect = document.getElementById('game-container').getBoundingClientRect(); let newX = e.clientX - containerRect.left - dragOffX; let newY = e.clientY - containerRect.top - dragOffY; if (newX < 0) newX = 0; if (newY < 0) newY = 0; if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight; let pctX = (newX / containerRect.width) * 100; let pctY = (newY / containerRect.height) * 100; dragObj.style.left = pctX + '%'; dragObj.style.top = pctY + '%'; } });
-document.addEventListener('pointerup', (e) => { if (dragObj && gameState === 'PAUSED') { dragObj = null; saveHudPositions(); unlockAchievement('a1'); } });
+
+document.addEventListener('pointermove', (e) => { 
+    if (joystick.active && e.pointerId === joystick.pointerId && (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL')) {
+        if (gameState === 'TUTORIAL' && tutorialStep === 0.5) { completeTutorialStep(0.5); }
+        let dx = e.clientX - joystick.baseX; let dy = e.clientY - joystick.baseY;
+        let dist = Math.hypot(dx, dy); let maxDist = 35; 
+        if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+        document.getElementById('joystick-knob').style.transform = `translate(${dx}px, ${dy}px)`;
+        joystick.dx = dx / maxDist; joystick.dy = dy / maxDist;
+        return;
+    }
+    if (dragObj && gameState === 'PAUSED') { const containerRect = document.getElementById('game-container').getBoundingClientRect(); let newX = e.clientX - containerRect.left - dragOffX; let newY = e.clientY - containerRect.top - dragOffY; if (newX < 0) newX = 0; if (newY < 0) newY = 0; if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight; let pctX = (newX / containerRect.width) * 100; let pctY = (newY / containerRect.height) * 100; dragObj.style.left = pctX + '%'; dragObj.style.top = pctY + '%'; } 
+});
+
+const endJoystick = (e) => {
+    if (joystick.active && e.pointerId === joystick.pointerId) {
+        joystick.active = false; joystick.pointerId = null; joystick.dx = 0; joystick.dy = 0;
+        let knob = document.getElementById('joystick-knob'); if(knob) { knob.style.transition = 'transform 0.2s ease-out'; knob.style.transform = `translate(0px, 0px)`; }
+    }
+};
+
+document.addEventListener('pointerup', (e) => { endJoystick(e); if (dragObj && gameState === 'PAUSED') { dragObj = null; saveHudPositions(); unlockAchievement('a1'); } });
+document.addEventListener('pointercancel', endJoystick);
 
 window.updateUpgradesHUD = function() {
     document.getElementById('coinVal').textContent = coins; const btnBullets = document.getElementById('hud-bullets'); 
