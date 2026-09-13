@@ -13,7 +13,13 @@ function loadHudPositions() {
 function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn'].forEach(id => { const el = document.getElementById(id); if(el) positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v11', JSON.stringify(positions)); }
 loadHudPositions();
 
-function pauseGame() { if (gameState === 'PLAYING' || gameState === 'TRANSITION') { previousState = gameState; gameState = 'PAUSED'; bgMusic.pause(); document.getElementById('pauseScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.add('paused')); isDraggingShip = false; dragPointerId = null; } }
+window.toggleControlMode = function() {
+    gameStats.controlMode = gameStats.controlMode === 'drag' ? 'joystick' : 'drag';
+    saveStats();
+    document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick';
+};
+
+function pauseGame() { if (gameState === 'PLAYING' || gameState === 'TRANSITION') { previousState = gameState; gameState = 'PAUSED'; bgMusic.pause(); document.getElementById('pauseScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.add('paused')); isDraggingShip = false; dragPointerId = null; document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick'; } }
 document.getElementById('muteMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); bgMusic.muted = !bgMusic.muted; e.target.textContent = bgMusic.muted ? '🔇 Activar Música' : '🔊 Silenciar Música'; });
 document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); pauseGame(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
@@ -73,14 +79,12 @@ function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTroph
 
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
-// LÓGICA CORREGIDA DEL TUTORIAL
 function activateTutorial(text, targetBtnId) {
     gameState = 'TUTORIAL'; 
     let overlay = document.getElementById('activeTutorialOverlay');
     overlay.style.display = 'flex'; 
     document.getElementById('activeTutorialText').innerHTML = text;
     
-    // Si el objetivo es 'none', ocultamos el botón OK y NO bloqueamos el táctil (para obligar a mover la nave)
     if (targetBtnId === 'none') { 
         document.getElementById('tutorialOkBtn').style.display = 'none'; 
         overlay.style.pointerEvents = 'none'; 
@@ -89,7 +93,7 @@ function activateTutorial(text, targetBtnId) {
         if (Array.isArray(targetBtnId)) { targetBtnId.forEach(id => document.getElementById(id).classList.add('tutorial-highlight')); } 
         else { document.getElementById(targetBtnId).classList.add('tutorial-highlight'); } 
         document.getElementById('tutorialOkBtn').style.display = 'none'; 
-        overlay.style.pointerEvents = 'auto'; // Bloquea toques fuera del botón iluminado
+        overlay.style.pointerEvents = 'auto'; 
     } 
     else { 
         document.getElementById('tutorialOkBtn').style.display = 'block'; 
@@ -102,7 +106,7 @@ function completeTutorialStep(step) {
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
     let overlay = document.getElementById('activeTutorialOverlay');
     overlay.style.display = 'none'; 
-    overlay.style.pointerEvents = 'auto'; // Restaurar bloqueo normal
+    overlay.style.pointerEvents = 'auto';
     gameState = 'PLAYING';
     
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
