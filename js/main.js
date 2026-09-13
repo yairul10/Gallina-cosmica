@@ -20,7 +20,6 @@ import { loadHudPositions, saveHudPositions, updateHangarUI, updateShopUI, updat
 
 loadHudPositions();
 
-// EXPONER FUNCIÓN DE MONEDAS GLOBALMENTE PARA LA TIENDA
 window.globalCoinsAdjustment = function(amount) {
     setCoins(coins + amount);
     gameStats.savedCoins = coins;
