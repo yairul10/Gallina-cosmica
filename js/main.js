@@ -6,19 +6,6 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = false; });
 
-document.getElementById('startBtn').addEventListener('click', startGame); document.getElementById('restartBtn').addEventListener('click', startGame);
-document.getElementById('saveScoreBtn').addEventListener('click', () => { let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); if (!initials) initials = 'ABC'; leaderboard.push({ name: initials, score: score }); leaderboard.sort((a, b) => b.score - a.score); if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); saveLeaderboard(); document.getElementById('saveScoreSection').style.display = 'none'; renderLeaderboard('endLeaderboardList'); });
-
-document.getElementById('reviveBtn').addEventListener('click', () => {
-    if (coins >= 500) {
-        coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; enemies = []; bossBullets = []; shieldActive = true; partialHit = false; 
-        updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD();
-        gameState = 'PLAYING'; previousState = 'PLAYING'; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
-        if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
-        window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
-    }
-});
-
 window.startGame = function() {
     if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); currentMatchBooster = gameStats.pendingBooster || 1.0; gameStats.pendingBooster = 1.0; saveStats();
     score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; goingToRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false; sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
@@ -108,6 +95,12 @@ function draw() {
     if (gameState === 'TRANSITION') { ctx.save(); ctx.fillStyle = 'rgba(2, 6, 23, 0.85)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.textAlign = 'center'; if (goingToRound === 2) { ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif'; ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; ctx.fillText('LISTO PARA LA SIGUIENTE RONDA', canvas.width / 2, canvas.height / 2 - 10); } else if (goingToRound === 3) { ctx.fillStyle = '#ef4444'; ctx.font = 'bold 36px sans-serif'; ctx.shadowColor = '#b91c1c'; ctx.shadowBlur = 10; ctx.fillText('¡MUERTE SÚBITA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0; ctx.fillText('¿CUÁL ES EL MÁXIMO PUNTAJE QUE PUEDES HACER?', canvas.width / 2, canvas.height / 2 - 10); } let seconds = Math.ceil(transitionTimer / 60); ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 64px sans-serif'; ctx.fillText(seconds, canvas.width / 2, canvas.height / 2 + 70); ctx.restore(); }
     ctx.restore();
 }
+
+// -----------------------------------------------------------
+// 🚨 AQUÍ ESTÁN LOS ESCUCHADORES DE CLICS (MOVIDOS AL FINAL) 🚨
+// -----------------------------------------------------------
+document.getElementById('startBtn').addEventListener('click', window.startGame); 
+document.getElementById('restartBtn').addEventListener('click', window.startGame);
 
 let lastFrameTime = 0; const fpsInterval = 1000 / 60; 
 function loop(timestamp) { requestAnimationFrame(loop); if (!lastFrameTime) lastFrameTime = timestamp; let elapsed = timestamp - lastFrameTime; if (elapsed > 200) { lastFrameTime = timestamp; elapsed = 0; } if (elapsed >= fpsInterval) { lastFrameTime = timestamp - (elapsed % fpsInterval); update(); draw(); } }
