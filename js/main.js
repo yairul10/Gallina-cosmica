@@ -76,7 +76,6 @@ function update() {
         transitionTimer--; 
         bullets.length = 0; homingMissiles.length = 0; bossBullets.length = 0; enemies.length = 0; 
         
-        // LAS ESTRELLAS VIAJAN A VELOCIDAD LUZ
         for (let s of stars) { 
             s.y += s.speed * 25; 
             if (s.y > canvas.height) s.y = 0; 
@@ -149,17 +148,18 @@ function draw() {
         ctx.translate((Math.random() - 0.5) * turbulence, (Math.random() - 0.5) * turbulence); 
     }
     
-    // --- LÓGICA DE FONDO INFINITO A VELOCIDAD LUZ ---
+    // --- LÓGICA DE FONDO INFINITO (OPCIÓN 1: REDONDEO Y SOLAPAMIENTO DE +2 PÍXELES) ---
     let warpSpeed = (gameState === 'TRANSITION') ? 40 : 0.5;
     bgScrollY += warpSpeed; 
     if (bgScrollY >= canvas.height) bgScrollY = 0;
     
-    let y = Math.floor(bgScrollY); 
+    let y = Math.floor(bgScrollY); // Redondeo para evitar micro-líneas
     let bgImg = (gameRound >= 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) ? assets.fondoRonda2 : (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0 ? assets.fondoGalaxia : null);
     
     if (bgImg) {
         ctx.drawImage(bgImg, 0, y, canvas.width, canvas.height); 
-        ctx.drawImage(bgImg, 0, y - canvas.height + 1, canvas.width, canvas.height);
+        // +2 píxeles de solapamiento para asegurar que no se vea ninguna línea parpadeante
+        ctx.drawImage(bgImg, 0, y - canvas.height + 2, canvas.width, canvas.height);
     }
     
     let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
