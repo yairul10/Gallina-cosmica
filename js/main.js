@@ -1,7 +1,13 @@
 let keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false, KeyA: false, KeyD: false, KeyW: false, KeyS: false };
 
 window.addEventListener('keydown', (e) => { 
-    if (e.code in keys) keys[e.code] = true; 
+    if (e.code in keys) { 
+        keys[e.code] = true; 
+        // Si el jugador usa alguna tecla de movimiento en el paso 0.5, avanza el tutorial
+        if (gameState === 'TUTORIAL' && tutorialStep === 0.5 && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code)) { 
+            completeTutorialStep(0.5); 
+        }
+    } 
     if (e.code === 'Space') { if (gameState === 'TUTORIAL' && tutorialStep === 1) { completeTutorialStep(1); shootBullet(); } else if (gameState === 'PLAYING' || gameState === 'TRANSITION') shootBullet(); }
     if (e.code === 'KeyM') { if (gameState === 'TUTORIAL' && tutorialStep === 1.1) { completeTutorialStep(1.1); shootMissile(); } else if (gameState === 'PLAYING' || gameState === 'TRANSITION') shootMissile(); }
 });
@@ -50,8 +56,10 @@ window.startGame = function() {
     document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); 
     gameState = 'PLAYING'; previousState = 'PLAYING';
     
+    // Novedad: El tutorial ahora arranca en el paso 0.5 pidiendo movimiento
     if (!gameStats.tutorialCompleted) { 
-        tutorialStep = 1; activateTutorial("¡Bienvenido Granero Espacial!<br><br>Toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); 
+        tutorialStep = 0.5; 
+        activateTutorial("¡Bienvenido Granero Espacial!<br><br>Arrastra la nave con tu dedo 👆, o usa las flechas / W,A,S,D ⌨️ en PC para moverte.", null); 
     } else { tutorialStep = 0; }
     
     if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); 
@@ -148,7 +156,6 @@ function draw() {
         ctx.translate((Math.random() - 0.5) * turbulence, (Math.random() - 0.5) * turbulence); 
     }
     
-    // --- LÓGICA DE FONDO INFINITO (OPCIÓN 1: REDONDEO Y SOLAPAMIENTO DE +2 PÍXELES) ---
     let warpSpeed = (gameState === 'TRANSITION') ? 40 : 0.5;
     bgScrollY += warpSpeed; 
     if (bgScrollY >= canvas.height) bgScrollY = 0;
@@ -162,7 +169,7 @@ function draw() {
         ctx.drawImage(bgImg, 0, y - canvas.height + 2, canvas.width, canvas.height);
     }
     
-    let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    let bgGradient = ctx.createLinearGradient(0, 0, canvas.height);
     if (gameRound === 1) { bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); } else if (gameRound === 2) { bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); } else { bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); }
     ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
     
