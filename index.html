@@ -78,13 +78,10 @@
             </div>
         </div>
 
-        <!-- NUEVA PANTALLA: RECOMPENSA DIARIA -->
         <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;">
             <h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1>
             <p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p>
-            <div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;">
-                <!-- Dinámico generado por JS -->
-            </div>
+            <div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;"></div>
             <button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button>
         </div>
 
@@ -92,7 +89,7 @@
             <h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1>
             <div class="tutorial-content">
                 <h3 style="color: #38bdf8;">🕹️ Movimiento</h3>
-                <p>• <b>Táctil:</b> Arrastra el dedo sobre la pantalla para mover la nave.<br>• <b>PC:</b> Usa las flechas del teclado o W, A, S, D.</p>
+                <p>• <b>Arrastrar / Joystick:</b> Configúralo en el menú de pausa.<br>• <b>PC:</b> Usa las flechas del teclado o W, A, S, D.</p>
                 <h3 style="color: #ef4444;">🚀 Combate</h3>
                 <p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparos múltiples.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯).</p>
                 <h3 style="color: #10b981;">⚙️ Mejoras</h3>
@@ -186,6 +183,9 @@
                 <button class="pause-shop-btn" onclick="buyUpgrade('evolve')" id="pauseEvolveBtn"><span>🌟 Evolución</span><span style="color:#fbbf24;">Condición</span></button>
                 <button class="pause-shop-btn" id="pauseSuperDmgBtn" style="display:none;" onclick="buyUpgrade('superDamage')"><span>☢️ Daño Omega</span><span id="pauseSuperDmgLvl" style="color:#8b5cf6;">🪙1000</span></button>
             </div>
+            
+            <button class="btn btn-secondary" id="toggleControlBtn" onclick="toggleControlMode()" style="margin-top: 10px; margin-bottom: 10px; border: 2px solid #38bdf8;">🕹️ Control: Arrastrar</button>
+
             <button class="btn" id="resumeBtn">▶️ Reanudar</button>
             <button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button>
         </div>
@@ -210,7 +210,6 @@
         </div>
     </div>
 
-    <!-- ORDEN ESTRICTO: ESTADO -> ASSETS -> UI -> ENTIDADES -> MAIN -->
     <script src="js/estado.js"></script>
     <script src="js/assets.js"></script>
     <script src="js/ui.js"></script>
