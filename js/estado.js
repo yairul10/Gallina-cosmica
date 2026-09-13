@@ -75,7 +75,7 @@ let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0;
 let partialHit = false; let transitionTimer = 0; let doubleBossSpawned = false; let doubleBossDefeated = false;
 
 let tutorialStep = 0; let bgScrollY = 0;
-let joystick = { active: false, baseX: 0, baseY: 0, x: 0, y: 0, dx: 0, dy: 0 };
+let joystick = { active: false, baseX: 0, baseY: 0, dx: 0, dy: 0, pointerId: null };
 
 const starColors = ['#ffffff', '#fde047', '#38bdf8', '#f472b6', '#a78bfa'];
 for (let i = 0; i < 50; i++) { stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2.5 + 1, speed: Math.random() * 1.5 + 0.3, color: starColors[Math.floor(Math.random() * starColors.length)], opacity: Math.random() * 0.6 + 0.4 }); }
