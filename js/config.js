@@ -130,6 +130,9 @@ export const assets = {
 
 assets.fondoGalaxia.src = 'assets/fondo_galaxia.png';
 assets.fondoRonda2.src = 'assets/fondo_ronda2.png';
+// Control de seguridad por si la imagen de ronda 2 no existe aún
+assets.fondoRonda2.onerror = function() { this.src = 'assets/fondo_galaxia.png'; };
+
 assets.gallina.src = 'assets/gallina.png'; assets.oveja.src = 'assets/oveja.png'; assets.caballo.src = 'assets/caballo.png'; assets.vaca.src = 'assets/vaca.png'; 
 assets.gallinaPro.src = 'assets/gallina_pro.png'; assets.ovejaPro.src = 'assets/oveja_pro.png'; assets.caballoPro.src = 'assets/caballo_pro.png'; assets.vacaPro.src = 'assets/vaca_pro.png'; 
 assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png'; assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
