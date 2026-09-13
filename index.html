@@ -78,6 +78,16 @@
             </div>
         </div>
 
+        <!-- NUEVA PANTALLA: RECOMPENSA DIARIA -->
+        <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;">
+            <h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1>
+            <p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p>
+            <div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;">
+                <!-- Dinámico generado por JS -->
+            </div>
+            <button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button>
+        </div>
+
         <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1>
             <div class="tutorial-content">
@@ -96,19 +106,16 @@
         <div id="hangarScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 5px;">🛸 Hangar</h1>
             <p>Activa tus mejoras visuales y armas desbloqueadas.</p>
-            
             <div class="shop-tabs">
                 <button class="shop-tab active" id="tabHangarSkins" onclick="switchHangarTab('skins')">Skins Naves</button>
                 <button class="shop-tab" id="tabHangarMissiles" onclick="switchHangarTab('missiles')">Skins Misiles (🎯)</button>
             </div>
-
             <div id="hangarSkins" class="shop-grid">
                 <div class="shop-item"><h4 id="name-hangar-skin-0">Gallina</h4><img id="img-hangar-skin-0" src="assets/gallina.png" class="shop-img"><p id="desc-hangar-skin-0">Normal</p><button class="shop-btn" id="btn-hangar-skin-0" onclick="toggleHangarSkin(0)">Pro Bloqueada</button></div>
                 <div class="shop-item"><h4 id="name-hangar-skin-1">Oveja</h4><img id="img-hangar-skin-1" src="assets/oveja.png" class="shop-img"><p id="desc-hangar-skin-1">Normal</p><button class="shop-btn" id="btn-hangar-skin-1" onclick="toggleHangarSkin(1)">Pro Bloqueada</button></div>
                 <div class="shop-item"><h4 id="name-hangar-skin-2">Caballo</h4><img id="img-hangar-skin-2" src="assets/caballo.png" class="shop-img"><p id="desc-hangar-skin-2">Normal</p><button class="shop-btn" id="btn-hangar-skin-2" onclick="toggleHangarSkin(2)">Pro Bloqueada</button></div>
                 <div class="shop-item"><h4 id="name-hangar-skin-3">Vaca</h4><img id="img-hangar-skin-3" src="assets/vaca.png" class="shop-img"><p id="desc-hangar-skin-3">Normal</p><button class="shop-btn" id="btn-hangar-skin-3" onclick="toggleHangarSkin(3)">Pro Bloqueada</button></div>
             </div>
-
             <div id="hangarMissiles" class="shop-grid" style="display: none;">
                 <div class="shop-item"><h4 id="name-hangar-missile-0">Misil Pollito</h4><img id="img-hangar-missile-0" src="assets/bala_pollito.png" class="shop-img" style="height: 35px;"><p id="desc-hangar-missile-0">Normal</p><button class="shop-btn" id="btn-hangar-missile-0" onclick="toggleHangarMissile(0)">Pro Bloqueado</button></div>
                 <div class="shop-item"><h4 id="name-hangar-missile-1">Misil Lana</h4><img id="img-hangar-missile-1" src="assets/bala_lana.png" class="shop-img" style="height: 35px;"><p id="desc-hangar-missile-1">Normal</p><button class="shop-btn" id="btn-hangar-missile-1" onclick="toggleHangarMissile(1)">Pro Bloqueado</button></div>
@@ -121,19 +128,16 @@
         <div id="shopScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 5px;">🛒 Tienda Galáctica</h1>
             <div style="color: #fbbf24; font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;">Tus Monedas: 🪙 <span id="shopCoinsVal">0</span></div>
-            
             <div class="shop-tabs">
                 <button class="shop-tab active" id="tabSkins" onclick="switchShopTab('skins')">Skins</button>
                 <button class="shop-tab" id="tabBoosters" onclick="switchShopTab('boosters')">Potenciadores</button>
             </div>
-
             <div id="shopSkins" class="shop-grid">
                 <div class="shop-item"><h4>Gallina Pro</h4><img src="assets/gallina_pro.png" class="shop-img"><p>Mejora dorada.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-0" onclick="buySkin(0, 1000)">🪙 1,000</button></div>
                 <div class="shop-item"><h4>Oveja Pro</h4><img src="assets/oveja_pro.png" class="shop-img"><p>Lana de titanio.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-1" onclick="buySkin(1, 2000)">🪙 2,000</button></div>
                 <div class="shop-item"><h4>Caballo Pro</h4><img src="assets/caballo_pro.png" class="shop-img"><p>Armadura veloz.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-2" onclick="buySkin(2, 4000)">🪙 4,000</button></div>
                 <div class="shop-item"><h4>Vaca Pro</h4><img src="assets/vaca_pro.png" class="shop-img"><p>Tanque total.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-3" onclick="buySkin(3, 8000)">🪙 8,000</button></div>
             </div>
-
             <div id="shopBoosters" class="shop-grid" style="display: none;">
                 <div class="shop-item" style="grid-column: span 2;"><h4>+20% Daño (1 Partida)</h4><p>Ligera ventaja bélica.</p><button class="shop-btn" id="btn-boost-20" data-cost="500" onclick="buyBooster(1.2, 500)">🪙 500</button></div>
                 <div class="shop-item" style="grid-column: span 2;"><h4>+50% Daño (1 Partida)</h4><p>Potencia destructiva alta.</p><button class="shop-btn" id="btn-boost-50" data-cost="2000" onclick="buyBooster(1.5, 2000)">🪙 2,000</button></div>
@@ -175,7 +179,6 @@
         <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.92);">
             <h1 style="margin-bottom: 4px;">⏸️ Pausa</h1>
             <p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p>
-            
             <div class="pause-shop-grid">
                 <button class="pause-shop-btn" onclick="buyUpgrade('bullets')"><span>⚔️ Daño Láser</span><span id="pauseBulletsLvl" style="color:#38bdf8;">🪙10</span></button>
                 <button class="pause-shop-btn" onclick="buyUpgrade('speed')"><span>⚡ Velocidad</span><span id="pauseSpeedLvl" style="color:#38bdf8;">🪙10</span></button>
@@ -183,7 +186,6 @@
                 <button class="pause-shop-btn" onclick="buyUpgrade('evolve')" id="pauseEvolveBtn"><span>🌟 Evolución</span><span style="color:#fbbf24;">Condición</span></button>
                 <button class="pause-shop-btn" id="pauseSuperDmgBtn" style="display:none;" onclick="buyUpgrade('superDamage')"><span>☢️ Daño Omega</span><span id="pauseSuperDmgLvl" style="color:#8b5cf6;">🪙1000</span></button>
             </div>
-
             <button class="btn" id="resumeBtn">▶️ Reanudar</button>
             <button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button>
         </div>
@@ -191,10 +193,8 @@
         <div id="gameOverScreen" class="screen-overlay" style="display: none;">
             <h1 style="margin-bottom: 4px;">¡Nave Destruida!</h1>
             <p style="margin-bottom: 15px;">Puntuación final: <strong id="finalScore" style="font-size:1.2rem; color:#38bdf8;">0</strong></p>
-            
             <p id="coinsStatus" style="color: #fbbf24; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Tienes: 🪙 0</p>
             <button class="btn" id="reviveBtn" style="background-color: #f59e0b; color: #fff; margin-bottom: 15px; border: 2px solid #fbbf24;">❤️ Revivir (500 🪙)</button>
-            
             <div id="saveScoreSection">
                 <p style="font-size:0.8rem; margin-bottom:4px;">¡Nuevo Récord! Ingresa tus 3 iniciales:</p>
                 <div class="initials-input-container">
