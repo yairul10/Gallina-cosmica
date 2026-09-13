@@ -50,6 +50,7 @@ window.startGame = function() {
     
     evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0; missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false; doubleBossSpawned = false; doubleBossDefeated = false;
     updateTrophiesHUD(); player.x = canvas.width / 2 - player.width / 2; player.y = canvas.height - 110; isDraggingShip = false; dragPointerId = null; 
+    joystick.active = false;
     document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'none'; document.getElementById('playerInitials').value = 'AAA';
     updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
     document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); 
@@ -57,8 +58,7 @@ window.startGame = function() {
     
     if (!gameStats.tutorialCompleted) { 
         tutorialStep = 0.5; 
-        // ¡CAMBIO CLAVE AQUÍ!: Usamos 'none' para que no muestre el botón
-        activateTutorial("¡Bienvenido Granero Espacial!<br><br>Arrastra la nave con tu dedo 👆, o usa las flechas / W,A,S,D ⌨️ en PC para moverte.", 'none'); 
+        activateTutorial("¡Bienvenido Granero Espacial!<br><br>Muévete por la pantalla con tu dedo 👆, o usa las flechas / W,A,S,D ⌨️ en PC.", 'none'); 
     } else { tutorialStep = 0; }
     
     if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); 
@@ -90,6 +90,10 @@ function update() {
         
         let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; 
         if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; 
+        
+        // Joystick en Transición
+        if (gameStats.controlMode === 'joystick' && joystick.active) { player.x += joystick.dx * currentSpeed * 1.3; player.y += joystick.dy * currentSpeed * 1.3; }
+
         if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
         
         if (transitionTimer <= 0) { 
@@ -103,11 +107,17 @@ function update() {
     
     if (gameState !== 'PLAYING') return;
 
+    let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; 
+    if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; 
+    
+    // Movimiento Joystick
+    if (gameStats.controlMode === 'joystick' && joystick.active) { player.x += joystick.dx * currentSpeed * 1.3; player.y += joystick.dy * currentSpeed * 1.3; }
+
+    if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
+
     if (missileCooldownTimer > 0) { missileCooldownTimer--; let sec = Math.ceil(missileCooldownTimer / 60); document.getElementById('missileCooldown').textContent = sec + 's'; document.getElementById('missileBtn').classList.remove('missile-ready'); } else { document.getElementById('missileCooldown').textContent = 'LISTO'; document.getElementById('missileBtn').classList.add('missile-ready'); }
     if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; let isNew = !gameStats.missiles[0]; if (isNew) { gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); } showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t20k'); } if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.missiles[1]; if (isNew) { gameStats.missiles[1] = true; gameStats.equippedMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); } if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; let isNew = !gameStats.missiles[2]; if (isNew) { gameStats.missiles[2] = true; gameStats.equippedMissiles[2] = true; saveStats(); } showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t100k'); } if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; let isNew = !gameStats.missiles[3]; if (isNew) { gameStats.missiles[3] = true; gameStats.equippedMissiles[3] = true; saveStats(); } showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); } if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let sub = ""; if (!pTrophies['t300k']) { if (gameStats.skins[3]) { coins += 4000; gameStats.savedCoins = coins; sub = "Vaca Pro Reembolsada (+4,000🪙)"; } else { gameStats.skins[3] = true; gameStats.equippedSkins[3] = true; sub = "¡Skin Vaca Pro Desbloqueada!"; } } saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); } if (score >= 500000) unlockAchievement('a20'); if (doubleBossSpawned && !doubleBossDefeated && bosses.length === 0 && score >= 250000) { doubleBossDefeated = true; unlockAchievement('a21'); } if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; } if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
     if (score >= nextBossScoreThreshold && bosses.length === 0) { let currentThreshold = nextBossScoreThreshold; spawnBoss(); if (gameRound === 1) nextBossScoreThreshold += 5000; else if (gameRound === 2 && currentThreshold === 150000) nextBossScoreThreshold = 9999999; else if (gameRound === 3 && currentThreshold === 250000) nextBossScoreThreshold = 9999999; }
-
-    let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10;
     
     for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; }
     for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].y -= bullets[i].speed; if (bullets[i].dx) bullets[i].x += bullets[i].dx; if (bullets[i].y < -20 || bullets[i].x < -30 || bullets[i].x > canvas.width + 30) bullets.splice(i, 1); }
@@ -177,6 +187,20 @@ function draw() {
     for (let m of homingMissiles) { ctx.save(); ctx.translate(m.x + m.width/2, m.y + m.height/2); let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; ctx.rotate(angle); let imgNormal, imgPro; if (m.type === 'milk') { imgNormal = assets.balaLeche; imgPro = assets.balaLechePro; } else if (m.type === 'horseshoe') { imgNormal = assets.balaHerradura; imgPro = assets.balaHerraduraPro; } else if (m.type === 'wool') { imgNormal = assets.balaLana; imgPro = assets.balaLanaPro; } else { imgNormal = assets.balaPollito; imgPro = assets.balaPollitoPro; } let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal; if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; ctx.fillText(icon, 0, 0); } ctx.restore(); }
     for (let bb of bossBullets) { let imgB = bb.isLechugaBala ? assets.balaLechuga : assets.balaJefe; if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); } }
     for (let e of enemies) drawEnemy(e);
+    
+    // --- DIBUJO DEL JOYSTICK ---
+    if (gameStats.controlMode === 'joystick' && joystick.active) {
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, 40, 0, Math.PI*2);
+        ctx.fillStyle = '#0f172a'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = '#38bdf8'; ctx.stroke();
+        
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath(); ctx.arc(joystick.x, joystick.y, 18, 0, Math.PI*2);
+        ctx.fillStyle = '#38bdf8'; ctx.fill();
+        ctx.restore();
+    }
     
     if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') { let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10; if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); } }
     if (toastTimer > 0 && gameState === 'PLAYING') { ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); } if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); } ctx.restore(); toastTimer--; }
