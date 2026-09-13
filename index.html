@@ -18,7 +18,6 @@
         <canvas id="gameCanvas"></canvas>
         
         <div class="ui-layer">
-            <!-- CAPA DE TUTORIAL ACTIVO -->
             <div id="activeTutorialOverlay" style="display:none;">
                 <div id="activeTutorialText"></div>
                 <button id="tutorialOkBtn" class="btn" style="display: none; position: relative; z-index: 101;" onclick="finishTutorial()">¡Entendido!</button>
@@ -81,21 +80,16 @@
 
         <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1>
-            
             <div class="tutorial-content">
                 <h3 style="color: #38bdf8;">🕹️ Movimiento</h3>
-                <p>• <b>Táctil:</b> Arrastra el dedo sobre la pantalla para mover la nave en 4 direcciones.<br>• <b>PC:</b> Usa las flechas del teclado o W, A, S, D.</p>
-                
+                <p>• <b>Táctil:</b> Arrastra el dedo sobre la pantalla para mover la nave.<br>• <b>PC:</b> Usa las flechas del teclado o W, A, S, D.</p>
                 <h3 style="color: #ef4444;">🚀 Combate</h3>
-                <p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparar múltiples láseres.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯). Busca y destruye automáticamente, ¡pero tarda 8s en recargar!</p>
-                
+                <p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparos múltiples.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯).</p>
                 <h3 style="color: #10b981;">⚙️ Mejoras</h3>
-                <p>• Los botones de la izquierda <b>brillarán ✨</b> cuando tengas monedas suficientes. Tócalos para mejorar y <b>🌟 Evolucionar</b> al máximo nivel.</p>
-
+                <p>• Los botones de la izquierda <b>brillarán ✨</b> con monedas suficientes.</p>
                 <h3 style="color: #fbbf24;">✨ Personalizar Botones</h3>
-                <p>Toca <b>Pausa ⏸️</b> arriba a la derecha. ¡Mientras el juego está en pausa, <b>puedes arrastrar</b> todos los botones a donde quieras!</p>
+                <p>Toca <b>Pausa ⏸️</b> arriba a la derecha para organizar tu interfaz.</p>
             </div>
-
             <button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button>
         </div>
 
@@ -121,7 +115,6 @@
                 <div class="shop-item"><h4 id="name-hangar-missile-2">Misil Herradura</h4><img id="img-hangar-missile-2" src="assets/bala_herradura.png" class="shop-img" style="height: 35px;"><p id="desc-hangar-missile-2">Normal</p><button class="shop-btn" id="btn-hangar-missile-2" onclick="toggleHangarMissile(2)">Pro Bloqueado</button></div>
                 <div class="shop-item"><h4 id="name-hangar-missile-3">Misil Lácteo</h4><img id="img-hangar-missile-3" src="assets/bala_leche.png" class="shop-img" style="height: 35px;"><p id="desc-hangar-missile-3">Normal</p><button class="shop-btn" id="btn-hangar-missile-3" onclick="toggleHangarMissile(3)">Pro Bloqueado</button></div>
             </div>
-
             <button class="btn btn-secondary" onclick="closeScreen('hangarScreen')" style="margin-top: 10px;">🔙 Volver</button>
         </div>
 
@@ -135,52 +128,23 @@
             </div>
 
             <div id="shopSkins" class="shop-grid">
-                <div class="shop-item">
-                    <h4>Gallina Pro</h4><img src="assets/gallina_pro.png" class="shop-img" alt="Gallina Pro">
-                    <p>Mejora estética dorada.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p>
-                    <button class="shop-btn" id="btn-skin-0" onclick="buySkin(0, 1000)">🪙 1,000</button>
-                </div>
-                <div class="shop-item">
-                    <h4>Oveja Pro</h4><img src="assets/oveja_pro.png" class="shop-img" alt="Oveja Pro">
-                    <p>Lana de titanio estelar.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p>
-                    <button class="shop-btn" id="btn-skin-1" onclick="buySkin(1, 2000)">🪙 2,000</button>
-                </div>
-                <div class="shop-item">
-                    <h4>Caballo Pro</h4><img src="assets/caballo_pro.png" class="shop-img" alt="Caballo Pro">
-                    <p>Armadura de galope.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p>
-                    <button class="shop-btn" id="btn-skin-2" onclick="buySkin(2, 4000)">🪙 4,000</button>
-                </div>
-                <div class="shop-item">
-                    <h4>Vaca Pro</h4><img src="assets/vaca_pro.png" class="shop-img" alt="Vaca Pro">
-                    <p>Tanque lechero definitivo.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p>
-                    <button class="shop-btn" id="btn-skin-3" onclick="buySkin(3, 8000)">🪙 8,000</button>
-                </div>
+                <div class="shop-item"><h4>Gallina Pro</h4><img src="assets/gallina_pro.png" class="shop-img"><p>Mejora dorada.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-0" onclick="buySkin(0, 1000)">🪙 1,000</button></div>
+                <div class="shop-item"><h4>Oveja Pro</h4><img src="assets/oveja_pro.png" class="shop-img"><p>Lana de titanio.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-1" onclick="buySkin(1, 2000)">🪙 2,000</button></div>
+                <div class="shop-item"><h4>Caballo Pro</h4><img src="assets/caballo_pro.png" class="shop-img"><p>Armadura veloz.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-2" onclick="buySkin(2, 4000)">🪙 4,000</button></div>
+                <div class="shop-item"><h4>Vaca Pro</h4><img src="assets/vaca_pro.png" class="shop-img"><p>Tanque total.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-3" onclick="buySkin(3, 8000)">🪙 8,000</button></div>
             </div>
 
             <div id="shopBoosters" class="shop-grid" style="display: none;">
-                <div class="shop-item" style="grid-column: span 2;">
-                    <h4>+20% Daño (1 Partida)</h4><p>Ligera ventaja bélica.</p>
-                    <button class="shop-btn" id="btn-boost-20" data-cost="500" onclick="buyBooster(1.2, 500)">🪙 500</button>
-                </div>
-                <div class="shop-item" style="grid-column: span 2;">
-                    <h4>+50% Daño (1 Partida)</h4><p>Potencia destructiva alta.</p>
-                    <button class="shop-btn" id="btn-boost-50" data-cost="2000" onclick="buyBooster(1.5, 2000)">🪙 2,000</button>
-                </div>
-                <div class="shop-item" style="grid-column: span 2;">
-                    <h4>+100% Daño (1 Partida)</h4><p>Aniquilación total asegurada.</p>
-                    <button class="shop-btn" id="btn-boost-100" data-cost="10000" onclick="buyBooster(2.0, 10000)">🪙 10,000</button>
-                </div>
+                <div class="shop-item" style="grid-column: span 2;"><h4>+20% Daño (1 Partida)</h4><p>Ligera ventaja bélica.</p><button class="shop-btn" id="btn-boost-20" data-cost="500" onclick="buyBooster(1.2, 500)">🪙 500</button></div>
+                <div class="shop-item" style="grid-column: span 2;"><h4>+50% Daño (1 Partida)</h4><p>Potencia destructiva alta.</p><button class="shop-btn" id="btn-boost-50" data-cost="2000" onclick="buyBooster(1.5, 2000)">🪙 2,000</button></div>
+                <div class="shop-item" style="grid-column: span 2;"><h4>+100% Daño (1 Partida)</h4><p>Aniquilación total asegurada.</p><button class="shop-btn" id="btn-boost-100" data-cost="10000" onclick="buyBooster(2.0, 10000)">🪙 10,000</button></div>
             </div>
-
             <button class="btn btn-secondary" onclick="closeScreen('shopScreen')" style="margin-top: 10px;">🔙 Volver</button>
         </div>
 
         <div id="recordsScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 24px;">🥇 Récords Mundiales</h1>
-            <div class="leaderboard-box">
-                <h3>🏆 Top Puntajes</h3>
-                <div id="startLeaderboardList"></div>
-            </div>
+            <div class="leaderboard-box"><h3>🏆 Top Puntajes</h3><div id="startLeaderboardList"></div></div>
             <button class="btn btn-secondary" onclick="closeScreen('recordsScreen')" style="margin-top: 15px;">🔙 Volver</button>
         </div>
 
@@ -246,7 +210,11 @@
         </div>
     </div>
 
-    <!-- EL ARCHIVO PRINCIPAL JS, UNIFICADO PARA EVITAR ERRORES DE SCOPE -->
-    <script src="game.js"></script>
+    <!-- ORDEN ESTRICTO: ESTADO -> ASSETS -> UI -> ENTIDADES -> MAIN -->
+    <script src="js/estado.js"></script>
+    <script src="js/assets.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/entidades.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
