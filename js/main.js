@@ -3,7 +3,6 @@ let keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: fal
 window.addEventListener('keydown', (e) => { 
     if (e.code in keys) { 
         keys[e.code] = true; 
-        // Si el jugador usa alguna tecla de movimiento en el paso 0.5, avanza el tutorial
         if (gameState === 'TUTORIAL' && tutorialStep === 0.5 && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code)) { 
             completeTutorialStep(0.5); 
         }
@@ -56,10 +55,10 @@ window.startGame = function() {
     document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); 
     gameState = 'PLAYING'; previousState = 'PLAYING';
     
-    // Novedad: El tutorial ahora arranca en el paso 0.5 pidiendo movimiento
     if (!gameStats.tutorialCompleted) { 
         tutorialStep = 0.5; 
-        activateTutorial("¡Bienvenido Granero Espacial!<br><br>Arrastra la nave con tu dedo 👆, o usa las flechas / W,A,S,D ⌨️ en PC para moverte.", null); 
+        // ¡CAMBIO CLAVE AQUÍ!: Usamos 'none' para que no muestre el botón
+        activateTutorial("¡Bienvenido Granero Espacial!<br><br>Arrastra la nave con tu dedo 👆, o usa las flechas / W,A,S,D ⌨️ en PC para moverte.", 'none'); 
     } else { tutorialStep = 0; }
     
     if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); 
@@ -150,61 +149,26 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
     ctx.save();
     
-    // Turbulencia durante todo el viaje warp
-    if (gameState === 'TRANSITION') { 
-        let turbulence = (transitionTimer > 100) ? ((transitionTimer - 100) / 15) : 3; 
-        ctx.translate((Math.random() - 0.5) * turbulence, (Math.random() - 0.5) * turbulence); 
-    }
+    if (gameState === 'TRANSITION' && transitionTimer > 100) { let shake = (transitionTimer - 100) / 15; ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake); }
     
     let warpSpeed = (gameState === 'TRANSITION') ? 40 : 0.5;
     bgScrollY += warpSpeed; 
     if (bgScrollY >= canvas.height) bgScrollY = 0;
     
-    let y = Math.floor(bgScrollY); // Redondeo para evitar micro-líneas
+    let y = Math.floor(bgScrollY); 
     let bgImg = (gameRound >= 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) ? assets.fondoRonda2 : (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0 ? assets.fondoGalaxia : null);
     
-    if (bgImg) {
-        ctx.drawImage(bgImg, 0, y, canvas.width, canvas.height); 
-        // +2 píxeles de solapamiento para asegurar que no se vea ninguna línea parpadeante
-        ctx.drawImage(bgImg, 0, y - canvas.height + 2, canvas.width, canvas.height);
-    }
+    if (bgImg) { ctx.drawImage(bgImg, 0, y, canvas.width, canvas.height); ctx.drawImage(bgImg, 0, y - canvas.height + 2, canvas.width, canvas.height); }
     
-    let bgGradient = ctx.createLinearGradient(0, 0, canvas.height);
+    let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     if (gameRound === 1) { bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); } else if (gameRound === 2) { bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); } else { bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); }
     ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    for (let s of stars) { 
-        ctx.globalAlpha = s.opacity; 
-        ctx.fillStyle = s.color; 
-        if (gameState === 'TRANSITION') {
-            // Estrellas estiradas por velocidad luz
-            ctx.fillRect(s.x, s.y, s.size / 2, s.size * 20);
-        } else {
-            ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); 
-        }
-    } 
-    ctx.globalAlpha = 1.0;
-    
+    for (let s of stars) { ctx.globalAlpha = s.opacity; ctx.fillStyle = s.color; if (gameState === 'TRANSITION') { ctx.fillRect(s.x, s.y, s.size / 2, s.size * 20); } else { ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); } } ctx.globalAlpha = 1.0;
     for (let b of bosses) drawBoss(b); 
 
-    // --- EFECTO TELETRANSPORTACIÓN NAVE ---
     if (gameState === 'TRANSITION') {
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        let beamWidth = player.width * 1.8;
-        let beamGradient = ctx.createLinearGradient(0, player.y + player.height, 0, 0);
-        beamGradient.addColorStop(0, 'rgba(56, 189, 248, 0.9)'); // Cyan brillante
-        beamGradient.addColorStop(1, 'rgba(167, 139, 250, 0)');  // Morado transparente
-        ctx.fillStyle = beamGradient;
-        ctx.fillRect(player.x - (beamWidth - player.width)/2, 0, beamWidth, player.y + player.height);
-        
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(player.x + 8, player.y + player.height); ctx.lineTo(player.x + 8, 0);
-        ctx.moveTo(player.x + player.width - 8, player.y + player.height); ctx.lineTo(player.x + player.width - 8, 0);
-        ctx.stroke();
-        ctx.restore();
+        ctx.save(); ctx.globalCompositeOperation = "screen"; let beamWidth = player.width * 1.8; let beamGradient = ctx.createLinearGradient(0, player.y + player.height, 0, 0); beamGradient.addColorStop(0, 'rgba(56, 189, 248, 0.9)'); beamGradient.addColorStop(1, 'rgba(167, 139, 250, 0)'); ctx.fillStyle = beamGradient; ctx.fillRect(player.x - (beamWidth - player.width)/2, 0, beamWidth, player.y + player.height); ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(player.x + 8, player.y + player.height); ctx.lineTo(player.x + 8, 0); ctx.moveTo(player.x + player.width - 8, player.y + player.height); ctx.lineTo(player.x + player.width - 8, 0); ctx.stroke(); ctx.restore();
     }
 
     drawPlayerShip(player.x, player.y);
@@ -217,32 +181,11 @@ function draw() {
     if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') { let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10; if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); } }
     if (toastTimer > 0 && gameState === 'PLAYING') { ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); } if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); } ctx.restore(); toastTimer--; }
     
-    // --- PANTALLA DE TRANSICIÓN MEJORADA ---
     if (gameState === 'TRANSITION') { 
-        ctx.save(); 
-        ctx.textAlign = 'center'; 
-        if (goingToRound === 2) { 
-            ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 8;
-            ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); 
-            ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; 
-            ctx.fillText('VIAJE ESTELAR ACTIVADO', canvas.width / 2, canvas.height / 2 - 10); 
-        } else if (goingToRound === 3) { 
-            ctx.fillStyle = '#ef4444'; ctx.font = 'bold 36px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 10; 
-            ctx.fillText('¡MUERTE SÚBITA!', canvas.width / 2, canvas.height / 2 - 50); 
-            ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0; 
-            ctx.fillText('TELETRANSPORTANDO AL NÚCLEO...', canvas.width / 2, canvas.height / 2 - 10); 
-        } 
-        
-        let seconds = Math.ceil(transitionTimer / 60); 
-        ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 64px sans-serif'; 
-        ctx.fillText(seconds, canvas.width / 2, canvas.height / 2 + 70); 
-
-        // Destello Blanco Cegador al terminar el salto Warp
-        if (transitionTimer < 30) {
-            ctx.shadowBlur = 0; 
-            ctx.fillStyle = `rgba(255, 255, 255, ${ (30 - transitionTimer) / 30 })`;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        ctx.save(); ctx.textAlign = 'center'; 
+        if (goingToRound === 2) { ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 8; ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; ctx.fillText('VIAJE ESTELAR ACTIVADO', canvas.width / 2, canvas.height / 2 - 10); } else if (goingToRound === 3) { ctx.fillStyle = '#ef4444'; ctx.font = 'bold 36px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 10; ctx.fillText('¡MUERTE SÚBITA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0; ctx.fillText('TELETRANSPORTANDO AL NÚCLEO...', canvas.width / 2, canvas.height / 2 - 10); } 
+        let seconds = Math.ceil(transitionTimer / 60); ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 64px sans-serif'; ctx.fillText(seconds, canvas.width / 2, canvas.height / 2 + 70); 
+        if (transitionTimer < 30) { ctx.shadowBlur = 0; ctx.fillStyle = `rgba(255, 255, 255, ${ (30 - transitionTimer) / 30 })`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
         ctx.restore(); 
     }
     
