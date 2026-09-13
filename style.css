@@ -39,7 +39,6 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 #missileBtn .hud-emoji { font-size: 1.4rem; margin-top: -8px; }
 .missile-ready { animation: glowUpgrade 1.2s infinite !important; border-color: #fcd34d !important; }
 
-/* NUEVOS ESTILOS PARA EL TUTORIAL INTERACTIVO */
 #activeTutorialOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 15; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; pointer-events: auto; }
 #activeTutorialText { background: rgba(15, 23, 42, 0.95); border: 2px solid #38bdf8; padding: 16px; border-radius: 12px; color: #fff; font-size: 1.05rem; font-weight: bold; box-shadow: 0 0 20px rgba(56, 189, 248, 0.6); max-width: 320px; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
 .tutorial-highlight { z-index: 100 !important; animation: superGlow 1s infinite alternate !important; pointer-events: auto !important; border-color: #38bdf8 !important; }
@@ -117,3 +116,17 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .tutorial-content::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 4px; }
 .tutorial-content h3 { font-size: 1.05rem; margin-top: 12px; margin-bottom: 4px; }
 .tutorial-content p { color: #94a3b8; font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px; }
+
+/* EFECTO DE TEMBLOR DE PANTALLA PARA CAMBIO DE RONDA */
+@keyframes screenShake {
+    0% { transform: translate(0, 0); }
+    20% { transform: translate(-6px, 4px); }
+    40% { transform: translate(6px, -4px); }
+    60% { transform: translate(-4px, -6px); }
+    80% { transform: translate(4px, 6px); }
+    100% { transform: translate(0, 0); }
+}
+
+.shake-effect {
+    animation: screenShake 0.4s ease-in-out;
+}
