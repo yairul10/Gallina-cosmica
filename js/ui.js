@@ -82,6 +82,9 @@ function completeTutorialStep(step) {
     if (tutorialStep !== step) return;
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
     document.getElementById('activeTutorialOverlay').style.display = 'none'; gameState = 'PLAYING';
+    
+    // Novedad: Al moverte, se activa el paso para disparar
+    if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
     if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo (🎯).", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
     if (step === 4.5) { tutorialStep = 5; activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); }
@@ -144,85 +147,31 @@ window.buyUpgrade = function(type) {
     }
 }
 
-// ----------------------------------------------------
-// SISTEMA DE RECOMPENSAS DIARIAS (LOGIN REWARDS)
-// ----------------------------------------------------
 const dailyRewards = [100, 250, 500, 1000, 2000, 4000, 10000];
-
 function checkDailyReward() {
-    let now = new Date();
-    // Conseguimos los milisegundos que corresponden exactamente a la medianoche local de hoy
-    let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    let lastLogin = gameStats.lastLoginDate || 0;
-    let oneDay = 24 * 60 * 60 * 1000;
-    
-    // Cuántos días pasaron desde el último Login
-    let diffDays = Math.round((today - lastLogin) / oneDay);
-    
-    // Si ha pasado al menos 1 día, mostramos la pantalla de recompensas
+    let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    let lastLogin = gameStats.lastLoginDate || 0; let oneDay = 24 * 60 * 60 * 1000; let diffDays = Math.round((today - lastLogin) / oneDay);
     if (diffDays > 0 || lastLogin === 0) {
-        if (diffDays === 1) {
-            gameStats.loginStreak++; // Aumenta la racha si es el día consecutivo
-            if (gameStats.loginStreak > 7) gameStats.loginStreak = 1; // Si pasó del día 7, reinicia a 1
-        } else {
-            gameStats.loginStreak = 1; // Si pasaron más de 1 día, se rompe la racha
-        }
+        if (diffDays === 1) { gameStats.loginStreak++; if (gameStats.loginStreak > 7) gameStats.loginStreak = 1; } else { gameStats.loginStreak = 1; }
         showDailyRewardScreen();
     }
 }
 
 function showDailyRewardScreen() {
-    document.getElementById('startScreen').style.display = 'none';
-    document.getElementById('dailyRewardScreen').style.display = 'flex';
-    
-    let grid = document.getElementById('dailyRewardsGrid');
-    grid.innerHTML = '';
-    
+    document.getElementById('startScreen').style.display = 'none'; document.getElementById('dailyRewardScreen').style.display = 'flex';
+    let grid = document.getElementById('dailyRewardsGrid'); grid.innerHTML = '';
     for (let i = 0; i < 7; i++) {
-        let dayNum = i + 1;
-        let reward = dailyRewards[i];
-        let isToday = (dayNum === gameStats.loginStreak);
-        let isClaimed = (dayNum < gameStats.loginStreak);
-        
-        let boxColor = isToday ? '#f59e0b' : (isClaimed ? '#10b981' : '#1e293b');
-        let textColor = isToday ? '#000' : '#fff';
-        let opacity = isClaimed ? '0.6' : '1';
-        let icon = isClaimed ? '✅' : '🪙';
-        if (dayNum === 7 && !isClaimed) icon = '💎';
-        
-        // El día 7 es especial y ocupa toda la última fila (3 columnas)
+        let dayNum = i + 1; let reward = dailyRewards[i]; let isToday = (dayNum === gameStats.loginStreak); let isClaimed = (dayNum < gameStats.loginStreak);
+        let boxColor = isToday ? '#f59e0b' : (isClaimed ? '#10b981' : '#1e293b'); let textColor = isToday ? '#000' : '#fff'; let opacity = isClaimed ? '0.6' : '1'; let icon = isClaimed ? '✅' : '🪙'; if (dayNum === 7 && !isClaimed) icon = '💎';
         let extraStyle = (dayNum === 7) ? 'grid-column: span 3; font-size: 1.1rem; padding: 12px;' : 'padding: 8px;';
-        
-        grid.innerHTML += `
-            <div style="background: ${boxColor}; color: ${textColor}; ${extraStyle} border-radius: 8px; text-align: center; opacity: ${opacity}; box-shadow: ${isToday ? '0 0 12px #fbbf24' : 'none'}; border: 2px solid ${isToday ? '#fff' : 'transparent'};">
-                <div style="font-size: 0.75rem; font-weight: bold; opacity: 0.9;">DÍA ${dayNum}</div>
-                <div style="font-size: ${dayNum===7 ? '1.8rem' : '1.3rem'}; margin: 2px 0;">${icon}</div>
-                <div style="font-size: 0.9rem; font-weight: 900;">+${reward.toLocaleString()}</div>
-            </div>
-        `;
+        grid.innerHTML += `<div style="background: ${boxColor}; color: ${textColor}; ${extraStyle} border-radius: 8px; text-align: center; opacity: ${opacity}; box-shadow: ${isToday ? '0 0 12px #fbbf24' : 'none'}; border: 2px solid ${isToday ? '#fff' : 'transparent'};"><div style="font-size: 0.75rem; font-weight: bold; opacity: 0.9;">DÍA ${dayNum}</div><div style="font-size: ${dayNum===7 ? '1.8rem' : '1.3rem'}; margin: 2px 0;">${icon}</div><div style="font-size: 0.9rem; font-weight: 900;">+${reward.toLocaleString()}</div></div>`;
     }
 }
-
 document.getElementById('claimRewardBtn').addEventListener('click', () => {
-    let now = new Date();
-    let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    
-    let rewardIndex = gameStats.loginStreak - 1;
-    let earned = dailyRewards[rewardIndex];
-    
-    coins += earned;
-    gameStats.savedCoins = coins;
-    gameStats.totalCoins += earned;
-    gameStats.lastLoginDate = today;
-    
-    saveStats();
-    document.getElementById('coinVal').textContent = coins;
-    
-    document.getElementById('dailyRewardScreen').style.display = 'none';
-    document.getElementById('startScreen').style.display = 'flex';
-    
+    let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    let rewardIndex = gameStats.loginStreak - 1; let earned = dailyRewards[rewardIndex];
+    coins += earned; gameStats.savedCoins = coins; gameStats.totalCoins += earned; gameStats.lastLoginDate = today; saveStats();
+    document.getElementById('coinVal').textContent = coins; document.getElementById('dailyRewardScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex';
     showTrophyToast("🎁", null, `¡+${earned.toLocaleString()} Monedas!`);
 });
-
-// Comprueba la recompensa diaria unos instantes después de cargar el juego
 setTimeout(checkDailyReward, 300);
