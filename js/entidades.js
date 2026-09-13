@@ -1,6 +1,23 @@
 let isDraggingShip = false; let dragPointerId = null; let lastTouchX = 0; let lastTouchY = 0;
-canvas.addEventListener('pointerdown', (e) => { if (dragPointerId === null && (gameState === 'PLAYING' || gameState === 'TRANSITION')) { dragPointerId = e.pointerId; isDraggingShip = true; lastTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); lastTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height); } });
-canvas.addEventListener('pointermove', (e) => { if (!isDraggingShip || (gameState !== 'PLAYING' && gameState !== 'TRANSITION') || e.pointerId !== dragPointerId) return; const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); const currentTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height); player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); player.y += (currentTouchY - lastTouchY) * (1 + (upgrades.speed * 0.15)); if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; lastTouchX = currentTouchX; lastTouchY = currentTouchY; });
+canvas.addEventListener('pointerdown', (e) => { 
+    // Ahora permite agarrar la nave en modo TUTORIAL
+    if (dragPointerId === null && (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL')) { 
+        dragPointerId = e.pointerId; isDraggingShip = true; 
+        lastTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); 
+        lastTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height); 
+    } 
+});
+canvas.addEventListener('pointermove', (e) => { 
+    if (!isDraggingShip || (gameState !== 'PLAYING' && gameState !== 'TRANSITION' && gameState !== 'TUTORIAL') || e.pointerId !== dragPointerId) return; 
+    
+    // Si el jugador arrastra la nave en el paso 0.5, avanza el tutorial
+    if (gameState === 'TUTORIAL' && tutorialStep === 0.5) { completeTutorialStep(0.5); }
+    
+    const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); const currentTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height); 
+    player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); player.y += (currentTouchY - lastTouchY) * (1 + (upgrades.speed * 0.15)); 
+    if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
+    lastTouchX = currentTouchX; lastTouchY = currentTouchY; 
+});
 window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } }); window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
 
 window.shootBullet = function() {
