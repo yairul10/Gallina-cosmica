@@ -135,8 +135,17 @@ function updateHangarUI() {
     for(let i=0; i<4; i++) {
         let btn = document.getElementById('btn-hangar-missile-'+i); let img = document.getElementById('img-hangar-missile-'+i); let name = document.getElementById('name-hangar-missile-'+i); let desc = document.getElementById('desc-hangar-missile-'+i);
         if (gameStats.missiles[i]) {
-            if (gameStats.equippedMissiles[i]) { btn.textContent = 'Usar Normal'; btn.style.background = '#f59e0b'; img.src = misProSrc[i]; name.textContent = misNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#38bdf8;">+20% Daño Misil</b>'; } 
-            else { btn.textContent = 'Equipar Pro'; btn.style.background = '#10b981'; img.src = misSrc[i]; name.textContent = misNames[i]; desc.innerHTML = 'Normal'; }
+            if (gameStats.equippedMissiles[i]) { 
+                btn.textContent = 'Usar Normal'; btn.style.background = '#f59e0b'; 
+                img.src = misProSrc[i]; 
+                img.onerror = function() { this.src = misSrc[i]; }; // Obliga a usar la imagen antigua si la pro no existe
+                name.textContent = misNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#38bdf8;">+20% Daño Misil</b>'; 
+            } 
+            else { 
+                btn.textContent = 'Equipar Pro'; btn.style.background = '#10b981'; 
+                img.src = misSrc[i]; 
+                name.textContent = misNames[i]; desc.innerHTML = 'Normal'; 
+            }
             btn.disabled = false;
         } else {
             btn.textContent = '🔒 Gana el trofeo'; btn.style.background = '#475569'; img.src = misSrc[i]; name.textContent = misNames[i]; desc.innerHTML = 'Normal'; btn.disabled = true;
@@ -260,10 +269,9 @@ let evolutionStage = 0; let maxUpgradeLimit = 3; let nextBossScoreThreshold = 50
 let upgrades = { bullets: 0, speed: 1, armor: 0, dmgBoost: 0, superDmgBoost: 0 };
 const player = { x: canvas.width / 2 - 25, y: canvas.height - 110, width: 50, height: 50, baseSpeed: 5.5 };
 
-// NUEVAS ARMAS
 let bullets = []; 
 let homingMissiles = [];
-let missileCooldownTimer = 0; const MISSILE_COOLDOWN = 480; // 8 segundos a 60 FPS
+let missileCooldownTimer = 0; const MISSILE_COOLDOWN = 480;
 
 let enemies = []; let bossBullets = []; 
 let bosses = [];
@@ -336,7 +344,6 @@ canvas.addEventListener('pointermove', (e) => {
 });
 window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } }); window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
 
-// LÁSERES PRINCIPALES
 window.shootBullet = function() {
     let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
     let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets;
@@ -358,15 +365,12 @@ window.shootBullet = function() {
     }
 }
 
-// NUEVO MISIL RASTREADOR
 window.shootMissile = function() {
     if (missileCooldownTimer > 0) return;
     
     let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
     
-    // Daño masivo base para el misil
     let baseDmg = (upgrades.bullets === 0 ? 1 : upgrades.bullets) * 15;
-    
     let bonusPro = gameStats.equippedMissiles[evolutionStage] ? 0.20 : 0;
     baseDmg = baseDmg + (baseDmg * bonusPro);
     
@@ -666,7 +670,6 @@ function update() {
         if (bullets[i].y < -20 || bullets[i].x < -30 || bullets[i].x > canvas.width + 30) bullets.splice(i, 1); 
     }
 
-    // LÓGICA DE MISIL DIRIGIDO (Rastrea y Persigue)
     for (let i = homingMissiles.length - 1; i >= 0; i--) {
         let m = homingMissiles[i];
         let target = null;
@@ -865,7 +868,6 @@ function draw() {
     for (let b of bosses) drawBoss(b); 
     drawPlayerShip(player.x, player.y);
     
-    // DIBUJAR LÁSERES AZULES
     for (let b of bullets) {
         ctx.fillStyle = '#38bdf8';
         ctx.shadowColor = '#0ea5e9';
@@ -874,21 +876,22 @@ function draw() {
         ctx.shadowBlur = 0;
     }
     
-    // DIBUJAR MISILES DIRIGIDOS
     for (let m of homingMissiles) {
         ctx.save();
         ctx.translate(m.x + m.width/2, m.y + m.height/2);
         let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; 
         ctx.rotate(angle);
         
-        let img; 
-        if (m.type === 'milk') img = m.isPro ? assets.balaLechePro : assets.balaLeche; 
-        else if (m.type === 'horseshoe') img = m.isPro ? assets.balaHerraduraPro : assets.balaHerradura; 
-        else if (m.type === 'wool') img = m.isPro ? assets.balaLanaPro : assets.balaLana; 
-        else img = m.isPro ? assets.balaPollitoPro : assets.balaPollito;
+        let imgNormal, imgPro; 
+        if (m.type === 'milk') { imgNormal = assets.balaLeche; imgPro = assets.balaLechePro; }
+        else if (m.type === 'horseshoe') { imgNormal = assets.balaHerradura; imgPro = assets.balaHerraduraPro; }
+        else if (m.type === 'wool') { imgNormal = assets.balaLana; imgPro = assets.balaLanaPro; }
+        else { imgNormal = assets.balaPollito; imgPro = assets.balaPollitoPro; }
         
-        if (img.complete && img.naturalWidth > 0) { 
-            ctx.drawImage(img, -m.width/2, -m.height/2, m.width, m.height); 
+        let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal;
+        
+        if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { 
+            ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); 
         } else { 
             ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
             let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; 
