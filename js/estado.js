@@ -2,8 +2,16 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = 420; canvas.height = 640;
 
-let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0, skins: [false, false, false, false], equippedSkins: [false, false, false, false], missiles: [false, false, false, false], equippedMissiles: [false, false, false, false], pendingBooster: 1.0, tutorialCompleted: false };
+let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { 
+    totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0, 
+    skins: [false, false, false, false], equippedSkins: [false, false, false, false], 
+    missiles: [false, false, false, false], equippedMissiles: [false, false, false, false], 
+    pendingBooster: 1.0, tutorialCompleted: false, 
+    lastLoginDate: 0, loginStreak: 0 
+};
 if (gameStats.tutorialCompleted === undefined) gameStats.tutorialCompleted = false;
+if (gameStats.lastLoginDate === undefined) gameStats.lastLoginDate = 0;
+if (gameStats.loginStreak === undefined) gameStats.loginStreak = 0;
 if (!gameStats.skins) gameStats.skins = [false, false, false, false];
 if (!gameStats.equippedSkins) gameStats.equippedSkins = [false, false, false, false];
 if (!gameStats.missiles) gameStats.missiles = [false, false, false, false];
