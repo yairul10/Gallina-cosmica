@@ -1,4 +1,4 @@
-import { gameStats, saveStats, coins, score } from './config.js';
+import { gameStats, saveStats, coins } from './config.js';
 
 const achievData = { 
     'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 
@@ -146,7 +146,7 @@ export function updateShopUI() {
 
 window.buySkin = function(index, cost) {
     if (!gameStats.skins[index] && coins >= cost) {
-        coins -= cost; gameStats.savedCoins = coins; 
+        window.globalCoinsAdjustment(-cost);
         gameStats.skins[index] = true; gameStats.equippedSkins[index] = true;
         saveStats(); updateShopUI();
     }
@@ -154,7 +154,8 @@ window.buySkin = function(index, cost) {
 
 window.buyBooster = function(mult, cost) {
     if (gameStats.pendingBooster === 1.0 && coins >= cost) {
-        coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult;
+        window.globalCoinsAdjustment(-cost);
+        gameStats.pendingBooster = mult;
         saveStats(); updateShopUI();
     }
 }
