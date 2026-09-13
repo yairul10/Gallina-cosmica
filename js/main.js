@@ -1,23 +1,66 @@
 let keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false, KeyA: false, KeyD: false, KeyW: false, KeyS: false };
+
 window.addEventListener('keydown', (e) => { 
     if (e.code in keys) keys[e.code] = true; 
     if (e.code === 'Space') { if (gameState === 'TUTORIAL' && tutorialStep === 1) { completeTutorialStep(1); shootBullet(); } else if (gameState === 'PLAYING' || gameState === 'TRANSITION') shootBullet(); }
     if (e.code === 'KeyM') { if (gameState === 'TUTORIAL' && tutorialStep === 1.1) { completeTutorialStep(1.1); shootMissile(); } else if (gameState === 'PLAYING' || gameState === 'TRANSITION') shootMissile(); }
 });
+
 window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = false; });
 
+document.getElementById('saveScoreBtn').addEventListener('click', () => { 
+    let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); 
+    if (!initials) initials = 'ABC'; 
+    leaderboard.push({ name: initials, score: score }); 
+    leaderboard.sort((a, b) => b.score - a.score); 
+    if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); 
+    saveLeaderboard(); 
+    document.getElementById('saveScoreSection').style.display = 'none'; 
+    renderLeaderboard('endLeaderboardList'); 
+});
+
+document.getElementById('reviveBtn').addEventListener('click', () => {
+    if (coins >= 500) {
+        coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; 
+        enemies.length = 0; bossBullets.length = 0; 
+        shieldActive = true; partialHit = false; 
+        updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
+        document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); 
+        updateUpgradesHUD();
+        gameState = 'PLAYING'; previousState = 'PLAYING'; 
+        if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
+        if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
+        window.gameTimerInterval = setInterval(() => { 
+            if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } 
+        }, 1000);
+    }
+});
+
+// Función de inicio de juego
 window.startGame = function() {
-    if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); currentMatchBooster = gameStats.pendingBooster || 1.0; gameStats.pendingBooster = 1.0; saveStats();
+    if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); 
+    currentMatchBooster = gameStats.pendingBooster || 1.0; gameStats.pendingBooster = 1.0; saveStats();
     score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; goingToRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false; sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
-    bullets = []; homingMissiles = []; enemies = []; bossBullets = []; bosses = []; evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0; missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false; doubleBossSpawned = false; doubleBossDefeated = false;
+    
+    // Limpieza de memoria segura entre archivos
+    bullets.length = 0; homingMissiles.length = 0; enemies.length = 0; bossBullets.length = 0; bosses.length = 0; 
+    
+    evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0; missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false; doubleBossSpawned = false; doubleBossDefeated = false;
     updateTrophiesHUD(); player.x = canvas.width / 2 - player.width / 2; player.y = canvas.height - 110; isDraggingShip = false; dragPointerId = null; 
     document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'none'; document.getElementById('playerInitials').value = 'AAA';
     updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
     document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); 
     gameState = 'PLAYING'; previousState = 'PLAYING';
-    if (!gameStats.tutorialCompleted) { tutorialStep = 1; activateTutorial("¡Bienvenido Granero Espacial!<br><br>Toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); } else { tutorialStep = 0; }
-    if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
-}
+    
+    if (!gameStats.tutorialCompleted) { 
+        tutorialStep = 1; activateTutorial("¡Bienvenido Granero Espacial!<br><br>Toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); 
+    } else { tutorialStep = 0; }
+    
+    if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); 
+    window.gameTimerInterval = setInterval(() => { 
+        if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } 
+    }, 1000);
+};
 
 window.gameOver = function() { 
     gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
@@ -26,12 +69,12 @@ window.gameOver = function() {
     let isTop5 = false; if (leaderboard.length < 5) { isTop5 = true; } else { isTop5 = score > leaderboard[leaderboard.length - 1].score; }
     if (isTop5 && score > 0) { document.getElementById('saveScoreSection').style.display = 'block'; } else { document.getElementById('saveScoreSection').style.display = 'none'; }
     document.getElementById('gameOverScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
-}
+};
 
 let enemySpawnInterval = 0;
 function update() {
     if (gameState === 'TUTORIAL') return;
-    if (gameState === 'TRANSITION') { transitionTimer--; bullets = []; homingMissiles = []; bossBullets = []; enemies = []; for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; } let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; if (transitionTimer <= 0) { gameRound = goingToRound; if (gameRound === 2) nextBossScoreThreshold = 150000; else if (gameRound === 3) nextBossScoreThreshold = 250000; document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); bgMusic.volume = 0.4; gameState = 'PLAYING'; previousState = 'PLAYING'; } return; }
+    if (gameState === 'TRANSITION') { transitionTimer--; bullets.length = 0; homingMissiles.length = 0; bossBullets.length = 0; enemies.length = 0; for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; } let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; if (transitionTimer <= 0) { gameRound = goingToRound; if (gameRound === 2) nextBossScoreThreshold = 150000; else if (gameRound === 3) nextBossScoreThreshold = 250000; document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); bgMusic.volume = 0.4; gameState = 'PLAYING'; previousState = 'PLAYING'; } return; }
     if (gameState !== 'PLAYING') return;
 
     if (missileCooldownTimer > 0) { missileCooldownTimer--; let sec = Math.ceil(missileCooldownTimer / 60); document.getElementById('missileCooldown').textContent = sec + 's'; document.getElementById('missileBtn').classList.remove('missile-ready'); } else { document.getElementById('missileCooldown').textContent = 'LISTO'; document.getElementById('missileBtn').classList.add('missile-ready'); }
@@ -77,22 +120,50 @@ function update() {
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save();
-    if (gameState === 'TRANSITION' && transitionTimer > 100) { let shake = (transitionTimer - 100) / 15; ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake); }
-    bgScrollY += 0.5; if (bgScrollY >= canvas.height) bgScrollY = 0;
-    if (gameRound >= 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) { ctx.drawImage(assets.fondoRonda2, 0, bgScrollY, canvas.width, canvas.height); ctx.drawImage(assets.fondoRonda2, 0, bgScrollY - canvas.height, canvas.width, canvas.height); } else if (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0) { ctx.drawImage(assets.fondoGalaxia, 0, bgScrollY, canvas.width, canvas.height); ctx.drawImage(assets.fondoGalaxia, 0, bgScrollY - canvas.height, canvas.width, canvas.height); }
+    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+    ctx.save();
+    
+    if (gameState === 'TRANSITION' && transitionTimer > 100) { 
+        let shake = (transitionTimer - 100) / 15; 
+        ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake); 
+    }
+    
+    // --- LÓGICA DE FONDO ESPEJO ---
+    bgScrollY += 0.5; 
+    if (bgScrollY >= canvas.height * 2) bgScrollY = 0;
+    
+    let y = Math.floor(bgScrollY); 
+    let bgImg = (gameRound >= 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) ? assets.fondoRonda2 : (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0 ? assets.fondoGalaxia : null);
+    
+    if (bgImg) {
+        ctx.drawImage(bgImg, 0, y, canvas.width, canvas.height); 
+        ctx.save(); 
+        ctx.translate(0, y);
+        ctx.scale(1, -1);
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        ctx.drawImage(bgImg, 0, y - canvas.height * 2, canvas.width, canvas.height);
+    }
+    
     let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     if (gameRound === 1) { bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); } else if (gameRound === 2) { bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); } else { bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); }
     ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
     for (let s of stars) { ctx.globalAlpha = s.opacity; ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1.0;
-    for (let b of bosses) drawBoss(b); drawPlayerShip(player.x, player.y);
+    
+    for (let b of bosses) drawBoss(b); 
+    drawPlayerShip(player.x, player.y);
+    
     for (let b of bullets) { ctx.fillStyle = '#38bdf8'; ctx.shadowColor = '#0ea5e9'; ctx.shadowBlur = 8; ctx.fillRect(b.x, b.y, b.width, b.height); ctx.shadowBlur = 0; }
+    
     for (let m of homingMissiles) { ctx.save(); ctx.translate(m.x + m.width/2, m.y + m.height/2); let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; ctx.rotate(angle); let imgNormal, imgPro; if (m.type === 'milk') { imgNormal = assets.balaLeche; imgPro = assets.balaLechePro; } else if (m.type === 'horseshoe') { imgNormal = assets.balaHerradura; imgPro = assets.balaHerraduraPro; } else if (m.type === 'wool') { imgNormal = assets.balaLana; imgPro = assets.balaLanaPro; } else { imgNormal = assets.balaPollito; imgPro = assets.balaPollitoPro; } let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal; if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; ctx.fillText(icon, 0, 0); } ctx.restore(); }
     for (let bb of bossBullets) { let imgB = bb.isLechugaBala ? assets.balaLechuga : assets.balaJefe; if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); } }
     for (let e of enemies) drawEnemy(e);
+    
     if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') { let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10; if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); } }
     if (toastTimer > 0 && gameState === 'PLAYING') { ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); } if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); } ctx.restore(); toastTimer--; }
     if (gameState === 'TRANSITION') { ctx.save(); ctx.fillStyle = 'rgba(2, 6, 23, 0.85)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.textAlign = 'center'; if (goingToRound === 2) { ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif'; ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; ctx.fillText('LISTO PARA LA SIGUIENTE RONDA', canvas.width / 2, canvas.height / 2 - 10); } else if (goingToRound === 3) { ctx.fillStyle = '#ef4444'; ctx.font = 'bold 36px sans-serif'; ctx.shadowColor = '#b91c1c'; ctx.shadowBlur = 10; ctx.fillText('¡MUERTE SÚBITA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0; ctx.fillText('¿CUÁL ES EL MÁXIMO PUNTAJE QUE PUEDES HACER?', canvas.width / 2, canvas.height / 2 - 10); } let seconds = Math.ceil(transitionTimer / 60); ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 64px sans-serif'; ctx.fillText(seconds, canvas.width / 2, canvas.height / 2 + 70); ctx.restore(); }
+    
     ctx.restore();
 }
 
@@ -104,4 +175,6 @@ document.getElementById('restartBtn').addEventListener('click', window.startGame
 
 let lastFrameTime = 0; const fpsInterval = 1000 / 60; 
 function loop(timestamp) { requestAnimationFrame(loop); if (!lastFrameTime) lastFrameTime = timestamp; let elapsed = timestamp - lastFrameTime; if (elapsed > 200) { lastFrameTime = timestamp; elapsed = 0; } if (elapsed >= fpsInterval) { lastFrameTime = timestamp - (elapsed % fpsInterval); update(); draw(); } }
-renderLeaderboard('startLeaderboardList'); requestAnimationFrame(loop);
+
+renderLeaderboard('startLeaderboardList'); 
+requestAnimationFrame(loop);
