@@ -36,13 +36,11 @@ document.getElementById('reviveBtn').addEventListener('click', () => {
     }
 });
 
-// Función de inicio de juego
 window.startGame = function() {
     if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); 
     currentMatchBooster = gameStats.pendingBooster || 1.0; gameStats.pendingBooster = 1.0; saveStats();
     score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; goingToRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false; sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
     
-    // Limpieza de memoria segura entre archivos
     bullets.length = 0; homingMissiles.length = 0; enemies.length = 0; bossBullets.length = 0; bosses.length = 0; 
     
     evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0; missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false; doubleBossSpawned = false; doubleBossDefeated = false;
@@ -74,7 +72,29 @@ window.gameOver = function() {
 let enemySpawnInterval = 0;
 function update() {
     if (gameState === 'TUTORIAL') return;
-    if (gameState === 'TRANSITION') { transitionTimer--; bullets.length = 0; homingMissiles.length = 0; bossBullets.length = 0; enemies.length = 0; for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; } let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; if (transitionTimer <= 0) { gameRound = goingToRound; if (gameRound === 2) nextBossScoreThreshold = 150000; else if (gameRound === 3) nextBossScoreThreshold = 250000; document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); bgMusic.volume = 0.4; gameState = 'PLAYING'; previousState = 'PLAYING'; } return; }
+    if (gameState === 'TRANSITION') { 
+        transitionTimer--; 
+        bullets.length = 0; homingMissiles.length = 0; bossBullets.length = 0; enemies.length = 0; 
+        
+        // LAS ESTRELLAS VIAJAN A VELOCIDAD LUZ
+        for (let s of stars) { 
+            s.y += s.speed * 25; 
+            if (s.y > canvas.height) s.y = 0; 
+        } 
+        
+        let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; 
+        if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; 
+        if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
+        
+        if (transitionTimer <= 0) { 
+            gameRound = goingToRound; 
+            if (gameRound === 2) nextBossScoreThreshold = 150000; else if (gameRound === 3) nextBossScoreThreshold = 250000; 
+            document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); 
+            updateUpgradesHUD(); bgMusic.volume = 0.4; gameState = 'PLAYING'; previousState = 'PLAYING'; 
+        } 
+        return; 
+    }
+    
     if (gameState !== 'PLAYING') return;
 
     if (missileCooldownTimer > 0) { missileCooldownTimer--; let sec = Math.ceil(missileCooldownTimer / 60); document.getElementById('missileCooldown').textContent = sec + 's'; document.getElementById('missileBtn').classList.remove('missile-ready'); } else { document.getElementById('missileCooldown').textContent = 'LISTO'; document.getElementById('missileBtn').classList.add('missile-ready'); }
@@ -123,53 +143,105 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
     ctx.save();
     
-    if (gameState === 'TRANSITION' && transitionTimer > 100) { 
-        let shake = (transitionTimer - 100) / 15; 
-        ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake); 
+    // Turbulencia durante todo el viaje warp
+    if (gameState === 'TRANSITION') { 
+        let turbulence = (transitionTimer > 100) ? ((transitionTimer - 100) / 15) : 3; 
+        ctx.translate((Math.random() - 0.5) * turbulence, (Math.random() - 0.5) * turbulence); 
     }
     
-    // --- LÓGICA DE FONDO ESPEJO ---
-    bgScrollY += 0.5; 
-    if (bgScrollY >= canvas.height * 2) bgScrollY = 0;
+    // --- LÓGICA DE FONDO INFINITO A VELOCIDAD LUZ ---
+    let warpSpeed = (gameState === 'TRANSITION') ? 40 : 0.5;
+    bgScrollY += warpSpeed; 
+    if (bgScrollY >= canvas.height) bgScrollY = 0;
     
     let y = Math.floor(bgScrollY); 
     let bgImg = (gameRound >= 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) ? assets.fondoRonda2 : (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0 ? assets.fondoGalaxia : null);
     
     if (bgImg) {
         ctx.drawImage(bgImg, 0, y, canvas.width, canvas.height); 
-        ctx.save(); 
-        ctx.translate(0, y);
-        ctx.scale(1, -1);
-        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-        ctx.restore();
-        ctx.drawImage(bgImg, 0, y - canvas.height * 2, canvas.width, canvas.height);
+        ctx.drawImage(bgImg, 0, y - canvas.height + 1, canvas.width, canvas.height);
     }
     
     let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     if (gameRound === 1) { bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); } else if (gameRound === 2) { bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); } else { bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); }
     ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    for (let s of stars) { ctx.globalAlpha = s.opacity; ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1.0;
+    for (let s of stars) { 
+        ctx.globalAlpha = s.opacity; 
+        ctx.fillStyle = s.color; 
+        if (gameState === 'TRANSITION') {
+            // Estrellas estiradas por velocidad luz
+            ctx.fillRect(s.x, s.y, s.size / 2, s.size * 20);
+        } else {
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); 
+        }
+    } 
+    ctx.globalAlpha = 1.0;
     
     for (let b of bosses) drawBoss(b); 
+
+    // --- EFECTO TELETRANSPORTACIÓN NAVE ---
+    if (gameState === 'TRANSITION') {
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        let beamWidth = player.width * 1.8;
+        let beamGradient = ctx.createLinearGradient(0, player.y + player.height, 0, 0);
+        beamGradient.addColorStop(0, 'rgba(56, 189, 248, 0.9)'); // Cyan brillante
+        beamGradient.addColorStop(1, 'rgba(167, 139, 250, 0)');  // Morado transparente
+        ctx.fillStyle = beamGradient;
+        ctx.fillRect(player.x - (beamWidth - player.width)/2, 0, beamWidth, player.y + player.height);
+        
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(player.x + 8, player.y + player.height); ctx.lineTo(player.x + 8, 0);
+        ctx.moveTo(player.x + player.width - 8, player.y + player.height); ctx.lineTo(player.x + player.width - 8, 0);
+        ctx.stroke();
+        ctx.restore();
+    }
+
     drawPlayerShip(player.x, player.y);
     
     for (let b of bullets) { ctx.fillStyle = '#38bdf8'; ctx.shadowColor = '#0ea5e9'; ctx.shadowBlur = 8; ctx.fillRect(b.x, b.y, b.width, b.height); ctx.shadowBlur = 0; }
-    
     for (let m of homingMissiles) { ctx.save(); ctx.translate(m.x + m.width/2, m.y + m.height/2); let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; ctx.rotate(angle); let imgNormal, imgPro; if (m.type === 'milk') { imgNormal = assets.balaLeche; imgPro = assets.balaLechePro; } else if (m.type === 'horseshoe') { imgNormal = assets.balaHerradura; imgPro = assets.balaHerraduraPro; } else if (m.type === 'wool') { imgNormal = assets.balaLana; imgPro = assets.balaLanaPro; } else { imgNormal = assets.balaPollito; imgPro = assets.balaPollitoPro; } let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal; if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; ctx.fillText(icon, 0, 0); } ctx.restore(); }
     for (let bb of bossBullets) { let imgB = bb.isLechugaBala ? assets.balaLechuga : assets.balaJefe; if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); } }
     for (let e of enemies) drawEnemy(e);
     
     if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') { let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10; if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); } }
     if (toastTimer > 0 && gameState === 'PLAYING') { ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); } if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); } ctx.restore(); toastTimer--; }
-    if (gameState === 'TRANSITION') { ctx.save(); ctx.fillStyle = 'rgba(2, 6, 23, 0.85)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.textAlign = 'center'; if (goingToRound === 2) { ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif'; ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; ctx.fillText('LISTO PARA LA SIGUIENTE RONDA', canvas.width / 2, canvas.height / 2 - 10); } else if (goingToRound === 3) { ctx.fillStyle = '#ef4444'; ctx.font = 'bold 36px sans-serif'; ctx.shadowColor = '#b91c1c'; ctx.shadowBlur = 10; ctx.fillText('¡MUERTE SÚBITA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0; ctx.fillText('¿CUÁL ES EL MÁXIMO PUNTAJE QUE PUEDES HACER?', canvas.width / 2, canvas.height / 2 - 10); } let seconds = Math.ceil(transitionTimer / 60); ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 64px sans-serif'; ctx.fillText(seconds, canvas.width / 2, canvas.height / 2 + 70); ctx.restore(); }
+    
+    // --- PANTALLA DE TRANSICIÓN MEJORADA ---
+    if (gameState === 'TRANSITION') { 
+        ctx.save(); 
+        ctx.textAlign = 'center'; 
+        if (goingToRound === 2) { 
+            ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 8;
+            ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); 
+            ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; 
+            ctx.fillText('VIAJE ESTELAR ACTIVADO', canvas.width / 2, canvas.height / 2 - 10); 
+        } else if (goingToRound === 3) { 
+            ctx.fillStyle = '#ef4444'; ctx.font = 'bold 36px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 10; 
+            ctx.fillText('¡MUERTE SÚBITA!', canvas.width / 2, canvas.height / 2 - 50); 
+            ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0; 
+            ctx.fillText('TELETRANSPORTANDO AL NÚCLEO...', canvas.width / 2, canvas.height / 2 - 10); 
+        } 
+        
+        let seconds = Math.ceil(transitionTimer / 60); 
+        ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 64px sans-serif'; 
+        ctx.fillText(seconds, canvas.width / 2, canvas.height / 2 + 70); 
+
+        // Destello Blanco Cegador al terminar el salto Warp
+        if (transitionTimer < 30) {
+            ctx.shadowBlur = 0; 
+            ctx.fillStyle = `rgba(255, 255, 255, ${ (30 - transitionTimer) / 30 })`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.restore(); 
+    }
     
     ctx.restore();
 }
 
-// -----------------------------------------------------------
-// 🚨 AQUÍ ESTÁN LOS ESCUCHADORES DE CLICS (MOVIDOS AL FINAL) 🚨
-// -----------------------------------------------------------
 document.getElementById('startBtn').addEventListener('click', window.startGame); 
 document.getElementById('restartBtn').addEventListener('click', window.startGame);
 
