@@ -31,6 +31,7 @@ document.getElementById('reviveBtn').addEventListener('click', () => {
         shieldActive = true; partialHit = false; 
         updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
         document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); 
+        if (gameStats.controlMode === 'drag') { document.getElementById('hud-joystick').style.display = 'none'; }
         updateUpgradesHUD();
         gameState = 'PLAYING'; previousState = 'PLAYING'; 
         if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
@@ -50,10 +51,15 @@ window.startGame = function() {
     
     evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0; missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false; doubleBossSpawned = false; doubleBossDefeated = false;
     updateTrophiesHUD(); player.x = canvas.width / 2 - player.width / 2; player.y = canvas.height - 110; isDraggingShip = false; dragPointerId = null; 
-    joystick.active = false;
+    
+    joystick.active = false; joystick.dx = 0; joystick.dy = 0;
+    
     document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'none'; document.getElementById('playerInitials').value = 'AAA';
     updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
-    document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); updateUpgradesHUD(); 
+    
+    document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); 
+    if (gameStats.controlMode === 'drag') { document.getElementById('hud-joystick').style.display = 'none'; }
+    updateUpgradesHUD(); 
     gameState = 'PLAYING'; previousState = 'PLAYING';
     
     if (!gameStats.tutorialCompleted) { 
@@ -91,8 +97,7 @@ function update() {
         let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; 
         if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; 
         
-        // Joystick en Transición
-        if (gameStats.controlMode === 'joystick' && joystick.active) { player.x += joystick.dx * currentSpeed * 1.3; player.y += joystick.dy * currentSpeed * 1.3; }
+        if (gameStats.controlMode === 'joystick' && joystick.active) { player.x += joystick.dx * currentSpeed * 1.5; player.y += joystick.dy * currentSpeed * 1.5; }
 
         if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
         
@@ -100,6 +105,7 @@ function update() {
             gameRound = goingToRound; 
             if (gameRound === 2) nextBossScoreThreshold = 150000; else if (gameRound === 3) nextBossScoreThreshold = 250000; 
             document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); 
+            if (gameStats.controlMode === 'drag') { document.getElementById('hud-joystick').style.display = 'none'; }
             updateUpgradesHUD(); bgMusic.volume = 0.4; gameState = 'PLAYING'; previousState = 'PLAYING'; 
         } 
         return; 
@@ -110,8 +116,8 @@ function update() {
     let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; 
     if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; 
     
-    // Movimiento Joystick
-    if (gameStats.controlMode === 'joystick' && joystick.active) { player.x += joystick.dx * currentSpeed * 1.3; player.y += joystick.dy * currentSpeed * 1.3; }
+    // Joystick Move
+    if (gameStats.controlMode === 'joystick' && joystick.active) { player.x += joystick.dx * currentSpeed * 1.5; player.y += joystick.dy * currentSpeed * 1.5; }
 
     if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
 
@@ -187,20 +193,6 @@ function draw() {
     for (let m of homingMissiles) { ctx.save(); ctx.translate(m.x + m.width/2, m.y + m.height/2); let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; ctx.rotate(angle); let imgNormal, imgPro; if (m.type === 'milk') { imgNormal = assets.balaLeche; imgPro = assets.balaLechePro; } else if (m.type === 'horseshoe') { imgNormal = assets.balaHerradura; imgPro = assets.balaHerraduraPro; } else if (m.type === 'wool') { imgNormal = assets.balaLana; imgPro = assets.balaLanaPro; } else { imgNormal = assets.balaPollito; imgPro = assets.balaPollitoPro; } let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal; if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; ctx.fillText(icon, 0, 0); } ctx.restore(); }
     for (let bb of bossBullets) { let imgB = bb.isLechugaBala ? assets.balaLechuga : assets.balaJefe; if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); } }
     for (let e of enemies) drawEnemy(e);
-    
-    // --- DIBUJO DEL JOYSTICK ---
-    if (gameStats.controlMode === 'joystick' && joystick.active) {
-        ctx.save();
-        ctx.globalAlpha = 0.4;
-        ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, 40, 0, Math.PI*2);
-        ctx.fillStyle = '#0f172a'; ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = '#38bdf8'; ctx.stroke();
-        
-        ctx.globalAlpha = 0.8;
-        ctx.beginPath(); ctx.arc(joystick.x, joystick.y, 18, 0, Math.PI*2);
-        ctx.fillStyle = '#38bdf8'; ctx.fill();
-        ctx.restore();
-    }
     
     if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') { let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10; if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); } }
     if (toastTimer > 0 && gameState === 'PLAYING') { ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); } if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); } ctx.restore(); toastTimer--; }
