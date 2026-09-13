@@ -4,20 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nave Gallina vs Maíces y Lechugas</title>
-    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
     <div id="game-container">
         <div id="flashOverlay"></div>
-        
-        <!-- PANTALLA DE TUTORIAL ACTIVO -->
-        <div id="activeTutorialOverlay" class="tutorial-overlay" style="display: none;">
-            <div id="activeTutorialBox" class="tutorial-box">
-                <h2 id="activeTutorialText">Texto del tutorial</h2>
-            </div>
-        </div>
-
         <div id="achievToast">
             <div style="color: #fbbf24; font-size: 0.65rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px;">🏅 LOGRO DESBLOQUEADO</div>
             <div id="achievToastName" style="color: #fff; font-size: 0.95rem; font-weight: bold;">Nombre del Logro</div>
@@ -26,6 +18,12 @@
         <canvas id="gameCanvas"></canvas>
         
         <div class="ui-layer">
+            <!-- CAPA DE TUTORIAL ACTIVO -->
+            <div id="activeTutorialOverlay" style="display:none;">
+                <div id="activeTutorialText"></div>
+                <button id="tutorialOkBtn" class="btn" style="display: none; position: relative; z-index: 101;" onclick="finishTutorial()">¡Entendido!</button>
+            </div>
+
             <div class="header-score">
                 <div class="header-left">
                     <div>Pts: <span id="scoreVal">0</span></div>
@@ -56,12 +54,10 @@
                 <div class="hud-cost" style="background:#6d28d9;">🪙1000</div><div class="hud-emoji">☢️</div><div class="hud-lvl" style="color:#ddd6fe">+50%</div>
             </div>
 
-            <!-- BOTÓN DE LÁSER PRINCIPAL -->
             <div id="fireBtn" class="draggable-btn" data-type="fire" style="display: none;">
                 <div class="hud-emoji">🚀</div>
             </div>
             
-            <!-- BOTÓN DE MISIL DIRIGIDO -->
             <div id="missileBtn" class="draggable-btn" data-type="missile" style="display: none; border-color: #f59e0b;">
                 <div class="hud-emoji">🎯</div>
                 <div id="missileCooldown" style="position:absolute; bottom:2px; font-size:0.5rem; color:#fbbf24; font-weight:bold;">LISTO</div>
@@ -85,16 +81,21 @@
 
         <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1>
+            
             <div class="tutorial-content">
                 <h3 style="color: #38bdf8;">🕹️ Movimiento</h3>
                 <p>• <b>Táctil:</b> Arrastra el dedo sobre la pantalla para mover la nave en 4 direcciones.<br>• <b>PC:</b> Usa las flechas del teclado o W, A, S, D.</p>
+                
                 <h3 style="color: #ef4444;">🚀 Combate</h3>
                 <p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparar múltiples láseres.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯). Busca y destruye automáticamente, ¡pero tarda 8s en recargar!</p>
+                
                 <h3 style="color: #10b981;">⚙️ Mejoras</h3>
                 <p>• Los botones de la izquierda <b>brillarán ✨</b> cuando tengas monedas suficientes. Tócalos para mejorar y <b>🌟 Evolucionar</b> al máximo nivel.</p>
+
                 <h3 style="color: #fbbf24;">✨ Personalizar Botones</h3>
                 <p>Toca <b>Pausa ⏸️</b> arriba a la derecha. ¡Mientras el juego está en pausa, <b>puedes arrastrar</b> todos los botones a donde quieras!</p>
             </div>
+
             <button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button>
         </div>
 
