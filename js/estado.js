@@ -7,11 +7,12 @@ let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || {
     skins: [false, false, false, false], equippedSkins: [false, false, false, false], 
     missiles: [false, false, false, false], equippedMissiles: [false, false, false, false], 
     pendingBooster: 1.0, tutorialCompleted: false, 
-    lastLoginDate: 0, loginStreak: 0 
+    lastLoginDate: 0, loginStreak: 0, controlMode: 'drag'
 };
 if (gameStats.tutorialCompleted === undefined) gameStats.tutorialCompleted = false;
 if (gameStats.lastLoginDate === undefined) gameStats.lastLoginDate = 0;
 if (gameStats.loginStreak === undefined) gameStats.loginStreak = 0;
+if (!gameStats.controlMode) gameStats.controlMode = 'drag';
 if (!gameStats.skins) gameStats.skins = [false, false, false, false];
 if (!gameStats.equippedSkins) gameStats.equippedSkins = [false, false, false, false];
 if (!gameStats.missiles) gameStats.missiles = [false, false, false, false];
@@ -66,23 +67,15 @@ let evolutionStage = 0; let maxUpgradeLimit = 3; let nextBossScoreThreshold = 50
 let upgrades = { bullets: 0, speed: 1, armor: 0, dmgBoost: 0, superDmgBoost: 0 };
 const player = { x: canvas.width / 2 - 25, y: canvas.height - 110, width: 50, height: 50, baseSpeed: 5.5 };
 
-let bullets = []; 
-let homingMissiles = [];
-let enemies = []; 
-let bossBullets = []; 
-let bosses = [];
-let stars = [];
+let bullets = []; let homingMissiles = []; let enemies = []; let bossBullets = []; let bosses = []; let stars = [];
 let missileCooldownTimer = 0; const MISSILE_COOLDOWN = 480;
 
 let timeAt40k = 0; let shieldUnlocked = false; let shieldActive = false; let gameRound = 1; let goingToRound = 1;
 let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0; let sessionCoinsEarned = 0;
-let partialHit = false; let transitionTimer = 0; 
-let doubleBossSpawned = false; let doubleBossDefeated = false;
+let partialHit = false; let transitionTimer = 0; let doubleBossSpawned = false; let doubleBossDefeated = false;
 
-let tutorialStep = 0;
-let bgScrollY = 0;
+let tutorialStep = 0; let bgScrollY = 0;
+let joystick = { active: false, baseX: 0, baseY: 0, x: 0, y: 0, dx: 0, dy: 0 };
 
 const starColors = ['#ffffff', '#fde047', '#38bdf8', '#f472b6', '#a78bfa'];
-for (let i = 0; i < 50; i++) { 
-    stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2.5 + 1, speed: Math.random() * 1.5 + 0.3, color: starColors[Math.floor(Math.random() * starColors.length)], opacity: Math.random() * 0.6 + 0.4 }); 
-}
+for (let i = 0; i < 50; i++) { stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2.5 + 1, speed: Math.random() * 1.5 + 0.3, color: starColors[Math.floor(Math.random() * starColors.length)], opacity: Math.random() * 0.6 + 0.4 }); }
