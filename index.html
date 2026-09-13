@@ -61,6 +61,12 @@
                 <div class="hud-emoji">🎯</div>
                 <div id="missileCooldown" style="position:absolute; bottom:2px; font-size:0.5rem; color:#fbbf24; font-weight:bold;">LISTO</div>
             </div>
+
+            <!-- NUEVO: BASE DEL JOYSTICK FIJO -->
+            <div id="hud-joystick" class="draggable-btn" data-type="joystick" style="display: none; width: 110px; height: 110px; border-radius: 50%; border: 2px solid rgba(56, 189, 248, 0.3); background: rgba(15, 23, 42, 0.4); justify-content: center; align-items: center; z-index: 50;">
+                <div id="joystick-knob" style="width: 45px; height: 45px; border-radius: 50%; background: rgba(56, 189, 248, 0.8); box-shadow: 0 0 10px #38bdf8; pointer-events: none; transition: transform 0.2s ease-out;"></div>
+            </div>
+
         </div>
 
         <div id="startScreen" class="screen-overlay">
