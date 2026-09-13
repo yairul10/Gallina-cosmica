@@ -296,7 +296,7 @@ for (let i = 0; i < 50; i++) {
 function saveLeaderboard() { localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard)); }
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
-// LÓGICA DEL TUTORIAL INTERACTIVO ACTUALIZADA
+// LÓGICA DEL TUTORIAL INTERACTIVO
 function activateTutorial(text, targetBtnId) {
     gameState = 'TUTORIAL';
     document.getElementById('activeTutorialOverlay').style.display = 'flex';
@@ -319,7 +319,12 @@ function completeTutorialStep(step) {
     document.getElementById('activeTutorialOverlay').style.display = 'none';
     gameState = 'PLAYING';
 
-    if (step === 1) tutorialStep = 1.5; 
+    if (step === 1) {
+        tutorialStep = 1.1;
+        activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo (🎯).", 'missileBtn');
+        return; 
+    }
+    if (step === 1.1) tutorialStep = 1.5;
     if (step === 2) tutorialStep = 2.5;
     if (step === 3) tutorialStep = 3.5;
     if (step === 4.5) {
@@ -343,7 +348,10 @@ window.addEventListener('keydown', (e) => {
         if (gameState === 'TUTORIAL' && tutorialStep === 1) { completeTutorialStep(1); shootBullet(); }
         else if (gameState === 'PLAYING' || gameState === 'TRANSITION') shootBullet();
     }
-    if (e.code === 'KeyM' && (gameState === 'PLAYING' || gameState === 'TRANSITION')) shootMissile(); 
+    if (e.code === 'KeyM') {
+        if (gameState === 'TUTORIAL' && tutorialStep === 1.1) { completeTutorialStep(1.1); shootMissile(); }
+        else if (gameState === 'PLAYING' || gameState === 'TRANSITION') shootMissile(); 
+    }
 });
 window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = false; });
 
@@ -355,30 +363,14 @@ document.querySelectorAll('.draggable-btn').forEach(btn => {
         if (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL') {
             const type = btn.getAttribute('data-type');
             
-            // INTERCEPCIÓN SI ESTÁ EN MODO TUTORIAL
             if (gameState === 'TUTORIAL') {
                 if (tutorialStep === 1 && type === 'fire') { completeTutorialStep(1); shootBullet(); }
+                else if (tutorialStep === 1.1 && type === 'missile') { completeTutorialStep(1.1); shootMissile(); }
                 else if (tutorialStep === 2 && type === 'bullets') { completeTutorialStep(2); buyUpgrade(type); }
                 else if (tutorialStep === 3 && type === 'speed') { completeTutorialStep(3); buyUpgrade(type); }
-                else if (tutorialStep === 4 && (type === 'bullets' || type === 'speed')) { 
-                    buyUpgrade(type);
-                    
-                    if (upgrades.bullets >= maxUpgradeLimit) document.getElementById('hud-bullets').classList.remove('tutorial-highlight');
-                    if (upgrades.speed >= maxUpgradeLimit) document.getElementById('hud-speed').classList.remove('tutorial-highlight');
-                    
-                    if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) {
-                        tutorialStep = 4.5;
-                        document.getElementById('activeTutorialText').innerHTML = "¡Excelente!<br><br>Ahora toca el botón de <b>Evolución</b> (🌟) para transformar tu nave.";
-                        document.getElementById('hud-life-evolve').classList.add('tutorial-highlight');
-                    }
-                }
+                else if (tutorialStep === 4 && (type === 'bullets' || type === 'speed')) buyUpgrade(type);
                 else if (tutorialStep === 4.5 && type === 'btn3') { completeTutorialStep(4.5); buyUpgrade('evolve'); }
-                return; // Bloquea los demás botones durante el tutorial
-            }
-            
-            // EVITAR QUE GASTEN LAS MONEDAS MIENTRAS ESPERAN RECOLECTARLAS EN EL TUTORIAL
-            if (!gameStats.tutorialCompleted && gameState === 'PLAYING' && type !== 'fire' && type !== 'missile') {
-                return; 
+                return;
             }
             
             if (type === 'fire') shootBullet(); 
@@ -489,7 +481,20 @@ window.buyUpgrade = function(type) {
     else if (type === 'armor' && gameRound >= 2 && coins >= 300 && upgrades.armor === 0) { coins -= 300; gameStats.savedCoins = coins; saveStats(); upgrades.armor = 1; }
     else if (type === 'damage' && gameRound >= 2 && coins >= 200 && upgrades.dmgBoost === 0) { coins -= 200; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
     else if (type === 'superDamage' && (gameRound === 3 || goingToRound === 3) && coins >= 1000 && upgrades.superDmgBoost === 0) { coins -= 1000; gameStats.savedCoins = coins; saveStats(); upgrades.superDmgBoost = 1; }
+    
     updateUpgradesHUD();
+
+    if (!gameStats.tutorialCompleted) {
+        if ((tutorialStep === 3.5 || tutorialStep === 4) && upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) {
+            document.getElementById('hud-bullets').classList.remove('tutorial-highlight');
+            document.getElementById('hud-speed').classList.remove('tutorial-highlight');
+            tutorialStep = 4.5;
+            activateTutorial("¡Excelente!<br><br>Ahora toca el botón de <b>Evolución</b> (🌟) para transformar tu nave.", 'hud-life-evolve');
+        } else if (tutorialStep === 4) {
+            if (upgrades.bullets >= maxUpgradeLimit) document.getElementById('hud-bullets').classList.remove('tutorial-highlight');
+            if (upgrades.speed >= maxUpgradeLimit) document.getElementById('hud-speed').classList.remove('tutorial-highlight');
+        }
+    }
 }
 
 function updateUpgradesHUD() {
@@ -604,16 +609,18 @@ function handleCoinEarned(amount) {
     if (gameStats.totalCoins >= 10000) unlockAchievement('a22'); 
     if (coins >= 10000) unlockAchievement('a23'); 
     
-    // VERIFICADOR DE TUTORIAL MONEDAS ACTUALIZADO
     if (tutorialStep === 1.5 && coins >= 10) {
         tutorialStep = 2;
         activateTutorial("¡Conseguiste 10 monedas!<br><br>Toca el botón brillante para <b>Mejorar el Daño</b> (⚔️).", 'hud-bullets');
     } else if (tutorialStep === 2.5 && coins >= 10) {
         tutorialStep = 3;
         activateTutorial("¡Otras 10 monedas!<br><br>Toca el botón para <b>Mejorar Velocidad</b> (⚡).", 'hud-speed');
-    } else if (tutorialStep === 3.5 && coins >= 40) {
-        tutorialStep = 4;
-        activateTutorial("¡Reuniste 40 monedas!<br><br>Mejora al <b>MÁXIMO</b> el Daño y Velocidad para poder ascender.", ['hud-bullets', 'hud-speed']);
+    } else if (tutorialStep === 3.5) {
+        let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10;
+        if (coins >= needed && needed > 0) {
+            tutorialStep = 4;
+            activateTutorial("¡Tienes las monedas necesarias!<br><br>Mejora al <b>MÁXIMO</b> el Daño y Velocidad para ascender.", ['hud-bullets', 'hud-speed']);
+        }
     }
     
     updateUpgradesHUD();
@@ -996,6 +1003,18 @@ function draw() {
         if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); }
     }
     for (let e of enemies) drawEnemy(e);
+
+    if (tutorialStep === 3.5 && !gameStats.tutorialCompleted && gameState === 'PLAYING') {
+        let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10;
+        ctx.save();
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 6;
+        ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80);
+        ctx.restore();
+    }
 
     if (toastTimer > 0 && gameState === 'PLAYING') {
         ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); 
