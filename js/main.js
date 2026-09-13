@@ -213,6 +213,88 @@ function updateTrophiesHUD() {
     document.getElementById('trophiesVal').innerHTML = html; 
 }
 
+// CONEXIÓN DEL BOTÓN DE INICIO Y REINICIO
+document.getElementById('startBtn').addEventListener('click', startGame); 
+document.getElementById('restartBtn').addEventListener('click', startGame);
+
+document.getElementById('saveScoreBtn').addEventListener('click', () => { 
+    let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); 
+    if (!initials) initials = 'ABC'; 
+    leaderboard.push({ name: initials, score: score }); 
+    leaderboard.sort((a, b) => b.score - a.score); 
+    if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); 
+    saveLeaderboard(); 
+    document.getElementById('saveScoreSection').style.display = 'none'; 
+    renderLeaderboard('endLeaderboardList'); 
+});
+
+document.getElementById('reviveBtn').addEventListener('click', () => {
+    if (coins >= 500) {
+        setCoins(coins - 500); gameStats.savedCoins = coins; saveStats(); setLives(3); enemies.splice(0, enemies.length); bossBullets.splice(0, bossBullets.length); setShieldActive(true); setPartialHit(false); 
+        updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
+        document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
+        updateUpgradesHUD();
+        setGameState('PLAYING'); setPreviousState('PLAYING'); if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
+        if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
+        window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { setGameTime(gameTime + 1); setSessionTimeNoHit(sessionTimeNoHit + 1); if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
+    }
+});
+
+function startGame() {
+    if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
+    setCurrentMatchBooster(gameStats.pendingBooster || 1.0);
+    gameStats.pendingBooster = 1.0; 
+    saveStats();
+    
+    setScore(0); setCoins(gameStats.savedCoins || 0); setLives(3); setGameTime(0); setGameRound(1); setGoingToRound(1); setTimeAt40k(0); setShieldUnlocked(false); setShieldActive(false); setPartialHit(false);
+    setSessionKillsNoHit(0); setSessionTimeNoHit(0); setSessionLivesBought(0);
+    bullets.splice(0, bullets.length); homingMissiles.splice(0, homingMissiles.length); enemies.splice(0, enemies.length); bossBullets.splice(0, bossBullets.length); bosses.splice(0, bosses.length);
+    setEvolutionStage(0); setMaxUpgradeLimit(3); setNextBossScoreThreshold(5000); upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0;
+    setMissileCooldownTimer(0); setGotTrophy20k(false); setGotTrophy50k(false); setGotTrophy100k(false); setGotTrophy200k(false); setGotTrophy300k(false);
+    setDoubleBossSpawned(false); setDoubleBossDefeated(false);
+    updateTrophiesHUD();
+    
+    player.x = canvas.width / 2 - player.width / 2; player.y = canvas.height - 110; 
+    isDraggingShip = false; dragPointerId = null; 
+    
+    document.getElementById('scoreVal').textContent = score; 
+    document.getElementById('saveScoreSection').style.display = 'none';
+    document.getElementById('playerInitials').value = 'AAA';
+    
+    updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
+    
+    document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
+    updateUpgradesHUD(); 
+    
+    setGameState('PLAYING'); setPreviousState('PLAYING');
+    
+    if (!gameStats.tutorialCompleted) {
+        setTutorialStep(1);
+        activateTutorial("¡Bienvenido Granero Espacial!<br><br>Toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn');
+    } else {
+        setTutorialStep(0);
+    }
+    
+    if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
+    window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { setGameTime(gameTime + 1); setSessionTimeNoHit(sessionTimeNoHit + 1); if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
+}
+
+// DEFINICIÓN DE GAMEOVER QUE LLAMA ENEMIES.JS
+export function gameOver() { 
+    setGameState('GAMEOVER'); bgMusic.pause(); clearInterval(window.gameTimerInterval); 
+    unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
+    document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); 
+    document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
+    const reviveBtn = document.getElementById('reviveBtn');
+    if (coins >= 500) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
+    
+    let isTop5 = false;
+    if (leaderboard.length < 5) { isTop5 = true; } else { isTop5 = score > leaderboard[leaderboard.length - 1].score; }
+    if (isTop5 && score > 0) { document.getElementById('saveScoreSection').style.display = 'block'; } else { document.getElementById('saveScoreSection').style.display = 'none'; }
+
+    document.getElementById('gameOverScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
+}
+
 let enemySpawnInterval = 0;
 function update() {
     if (gameState === 'TUTORIAL') return;
