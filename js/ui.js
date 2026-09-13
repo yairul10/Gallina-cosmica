@@ -73,24 +73,45 @@ function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTroph
 
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
+// LÓGICA CORREGIDA DEL TUTORIAL
 function activateTutorial(text, targetBtnId) {
-    gameState = 'TUTORIAL'; document.getElementById('activeTutorialOverlay').style.display = 'flex'; document.getElementById('activeTutorialText').innerHTML = text;
-    if (targetBtnId) { if (Array.isArray(targetBtnId)) { targetBtnId.forEach(id => document.getElementById(id).classList.add('tutorial-highlight')); } else { document.getElementById(targetBtnId).classList.add('tutorial-highlight'); } document.getElementById('tutorialOkBtn').style.display = 'none'; } else { document.getElementById('tutorialOkBtn').style.display = 'block'; }
+    gameState = 'TUTORIAL'; 
+    let overlay = document.getElementById('activeTutorialOverlay');
+    overlay.style.display = 'flex'; 
+    document.getElementById('activeTutorialText').innerHTML = text;
+    
+    // Si el objetivo es 'none', ocultamos el botón OK y NO bloqueamos el táctil (para obligar a mover la nave)
+    if (targetBtnId === 'none') { 
+        document.getElementById('tutorialOkBtn').style.display = 'none'; 
+        overlay.style.pointerEvents = 'none'; 
+    } 
+    else if (targetBtnId) { 
+        if (Array.isArray(targetBtnId)) { targetBtnId.forEach(id => document.getElementById(id).classList.add('tutorial-highlight')); } 
+        else { document.getElementById(targetBtnId).classList.add('tutorial-highlight'); } 
+        document.getElementById('tutorialOkBtn').style.display = 'none'; 
+        overlay.style.pointerEvents = 'auto'; // Bloquea toques fuera del botón iluminado
+    } 
+    else { 
+        document.getElementById('tutorialOkBtn').style.display = 'block'; 
+        overlay.style.pointerEvents = 'auto';
+    }
 }
 
 function completeTutorialStep(step) {
     if (tutorialStep !== step) return;
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
-    document.getElementById('activeTutorialOverlay').style.display = 'none'; gameState = 'PLAYING';
+    let overlay = document.getElementById('activeTutorialOverlay');
+    overlay.style.display = 'none'; 
+    overlay.style.pointerEvents = 'auto'; // Restaurar bloqueo normal
+    gameState = 'PLAYING';
     
-    // Novedad: Al moverte, se activa el paso para disparar
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
     if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo (🎯).", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
     if (step === 4.5) { tutorialStep = 5; activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); }
 }
 
-window.finishTutorial = function() { document.getElementById('activeTutorialOverlay').style.display = 'none'; tutorialStep = 0; gameStats.tutorialCompleted = true; saveStats(); gameState = 'PLAYING'; }
+window.finishTutorial = function() { document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto'; tutorialStep = 0; gameStats.tutorialCompleted = true; saveStats(); gameState = 'PLAYING'; }
 
 let dragObj = null; let dragOffX = 0; let dragOffY = 0;
 document.querySelectorAll('.draggable-btn').forEach(btn => {
@@ -142,7 +163,7 @@ window.buyUpgrade = function(type) {
             if (upgrades.bullets >= maxUpgradeLimit) document.getElementById('hud-bullets').classList.remove('tutorial-highlight');
             if (upgrades.speed >= maxUpgradeLimit) document.getElementById('hud-speed').classList.remove('tutorial-highlight');
             if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { tutorialStep = 4.5; activateTutorial("¡Excelente!<br><br>Ahora toca el botón de <b>Evolución</b> (🌟) para transformar tu nave.", 'hud-life-evolve'); } 
-            else if (tutorialStep === 4 && coins < 10) { tutorialStep = 3.5; document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight')); document.getElementById('activeTutorialOverlay').style.display = 'none'; gameState = 'PLAYING'; }
+            else if (tutorialStep === 4 && coins < 10) { tutorialStep = 3.5; document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight')); document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto'; gameState = 'PLAYING'; }
         }
     }
 }
