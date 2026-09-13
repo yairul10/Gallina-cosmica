@@ -20,6 +20,14 @@ import { loadHudPositions, saveHudPositions, updateHangarUI, updateShopUI, updat
 
 loadHudPositions();
 
+// EXPONER FUNCIÓN DE MONEDAS GLOBALMENTE PARA LA TIENDA
+window.globalCoinsAdjustment = function(amount) {
+    setCoins(coins + amount);
+    gameStats.savedCoins = coins;
+    saveStats();
+    updateShopUI();
+};
+
 const playlist = ['assets/musica_1.mp3', 'assets/musica_2.mp3', 'assets/musica_3.mp3'];
 let currentTrackIndex = 0; const bgMusic = new Audio(playlist[currentTrackIndex]); bgMusic.volume = 0.4; 
 bgMusic.addEventListener('ended', () => { currentTrackIndex++; if (currentTrackIndex >= playlist.length) currentTrackIndex = 0; bgMusic.src = playlist[currentTrackIndex]; bgMusic.play().catch(e => console.log(e)); });
@@ -86,17 +94,17 @@ document.querySelectorAll('.draggable-btn').forEach(btn => {
             if (gameState === 'TUTORIAL') {
                 if (tutorialStep === 1 && type === 'fire') { completeTutorialStep(1); shootBullet(); }
                 else if (tutorialStep === 1.1 && type === 'missile') { completeTutorialStep(1.1); shootMissile(); }
-                else if (tutorialStep === 2 && type === 'bullets') { completeTutorialStep(2); buyUpgrade(type); }
-                else if (tutorialStep === 3 && type === 'speed') { completeTutorialStep(3); buyUpgrade(type); }
-                else if (tutorialStep === 4 && (type === 'bullets' || type === 'speed')) buyUpgrade(type);
-                else if (tutorialStep === 4.5 && type === 'btn3') { completeTutorialStep(4.5); buyUpgrade('evolve'); }
+                else if (tutorialStep === 2 && type === 'bullets') { completeTutorialStep(2); window.buyUpgrade(type); }
+                else if (tutorialStep === 3 && type === 'speed') { completeTutorialStep(3); window.buyUpgrade(type); }
+                else if (tutorialStep === 4 && (type === 'bullets' || type === 'speed')) window.buyUpgrade(type);
+                else if (tutorialStep === 4.5 && type === 'btn3') { completeTutorialStep(4.5); window.buyUpgrade('evolve'); }
                 return;
             }
             
             if (type === 'fire') shootBullet(); 
             else if (type === 'missile') shootMissile();
-            else if (type === 'btn3') { (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); } 
-            else buyUpgrade(type);
+            else if (type === 'btn3') { (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? window.buyUpgrade('evolve') : window.buyUpgrade('life'); } 
+            else window.buyUpgrade(type);
         } else if (gameState === 'PAUSED') { dragObj = btn; const rect = btn.getBoundingClientRect(); dragOffX = e.clientX - rect.left; dragOffY = e.clientY - rect.top; }
     });
 });
@@ -449,7 +457,6 @@ function drawBoss(b) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // CAMBIO DE FONDO DINÁMICO SEGÚN LA RONDA
     let activeBg = assets.fondoGalaxia;
     if (gameRound >= 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) {
         activeBg = assets.fondoRonda2;
