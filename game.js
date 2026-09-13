@@ -241,6 +241,7 @@ function savePersistentTrophy(key) { let pT = JSON.parse(localStorage.getItem('f
 
 const assets = { 
     fondoGalaxia: new Image(),
+    fondoRonda2: new Image(), // NUEVA IMAGEN
     gallina: new Image(), oveja: new Image(), caballo: new Image(), vaca: new Image(), 
     gallinaPro: new Image(), ovejaPro: new Image(), caballoPro: new Image(), vacaPro: new Image(),
     maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(), superJefeMaiz: new Image(),
@@ -252,6 +253,7 @@ const assets = {
 };
 
 assets.fondoGalaxia.src = 'assets/fondo_galaxia.png';
+assets.fondoRonda2.src = 'assets/fondo_ronda2.png'; // RUTA DE LA NUEVA IMAGEN
 assets.gallina.src = 'assets/gallina.png'; assets.oveja.src = 'assets/oveja.png'; assets.caballo.src = 'assets/caballo.png'; assets.vaca.src = 'assets/vaca.png'; 
 assets.gallinaPro.src = 'assets/gallina_pro.png'; assets.ovejaPro.src = 'assets/oveja_pro.png'; assets.caballoPro.src = 'assets/caballo_pro.png'; assets.vacaPro.src = 'assets/vaca_pro.png'; 
 assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png'; assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
@@ -497,7 +499,6 @@ window.buyUpgrade = function(type) {
                 tutorialStep = 4.5;
                 activateTutorial("¡Excelente!<br><br>Ahora toca el botón de <b>Evolución</b> (🌟) para transformar tu nave.", 'hud-life-evolve');
             } else if (tutorialStep === 4 && coins < 10) {
-                // Si el usuario gastó dinero pero no le alcanzó para subir todo al máximo, vuelve a jugar.
                 tutorialStep = 3.5;
                 document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
                 document.getElementById('activeTutorialOverlay').style.display = 'none';
@@ -587,20 +588,19 @@ function spawnEnemy() {
 }
 
 function spawnBoss() { 
-    if (nextBossScoreThreshold === 250000 && gameRound === 3) {
+    // RONDA 2: Doble Jefe a los 150,000 pts
+    if (nextBossScoreThreshold === 150000 && gameRound === 2) {
         let bossHpM = 1680 * 2; let bossHpL = 6720 * 2; 
         bosses.push({ x: 20, y: -120, width: 140, height: 110, maxHp: bossHpM, hp: bossHpM, speed: 1.5, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
         bosses.push({ x: canvas.width - 160, y: -180, width: 140, height: 110, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: -1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
         doubleBossSpawned = true;
     }
-    else if (nextBossScoreThreshold === 150000 && gameRound === 2) {
-        let bossHp = 6720; 
-        bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.4, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
-    }
+    // RONDA 1: Súper Jefe Maíz a los 50,000 pts
     else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
         let bossHp = 1680; 
         bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
     } 
+    // Jefes normales de fase (Aparecen antes del Súper Jefe en ronda 1)
     else if (gameRound === 1) {
         let bossLevel = Math.floor(score / 5000); let bossHp = Math.floor((60 + (bossLevel * 45)) * 1.5); 
         bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'corn', entered: false, dirY: 1 }); 
@@ -644,8 +644,17 @@ function damageBoss(bIndex, dmg) {
     boss.hp -= dmg;
     if (boss.hp <= 0) { 
         score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 6 : 3); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
-        if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); } 
-        else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); }
+        
+        // Termina Ronda 1
+        if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { 
+            gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); 
+        } 
+        // Termina Ronda 2 (SOLO cuando muere el último de los dos jefes)
+        else if (boss.isSuperBoss && gameRound === 2 && bosses.length === 1) { 
+            gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); 
+            doubleBossDefeated = true; unlockAchievement('a21');
+        }
+        
         bosses.splice(bIndex, 1); unlockAchievement('a10'); if (lives === 1) unlockAchievement('a12'); return true; 
     }
     return false;
@@ -967,9 +976,21 @@ function drawBoss(b) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    if (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0) {
-        bgScrollY += 0.5; 
-        if (bgScrollY >= canvas.height) bgScrollY = 0;
+    // GUARDAR ESTADO PARA EL TEMBLOR DE CÁMARA
+    ctx.save();
+    if (gameState === 'TRANSITION' && transitionTimer > 100) {
+        let shake = (transitionTimer - 100) / 15;
+        ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    }
+
+    bgScrollY += 0.5; 
+    if (bgScrollY >= canvas.height) bgScrollY = 0;
+
+    // FONDO DINÁMICO SEGÚN LA RONDA
+    if (gameRound >= 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) {
+        ctx.drawImage(assets.fondoRonda2, 0, bgScrollY, canvas.width, canvas.height);
+        ctx.drawImage(assets.fondoRonda2, 0, bgScrollY - canvas.height, canvas.width, canvas.height);
+    } else if (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0) {
         ctx.drawImage(assets.fondoGalaxia, 0, bgScrollY, canvas.width, canvas.height);
         ctx.drawImage(assets.fondoGalaxia, 0, bgScrollY - canvas.height, canvas.width, canvas.height);
     }
@@ -1019,14 +1040,7 @@ function draw() {
     if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') {
         let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10;
         if (needed > 0) {
-            ctx.save();
-            ctx.fillStyle = '#fbbf24';
-            ctx.font = 'bold 15px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.shadowColor = '#000';
-            ctx.shadowBlur = 6;
-            ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80);
-            ctx.restore();
+            ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore();
         }
     }
 
@@ -1052,6 +1066,9 @@ function draw() {
         let seconds = Math.ceil(transitionTimer / 60); ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 64px sans-serif'; ctx.fillText(seconds, canvas.width / 2, canvas.height / 2 + 70);
         ctx.restore();
     }
+    
+    // RESTAURAR LA CÁMARA PARA QUE NO SE ROMPA LA INTERFAZ
+    ctx.restore();
 }
 
 let lastFrameTime = 0; const fpsInterval = 1000 / 60; 
