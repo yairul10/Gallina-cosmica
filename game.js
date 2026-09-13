@@ -2,8 +2,9 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = 420; canvas.height = 640;
 
-// SISTEMA DE GUARDADO ACTUALIZADO
-let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0, skins: [false, false, false, false], equippedSkins: [false, false, false, false], missiles: [false, false, false, false], equippedMissiles: [false, false, false, false], pendingBooster: 1.0 };
+// SISTEMA DE GUARDADO ACTUALIZADO (Con Tutorial Tracking)
+let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0, skins: [false, false, false, false], equippedSkins: [false, false, false, false], missiles: [false, false, false, false], equippedMissiles: [false, false, false, false], pendingBooster: 1.0, tutorialCompleted: false };
+if (gameStats.tutorialCompleted === undefined) gameStats.tutorialCompleted = false;
 if (!gameStats.skins) gameStats.skins = [false, false, false, false];
 if (!gameStats.equippedSkins) gameStats.equippedSkins = [false, false, false, false];
 if (!gameStats.missiles) gameStats.missiles = [false, false, false, false];
@@ -138,7 +139,7 @@ function updateHangarUI() {
             if (gameStats.equippedMissiles[i]) { 
                 btn.textContent = 'Usar Normal'; btn.style.background = '#f59e0b'; 
                 img.src = misProSrc[i]; 
-                img.onerror = function() { this.src = misSrc[i]; }; // Obliga a usar la imagen antigua si la pro no existe
+                img.onerror = function() { this.src = misSrc[i]; };
                 name.textContent = misNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#38bdf8;">+20% Daño Misil</b>'; 
             } 
             else { 
@@ -282,6 +283,9 @@ let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0;
 let partialHit = false; let transitionTimer = 0; 
 let doubleBossSpawned = false; let doubleBossDefeated = false;
 
+// VARIABLES DEL TUTORIAL
+let tutorialStep = 0;
+
 let bgScrollY = 0;
 let stars = [];
 const starColors = ['#ffffff', '#fde047', '#38bdf8', '#f472b6', '#a78bfa'];
@@ -292,10 +296,48 @@ for (let i = 0; i < 50; i++) {
 function saveLeaderboard() { localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard)); }
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
+// LÓGICA DEL TUTORIAL INTERACTIVO
+function activateTutorial(text, targetBtnId) {
+    gameState = 'TUTORIAL';
+    document.getElementById('activeTutorialOverlay').style.display = 'flex';
+    document.getElementById('activeTutorialText').innerHTML = text;
+    if (targetBtnId) {
+        document.getElementById(targetBtnId).classList.add('tutorial-highlight');
+        document.getElementById('tutorialOkBtn').style.display = 'none';
+    } else {
+        document.getElementById('tutorialOkBtn').style.display = 'block';
+    }
+}
+
+function completeTutorialStep(step) {
+    if (tutorialStep !== step) return;
+    document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+    document.getElementById('activeTutorialOverlay').style.display = 'none';
+    gameState = 'PLAYING';
+
+    if (step === 1) tutorialStep = 1.5; 
+    if (step === 2) tutorialStep = 2.5;
+    if (step === 3) tutorialStep = 3.5;
+    if (step === 4) {
+        activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null);
+    }
+}
+
+window.finishTutorial = function() {
+    document.getElementById('activeTutorialOverlay').style.display = 'none';
+    tutorialStep = 0;
+    gameStats.tutorialCompleted = true;
+    saveStats();
+    gameState = 'PLAYING';
+}
+
 let keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false, KeyA: false, KeyD: false, KeyW: false, KeyS: false };
 window.addEventListener('keydown', (e) => { 
     if (e.code in keys) keys[e.code] = true; 
-    if (e.code === 'Space' && (gameState === 'PLAYING' || gameState === 'TRANSITION')) shootBullet(); 
+    if (e.code === 'Space') {
+        if (gameState === 'TUTORIAL' && tutorialStep === 1) { completeTutorialStep(1); shootBullet(); }
+        else if (gameState === 'PLAYING' || gameState === 'TRANSITION') shootBullet();
+    }
     if (e.code === 'KeyM' && (gameState === 'PLAYING' || gameState === 'TRANSITION')) shootMissile(); 
 });
 window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = false; });
@@ -304,8 +346,19 @@ let dragObj = null; let dragOffX = 0; let dragOffY = 0;
 document.querySelectorAll('.draggable-btn').forEach(btn => {
     btn.addEventListener('pointerdown', (e) => {
         e.stopPropagation(); e.preventDefault();
-        if (gameState === 'PLAYING' || gameState === 'TRANSITION') {
+        
+        if (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL') {
             const type = btn.getAttribute('data-type');
+            
+            // INTERCEPCIÓN SI ESTÁ EN MODO TUTORIAL
+            if (gameState === 'TUTORIAL') {
+                if (tutorialStep === 1 && type === 'fire') { completeTutorialStep(1); shootBullet(); }
+                else if (tutorialStep === 2 && type === 'bullets') { completeTutorialStep(2); buyUpgrade(type); }
+                else if (tutorialStep === 3 && type === 'speed') { completeTutorialStep(3); buyUpgrade(type); }
+                else if (tutorialStep === 4 && type === 'btn3') { completeTutorialStep(4); buyUpgrade('evolve'); }
+                return; // Bloquea los demás botones durante el tutorial
+            }
+            
             if (type === 'fire') shootBullet(); 
             else if (type === 'missile') shootMissile();
             else if (type === 'btn3') { (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); } 
@@ -370,6 +423,9 @@ window.shootMissile = function() {
     
     let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
     
+    // LA CANTIDAD DE MISILES AUMENTA SEGÚN TU NIVEL
+    let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1);
+    
     let baseDmg = (upgrades.bullets === 0 ? 1 : upgrades.bullets) * 15;
     let bonusPro = gameStats.equippedMissiles[evolutionStage] ? 0.20 : 0;
     baseDmg = baseDmg + (baseDmg * bonusPro);
@@ -377,11 +433,20 @@ window.shootMissile = function() {
     let finalDamage = (upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg) * currentMatchBooster;
     if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
     
-    homingMissiles.push({ 
-        x: player.x + player.width/2 - 12, y: player.y - 10, 
-        width: 24, height: 24, speed: 7.5, vx: 0, vy: -5, 
-        type: bType, damage: finalDamage, isPro: gameStats.equippedMissiles[evolutionStage] 
-    });
+    const patterns = {
+        1: [{ dx: 0, offX: player.width / 2 - 12, offY: -10 }],
+        2: [{ dx: -2, offX: 0, offY: -10 }, { dx: 2, offX: player.width - 24, offY: -10 }],
+        3: [{ dx: -3, offX: -5, offY: -10 }, { dx: 0, offX: player.width / 2 - 12, offY: -14 }, { dx: 3, offX: player.width - 19, offY: -10 }],
+        4: [{ dx: -4, offX: -10, offY: -8 }, { dx: -1.5, offX: 5, offY: -14 }, { dx: 1.5, offX: player.width - 29, offY: -14 }, { dx: 4, offX: player.width - 14, offY: -8 }]
+    };
+
+    for (let p of (patterns[bulletCount] || patterns[3])) {
+        homingMissiles.push({ 
+            x: player.x + p.offX, y: player.y + p.offY, 
+            width: 24, height: 24, speed: 7.5, vx: p.dx, vy: -5, 
+            type: bType, damage: finalDamage, isPro: gameStats.equippedMissiles[evolutionStage] 
+        });
+    }
     
     missileCooldownTimer = MISSILE_COOLDOWN;
 }
@@ -414,6 +479,13 @@ function updateUpgradesHUD() {
     const btnLifeEvolve = document.getElementById('hud-life-evolve'); 
     if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { 
         btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; btnLifeEvolve.classList.toggle('can-upgrade', true); 
+        
+        // Disparador del paso 4 del tutorial
+        if (tutorialStep === 3.5) {
+            tutorialStep = 4;
+            activateTutorial("¡Llegaste al máximo nivel actual!<br><br>Toca el botón de <b>Evolución</b> (🌟) para transformar tu nave.", 'hud-life-evolve');
+        }
+
     } else { 
         btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; 
         if (lives >= 10) { btnLifeEvolve.querySelector('.hud-lvl').textContent = 'MÁX'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; } else { btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; }
@@ -514,6 +586,16 @@ function handleCoinEarned(amount) {
     if (gameStats.totalCoins >= 300) unlockAchievement('a4'); 
     if (gameStats.totalCoins >= 10000) unlockAchievement('a22'); 
     if (coins >= 10000) unlockAchievement('a23'); 
+    
+    // VERIFICADOR DE TUTORIAL MONEDAS
+    if (tutorialStep === 1.5 && coins >= 10) {
+        tutorialStep = 2;
+        activateTutorial("¡Conseguiste 10 monedas!<br><br>Toca el botón brillante para <b>Mejorar el Daño</b> (⚔️).", 'hud-bullets');
+    } else if (tutorialStep === 2.5 && coins >= 10) {
+        tutorialStep = 3;
+        activateTutorial("¡Otras 10 monedas!<br><br>Toca el botón para <b>Mejorar Velocidad</b> (⚡).", 'hud-speed');
+    }
+    
     updateUpgradesHUD();
 }
 
@@ -583,6 +665,15 @@ function startGame() {
     updateUpgradesHUD(); 
     
     gameState = 'PLAYING'; previousState = 'PLAYING';
+    
+    // INICIO DEL TUTORIAL
+    if (!gameStats.tutorialCompleted) {
+        tutorialStep = 1;
+        activateTutorial("¡Bienvenido Granero Espacial!<br><br>Toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn');
+    } else {
+        tutorialStep = 0;
+    }
+    
     if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
     window.gameTimerInterval = setInterval(() => { if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } }, 1000);
 }
@@ -604,6 +695,8 @@ function gameOver() {
 
 let enemySpawnInterval = 0;
 function update() {
+    if (gameState === 'TUTORIAL') return; // EL JUEGO SE CONGELA COMPLETAMENTE
+
     if (gameState === 'TRANSITION') {
         transitionTimer--;
         bullets = []; homingMissiles = []; bossBullets = []; enemies = [];
@@ -843,37 +936,20 @@ function draw() {
     }
     
     let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    if (gameRound === 1) { 
-        bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); 
-        bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); 
-    } else if (gameRound === 2) { 
-        bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); 
-        bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); 
-    } else { 
-        bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); 
-        bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); 
-    }
-    ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (gameRound === 1) { bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); } 
+    else if (gameRound === 2) { bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); } 
+    else { bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); }
+    ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (let s of stars) { 
-        ctx.globalAlpha = s.opacity;
-        ctx.fillStyle = s.color;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
+    for (let s of stars) { ctx.globalAlpha = s.opacity; ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); }
     ctx.globalAlpha = 1.0;
 
     for (let b of bosses) drawBoss(b); 
     drawPlayerShip(player.x, player.y);
     
     for (let b of bullets) {
-        ctx.fillStyle = '#38bdf8';
-        ctx.shadowColor = '#0ea5e9';
-        ctx.shadowBlur = 8;
-        ctx.fillRect(b.x, b.y, b.width, b.height);
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#38bdf8'; ctx.shadowColor = '#0ea5e9'; ctx.shadowBlur = 8;
+        ctx.fillRect(b.x, b.y, b.width, b.height); ctx.shadowBlur = 0;
     }
     
     for (let m of homingMissiles) {
@@ -890,13 +966,8 @@ function draw() {
         
         let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal;
         
-        if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { 
-            ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); 
-        } else { 
-            ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
-            let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; 
-            ctx.fillText(icon, 0, 0); 
-        }
+        if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); } 
+        else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; ctx.fillText(icon, 0, 0); }
         ctx.restore();
     }
     
@@ -908,14 +979,8 @@ function draw() {
 
     if (toastTimer > 0 && gameState === 'PLAYING') {
         ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); 
-        if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { 
-            ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; 
-            ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); 
-        } else { 
-            ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
-            ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; 
-            ctx.fillText(toastIcon, canvas.width / 2, floatY); 
-        }
+        if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } 
+        else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); }
         if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); }
         ctx.restore(); toastTimer--;
     }
