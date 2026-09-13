@@ -1,24 +1,65 @@
 let isDraggingShip = false; let dragPointerId = null; let lastTouchX = 0; let lastTouchY = 0;
+
 canvas.addEventListener('pointerdown', (e) => { 
-    // Ahora permite agarrar la nave en modo TUTORIAL
     if (dragPointerId === null && (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL')) { 
-        dragPointerId = e.pointerId; isDraggingShip = true; 
-        lastTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); 
-        lastTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height); 
+        dragPointerId = e.pointerId; 
+        const touchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); 
+        const touchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height); 
+        
+        if (gameStats.controlMode === 'joystick') {
+            joystick.active = true;
+            joystick.baseX = touchX;
+            joystick.baseY = touchY;
+            joystick.x = touchX;
+            joystick.y = touchY;
+            joystick.dx = 0; 
+            joystick.dy = 0;
+        } else {
+            isDraggingShip = true; 
+            lastTouchX = touchX;
+            lastTouchY = touchY;
+        }
     } 
 });
+
 canvas.addEventListener('pointermove', (e) => { 
-    if (!isDraggingShip || (gameState !== 'PLAYING' && gameState !== 'TRANSITION' && gameState !== 'TUTORIAL') || e.pointerId !== dragPointerId) return; 
+    if ((gameState !== 'PLAYING' && gameState !== 'TRANSITION' && gameState !== 'TUTORIAL') || e.pointerId !== dragPointerId) return; 
     
-    // Si el jugador arrastra la nave en el paso 0.5, avanza el tutorial
     if (gameState === 'TUTORIAL' && tutorialStep === 0.5) { completeTutorialStep(0.5); }
     
-    const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); const currentTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height); 
-    player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); player.y += (currentTouchY - lastTouchY) * (1 + (upgrades.speed * 0.15)); 
-    if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
-    lastTouchX = currentTouchX; lastTouchY = currentTouchY; 
+    const currentTouchX = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width); 
+    const currentTouchY = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height); 
+    
+    if (gameStats.controlMode === 'joystick' && joystick.active) {
+        let dx = currentTouchX - joystick.baseX;
+        let dy = currentTouchY - joystick.baseY;
+        let dist = Math.hypot(dx, dy);
+        let maxDist = 40; 
+        if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+        
+        joystick.x = joystick.baseX + dx;
+        joystick.y = joystick.baseY + dy;
+        joystick.dx = dx / maxDist; 
+        joystick.dy = dy / maxDist;
+    } else if (isDraggingShip) {
+        player.x += (currentTouchX - lastTouchX) * (1 + (upgrades.speed * 0.15)); 
+        player.y += (currentTouchY - lastTouchY) * (1 + (upgrades.speed * 0.15)); 
+        if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
+        lastTouchX = currentTouchX; lastTouchY = currentTouchY; 
+    }
 });
-window.addEventListener('pointerup', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } }); window.addEventListener('pointercancel', (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } });
+
+const endPointer = (e) => { 
+    if (e.pointerId === dragPointerId) { 
+        isDraggingShip = false; 
+        joystick.active = false; 
+        joystick.dx = 0; 
+        joystick.dy = 0; 
+        dragPointerId = null; 
+    } 
+};
+window.addEventListener('pointerup', endPointer); 
+window.addEventListener('pointercancel', endPointer);
 
 window.shootBullet = function() {
     let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1); let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets; let bonusPro = gameStats.equippedSkins[evolutionStage] ? 0.30 : 0; baseDmg = baseDmg + (baseDmg * bonusPro); let finalDamage = (upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg) * currentMatchBooster; if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
