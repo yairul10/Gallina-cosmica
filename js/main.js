@@ -132,10 +132,12 @@ function update() {
     if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
 
     if (missileCooldownTimer > 0) { missileCooldownTimer--; let sec = Math.ceil(missileCooldownTimer / 60); document.getElementById('missileCooldown').textContent = sec + 's'; document.getElementById('missileBtn').classList.remove('missile-ready'); } else { document.getElementById('missileCooldown').textContent = 'LISTO'; document.getElementById('missileBtn').classList.add('missile-ready'); }
-    if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; let isNew = !gameStats.missiles[0]; if (isNew) { gameStats.missiles[0] = true; gameStats.proMissiles[0] = true; saveStats(); } showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Misil Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t20k'); } 
-    if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.missiles[1]; if (isNew) { gameStats.missiles[1] = true; gameStats.proMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Misil Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); } 
-    if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; let isNew = !gameStats.missiles[2]; if (isNew) { gameStats.missiles[2] = true; gameStats.proMissiles[2] = true; saveStats(); } showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Misil Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t100k'); } 
-    if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; let isNew = !gameStats.missiles[3]; if (isNew) { gameStats.missiles[3] = true; gameStats.proMissiles[3] = true; saveStats(); } showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Misil Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); } 
+    
+    // DESBLOQUEO DE MISILES PRO POR TROFEOS
+    if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; let isNew = !gameStats.proMissiles[0]; if (isNew) { gameStats.proMissiles[0] = true; saveStats(); } showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t20k'); } 
+    if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.proMissiles[1]; if (isNew) { gameStats.proMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); } 
+    if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; let isNew = !gameStats.proMissiles[2]; if (isNew) { gameStats.proMissiles[2] = true; saveStats(); } showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t100k'); } 
+    if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; let isNew = !gameStats.proMissiles[3]; if (isNew) { gameStats.proMissiles[3] = true; saveStats(); } showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); } 
     if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let sub = ""; if (!pTrophies['t300k']) { if (gameStats.proSkins[0]) { coins += 4000; gameStats.savedCoins = coins; sub = "Gallina Pro Reembolsada (+4,000🪙)"; } else { gameStats.proSkins[0] = true; sub = "¡Licencia Gallina Pro Desbloqueada!"; } } saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); } 
     if (score >= 500000) unlockAchievement('a20'); if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; } if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
     
@@ -180,7 +182,7 @@ function update() {
             if (boss.type === 'corn' && boss.shootCooldown >= 55) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 }); } 
             if (boss.type === 'corn' && boss.minionCooldown >= 110) { 
                 boss.minionCooldown = 0; 
-                let mCoin = gameRound >= 2 ? 3 : 2;
+                let mCoin = 1000; // MINIONS MAIZ DAN 1000
                 enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
                 enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
             } 
@@ -212,7 +214,7 @@ function update() {
                     enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 2 : 1), shootCooldown: 0 }); 
                 } 
                 if (enemies[i].type === 'maiz_jefe') { 
-                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 3 : 2), shootCooldown: 0 }); 
+                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 1000, shootCooldown: 0 }); 
                 } 
             } 
         }
@@ -259,7 +261,6 @@ function draw() {
 
     drawPlayerShip(player.x, player.y);
     
-    // NUEVO: Dibujo de láseres actualizado para colores Pro
     for (let b of bullets) { 
         let outerColor = '#38bdf8'; 
         let innerColor = '#ffffff'; 
