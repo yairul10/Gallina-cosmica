@@ -47,7 +47,6 @@ window.startGame = function() {
     currentMatchBooster = gameStats.pendingBooster || 1.0; gameStats.pendingBooster = 1.0; saveStats();
     score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; goingToRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false; sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
     
-    // Auto-Vida Reset
     moduleActiveInMatch = gameStats.equipExtraModule;
     
     bullets.length = 0; homingMissiles.length = 0; enemies.length = 0; bossBullets.length = 0; bosses.length = 0; 
@@ -104,9 +103,8 @@ function update() {
             gameState = 'PLAYING'; 
             for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; } 
             
-            // CORRECCIÓN DEL BUG: Detecta correctamente el paso 4.5
-            if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { 
-                tutorialStep = 5; 
+            if (!gameStats.tutorialCompleted && tutorialStep === 5) { 
+                tutorialStep = 5.1; 
                 activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); 
             }
         }
@@ -194,14 +192,14 @@ function update() {
             if (boss.type === 'corn' && boss.shootCooldown >= 55) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 }); } 
             if (boss.type === 'corn' && boss.minionCooldown >= 110) { 
                 boss.minionCooldown = 0; 
-                let mCoin = 1000; 
+                let mCoin = gameRound >= 2 ? 3 : 2;
                 enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
                 enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
             } 
             if (boss.type === 'lechuga' && boss.shootCooldown >= 45) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -2.0, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 - 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 2.0, isLechugaBala: true }); } 
             if (boss.type === 'lechuga' && boss.minionCooldown >= 90) { 
                 boss.minionCooldown = 0; 
-                let mCoin = gameRound >= 2 ? 3 : 2;
+                let mCoin = gameRound >= 2 ? 5 : 4;
                 enemies.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 48, height: 48, hp: 5, maxHp: 5, type: 'lechuga_fuerte', speed: 1.5, wobble: 0, pts: 300, coin: mCoin, shootCooldown: 0 }); 
             } 
         } else { 
@@ -226,7 +224,7 @@ function update() {
                     enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 2 : 1), shootCooldown: 0 }); 
                 } 
                 if (enemies[i].type === 'maiz_jefe') { 
-                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 1000, shootCooldown: 0 }); 
+                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 3 : 2), shootCooldown: 0 }); 
                 } 
             } 
         }
