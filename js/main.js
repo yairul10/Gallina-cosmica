@@ -136,22 +136,7 @@ function update() {
     if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.missiles[1]; if (isNew) { gameStats.missiles[1] = true; gameStats.proMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Misil Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); } 
     if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; let isNew = !gameStats.missiles[2]; if (isNew) { gameStats.missiles[2] = true; gameStats.proMissiles[2] = true; saveStats(); } showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Misil Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t100k'); } 
     if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; let isNew = !gameStats.missiles[3]; if (isNew) { gameStats.missiles[3] = true; gameStats.proMissiles[3] = true; saveStats(); } showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Misil Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); } 
-    
-    // TROFEO 300k - DESBLOQUEA GALLINA PRO
-    if (score >= 300000 && !gotTrophy300k) { 
-        gotTrophy300k = true; 
-        let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; 
-        let sub = ""; 
-        if (!pTrophies['t300k']) { 
-            if (gameStats.proSkins[0]) { 
-                coins += 4000; gameStats.savedCoins = coins; sub = "Gallina Pro Reembolsada (+4,000🪙)"; 
-            } else { 
-                gameStats.proSkins[0] = true; sub = "¡Licencia Gallina Pro Desbloqueada!"; 
-            } 
-        } 
-        saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); 
-    } 
-    
+    if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let sub = ""; if (!pTrophies['t300k']) { if (gameStats.proSkins[0]) { coins += 4000; gameStats.savedCoins = coins; sub = "Gallina Pro Reembolsada (+4,000🪙)"; } else { gameStats.proSkins[0] = true; sub = "¡Licencia Gallina Pro Desbloqueada!"; } } saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); } 
     if (score >= 500000) unlockAchievement('a20'); if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; } if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
     
     if (score >= nextBossScoreThreshold && bosses.length === 0) { 
@@ -189,12 +174,49 @@ function update() {
         let boss = bosses[bIndex];
         if (!boss.entered) { boss.y += 1.5; if (boss.y >= 50) boss.entered = true; } else { boss.x += boss.speed * boss.direction; boss.y += (boss.speed * 0.4) * boss.dirY; if (boss.x < 10 || boss.x + boss.width > canvas.width - 10) boss.direction *= -1; if (boss.y < 50 || boss.y + boss.height > canvas.height / 2 - 20) boss.dirY *= -1; }
         boss.shootCooldown++;
-        if (boss.isSuperBoss) { boss.minionCooldown++; if (boss.type === 'corn' && boss.shootCooldown >= 55) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 }); } if (boss.type === 'corn' && boss.minionCooldown >= 110) { boss.minionCooldown = 0; enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: 2, shootCooldown: 0 }); enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: 2, shootCooldown: 0 }); } if (boss.type === 'lechuga' && boss.shootCooldown >= 45) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -2.0, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 - 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 2.0, isLechugaBala: true }); } if (boss.type === 'lechuga' && boss.minionCooldown >= 90) { boss.minionCooldown = 0; enemies.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 48, height: 48, hp: 5, maxHp: 5, type: 'lechuga_fuerte', speed: 1.5, wobble: 0, pts: 300, coin: 2, shootCooldown: 0 }); } } else { if (boss.shootCooldown >= 40) { boss.shootCooldown = 0; let bc = Math.min(4, Math.max(1, score >= 20000 ? 2 + Math.floor((score - 20000) / 20000) : 1)); let isLB = boss.type === 'lechuga'; if (bc === 1) { bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0, isLechugaBala: isLB }); } else if (bc === 2) { bossBullets.push({ x: boss.x + boss.width / 2 - 16, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -1.2, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 4, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 1.2, isLechugaBala: isLB }); } else if (bc === 3) { bossBullets.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2, isLechugaBala: isLB }); } else { bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2.5, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 18, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2.5, isLechugaBala: isLB }); } } }
+        
+        // NUEVO: Monedas +1 para los súbditos de Jefes en Ronda 2+
+        if (boss.isSuperBoss) { 
+            boss.minionCooldown++; 
+            if (boss.type === 'corn' && boss.shootCooldown >= 55) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 }); } 
+            if (boss.type === 'corn' && boss.minionCooldown >= 110) { 
+                boss.minionCooldown = 0; 
+                let mCoin = gameRound >= 2 ? 3 : 2;
+                enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
+                enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
+            } 
+            if (boss.type === 'lechuga' && boss.shootCooldown >= 45) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -2.0, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 - 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 2.0, isLechugaBala: true }); } 
+            if (boss.type === 'lechuga' && boss.minionCooldown >= 90) { 
+                boss.minionCooldown = 0; 
+                let mCoin = gameRound >= 2 ? 3 : 2;
+                enemies.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 48, height: 48, hp: 5, maxHp: 5, type: 'lechuga_fuerte', speed: 1.5, wobble: 0, pts: 300, coin: mCoin, shootCooldown: 0 }); 
+            } 
+        } else { 
+            if (boss.shootCooldown >= 40) { 
+                boss.shootCooldown = 0; let bc = Math.min(4, Math.max(1, score >= 20000 ? 2 + Math.floor((score - 20000) / 20000) : 1)); let isLB = boss.type === 'lechuga'; 
+                if (bc === 1) { bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0, isLechugaBala: isLB }); } 
+                else if (bc === 2) { bossBullets.push({ x: boss.x + boss.width / 2 - 16, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -1.2, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 4, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 1.2, isLechugaBala: isLB }); } 
+                else if (bc === 3) { bossBullets.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 6, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2, isLechugaBala: isLB }); } 
+                else { bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2.5, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 18, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2.5, isLechugaBala: isLB }); } 
+            } 
+        }
         for (let j = bullets.length - 1; j >= 0; j--) { if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) { let dmg = bullets[j].damage; bullets.splice(j, 1); damageBoss(bIndex, dmg); } }
     }
     for (let i = enemies.length - 1; i >= 0; i--) {
         enemies[i].y += enemies[i].speed; enemies[i].wobble += 0.06; enemies[i].x += Math.sin(enemies[i].wobble) * 2.2; 
-        if (enemies[i].type.includes('jefe') || enemies[i].type === 'lechuga_fuerte') { enemies[i].shootCooldown++; if (enemies[i].shootCooldown >= 60) { enemies[i].shootCooldown = 0; let isL = enemies[i].type.includes('lechuga'); bossBullets.push({ x: enemies[i].x + enemies[i].width/2 - 6, y: enemies[i].y + enemies[i].height - 10, width: 12, height: 12, speed: 4.5, dx: 0, isLechugaBala: isL }); if (enemies[i].type === 'lechuga_jefe' && gameRound < 3) { enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 1, shootCooldown: 0 }); } if (enemies[i].type === 'maiz_jefe') { enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: 2, shootCooldown: 0 }); } } }
+        if (enemies[i].type.includes('jefe') || enemies[i].type === 'lechuga_fuerte') { 
+            enemies[i].shootCooldown++; 
+            if (enemies[i].shootCooldown >= 60) { 
+                enemies[i].shootCooldown = 0; let isL = enemies[i].type.includes('lechuga'); 
+                bossBullets.push({ x: enemies[i].x + enemies[i].width/2 - 6, y: enemies[i].y + enemies[i].height - 10, width: 12, height: 12, speed: 4.5, dx: 0, isLechugaBala: isL }); 
+                if (enemies[i].type === 'lechuga_jefe' && gameRound < 3) { 
+                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 2 : 1), shootCooldown: 0 }); 
+                } 
+                if (enemies[i].type === 'maiz_jefe') { 
+                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 3 : 2), shootCooldown: 0 }); 
+                } 
+            } 
+        }
         if (enemies[i].y > canvas.height) { enemies.splice(i, 1); handleDamage(); continue; } if (player.x < enemies[i].x + enemies[i].width && player.x + player.width > enemies[i].x && player.y < enemies[i].y + enemies[i].height && player.y + player.height > enemies[i].y) { enemies.splice(i, 1); handleDamage(); continue; }
         for (let j = bullets.length - 1; j >= 0; j--) { if (bullets[j] && bullets[j].x < enemies[i].x + enemies[i].width && bullets[j].x + bullets[j].width > enemies[i].x && bullets[j].y < enemies[i].y + enemies[i].height && bullets[j].y + bullets[j].height > enemies[i].y) { let dmg = bullets[j].damage; bullets.splice(j, 1); damageEnemy(i, dmg); break; } }
     }
@@ -240,10 +262,10 @@ function draw() {
     
     for (let b of bullets) { 
         let outerColor = '#38bdf8'; 
-        if (b.shipType === 0) outerColor = '#ef4444';      // Rojo
-        else if (b.shipType === 1) outerColor = '#a855f7'; // Morado
-        else if (b.shipType === 2) outerColor = '#fbbf24'; // Dorado
-        else if (b.shipType === 3) outerColor = '#3b82f6'; // Azul
+        if (b.shipType === 0) outerColor = '#ef4444'; 
+        else if (b.shipType === 1) outerColor = '#a855f7'; 
+        else if (b.shipType === 2) outerColor = '#fbbf24'; 
+        else if (b.shipType === 3) outerColor = '#3b82f6'; 
         
         ctx.fillStyle = '#ffffff'; ctx.shadowColor = outerColor; ctx.shadowBlur = 8; ctx.fillRect(b.x, b.y, b.width, b.height); 
         ctx.strokeStyle = outerColor; ctx.lineWidth = 1.5; ctx.strokeRect(b.x, b.y, b.width, b.height); ctx.shadowBlur = 0; 
