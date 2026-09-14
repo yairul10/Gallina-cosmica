@@ -49,7 +49,7 @@ window.startGame = function() {
     
     bullets.length = 0; homingMissiles.length = 0; enemies.length = 0; bossBullets.length = 0; bosses.length = 0; 
     
-    evolutionStage = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0; missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false; doubleBossSpawned = false; doubleBossDefeated = false;
+    evolutionStage = 0; evolutionTimer = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0; missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false; doubleBossSpawned = false; doubleBossDefeated = false;
     updateTrophiesHUD(); player.x = canvas.width / 2 - player.width / 2; player.y = canvas.height - 110; isDraggingShip = false; dragPointerId = null; 
     
     joystick.active = false; joystick.dx = 0; joystick.dy = 0;
@@ -85,6 +85,42 @@ window.gameOver = function() {
 let enemySpawnInterval = 0;
 function update() {
     if (gameState === 'TUTORIAL') return;
+    
+    // --- LÓGICA DE CINEMÁTICA DE EVOLUCIÓN ---
+    if (gameState === 'EVOLVING') {
+        evolutionTimer--;
+        
+        // Efecto visual: Las estrellas son absorbidas por la nave para darle poder
+        for (let s of stars) {
+            let dx = (player.x + player.width/2) - s.x;
+            let dy = (player.y + player.height/2) - s.y;
+            s.x += dx * 0.05;
+            s.y += dy * 0.05;
+        }
+
+        // Justo a la mitad de la animación (fotograma 75), hacemos el cambio real
+        if (evolutionTimer === 75) {
+            if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } 
+            else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } 
+            else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); }
+            
+            updateUpgradesHUD(); // Actualiza el botón para que aparezca el nuevo misil!
+            
+            // Si el jugador estaba en el tutorial de evolución, lo avanzamos aquí
+            if (!gameStats.tutorialCompleted && tutorialStep === 4.5) {
+                tutorialStep = 5; 
+                activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null);
+            }
+        }
+        
+        // Al terminar el tiempo, devolvemos el juego a la normalidad
+        if (evolutionTimer <= 0) {
+            gameState = 'PLAYING';
+            for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; }
+        }
+        return; // Retorna para que NO se muevan los enemigos ni las balas
+    }
+
     if (gameState === 'TRANSITION') { 
         transitionTimer--; 
         bullets.length = 0; homingMissiles.length = 0; bossBullets.length = 0; enemies.length = 0; 
@@ -116,7 +152,6 @@ function update() {
     let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; 
     if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; 
     
-    // Joystick Move
     if (gameStats.controlMode === 'joystick' && joystick.active) { player.x += joystick.dx * currentSpeed * 1.5; player.y += joystick.dy * currentSpeed * 1.5; }
 
     if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
@@ -165,6 +200,18 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
     ctx.save();
     
+    // --- LÓGICA DE CÁMARA ZOOM (NUEVA CINEMÁTICA) ---
+    if (gameState === 'EVOLVING') {
+        let cx = player.x + player.width / 2;
+        let cy = player.y + player.height / 2;
+        let progress = (150 - evolutionTimer) / 150; 
+        let zoom = 1 + Math.sin(progress * Math.PI) * 1.3; // Zoom in y out suave
+        
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-cx, -cy);
+    }
+    
     if (gameState === 'TRANSITION' && transitionTimer > 100) { let shake = (transitionTimer - 100) / 15; ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake); }
     
     let warpSpeed = (gameState === 'TRANSITION') ? 40 : 0.5;
@@ -194,6 +241,38 @@ function draw() {
     for (let bb of bossBullets) { let imgB = bb.isLechugaBala ? assets.balaLechuga : assets.balaJefe; if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); } }
     for (let e of enemies) drawEnemy(e);
     
+    if (gameStats.controlMode === 'joystick' && joystick.active) {
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, 40, 0, Math.PI*2);
+        ctx.fillStyle = '#0f172a'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = '#38bdf8'; ctx.stroke();
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath(); ctx.arc(joystick.x, joystick.y, 18, 0, Math.PI*2);
+        ctx.fillStyle = '#38bdf8'; ctx.fill();
+        ctx.restore();
+    }
+    
+    // RESTAURAMOS LA CÁMARA NORMAL PARA DIBUJAR LOS TEXTOS SIN DEFORMARLOS
+    ctx.restore();
+
+    // --- DESTELLO BLANCO AL EVOLUCIONAR ---
+    if (gameState === 'EVOLVING') {
+        let flashAlpha = 0;
+        if (evolutionTimer <= 100 && evolutionTimer >= 50) {
+            flashAlpha = 1 - (Math.abs(evolutionTimer - 75) / 25);
+        }
+        if (flashAlpha > 0) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        ctx.fillStyle = `rgba(251, 191, 36, ${Math.sin(((150 - evolutionTimer) / 150) * Math.PI)})`;
+        ctx.font = 'bold 30px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 10;
+        ctx.fillText('¡EVOLUCIONANDO!', canvas.width / 2, canvas.height / 4);
+        ctx.shadowBlur = 0;
+    }
+    
     if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') { let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10; if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); } }
     if (toastTimer > 0 && gameState === 'PLAYING') { ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); } if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); } ctx.restore(); toastTimer--; }
     
@@ -204,8 +283,6 @@ function draw() {
         if (transitionTimer < 30) { ctx.shadowBlur = 0; ctx.fillStyle = `rgba(255, 255, 255, ${ (30 - transitionTimer) / 30 })`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
         ctx.restore(); 
     }
-    
-    ctx.restore();
 }
 
 document.getElementById('startBtn').addEventListener('click', window.startGame); 
