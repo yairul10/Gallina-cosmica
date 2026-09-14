@@ -56,6 +56,7 @@ window.spawnEnemy = function() {
     
     if (gameRound >= 4) {
         let scale = Math.floor((score - 250000) / 2000); if (scale < 0) scale = 0; let eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte'; let eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale; let ePts = eType === 'maiz_jefe' ? 1200 : 1000; let eCoin = eType === 'maiz_jefe' ? 3 : 4;
+        if (gameRound >= 2) eCoin += 1;
         enemies.push({ x: Math.random() * (canvas.width - 56 - 20) + 10, y: -60, width: 56, height: 56, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 0.5) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 }); return;
     }
     
@@ -64,6 +65,10 @@ window.spawnEnemy = function() {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
         if (score >= 200000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 3; } else if (score >= 120000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 3 : 2; } else if (score >= 80000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 2; } else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; } else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
     } else { eHp = lastCornHp; if (eHp > 1) { eType = 'corn_strong'; eCoin = 2; } else { eType = 'corn'; eCoin = 1; } }
+    
+    // NUEVO: +1 moneda base si estás en ronda 2 o superior
+    if (gameRound >= 2) eCoin += 1;
+    
     enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
 }
 
@@ -105,16 +110,21 @@ window.damageBoss = function(bIndex, dmg) {
     let boss = bosses[bIndex]; 
     let ship = gameStats.selectedShip;
     let passiveMult = 1.0;
-    
-    // PASIVAS DE JEFES
-    if (ship === 1 && boss.type === 'corn') passiveMult = 1.2; // Oveja
-    if (ship === 3 && boss.type === 'lechuga') passiveMult = 1.2; // Vaca
+    if (ship === 1 && boss.type === 'corn') passiveMult = 1.2; 
+    if (ship === 3 && boss.type === 'lechuga') passiveMult = 1.2; 
     
     let proMult = gameStats.useProShip ? 1.3 : 1.0;
     boss.hp -= (dmg * passiveMult * proMult);
 
     if (boss.hp <= 0) { 
-        score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 6 : 3); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
+        score += boss.isSuperBoss ? 4500 : 2250; 
+        
+        // NUEVO: +1 Moneda en Jefes a partir de Ronda 2
+        let bCoin = boss.isSuperBoss ? 6 : 3;
+        if (gameRound >= 2) bCoin += 1;
+        handleCoinEarned(bCoin); 
+        
+        document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
         if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); } 
         else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2 && !doubleBossSpawned) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); }
         else if (boss.isSuperBoss && gameRound === 3 && doubleBossSpawned && bosses.length === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 4; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); doubleBossDefeated = true; unlockAchievement('a21'); }
@@ -126,8 +136,6 @@ window.damageEnemy = function(eIndex, dmg) {
     let e = enemies[eIndex]; 
     let ship = gameStats.selectedShip;
     let passiveMult = 1.0;
-    
-    // PASIVAS ENEMIGOS NORMALES
     if (ship === 0 && (e.type === 'corn' || e.type === 'corn_strong')) passiveMult = 1.2;
     if (ship === 1 && e.type === 'maiz_jefe') passiveMult = 1.2;
     if (ship === 2 && (e.type === 'lechuga' || e.type === 'lechuga_fuerte')) passiveMult = 1.2;
@@ -152,14 +160,13 @@ window.drawPlayerShip = function(x, y) {
     if (currentImg && currentImg.complete && currentImg.naturalWidth > 0) { 
         ctx.drawImage(currentImg, x, y, player.width, player.height); 
     } else { 
-        // FALLBACK: EMOJIS ESCALONADOS
         ctx.save(); ctx.translate(x + player.width/2, y + player.height/2); 
         if (isPro) { ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 15; } 
         let emojis = [
-            ['🥚', '🐣', '🐤', '🐔'], // Gallina
-            ['☁️', '🐑', '🐏', '🐐'], // Oveja (Creciente)
-            ['🐴', '🐎', '🎠', '🦄'], // Caballo
-            ['🥛', '🐄', '🐂', '🐃']  // Vaca
+            ['🥚', '🐣', '🐤', '🐔'], 
+            ['☁️', '🐑', '🐏', '🐐'], 
+            ['🐴', '🐎', '🎠', '🦄'], 
+            ['🥛', '🐄', '🐂', '🐃']  
         ];
         ctx.font = `${30 + (stage * 5)}px sans-serif`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
