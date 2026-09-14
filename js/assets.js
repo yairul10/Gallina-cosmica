@@ -5,14 +5,13 @@ const assets = {
     maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(), superJefeMaiz: new Image(),
     lechuga: new Image(), lechugaFuerte: new Image(), jefeLechuga: new Image(), superJefeLechuga: new Image(), balaJefe: new Image(), balaLechuga: new Image(),
     trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoDiamante: new Image(),
-    ships: [] // Aquí se guardan las 32 naves
+    ships: []
 };
 
 assets.fondoGalaxia.src = 'assets/fondo_galaxia.png'; 
 assets.fondoRonda2.src = 'assets/fondo_ronda2.png'; 
 assets.fondoRonda3.src = 'assets/fondo_ronda3.png';
 
-// Genera la matriz de 32 imágenes para tus naves (4 animales * 2 tipos * 4 fases)
 const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
 for(let i=0; i<4; i++) {
     let normalSkins = []; let proSkins = [];
@@ -22,17 +21,23 @@ for(let i=0; i<4; i++) {
         normalSkins.push(imgN);
         proSkins.push(imgP);
     }
-    assets.ships.push([normalSkins, proSkins]); // Guardado como [Animal][0:Normal, 1:Pro][Fase 0 a 3]
+    assets.ships.push([normalSkins, proSkins]); 
 }
 
 assets.balaPollito.src = 'assets/bala_pollito.png'; assets.balaPollitoPro.src = 'assets/bala_pollito_pro.png';
 assets.balaLana.src = 'assets/bala_lana.png'; assets.balaLanaPro.src = 'assets/bala_lana_pro.png';
 assets.balaHerradura.src = 'assets/bala_herradura.png'; assets.balaHerraduraPro.src = 'assets/bala_herradura_pro.png';
 assets.balaLeche.src = 'assets/bala_leche.png'; assets.balaLechePro.src = 'assets/bala_leche_pro.png';
+
 assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png';
 assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
-assets.lechuga.src = 'assets/lechuga.png'; assets.lechugaFuerte.src = 'assets/lechuga_fuerte.png';
-assets.jefeLechuga.src = 'assets/jefe_lechuga.png'; assets.superJefeLechuga.src = 'assets/super_jefe_lechuga.png';
+
+// CORRECCIÓN DE NOMBRES Y CACHÉ
+assets.lechuga.src = 'assets/lechuga.png'; 
+assets.lechugaFuerte.src = 'assets/lechuga_fuerte.png?v=2'; 
+assets.jefeLechuga.src = 'assets/lechuga_jefe.png?v=2'; 
+assets.superJefeLechuga.src = 'assets/super_jefe_lechuga.png';
+
 assets.balaJefe.src = 'assets/bala_jefe.png'; assets.balaLechuga.src = 'assets/bala_lechuga.png';
 assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png';
 assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png'; assets.trofeoDiamante.src = 'assets/trofeo_diamante.png';
