@@ -72,7 +72,7 @@ let missileCooldownTimer = 0; const MISSILE_COOLDOWN = 480;
 
 let timeAt40k = 0; let shieldUnlocked = false; let shieldActive = false; let gameRound = 1; let goingToRound = 1;
 let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0; let sessionCoinsEarned = 0;
-let partialHit = false; let transitionTimer = 0; let doubleBossSpawned = false; let doubleBossDefeated = false;
+let partialHit = false; let transitionTimer = 0; let evolveTimer = 0; let doubleBossSpawned = false; let doubleBossDefeated = false;
 
 let tutorialStep = 0; let bgScrollY = 0;
 let joystick = { active: false, baseX: 0, baseY: 0, dx: 0, dy: 0, pointerId: null };
