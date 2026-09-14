@@ -86,60 +86,38 @@ let enemySpawnInterval = 0;
 function update() {
     if (gameState === 'TUTORIAL') return;
     
-    // --- LÓGICA DE CINEMÁTICA DE EVOLUCIÓN ---
     if (gameState === 'EVOLVING') {
         evolutionTimer--;
-        
-        // Efecto visual: Las estrellas son absorbidas por la nave para darle poder
-        for (let s of stars) {
-            let dx = (player.x + player.width/2) - s.x;
-            let dy = (player.y + player.height/2) - s.y;
-            s.x += dx * 0.05;
-            s.y += dy * 0.05;
-        }
-
-        // Justo a la mitad de la animación (fotograma 75), hacemos el cambio real
+        for (let s of stars) { let dx = (player.x + player.width/2) - s.x; let dy = (player.y + player.height/2) - s.y; s.x += dx * 0.05; s.y += dy * 0.05; }
         if (evolutionTimer === 75) {
             if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } 
             else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } 
             else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); }
-            
-            updateUpgradesHUD(); // Actualiza el botón para que aparezca el nuevo misil!
-            
-            // Si el jugador estaba en el tutorial de evolución, lo avanzamos aquí
-            if (!gameStats.tutorialCompleted && tutorialStep === 4.5) {
-                tutorialStep = 5; 
-                activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null);
-            }
+            updateUpgradesHUD(); 
+            if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { tutorialStep = 5; activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); }
         }
-        
-        // Al terminar el tiempo, devolvemos el juego a la normalidad
-        if (evolutionTimer <= 0) {
-            gameState = 'PLAYING';
-            for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; }
-        }
-        return; // Retorna para que NO se muevan los enemigos ni las balas
+        if (evolutionTimer <= 0) { gameState = 'PLAYING'; for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; } }
+        return; 
     }
 
     if (gameState === 'TRANSITION') { 
         transitionTimer--; 
         bullets.length = 0; homingMissiles.length = 0; bossBullets.length = 0; enemies.length = 0; 
         
-        for (let s of stars) { 
-            s.y += s.speed * 25; 
-            if (s.y > canvas.height) s.y = 0; 
-        } 
+        for (let s of stars) { s.y += s.speed * 25; if (s.y > canvas.height) s.y = 0; } 
         
         let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; 
         if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; 
-        
         if (gameStats.controlMode === 'joystick' && joystick.active) { player.x += joystick.dx * currentSpeed * 1.5; player.y += joystick.dy * currentSpeed * 1.5; }
-
         if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
         
+        // NUEVO: Transición limpia a las 3 rondas y modo supervivencia
         if (transitionTimer <= 0) { 
             gameRound = goingToRound; 
-            if (gameRound === 2) nextBossScoreThreshold = 150000; else if (gameRound === 3) nextBossScoreThreshold = 250000; 
+            if (gameRound === 2) nextBossScoreThreshold = 75000; 
+            else if (gameRound === 3) nextBossScoreThreshold = 175000; 
+            else if (gameRound === 4) nextBossScoreThreshold = 9999999; 
+            
             document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); 
             if (gameStats.controlMode === 'drag') { document.getElementById('hud-joystick').style.display = 'none'; }
             updateUpgradesHUD(); bgMusic.volume = 0.4; gameState = 'PLAYING'; previousState = 'PLAYING'; 
@@ -151,14 +129,29 @@ function update() {
 
     let currentSpeed = player.baseSpeed + (upgrades.speed - 1) * 0.5; 
     if (keys.ArrowLeft || keys.KeyA) player.x -= currentSpeed; if (keys.ArrowRight || keys.KeyD) player.x += currentSpeed; if (keys.ArrowUp || keys.KeyW) player.y -= currentSpeed; if (keys.ArrowDown || keys.KeyS) player.y += currentSpeed; 
-    
     if (gameStats.controlMode === 'joystick' && joystick.active) { player.x += joystick.dx * currentSpeed * 1.5; player.y += joystick.dy * currentSpeed * 1.5; }
-
     if (player.x < 10) player.x = 10; if (player.x > canvas.width - player.width - 10) player.x = canvas.width - player.width - 10; if (player.y < canvas.height / 2) player.y = canvas.height / 2; if (player.y > canvas.height - player.height - 10) player.y = canvas.height - player.height - 10; 
 
     if (missileCooldownTimer > 0) { missileCooldownTimer--; let sec = Math.ceil(missileCooldownTimer / 60); document.getElementById('missileCooldown').textContent = sec + 's'; document.getElementById('missileBtn').classList.remove('missile-ready'); } else { document.getElementById('missileCooldown').textContent = 'LISTO'; document.getElementById('missileBtn').classList.add('missile-ready'); }
-    if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; let isNew = !gameStats.missiles[0]; if (isNew) { gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); } showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t20k'); } if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.missiles[1]; if (isNew) { gameStats.missiles[1] = true; gameStats.equippedMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); } if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; let isNew = !gameStats.missiles[2]; if (isNew) { gameStats.missiles[2] = true; gameStats.equippedMissiles[2] = true; saveStats(); } showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t100k'); } if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; let isNew = !gameStats.missiles[3]; if (isNew) { gameStats.missiles[3] = true; gameStats.equippedMissiles[3] = true; saveStats(); } showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); } if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let sub = ""; if (!pTrophies['t300k']) { if (gameStats.skins[3]) { coins += 4000; gameStats.savedCoins = coins; sub = "Vaca Pro Reembolsada (+4,000🪙)"; } else { gameStats.skins[3] = true; gameStats.equippedSkins[3] = true; sub = "¡Skin Vaca Pro Desbloqueada!"; } } saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); } if (score >= 500000) unlockAchievement('a20'); if (doubleBossSpawned && !doubleBossDefeated && bosses.length === 0 && score >= 250000) { doubleBossDefeated = true; unlockAchievement('a21'); } if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; } if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
-    if (score >= nextBossScoreThreshold && bosses.length === 0) { let currentThreshold = nextBossScoreThreshold; spawnBoss(); if (gameRound === 1) nextBossScoreThreshold += 5000; else if (gameRound === 2 && currentThreshold === 150000) nextBossScoreThreshold = 9999999; else if (gameRound === 3 && currentThreshold === 250000) nextBossScoreThreshold = 9999999; }
+    if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; let isNew = !gameStats.missiles[0]; if (isNew) { gameStats.missiles[0] = true; gameStats.equippedMissiles[0] = true; saveStats(); } showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t20k'); } if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.missiles[1]; if (isNew) { gameStats.missiles[1] = true; gameStats.equippedMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); } if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; let isNew = !gameStats.missiles[2]; if (isNew) { gameStats.missiles[2] = true; gameStats.equippedMissiles[2] = true; saveStats(); } showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t100k'); } if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; let isNew = !gameStats.missiles[3]; if (isNew) { gameStats.missiles[3] = true; gameStats.equippedMissiles[3] = true; saveStats(); } showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Skin Misil Desbloqueada!" : ""); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); } if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let sub = ""; if (!pTrophies['t300k']) { if (gameStats.skins[3]) { coins += 4000; gameStats.savedCoins = coins; sub = "Vaca Pro Reembolsada (+4,000🪙)"; } else { gameStats.skins[3] = true; gameStats.equippedSkins[3] = true; sub = "¡Skin Vaca Pro Desbloqueada!"; } } saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); } if (score >= 500000) unlockAchievement('a20'); if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; } if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
+    
+    // NUEVO: Lógica de aparición de Jefes dividida en 3 rondas y el modo infinito
+    if (score >= nextBossScoreThreshold && bosses.length === 0) { 
+        let currentThreshold = nextBossScoreThreshold; 
+        spawnBoss(); 
+        if (gameRound === 1) {
+            if (currentThreshold < 50000) nextBossScoreThreshold += 5000;
+            else nextBossScoreThreshold = 9999999;
+        } else if (gameRound === 2) {
+            if (currentThreshold < 150000) nextBossScoreThreshold += 25000;
+            else nextBossScoreThreshold = 9999999;
+        } else if (gameRound === 3) {
+            if (currentThreshold < 250000) nextBossScoreThreshold += 25000;
+            else nextBossScoreThreshold = 9999999;
+        } else if (gameRound === 4) {
+            nextBossScoreThreshold = 9999999;
+        }
+    }
     
     for (let s of stars) { s.y += s.speed; if (s.y > canvas.height) s.y = 0; }
     for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].y -= bullets[i].speed; if (bullets[i].dx) bullets[i].x += bullets[i].dx; if (bullets[i].y < -20 || bullets[i].x < -30 || bullets[i].x > canvas.width + 30) bullets.splice(i, 1); }
@@ -176,9 +169,11 @@ function update() {
     for (let i = bossBullets.length - 1; i >= 0; i--) { bossBullets[i].y += bossBullets[i].speed; if (bossBullets[i].dx) bossBullets[i].x += bossBullets[i].dx; if (bossBullets[i].y > canvas.height + 20 || bossBullets[i].x < -20 || bossBullets[i].x > canvas.width + 20) { bossBullets.splice(i, 1); continue; } if (player.x < bossBullets[i].x + bossBullets[i].width && player.x + player.width > bossBullets[i].x && player.y < bossBullets[i].y + bossBullets[i].height && player.y + player.height > bossBullets[i].y) { bossBullets.splice(i, 1); handleDamage(); } }
 
     if (bosses.length === 0) { 
-        if (gameRound === 3 && score < 250000 && nextBossScoreThreshold === 250000) {
-            let hasMaiz = false, hasLechuga = false; for (let e of enemies) { if (e.type === 'maiz_jefe') hasMaiz = true; if (e.type === 'lechuga_jefe') hasLechuga = true; } let baseHp = 1 + Math.floor(timeAt40k / 12) + (evolutionStage * 5); let eHpM = Math.ceil(baseHp * 2.5); let eHpL = Math.ceil(baseHp * 3.5); if (!hasMaiz) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpM, maxHp: eHpM, speed: 1.2, wobble: Math.random() * Math.PI, type: 'maiz_jefe', pts: 800, coin: 3, shootCooldown: 0 }); if (!hasLechuga) enemies.push({ x: Math.random() * (canvas.width - 76) + 10, y: -60, width: 56, height: 56, hp: eHpL, maxHp: eHpL, speed: 1.0, wobble: Math.random() * Math.PI, type: 'lechuga_jefe', pts: 1000, coin: 3, shootCooldown: 0 });
-        } else { enemySpawnInterval++; let spawnRate = 40; if (gameRound === 3) { spawnRate = Math.max(15, 30 - Math.floor((score - 250000) / 10000)); } else { let diffTime = score >= 40000 ? timeAt40k : gameTime; spawnRate = gameRound >= 2 ? Math.max(25, 50 - Math.floor(diffTime / 10)) : Math.max(20, 45 - Math.floor(diffTime / 10)); } if (enemySpawnInterval > spawnRate) { spawnEnemy(); enemySpawnInterval = 0; } }
+        enemySpawnInterval++; 
+        let spawnRate = 40; 
+        if (gameRound >= 4) { spawnRate = Math.max(15, 30 - Math.floor((score - 250000) / 10000)); } 
+        else { let diffTime = score >= 40000 ? timeAt40k : gameTime; spawnRate = gameRound >= 2 ? Math.max(25, 50 - Math.floor(diffTime / 10)) : Math.max(20, 45 - Math.floor(diffTime / 10)); } 
+        if (enemySpawnInterval > spawnRate) { spawnEnemy(); enemySpawnInterval = 0; } 
     }
     
     for (let bIndex = bosses.length - 1; bIndex >= 0; bIndex--) {
@@ -200,31 +195,30 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
     ctx.save();
     
-    // --- LÓGICA DE CÁMARA ZOOM (NUEVA CINEMÁTICA) ---
     if (gameState === 'EVOLVING') {
-        let cx = player.x + player.width / 2;
-        let cy = player.y + player.height / 2;
-        let progress = (150 - evolutionTimer) / 150; 
-        let zoom = 1 + Math.sin(progress * Math.PI) * 1.3; // Zoom in y out suave
-        
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.scale(zoom, zoom);
-        ctx.translate(-cx, -cy);
+        let cx = player.x + player.width / 2; let cy = player.y + player.height / 2;
+        let progress = (150 - evolutionTimer) / 150; let zoom = 1 + Math.sin(progress * Math.PI) * 1.3; 
+        ctx.translate(canvas.width / 2, canvas.height / 2); ctx.scale(zoom, zoom); ctx.translate(-cx, -cy);
     }
     
     if (gameState === 'TRANSITION' && transitionTimer > 100) { let shake = (transitionTimer - 100) / 15; ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake); }
     
     let warpSpeed = (gameState === 'TRANSITION') ? 40 : 0.5;
-    bgScrollY += warpSpeed; 
-    if (bgScrollY >= canvas.height) bgScrollY = 0;
+    bgScrollY += warpSpeed; if (bgScrollY >= canvas.height) bgScrollY = 0; let y = Math.floor(bgScrollY); 
     
-    let y = Math.floor(bgScrollY); 
-    let bgImg = (gameRound >= 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) ? assets.fondoRonda2 : (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0 ? assets.fondoGalaxia : null);
+    // NUEVO: Dibujar la tercera imagen de fondo
+    let bgImg = null;
+    if (gameRound >= 3 && assets.fondoRonda3 && assets.fondoRonda3.complete && assets.fondoRonda3.naturalWidth > 0) bgImg = assets.fondoRonda3;
+    else if (gameRound === 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) bgImg = assets.fondoRonda2;
+    else if (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0) bgImg = assets.fondoGalaxia;
     
     if (bgImg) { ctx.drawImage(bgImg, 0, y, canvas.width, canvas.height); ctx.drawImage(bgImg, 0, y - canvas.height + 2, canvas.width, canvas.height); }
     
     let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    if (gameRound === 1) { bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); } else if (gameRound === 2) { bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); } else { bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); }
+    if (gameRound === 1) { bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); } 
+    else if (gameRound === 2) { bgGradient.addColorStop(0, 'rgba(26, 11, 46, 0.7)'); bgGradient.addColorStop(1, 'rgba(74, 20, 75, 0.8)'); } 
+    else if (gameRound === 3) { bgGradient.addColorStop(0, 'rgba(10, 30, 10, 0.7)'); bgGradient.addColorStop(1, 'rgba(20, 60, 20, 0.8)'); } 
+    else { bgGradient.addColorStop(0, 'rgba(42, 8, 8, 0.7)'); bgGradient.addColorStop(1, 'rgba(5, 0, 0, 0.9)'); }
     ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     for (let s of stars) { ctx.globalAlpha = s.opacity; ctx.fillStyle = s.color; if (gameState === 'TRANSITION') { ctx.fillRect(s.x, s.y, s.size / 2, s.size * 20); } else { ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); } } ctx.globalAlpha = 1.0;
@@ -236,49 +230,56 @@ function draw() {
 
     drawPlayerShip(player.x, player.y);
     
-    for (let b of bullets) { ctx.fillStyle = '#38bdf8'; ctx.shadowColor = '#0ea5e9'; ctx.shadowBlur = 8; ctx.fillRect(b.x, b.y, b.width, b.height); ctx.shadowBlur = 0; }
+    // NUEVO: Dibujo de Láseres con el esquema de colores personalizado
+    for (let b of bullets) { 
+        let outerColor = '#38bdf8'; 
+        if (b.evo === 0) outerColor = '#ef4444';      // Rojo
+        else if (b.evo === 1) outerColor = '#a855f7'; // Morado
+        else if (b.evo === 2) outerColor = '#fbbf24'; // Dorado
+        else if (b.evo === 3) outerColor = '#3b82f6'; // Azul
+        
+        ctx.fillStyle = '#ffffff'; 
+        ctx.shadowColor = outerColor; 
+        ctx.shadowBlur = 8; 
+        ctx.fillRect(b.x, b.y, b.width, b.height); 
+        ctx.strokeStyle = outerColor;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(b.x, b.y, b.width, b.height);
+        ctx.shadowBlur = 0; 
+    }
+
     for (let m of homingMissiles) { ctx.save(); ctx.translate(m.x + m.width/2, m.y + m.height/2); let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; ctx.rotate(angle); let imgNormal, imgPro; if (m.type === 'milk') { imgNormal = assets.balaLeche; imgPro = assets.balaLechePro; } else if (m.type === 'horseshoe') { imgNormal = assets.balaHerradura; imgPro = assets.balaHerraduraPro; } else if (m.type === 'wool') { imgNormal = assets.balaLana; imgPro = assets.balaLanaPro; } else { imgNormal = assets.balaPollito; imgPro = assets.balaPollitoPro; } let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal; if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; ctx.fillText(icon, 0, 0); } ctx.restore(); }
     for (let bb of bossBullets) { let imgB = bb.isLechugaBala ? assets.balaLechuga : assets.balaJefe; if (imgB.complete && imgB.naturalWidth > 0) { ctx.drawImage(imgB, bb.x, bb.y, bb.width, bb.height); } else { ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bb.isLechugaBala ? '🥬' : '🌽', bb.x + bb.width / 2, bb.y + bb.height / 2); } }
     for (let e of enemies) drawEnemy(e);
     
-    if (gameStats.controlMode === 'joystick' && joystick.active) {
-        ctx.save();
-        ctx.globalAlpha = 0.4;
-        ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, 40, 0, Math.PI*2);
-        ctx.fillStyle = '#0f172a'; ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = '#38bdf8'; ctx.stroke();
-        ctx.globalAlpha = 0.8;
-        ctx.beginPath(); ctx.arc(joystick.x, joystick.y, 18, 0, Math.PI*2);
-        ctx.fillStyle = '#38bdf8'; ctx.fill();
-        ctx.restore();
-    }
+    if (gameStats.controlMode === 'joystick' && joystick.active) { ctx.save(); ctx.globalAlpha = 0.4; ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, 40, 0, Math.PI*2); ctx.fillStyle = '#0f172a'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#38bdf8'; ctx.stroke(); ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.arc(joystick.x, joystick.y, 18, 0, Math.PI*2); ctx.fillStyle = '#38bdf8'; ctx.fill(); ctx.restore(); }
     
-    // RESTAURAMOS LA CÁMARA NORMAL PARA DIBUJAR LOS TEXTOS SIN DEFORMARLOS
     ctx.restore();
 
-    // --- DESTELLO BLANCO AL EVOLUCIONAR ---
     if (gameState === 'EVOLVING') {
-        let flashAlpha = 0;
-        if (evolutionTimer <= 100 && evolutionTimer >= 50) {
-            flashAlpha = 1 - (Math.abs(evolutionTimer - 75) / 25);
-        }
-        if (flashAlpha > 0) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        
+        let flashAlpha = 0; if (evolutionTimer <= 100 && evolutionTimer >= 50) { flashAlpha = 1 - (Math.abs(evolutionTimer - 75) / 25); }
+        if (flashAlpha > 0) { ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
         ctx.fillStyle = `rgba(251, 191, 36, ${Math.sin(((150 - evolutionTimer) / 150) * Math.PI)})`;
         ctx.font = 'bold 30px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 10;
-        ctx.fillText('¡EVOLUCIONANDO!', canvas.width / 2, canvas.height / 4);
-        ctx.shadowBlur = 0;
+        ctx.fillText('¡EVOLUCIONANDO!', canvas.width / 2, canvas.height / 4); ctx.shadowBlur = 0;
     }
     
     if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') { let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10; if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); } }
     if (toastTimer > 0 && gameState === 'PLAYING') { ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); } if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); } ctx.restore(); toastTimer--; }
     
+    // NUEVO: Mensajes de Transición Ajustados
     if (gameState === 'TRANSITION') { 
         ctx.save(); ctx.textAlign = 'center'; 
-        if (goingToRound === 2) { ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 8; ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; ctx.fillText('VIAJE ESTELAR ACTIVADO', canvas.width / 2, canvas.height / 2 - 10); } else if (goingToRound === 3) { ctx.fillStyle = '#ef4444'; ctx.font = 'bold 36px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 10; ctx.fillText('¡MUERTE SÚBITA!', canvas.width / 2, canvas.height / 2 - 50); ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0; ctx.fillText('TELETRANSPORTANDO AL NÚCLEO...', canvas.width / 2, canvas.height / 2 - 10); } 
+        if (goingToRound === 2) { 
+            ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 26px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 8; ctx.fillText('¡SÚPER MAZORCA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); 
+            ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; ctx.fillText('VIAJE ESTELAR ACTIVADO', canvas.width / 2, canvas.height / 2 - 10); 
+        } else if (goingToRound === 3) { 
+            ctx.fillStyle = '#22c55e'; ctx.font = 'bold 24px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 8; ctx.fillText('¡SÚPER LECHUGA DERROTADA!', canvas.width / 2, canvas.height / 2 - 50); 
+            ctx.fillStyle = '#fff'; ctx.font = '18px sans-serif'; ctx.fillText('ENTRANDO AL NÚCLEO ENEMIGO...', canvas.width / 2, canvas.height / 2 - 10); 
+        } else if (goingToRound === 4) { 
+            ctx.fillStyle = '#ef4444'; ctx.font = 'bold 32px sans-serif'; ctx.shadowColor = '#000'; ctx.shadowBlur = 10; ctx.fillText('¡AMENAZA ELIMINADA!', canvas.width / 2, canvas.height / 2 - 50); 
+            ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.shadowBlur = 0; ctx.fillText('¡MODO SUPERVIVENCIA INFINITA!', canvas.width / 2, canvas.height / 2 - 10); 
+        }
         let seconds = Math.ceil(transitionTimer / 60); ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 64px sans-serif'; ctx.fillText(seconds, canvas.width / 2, canvas.height / 2 + 70); 
         if (transitionTimer < 30) { ctx.shadowBlur = 0; ctx.fillStyle = `rgba(255, 255, 255, ${ (30 - transitionTimer) / 30 })`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
         ctx.restore(); 
