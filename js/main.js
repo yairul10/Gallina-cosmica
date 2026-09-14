@@ -175,7 +175,6 @@ function update() {
         if (!boss.entered) { boss.y += 1.5; if (boss.y >= 50) boss.entered = true; } else { boss.x += boss.speed * boss.direction; boss.y += (boss.speed * 0.4) * boss.dirY; if (boss.x < 10 || boss.x + boss.width > canvas.width - 10) boss.direction *= -1; if (boss.y < 50 || boss.y + boss.height > canvas.height / 2 - 20) boss.dirY *= -1; }
         boss.shootCooldown++;
         
-        // NUEVO: Monedas +1 para los súbditos de Jefes en Ronda 2+
         if (boss.isSuperBoss) { 
             boss.minionCooldown++; 
             if (boss.type === 'corn' && boss.shootCooldown >= 55) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 }); } 
@@ -260,15 +259,31 @@ function draw() {
 
     drawPlayerShip(player.x, player.y);
     
+    // NUEVO: Dibujo de láseres actualizado para colores Pro
     for (let b of bullets) { 
         let outerColor = '#38bdf8'; 
-        if (b.shipType === 0) outerColor = '#ef4444'; 
-        else if (b.shipType === 1) outerColor = '#a855f7'; 
-        else if (b.shipType === 2) outerColor = '#fbbf24'; 
-        else if (b.shipType === 3) outerColor = '#3b82f6'; 
+        let innerColor = '#ffffff'; 
+
+        if (b.isPro) {
+            if (b.shipType === 0) { innerColor = '#ffffff'; outerColor = '#a855f7'; }      // Gallina Pro: Blanco/Morado
+            else if (b.shipType === 1) { innerColor = '#ffffff'; outerColor = '#fbbf24'; } // Oveja Pro: Blanco/Dorado
+            else if (b.shipType === 2) { innerColor = '#fbbf24'; outerColor = '#a855f7'; } // Caballo Pro: Dorado/Morado
+            else if (b.shipType === 3) { innerColor = '#fbbf24'; outerColor = '#a855f7'; } // Vaca Pro: Dorado/Morado
+        } else {
+            if (b.shipType === 0) outerColor = '#ef4444';      // Gallina Normal: Rojo
+            else if (b.shipType === 1) outerColor = '#a855f7'; // Oveja Normal: Morado
+            else if (b.shipType === 2) outerColor = '#fbbf24'; // Caballo Normal: Dorado
+            else if (b.shipType === 3) outerColor = '#3b82f6'; // Vaca Normal: Azul
+        }
         
-        ctx.fillStyle = '#ffffff'; ctx.shadowColor = outerColor; ctx.shadowBlur = 8; ctx.fillRect(b.x, b.y, b.width, b.height); 
-        ctx.strokeStyle = outerColor; ctx.lineWidth = 1.5; ctx.strokeRect(b.x, b.y, b.width, b.height); ctx.shadowBlur = 0; 
+        ctx.fillStyle = innerColor; 
+        ctx.shadowColor = outerColor; 
+        ctx.shadowBlur = 8; 
+        ctx.fillRect(b.x, b.y, b.width, b.height); 
+        ctx.strokeStyle = outerColor; 
+        ctx.lineWidth = 1.5; 
+        ctx.strokeRect(b.x, b.y, b.width, b.height); 
+        ctx.shadowBlur = 0; 
     }
 
     for (let m of homingMissiles) { ctx.save(); ctx.translate(m.x + m.width/2, m.y + m.height/2); let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; ctx.rotate(angle); let imgNormal, imgPro; if (m.type === 'milk') { imgNormal = assets.balaLeche; imgPro = assets.balaLechePro; } else if (m.type === 'horseshoe') { imgNormal = assets.balaHerradura; imgPro = assets.balaHerraduraPro; } else if (m.type === 'wool') { imgNormal = assets.balaLana; imgPro = assets.balaLanaPro; } else { imgNormal = assets.balaPollito; imgPro = assets.balaPollitoPro; } let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal; if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; ctx.fillText(icon, 0, 0); } ctx.restore(); }
