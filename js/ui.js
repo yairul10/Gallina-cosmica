@@ -13,7 +13,6 @@ function loadHudPositions() {
                 document.getElementById(id).style.left = saved[id].left; 
                 document.getElementById(id).style.top = saved[id].top; 
             } else if (id === 'hud-joystick' && document.getElementById(id)) {
-                // Fuerza la posición baja izquierda si no existía en el guardado
                 document.getElementById(id).style.left = '8%'; 
                 document.getElementById(id).style.top = '75%';
             }
@@ -131,7 +130,7 @@ function completeTutorialStep(step) {
     gameState = 'PLAYING';
     
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
-    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo (🎯).", 'missileBtn'); return; }
+    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo.", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
     if (step === 4.5) { tutorialStep = 5; activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); }
 }
@@ -196,6 +195,11 @@ window.updateUpgradesHUD = function() {
     const armorBtn = document.getElementById('hud-armor'); const damageBtn = document.getElementById('hud-damage'); const superDmgBtn = document.getElementById('hud-super-damage'); const pauseSuperDmg = document.getElementById('pauseSuperDmgBtn');
     if (gameRound >= 2) { armorBtn.style.display = 'flex'; damageBtn.style.display = 'flex'; if (upgrades.armor > 0) { armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; armorBtn.querySelector('.hud-cost').style.display = 'none'; } if (upgrades.dmgBoost > 0) { damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; damageBtn.querySelector('.hud-cost').style.display = 'none'; } armorBtn.classList.toggle('can-upgrade', upgrades.armor === 0 && coins >= 300); damageBtn.classList.toggle('can-upgrade', upgrades.dmgBoost === 0 && coins >= 200); } else { armorBtn.style.display = 'none'; damageBtn.style.display = 'none'; }
     if (gameRound === 3 || goingToRound === 3) { superDmgBtn.style.display = 'flex'; pauseSuperDmg.style.display = 'flex'; if (upgrades.superDmgBoost > 0) { superDmgBtn.querySelector('.hud-lvl').textContent = 'MÁX'; superDmgBtn.querySelector('.hud-cost').style.display = 'none'; document.getElementById('pauseSuperDmgLvl').textContent = 'MÁX'; } superDmgBtn.classList.toggle('can-upgrade', upgrades.superDmgBoost === 0 && coins >= 1000); } else { superDmgBtn.style.display = 'none'; pauseSuperDmg.style.display = 'none'; }
+    
+    // NUEVO: ACTUALIZA ICONO DE MISIL BASADO EN LA FASE
+    let missileIcons = ['🐥', '🧶', '🧲', '🥛'];
+    let mBtn = document.getElementById('missileBtn');
+    if (mBtn) { let emojiDiv = mBtn.querySelector('.hud-emoji'); if (emojiDiv) emojiDiv.textContent = missileIcons[evolutionStage] || '🎯'; }
 }
 
 function updateLivesUI() { document.getElementById('livesVal').textContent = `❤️ x${lives}`; }
@@ -204,12 +208,33 @@ window.buyUpgrade = function(type) {
     if (type === 'bullets' && upgrades.bullets < maxUpgradeLimit && coins >= 10) { coins -= 10; gameStats.savedCoins = coins; saveStats(); upgrades.bullets++; if (upgrades.bullets === maxUpgradeLimit) unlockAchievement('a8'); }
     else if (type === 'speed' && upgrades.speed < maxUpgradeLimit && coins >= 10) { coins -= 10; gameStats.savedCoins = coins; saveStats(); upgrades.speed++; if (upgrades.speed === maxUpgradeLimit) unlockAchievement('a9'); }
     else if (type === 'life' && coins >= 15 && lives < 10) { coins -= 15; gameStats.savedCoins = coins; saveStats(); lives++; partialHit = false; updateLivesUI(); gameStats.totalLivesBought++; saveStats(); sessionLivesBought++; if (gameStats.totalLivesBought >= 10) unlockAchievement('a15'); if (sessionLivesBought >= 10) unlockAchievement('a16'); }
-    else if (type === 'evolve') { if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); } } }
+    else if (type === 'evolve') { 
+        if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { 
+            if (evolutionStage < 3) { 
+                // NUEVO: INICIA LA CINEMÁTICA EN VEZ DE EVOLUCIONAR DE GOLPE
+                gameState = 'EVOLVING';
+                evolutionTimer = 150; // Dura 2.5 segundos
+                
+                // Si esto pasó en el tutorial, escondemos la pantalla negra temporalmente
+                if (!gameStats.tutorialCompleted && tutorialStep === 4.5) {
+                    document.getElementById('activeTutorialOverlay').style.display = 'none';
+                    document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto';
+                }
+                // Si el jugador estaba en pausa, cerramos el menú
+                if (document.getElementById('pauseScreen').style.display === 'flex') {
+                    document.getElementById('pauseScreen').style.display = 'none';
+                    document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused'));
+                }
+                return; // Interrumpe el flujo normal para que la cámara haga lo suyo
+            } 
+        } 
+    }
     else if (type === 'armor' && gameRound >= 2 && coins >= 300 && upgrades.armor === 0) { coins -= 300; gameStats.savedCoins = coins; saveStats(); upgrades.armor = 1; }
     else if (type === 'damage' && gameRound >= 2 && coins >= 200 && upgrades.dmgBoost === 0) { coins -= 200; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
     else if (type === 'superDamage' && (gameRound === 3 || goingToRound === 3) && coins >= 1000 && upgrades.superDmgBoost === 0) { coins -= 1000; gameStats.savedCoins = coins; saveStats(); upgrades.superDmgBoost = 1; }
+    
     updateUpgradesHUD();
-    if (!gameStats.tutorialCompleted) {
+    if (!gameStats.tutorialCompleted && gameState !== 'EVOLVING') {
         if (tutorialStep === 4 || tutorialStep === 3.5) {
             if (upgrades.bullets >= maxUpgradeLimit) document.getElementById('hud-bullets').classList.remove('tutorial-highlight');
             if (upgrades.speed >= maxUpgradeLimit) document.getElementById('hud-speed').classList.remove('tutorial-highlight');
