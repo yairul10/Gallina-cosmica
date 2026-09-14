@@ -41,4 +41,16 @@ assets.balaJefe.src = 'assets/bala_jefe.png'; assets.balaLechuga.src = 'assets/b
 assets.trofeoPollito.src = 'assets/trofeo_pollito.png'; assets.trofeoLana.src = 'assets/trofeo_lana.png';
 assets.trofeoHerradura.src = 'assets/trofeo_herradura.png'; assets.trofeoLeche.src = 'assets/trofeo_leche.png'; assets.trofeoDiamante.src = 'assets/trofeo_diamante.png';
 
-const bgMusic = new Audio('assets/bg_music.mp3'); bgMusic.loop = true; bgMusic.volume = 0.4;
+// --- NUEVO SISTEMA DE LISTA DE REPRODUCCIÓN ---
+const playlist = ['assets/musica_1.mp3', 'assets/musica_2.mp3', 'assets/musica_3.mp3'];
+let currentTrack = 0;
+
+const bgMusic = new Audio(playlist[currentTrack]);
+bgMusic.volume = 0.4;
+
+// Cuando una canción termina, avanza a la siguiente
+bgMusic.addEventListener('ended', () => {
+    currentTrack = (currentTrack + 1) % playlist.length;
+    bgMusic.src = playlist[currentTrack];
+    bgMusic.play().catch(e => console.log(e));
+});
