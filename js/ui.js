@@ -29,8 +29,7 @@ function pauseGame() {
         isDraggingShip = false; 
         document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick'; 
         
-        // Muestra u oculta botón de Auto-Vida en pausa
-        if (gameStats.equipExtraModule && !moduleUsed) {
+        if (gameStats.equipExtraModule) {
             document.getElementById('toggleAutoLifeBtn').style.display = 'block';
             document.getElementById('toggleAutoLifeBtn').innerHTML = moduleActiveInMatch ? '❤️ Auto-Vida: ON' : '🖤 Auto-Vida: OFF';
         } else {
@@ -44,9 +43,13 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) pause
 document.getElementById('resumeBtn').addEventListener('click', (e) => { e.stopPropagation(); if (gameState === 'PAUSED') { gameState = previousState; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); } });
 
 document.getElementById('quitMatchBtn').addEventListener('click', (e) => { 
-    e.stopPropagation(); if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); bgMusic.pause(); bgMusic.currentTime = 0;
-    document.getElementById('pauseScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; 
-    gameState = 'START'; previousState = 'START'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
+    e.stopPropagation(); 
+    if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
+    bgMusic.pause(); bgMusic.currentTime = 0;
+    document.getElementById('pauseScreen').style.display = 'none'; 
+    document.getElementById('startScreen').style.display = 'flex'; 
+    gameState = 'START'; previousState = 'START'; 
+    document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
 });
 
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
@@ -82,7 +85,6 @@ function updateHangarUI() {
         }
     }
     
-    // UI Hangar Extras
     let btnExtra = document.getElementById('btn-equip-autolife');
     if (btnExtra) {
         if (!gameStats.extraModule) { btnExtra.textContent = 'Bloqueado'; btnExtra.style.background = '#1e293b'; btnExtra.disabled = true; }
@@ -150,8 +152,7 @@ function completeTutorialStep(step) {
     if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1000, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo.", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
     if (step === 4.5) { 
-        tutorialStep = 5; 
-        // Ya no ponemos el cartel inmediatamente aquí, la cinemática lo llamará al terminar.
+        // El tutorial espera aquí y NO avanza hasta que la cámara termine
     }
 }
 
@@ -226,10 +227,7 @@ window.buyUpgrade = function(type) {
         if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { 
             if (evolutionStage < 3) { 
                 gameState = 'EVOLVING'; evolutionTimer = 150; 
-                if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { 
-                    document.getElementById('activeTutorialOverlay').style.display = 'none'; 
-                    document.getElementById('activeTutorialOverlay').style.pointerEvents = 'none'; 
-                }
+                if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'none'; }
                 if (document.getElementById('pauseScreen').style.display === 'flex') { document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); }
                 return; 
             } 
