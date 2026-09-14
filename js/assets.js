@@ -1,22 +1,30 @@
 const assets = {
     fondoGalaxia: new Image(), fondoRonda2: new Image(), fondoRonda3: new Image(),
-    gallina: new Image(), gallinaPro: new Image(), oveja: new Image(), ovejaPro: new Image(),
-    caballo: new Image(), caballoPro: new Image(), vaca: new Image(), vacaPro: new Image(),
     balaPollito: new Image(), balaPollitoPro: new Image(), balaLana: new Image(), balaLanaPro: new Image(),
     balaHerradura: new Image(), balaHerraduraPro: new Image(), balaLeche: new Image(), balaLechePro: new Image(),
     maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(), superJefeMaiz: new Image(),
     lechuga: new Image(), lechugaFuerte: new Image(), jefeLechuga: new Image(), superJefeLechuga: new Image(), balaJefe: new Image(), balaLechuga: new Image(),
-    trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoDiamante: new Image()
+    trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoDiamante: new Image(),
+    ships: [] // Aquí se guardan las 32 naves
 };
 
 assets.fondoGalaxia.src = 'assets/fondo_galaxia.png'; 
 assets.fondoRonda2.src = 'assets/fondo_ronda2.png'; 
-assets.fondoRonda3.src = 'assets/fondo_ronda3.png'; // <- NUEVO FONDO
+assets.fondoRonda3.src = 'assets/fondo_ronda3.png';
 
-assets.gallina.src = 'assets/gallina.png'; assets.gallinaPro.src = 'assets/gallina_pro.png';
-assets.oveja.src = 'assets/oveja.png'; assets.ovejaPro.src = 'assets/oveja_pro.png';
-assets.caballo.src = 'assets/caballo.png'; assets.caballoPro.src = 'assets/caballo_pro.png';
-assets.vaca.src = 'assets/vaca.png'; assets.vacaPro.src = 'assets/vaca_pro.png';
+// Genera la matriz de 32 imágenes para tus naves (4 animales * 2 tipos * 4 fases)
+const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+for(let i=0; i<4; i++) {
+    let normalSkins = []; let proSkins = [];
+    for(let j=1; j<=4; j++) {
+        let imgN = new Image(); imgN.src = `assets/${animalDirs[i]}_${j}.png`;
+        let imgP = new Image(); imgP.src = `assets/${animalDirs[i]}_pro_${j}.png`;
+        normalSkins.push(imgN);
+        proSkins.push(imgP);
+    }
+    assets.ships.push([normalSkins, proSkins]); // Guardado como [Animal][0:Normal, 1:Pro][Fase 0 a 3]
+}
+
 assets.balaPollito.src = 'assets/bala_pollito.png'; assets.balaPollitoPro.src = 'assets/bala_pollito_pro.png';
 assets.balaLana.src = 'assets/bala_lana.png'; assets.balaLanaPro.src = 'assets/bala_lana_pro.png';
 assets.balaHerradura.src = 'assets/bala_herradura.png'; assets.balaHerraduraPro.src = 'assets/bala_herradura_pro.png';
