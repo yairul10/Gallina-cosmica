@@ -22,25 +22,31 @@ canvas.addEventListener('pointermove', (e) => {
 });
 
 const endCanvasPointer = (e) => { if (e.pointerId === dragPointerId) { isDraggingShip = false; dragPointerId = null; } };
-window.addEventListener('pointerup', endCanvasPointer); 
-window.addEventListener('pointercancel', endCanvasPointer);
+window.addEventListener('pointerup', endCanvasPointer); window.addEventListener('pointercancel', endCanvasPointer);
 
 window.shootBullet = function() {
-    let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1); let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets; let bonusPro = gameStats.equippedSkins[evolutionStage] ? 0.30 : 0; baseDmg = baseDmg + (baseDmg * bonusPro); let finalDamage = (upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg) * currentMatchBooster; if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
-    const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 2, offY: -10 }], 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 12, offY: -10 }], 3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 2, offY: -14 }, { dx: 1.2, offX: player.width - 8, offY: -10 }], 4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 16, offY: -14 }, { dx: 2.0, offX: player.width - 6, offY: -8 }] };
+    let bulletCount = Math.min((evolutionStage === 3) ? 4 : 3, upgrades.bullets + 1); 
+    let baseDmg = upgrades.bullets === 0 ? 1 : upgrades.bullets; 
+    let finalDamage = baseDmg * currentMatchBooster; 
+    if (upgrades.dmgBoost > 0) finalDamage *= 1.5;
+    if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
     
-    // NUEVO: Agregamos "evo: evolutionStage" a la bala para que sepa de qué color dibujarse
-    for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 4, height: 20, speed: 14, dx: p.dx, type: 'laser', damage: finalDamage, evo: evolutionStage }); }
+    const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 2, offY: -10 }], 2: [{ dx: 0, offX: 8, offY: -10 }, { dx: 0, offX: player.width - 12, offY: -10 }], 3: [{ dx: -1.2, offX: 4, offY: -10 }, { dx: 0, offX: player.width / 2 - 2, offY: -14 }, { dx: 1.2, offX: player.width - 8, offY: -10 }], 4: [{ dx: -2.0, offX: 2, offY: -8 }, { dx: -0.6, offX: 12, offY: -14 }, { dx: 0.6, offX: player.width - 16, offY: -14 }, { dx: 2.0, offX: player.width - 6, offY: -8 }] };
+    for (let p of (patterns[bulletCount] || patterns[3])) { bullets.push({ x: player.x + p.offX, y: player.y + p.offY, width: 4, height: 20, speed: 14, dx: p.dx, type: 'laser', damage: finalDamage, shipType: gameStats.selectedShip }); }
 }
 
 window.shootMissile = function() {
     if (missileCooldownTimer > 0) return;
-    let bType = 'chick'; if (evolutionStage === 1) bType = 'wool'; if (evolutionStage === 2) bType = 'horseshoe'; if (evolutionStage === 3) bType = 'milk';
+    let bType = ['chick', 'wool', 'horseshoe', 'milk'][gameStats.selectedMissile];
     let bulletCount = evolutionStage + 1; if (bulletCount > 4) bulletCount = 4;
-    let baseDmg = (upgrades.bullets === 0 ? 1 : upgrades.bullets) * 15; let bonusPro = gameStats.equippedMissiles[evolutionStage] ? 0.20 : 0; baseDmg = baseDmg + (baseDmg * bonusPro); let finalDamage = (upgrades.dmgBoost > 0 ? baseDmg * 1.5 : baseDmg) * currentMatchBooster; if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
+    let baseDmg = (upgrades.bullets === 0 ? 1 : upgrades.bullets) * 15; 
+    let finalDamage = baseDmg * currentMatchBooster; 
+    if (upgrades.dmgBoost > 0) finalDamage *= 1.5;
+    if (upgrades.superDmgBoost > 0) finalDamage *= 1.5; 
+    
     const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 12, offY: -10 }], 2: [{ dx: -2, offX: 0, offY: -10 }, { dx: 2, offX: player.width - 24, offY: -10 }], 3: [{ dx: -3, offX: -5, offY: -10 }, { dx: 0, offX: player.width / 2 - 12, offY: -14 }, { dx: 3, offX: player.width - 19, offY: -10 }], 4: [{ dx: -4, offX: -10, offY: -8 }, { dx: -1.5, offX: 5, offY: -14 }, { dx: 1.5, offX: player.width - 29, offY: -14 }, { dx: 4, offX: player.width - 14, offY: -8 }] };
     let currentPattern = patterns[bulletCount] || patterns[1];
-    for (let p of currentPattern) { homingMissiles.push({ x: player.x + p.offX, y: player.y + p.offY, width: 24, height: 24, speed: 7.5, vx: p.dx, vy: -5, type: bType, damage: finalDamage, isPro: gameStats.equippedMissiles[evolutionStage] }); }
+    for (let p of currentPattern) { homingMissiles.push({ x: player.x + p.offX, y: player.y + p.offY, width: 24, height: 24, speed: 7.5, vx: p.dx, vy: -5, type: bType, damage: finalDamage, isPro: gameStats.useProMissile }); }
     missileCooldownTimer = MISSILE_COOLDOWN;
 }
 
@@ -68,19 +74,15 @@ window.spawnBoss = function() {
         bosses.push({ x: canvas.width - 160, y: -180, width: 140, height: 110, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: -1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
         doubleBossSpawned = true;
     } else if (nextBossScoreThreshold === 150000 && gameRound === 2) {
-        let bossHpL = 6720 * 1.5;
-        bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: 1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
+        let bossHpL = 6720 * 1.5; bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: 1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
     } else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
         let bossHp = 1680; bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
     } else if (gameRound === 1) {
         let bossLevel = Math.floor(score / 5000); let bossHp = Math.floor((60 + (bossLevel * 45)) * 1.5); bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'corn', entered: false, dirY: 1 }); 
     } else if (gameRound === 2) {
-        let bossLevel = Math.floor((score - 50000) / 25000); let bossHp = Math.floor((200 + (bossLevel * 100)) * 1.5);
-        bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.2 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'lechuga', entered: false, dirY: 1 });
+        let bossLevel = Math.floor((score - 50000) / 25000); let bossHp = Math.floor((200 + (bossLevel * 100)) * 1.5); bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.2 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'lechuga', entered: false, dirY: 1 });
     } else if (gameRound === 3) {
-        let bossLevel = Math.floor((score - 150000) / 25000); let bossHp = Math.floor((400 + (bossLevel * 150)) * 1.5);
-        let type = Math.random() > 0.5 ? 'corn' : 'lechuga';
-        bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.4 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: type, entered: false, dirY: 1 });
+        let bossLevel = Math.floor((score - 150000) / 25000); let bossHp = Math.floor((400 + (bossLevel * 150)) * 1.5); let type = Math.random() > 0.5 ? 'corn' : 'lechuga'; bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.4 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: type, entered: false, dirY: 1 });
     }
 }
 
@@ -100,33 +102,70 @@ window.handleCoinEarned = function(amount) {
 }
 
 window.damageBoss = function(bIndex, dmg) {
-    let boss = bosses[bIndex]; boss.hp -= dmg;
+    let boss = bosses[bIndex]; 
+    let ship = gameStats.selectedShip;
+    let passiveMult = 1.0;
+    
+    // PASIVAS DE JEFES
+    if (ship === 1 && boss.type === 'corn') passiveMult = 1.2; // Oveja
+    if (ship === 3 && boss.type === 'lechuga') passiveMult = 1.2; // Vaca
+    
+    let proMult = gameStats.useProShip ? 1.3 : 1.0;
+    boss.hp -= (dmg * passiveMult * proMult);
+
     if (boss.hp <= 0) { 
         score += boss.isSuperBoss ? 4500 : 2250; handleCoinEarned(boss.isSuperBoss ? 6 : 3); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); 
-        if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { 
-            gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); 
-        } 
-        else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2 && !doubleBossSpawned) { 
-            gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); 
-        }
-        else if (boss.isSuperBoss && gameRound === 3 && doubleBossSpawned && bosses.length === 1) {
-            gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 4; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); doubleBossDefeated = true; unlockAchievement('a21');
-        }
+        if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); } 
+        else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2 && !doubleBossSpawned) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); }
+        else if (boss.isSuperBoss && gameRound === 3 && doubleBossSpawned && bosses.length === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 4; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); doubleBossDefeated = true; unlockAchievement('a21'); }
         bosses.splice(bIndex, 1); unlockAchievement('a10'); if (lives === 1) unlockAchievement('a12'); return true; 
     } return false;
 }
 
 window.damageEnemy = function(eIndex, dmg) {
-    let e = enemies[eIndex]; e.hp -= dmg;
+    let e = enemies[eIndex]; 
+    let ship = gameStats.selectedShip;
+    let passiveMult = 1.0;
+    
+    // PASIVAS ENEMIGOS NORMALES
+    if (ship === 0 && (e.type === 'corn' || e.type === 'corn_strong')) passiveMult = 1.2;
+    if (ship === 1 && e.type === 'maiz_jefe') passiveMult = 1.2;
+    if (ship === 2 && (e.type === 'lechuga' || e.type === 'lechuga_fuerte')) passiveMult = 1.2;
+    if (ship === 3 && e.type === 'lechuga_jefe') passiveMult = 1.2;
+
+    let proMult = gameStats.useProShip ? 1.3 : 1.0;
+    e.hp -= (dmg * passiveMult * proMult);
+
     if (e.hp <= 0) { score += e.pts; handleCoinEarned(e.coin); document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); enemies.splice(eIndex, 1); gameStats.totalKills++; saveStats(); sessionKillsNoHit++; if (gameStats.totalKills >= 50) unlockAchievement('a3'); if (sessionKillsNoHit >= 30) unlockAchievement('a11'); return true; } return false;
 }
 
 window.drawPlayerShip = function(x, y) {
-    let currentImg; if (evolutionStage === 3) currentImg = gameStats.equippedSkins[3] ? assets.vacaPro : assets.vaca; else if (evolutionStage === 2) currentImg = gameStats.equippedSkins[2] ? assets.caballoPro : assets.caballo; else if (evolutionStage === 1) currentImg = gameStats.equippedSkins[1] ? assets.ovejaPro : assets.oveja; else currentImg = gameStats.equippedSkins[0] ? assets.gallinaPro : assets.gallina;
-    let isPro = gameStats.equippedSkins[evolutionStage] || gameStats.equippedMissiles[evolutionStage];
+    let ship = gameStats.selectedShip;
+    let isPro = gameStats.useProShip ? 1 : 0;
+    let stage = evolutionStage;
+    
+    let currentImg = assets.ships[ship][isPro][stage];
+    
     if (shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 38, 0, Math.PI * 2); ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'; ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 10; ctx.stroke(); ctx.restore(); }
     if (upgrades.armor > 0 && !shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 34, 0, Math.PI * 2); ctx.fillStyle = partialHit ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.1)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = partialHit ? 'rgba(239, 68, 68, 0.8)' : 'rgba(37, 99, 235, 0.8)'; ctx.stroke(); ctx.restore(); }
-    if (currentImg.complete && currentImg.naturalWidth > 0) { ctx.drawImage(currentImg, x, y, player.width, player.height); } else { ctx.save(); ctx.translate(x, y); if (isPro) { ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 15; } if (evolutionStage === 3) { ctx.fillStyle = '#f1f5f9'; ctx.beginPath(); ctx.ellipse(25, 26, 22, 18, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#0f172a'; ctx.fillRect(15, 20, 8, 8); ctx.fillRect(30, 28, 6, 6); } else if (evolutionStage === 2) { ctx.fillStyle = '#a855f7'; ctx.beginPath(); ctx.ellipse(25, 26, 18, 22, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#c084fc'; ctx.fillRect(20, -4, 10, 16); } else if (evolutionStage === 1) { ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.ellipse(25, 26, 20, 16, 0, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(25, 10, 10, 0, Math.PI * 2); ctx.fill(); } else { ctx.fillStyle = '#38bdf8'; ctx.fillRect(16, 42, 6, 10); ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.ellipse(25, 26, 16, 20, 0, 0, Math.PI * 2); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#cbd5e1'; ctx.stroke(); ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(25, 17, 9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.moveTo(21, 8); ctx.lineTo(29, 8); ctx.lineTo(25, 0); ctx.fill(); ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(22, 2, 3.5, 0, Math.PI * 2); ctx.fill(); } ctx.restore(); }
+    
+    if (currentImg && currentImg.complete && currentImg.naturalWidth > 0) { 
+        ctx.drawImage(currentImg, x, y, player.width, player.height); 
+    } else { 
+        // FALLBACK: EMOJIS ESCALONADOS
+        ctx.save(); ctx.translate(x + player.width/2, y + player.height/2); 
+        if (isPro) { ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 15; } 
+        let emojis = [
+            ['🥚', '🐣', '🐤', '🐔'], // Gallina
+            ['☁️', '🐑', '🐏', '🐐'], // Oveja (Creciente)
+            ['🐴', '🐎', '🎠', '🦄'], // Caballo
+            ['🥛', '🐄', '🐂', '🐃']  // Vaca
+        ];
+        ctx.font = `${30 + (stage * 5)}px sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(emojis[ship][stage], 0, 0);
+        ctx.restore(); 
+    }
 }
 
 window.drawEnemy = function(e) {
