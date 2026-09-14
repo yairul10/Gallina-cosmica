@@ -4,7 +4,6 @@ canvas.width = 420; canvas.height = 640;
 
 let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || {};
 
-// INICIALIZACIÓN SEGURA DE VARIABLES NUEVAS
 if (gameStats.totalGames === undefined) gameStats.totalGames = 0;
 if (gameStats.totalKills === undefined) gameStats.totalKills = 0;
 if (gameStats.totalCoins === undefined) gameStats.totalCoins = 0;
@@ -16,17 +15,13 @@ if (gameStats.loginStreak === undefined) gameStats.loginStreak = 0;
 if (!gameStats.controlMode) gameStats.controlMode = 'drag';
 if (!gameStats.pendingBooster) gameStats.pendingBooster = 1.0;
 
-// SISTEMA NUEVO DE NAVES (Clase + Evolución Independiente)
-if (!gameStats.skins) gameStats.skins = [true, false, false, false]; // Base (Solo Gallina abierta al inicio)
-if (!gameStats.proSkins) gameStats.proSkins = [false, false, false, false]; // Licencias Pro
-if (gameStats.selectedShip === undefined) gameStats.selectedShip = 0; // 0=Gallina, 1=Oveja, 2=Caballo, 3=Vaca
+if (!gameStats.skins) gameStats.skins = [true, false, false, false]; 
+if (!gameStats.proSkins) gameStats.proSkins = [false, false, false, false]; 
+if (gameStats.selectedShip === undefined) gameStats.selectedShip = 0; 
 if (gameStats.useProShip === undefined) gameStats.useProShip = false;
 
-// MISILES DESVINCULADOS
-if (!gameStats.missiles) gameStats.missiles = [false, false, false, false];
+// Los misiles base ahora vienen incluidos con la nave, por lo que solo guardamos los Pro
 if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
-if (gameStats.selectedMissile === undefined) gameStats.selectedMissile = 0;
-if (gameStats.useProMissile === undefined) gameStats.useProMissile = false;
 
 function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
 
