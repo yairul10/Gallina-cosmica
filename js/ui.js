@@ -7,8 +7,28 @@ function unlockAchievement(key) { if (!pAchiev[key]) { pAchiev[key] = true; loca
 
 function loadHudPositions() {
     const saved = JSON.parse(localStorage.getItem('farm_space_hud_v11'));
-    if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn', 'hud-joystick'].forEach(id => { if(saved[id] && document.getElementById(id)) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } }); } 
-    else { document.getElementById('hud-super-damage').style.left = '4%'; document.getElementById('hud-super-damage').style.top = '25%'; document.getElementById('hud-armor').style.left = '4%'; document.getElementById('hud-armor').style.top = '35%'; document.getElementById('hud-damage').style.left = '4%'; document.getElementById('hud-damage').style.top = '45%'; document.getElementById('hud-bullets').style.left = '4%'; document.getElementById('hud-bullets').style.top = '55%'; document.getElementById('hud-speed').style.left = '4%'; document.getElementById('hud-speed').style.top = '65%'; document.getElementById('hud-life-evolve').style.left = '4%'; document.getElementById('hud-life-evolve').style.top = '75%'; document.getElementById('fireBtn').style.left = '78%'; document.getElementById('fireBtn').style.top = '82%'; document.getElementById('missileBtn').style.left = '60%'; document.getElementById('missileBtn').style.top = '84%'; document.getElementById('hud-joystick').style.left = '12%'; document.getElementById('hud-joystick').style.top = '70%'; }
+    if (saved) { 
+        ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn', 'hud-joystick'].forEach(id => { 
+            if(saved[id] && document.getElementById(id)) { 
+                document.getElementById(id).style.left = saved[id].left; 
+                document.getElementById(id).style.top = saved[id].top; 
+            } else if (id === 'hud-joystick' && document.getElementById(id)) {
+                // Fuerza la posición baja izquierda si no existía en el guardado
+                document.getElementById(id).style.left = '8%'; 
+                document.getElementById(id).style.top = '75%';
+            }
+        }); 
+    } else { 
+        document.getElementById('hud-super-damage').style.left = '4%'; document.getElementById('hud-super-damage').style.top = '25%'; 
+        document.getElementById('hud-armor').style.left = '4%'; document.getElementById('hud-armor').style.top = '35%'; 
+        document.getElementById('hud-damage').style.left = '4%'; document.getElementById('hud-damage').style.top = '45%'; 
+        document.getElementById('hud-bullets').style.left = '4%'; document.getElementById('hud-bullets').style.top = '55%'; 
+        document.getElementById('hud-speed').style.left = '4%'; document.getElementById('hud-speed').style.top = '65%'; 
+        document.getElementById('hud-life-evolve').style.left = '4%'; document.getElementById('hud-life-evolve').style.top = '75%'; 
+        document.getElementById('fireBtn').style.left = '78%'; document.getElementById('fireBtn').style.top = '82%'; 
+        document.getElementById('missileBtn').style.left = '60%'; document.getElementById('missileBtn').style.top = '84%'; 
+        document.getElementById('hud-joystick').style.left = '8%'; document.getElementById('hud-joystick').style.top = '75%'; 
+    }
 }
 function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn', 'hud-joystick'].forEach(id => { const el = document.getElementById(id); if(el) positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v11', JSON.stringify(positions)); }
 loadHudPositions();
@@ -81,16 +101,35 @@ function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTroph
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
 function activateTutorial(text, targetBtnId) {
-    gameState = 'TUTORIAL'; let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'flex'; document.getElementById('activeTutorialText').innerHTML = text;
-    if (targetBtnId === 'none') { document.getElementById('tutorialOkBtn').style.display = 'none'; overlay.style.pointerEvents = 'none'; } 
-    else if (targetBtnId) { if (Array.isArray(targetBtnId)) { targetBtnId.forEach(id => document.getElementById(id).classList.add('tutorial-highlight')); } else { document.getElementById(targetBtnId).classList.add('tutorial-highlight'); } document.getElementById('tutorialOkBtn').style.display = 'none'; overlay.style.pointerEvents = 'auto'; } 
-    else { document.getElementById('tutorialOkBtn').style.display = 'block'; overlay.style.pointerEvents = 'auto'; }
+    gameState = 'TUTORIAL'; 
+    let overlay = document.getElementById('activeTutorialOverlay');
+    overlay.style.display = 'flex'; 
+    document.getElementById('activeTutorialText').innerHTML = text;
+    
+    if (targetBtnId === 'none') { 
+        document.getElementById('tutorialOkBtn').style.display = 'none'; 
+        overlay.style.pointerEvents = 'none'; 
+    } 
+    else if (targetBtnId) { 
+        if (Array.isArray(targetBtnId)) { targetBtnId.forEach(id => document.getElementById(id).classList.add('tutorial-highlight')); } 
+        else { document.getElementById(targetBtnId).classList.add('tutorial-highlight'); } 
+        document.getElementById('tutorialOkBtn').style.display = 'none'; 
+        overlay.style.pointerEvents = 'auto'; 
+    } 
+    else { 
+        document.getElementById('tutorialOkBtn').style.display = 'block'; 
+        overlay.style.pointerEvents = 'auto';
+    }
 }
 
 function completeTutorialStep(step) {
     if (tutorialStep !== step) return;
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
-    let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'none'; overlay.style.pointerEvents = 'auto'; gameState = 'PLAYING';
+    let overlay = document.getElementById('activeTutorialOverlay');
+    overlay.style.display = 'none'; 
+    overlay.style.pointerEvents = 'auto';
+    gameState = 'PLAYING';
+    
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
     if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo (🎯).", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
