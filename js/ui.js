@@ -15,20 +15,38 @@ loadHudPositions();
 
 window.toggleControlMode = function() { gameStats.controlMode = gameStats.controlMode === 'drag' ? 'joystick' : 'drag'; saveStats(); document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick'; document.getElementById('hud-joystick').style.display = gameStats.controlMode === 'drag' ? 'none' : 'flex'; };
 
-function pauseGame() { if (gameState === 'PLAYING' || gameState === 'TRANSITION') { previousState = gameState; gameState = 'PAUSED'; bgMusic.pause(); document.getElementById('pauseScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.add('paused')); isDraggingShip = false; document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick'; } }
+window.toggleAutoLifeMatch = function() {
+    if (!gameStats.equipExtraModule) return; 
+    moduleActiveInMatch = !moduleActiveInMatch;
+    document.getElementById('toggleAutoLifeBtn').innerHTML = moduleActiveInMatch ? '❤️ Auto-Vida: ON' : '🖤 Auto-Vida: OFF';
+};
+
+function pauseGame() { 
+    if (gameState === 'PLAYING' || gameState === 'TRANSITION') { 
+        previousState = gameState; gameState = 'PAUSED'; bgMusic.pause(); 
+        document.getElementById('pauseScreen').style.display = 'flex'; 
+        document.querySelectorAll('.draggable-btn').forEach(b => b.classList.add('paused')); 
+        isDraggingShip = false; 
+        document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick'; 
+        
+        // Muestra u oculta botón de Auto-Vida en pausa
+        if (gameStats.equipExtraModule && !moduleUsed) {
+            document.getElementById('toggleAutoLifeBtn').style.display = 'block';
+            document.getElementById('toggleAutoLifeBtn').innerHTML = moduleActiveInMatch ? '❤️ Auto-Vida: ON' : '🖤 Auto-Vida: OFF';
+        } else {
+            document.getElementById('toggleAutoLifeBtn').style.display = 'none';
+        }
+    } 
+}
 document.getElementById('muteMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); bgMusic.muted = !bgMusic.muted; e.target.textContent = bgMusic.muted ? '🔇 Activar Música' : '🔊 Silenciar Música'; });
 document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); pauseGame(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
 document.getElementById('resumeBtn').addEventListener('click', (e) => { e.stopPropagation(); if (gameState === 'PAUSED') { gameState = previousState; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); } });
 
 document.getElementById('quitMatchBtn').addEventListener('click', (e) => { 
-    e.stopPropagation(); 
-    if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
-    bgMusic.pause(); bgMusic.currentTime = 0;
-    document.getElementById('pauseScreen').style.display = 'none'; 
-    document.getElementById('startScreen').style.display = 'flex'; 
-    gameState = 'START'; previousState = 'START'; 
-    document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
+    e.stopPropagation(); if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); bgMusic.pause(); bgMusic.currentTime = 0;
+    document.getElementById('pauseScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; 
+    gameState = 'START'; previousState = 'START'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
 });
 
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
@@ -39,6 +57,13 @@ document.getElementById('openRecordsBtn').addEventListener('click', () => { docu
 document.getElementById('openTrophiesBtn').addEventListener('click', () => { updateTrophyMenu(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'flex'; });
 document.getElementById('openAchievBtn').addEventListener('click', () => { renderAchievementsList(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('achievScreen').style.display = 'flex'; });
 document.getElementById('mainMenuBtn').addEventListener('click', () => { document.getElementById('gameOverScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; gameState = 'START'; previousState = 'START'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); });
+
+window.switchHangarTab = function(tab) {
+    document.getElementById('tabHangarSkins').classList.remove('active'); document.getElementById('tabHangarExtras').classList.remove('active');
+    document.getElementById('hangarSkins').style.display = 'none'; document.getElementById('hangarExtras').style.display = 'none';
+    if (tab === 'skins') { document.getElementById('tabHangarSkins').classList.add('active'); document.getElementById('hangarSkins').style.display = 'grid'; }
+    else { document.getElementById('tabHangarExtras').classList.add('active'); document.getElementById('hangarExtras').style.display = 'grid'; }
+}
 
 function updateHangarUI() {
     const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
@@ -56,9 +81,18 @@ function updateHangarUI() {
             } else { card.style.display = 'none'; }
         }
     }
+    
+    // UI Hangar Extras
+    let btnExtra = document.getElementById('btn-equip-autolife');
+    if (btnExtra) {
+        if (!gameStats.extraModule) { btnExtra.textContent = 'Bloqueado'; btnExtra.style.background = '#1e293b'; btnExtra.disabled = true; }
+        else if (gameStats.equipExtraModule) { btnExtra.textContent = 'Equipado'; btnExtra.style.background = '#f59e0b'; btnExtra.disabled = false; }
+        else { btnExtra.textContent = 'Equipar'; btnExtra.style.background = '#334155'; btnExtra.disabled = false; }
+    }
 }
 
 window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; saveStats(); updateHangarUI(); } }
+window.equipExtra = function() { if (gameStats.extraModule) { gameStats.equipExtraModule = !gameStats.equipExtraModule; saveStats(); updateHangarUI(); } }
 
 window.switchShopTab = function(tab) {
     document.getElementById('tabSkins').classList.remove('active'); document.getElementById('tabBoosters').classList.remove('active');
@@ -76,12 +110,20 @@ function updateShopUI() {
         let btnP = document.getElementById('btn-skin-pro-'+i); let imgP = document.getElementById('shop-img-pro-'+i);
         if (btnP && imgP) { if (gameStats.proSkins[i]) { btnP.textContent = 'Comprado'; btnP.style.background = '#475569'; btnP.disabled = true; imgP.style.filter = 'none'; imgP.style.opacity = '1'; } else { btnP.textContent = `🪙 ${pCosts[i].toLocaleString()}`; btnP.style.background = '#10b981'; btnP.disabled = (coins < pCosts[i]); imgP.style.filter = 'grayscale(100%)'; imgP.style.opacity = '0.6'; } }
     }
+    
+    let bAuto = document.getElementById('btn-buy-autolife');
+    if (bAuto) {
+        if (gameStats.extraModule) { bAuto.textContent = 'Comprado'; bAuto.style.background = '#475569'; bAuto.disabled = true; }
+        else { bAuto.textContent = '🪙 5,000'; bAuto.style.background = '#10b981'; bAuto.disabled = (coins < 5000); }
+    }
+    
     let b20 = document.getElementById('btn-boost-20'); let b50 = document.getElementById('btn-boost-50'); let b100 = document.getElementById('btn-boost-100');
     if(b20 && b50 && b100) { [b20, b50, b100].forEach(b => { b.textContent = '🪙 ' + b.getAttribute('data-cost'); b.style.background = '#10b981'; b.disabled = false; }); if (coins < 500) b20.disabled = true; if (coins < 2000) b50.disabled = true; if (coins < 10000) b100.disabled = true; if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVO'; b20.style.background = '#3b82f6'; [b50, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVO'; b50.style.background = '#3b82f6'; [b20, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVO'; b100.style.background = '#3b82f6'; [b20, b50].forEach(b=>b.disabled=true); } }
 }
 
 window.buyShip = function(index, isPro, cost) { if (isPro) { if (!gameStats.proSkins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.proSkins[index] = true; saveStats(); updateShopUI(); } } else { if (!gameStats.skins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; saveStats(); updateShopUI(); } } }
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
+window.buyAutoLife = function() { if (!gameStats.extraModule && coins >= 5000) { coins -= 5000; gameStats.savedCoins = coins; gameStats.extraModule = true; gameStats.equipExtraModule = true; saveStats(); updateShopUI(); } }
 
 const trophyData = { '20k': { name: '🥉 Pollito de Bronce', lock: 'Consigue 20,000 pts', unlock: 'Lograste 20,000 pts.', key: 't20k' }, '50k': { name: '🥈 Lana de Plata', lock: 'Consigue 50,000 pts', unlock: 'Lograste 50,000 pts.', key: 't50k' }, '100k': { name: '🏅 Herradura de Oro', lock: 'Consigue 100,000 pts', unlock: 'Lograste 100,000 pts.', key: 't100k' }, '200k': { name: '🏆 Leche Legendaria', lock: 'Consigue 200,000 pts', unlock: 'Lograste 200,000 pts.', key: 't200k' }, '300k': { name: '💎 Gallina de Diamante', lock: 'Consigue 300,000 pts', unlock: 'Lograste 300,000 pts.', key: 't300k' } };
 function updateTrophyMenu() { let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; ['20k', '50k', '100k', '200k', '300k'].forEach(id => { let img = document.getElementById(`img-t${id}`); let emoji = document.getElementById(`fall-${id}`); if(img && emoji) { if(pTrophies[trophyData[id].key]) { img.className = 'trophy-img trophy-unlocked'; emoji.style.filter = 'none'; emoji.style.opacity = '1'; } else { img.className = 'trophy-img trophy-locked'; emoji.style.filter = 'grayscale(100%)'; emoji.style.opacity = '0.3'; } } }); }
@@ -107,7 +149,10 @@ function completeTutorialStep(step) {
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
     if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1000, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo.", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
-    if (step === 4.5) { tutorialStep = 5; activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); }
+    if (step === 4.5) { 
+        tutorialStep = 5; 
+        // Ya no ponemos el cartel inmediatamente aquí, la cinemática lo llamará al terminar.
+    }
 }
 
 window.finishTutorial = function() { document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto'; tutorialStep = 0; gameStats.tutorialCompleted = true; saveStats(); gameState = 'PLAYING'; }
@@ -156,16 +201,13 @@ window.updateUpgradesHUD = function() {
     if (gameRound >= 2) { armorBtn.style.display = 'flex'; damageBtn.style.display = 'flex'; if (upgrades.armor > 0) { armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; armorBtn.querySelector('.hud-cost').style.display = 'none'; } if (upgrades.dmgBoost > 0) { damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; damageBtn.querySelector('.hud-cost').style.display = 'none'; } armorBtn.classList.toggle('can-upgrade', upgrades.armor === 0 && coins >= 300); damageBtn.classList.toggle('can-upgrade', upgrades.dmgBoost === 0 && coins >= 200); } else { armorBtn.style.display = 'none'; damageBtn.style.display = 'none'; }
     if (gameRound === 3 || goingToRound === 3) { superDmgBtn.style.display = 'flex'; pauseSuperDmg.style.display = 'flex'; if (upgrades.superDmgBoost > 0) { superDmgBtn.querySelector('.hud-lvl').textContent = 'MÁX'; superDmgBtn.querySelector('.hud-cost').style.display = 'none'; document.getElementById('pauseSuperDmgLvl').textContent = 'MÁX'; } superDmgBtn.classList.toggle('can-upgrade', upgrades.superDmgBoost === 0 && coins >= 1000); } else { superDmgBtn.style.display = 'none'; pauseSuperDmg.style.display = 'none'; }
     
-    // LÓGICA DE MISIL AUTOMÁTICA SEGÚN NAVE
     let mBtn = document.getElementById('missileBtn');
     if (mBtn) { 
         let emojiDiv = mBtn.querySelector('.hud-emoji'); 
         if (emojiDiv) { 
-            let mIndex = gameStats.selectedShip; // El misil ahora es idéntico a la nave
+            let mIndex = gameStats.selectedShip; 
             let mIcons = ['🐥', '🧶', '🧲', '🥛'];
-            // Para usar misil pro debes estar usando la nave pro Y tener el trofeo de ese misil
             let isProM = gameStats.useProShip && gameStats.proMissiles[mIndex];
-            
             let mSrcBase = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
             let mSrcPro = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
             let imgSrc = isProM ? mSrcPro[mIndex] : mSrcBase[mIndex];
@@ -184,7 +226,10 @@ window.buyUpgrade = function(type) {
         if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { 
             if (evolutionStage < 3) { 
                 gameState = 'EVOLVING'; evolutionTimer = 150; 
-                if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto'; }
+                if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { 
+                    document.getElementById('activeTutorialOverlay').style.display = 'none'; 
+                    document.getElementById('activeTutorialOverlay').style.pointerEvents = 'none'; 
+                }
                 if (document.getElementById('pauseScreen').style.display === 'flex') { document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); }
                 return; 
             } 
