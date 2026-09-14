@@ -21,7 +21,6 @@ document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => { e.s
 document.addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
 document.getElementById('resumeBtn').addEventListener('click', (e) => { e.stopPropagation(); if (gameState === 'PAUSED') { gameState = previousState; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); } });
 
-// NUEVO: Funcionalidad del botón de Abandonar Partida
 document.getElementById('quitMatchBtn').addEventListener('click', (e) => { 
     e.stopPropagation(); 
     if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
@@ -41,18 +40,8 @@ document.getElementById('openTrophiesBtn').addEventListener('click', () => { upd
 document.getElementById('openAchievBtn').addEventListener('click', () => { renderAchievementsList(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('achievScreen').style.display = 'flex'; });
 document.getElementById('mainMenuBtn').addEventListener('click', () => { document.getElementById('gameOverScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; gameState = 'START'; previousState = 'START'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); });
 
-window.switchHangarTab = function(tab) {
-    document.getElementById('tabHangarSkins').classList.remove('active'); document.getElementById('tabHangarMissiles').classList.remove('active');
-    document.getElementById('hangarSkins').style.display = 'none'; document.getElementById('hangarMissiles').style.display = 'none';
-    if (tab === 'skins') { document.getElementById('tabHangarSkins').classList.add('active'); document.getElementById('hangarSkins').style.display = 'grid'; }
-    else { document.getElementById('tabHangarMissiles').classList.add('active'); document.getElementById('hangarMissiles').style.display = 'grid'; }
-}
-
 function updateHangarUI() {
     const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
-    const misSrc = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
-    const misProSrc = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
-
     for(let i=0; i<4; i++) { 
         let card = document.getElementById('hangar-ship-card-'+i);
         if(card) {
@@ -67,22 +56,9 @@ function updateHangarUI() {
             } else { card.style.display = 'none'; }
         }
     }
-    
-    for(let i=0; i<4; i++) { 
-        let bNorm = document.getElementById('btn-hm-'+i+'-norm'); let bPro = document.getElementById('btn-hm-'+i+'-pro'); let img = document.getElementById('img-hm-'+i);
-        if(bNorm && bPro && img) {
-            bNorm.style.background = (gameStats.selectedMissile === i && !gameStats.useProMissile) ? '#f59e0b' : '#334155';
-            bPro.style.background = (gameStats.selectedMissile === i && gameStats.useProMissile) ? '#f59e0b' : '#334155';
-            bNorm.disabled = !gameStats.missiles[i]; bPro.disabled = !gameStats.proMissiles[i]; 
-            if(!gameStats.missiles[i]) bNorm.style.background = '#1e293b'; if(!gameStats.proMissiles[i]) bPro.style.background = '#1e293b';
-            if (!gameStats.missiles[i] && !gameStats.proMissiles[i]) { img.style.filter = 'grayscale(100%)'; img.style.opacity = '0.5'; } else { img.style.filter = 'none'; img.style.opacity = '1'; }
-            let isPro = (gameStats.selectedMissile === i && gameStats.useProMissile); img.src = isPro ? misProSrc[i] : misSrc[i];
-        }
-    }
 }
 
 window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; saveStats(); updateHangarUI(); } }
-window.equipMissile = function(index, isPro) { if ((isPro && gameStats.proMissiles[index]) || (!isPro && gameStats.missiles[index])) { gameStats.selectedMissile = index; gameStats.useProMissile = isPro; saveStats(); updateHangarUI(); } }
 
 window.switchShopTab = function(tab) {
     document.getElementById('tabSkins').classList.remove('active'); document.getElementById('tabBoosters').classList.remove('active');
@@ -129,7 +105,7 @@ function completeTutorialStep(step) {
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
     let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'none'; overlay.style.pointerEvents = 'auto'; gameState = 'PLAYING';
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
-    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo.", 'missileBtn'); return; }
+    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1000, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo.", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
     if (step === 4.5) { tutorialStep = 5; activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); }
 }
@@ -180,16 +156,19 @@ window.updateUpgradesHUD = function() {
     if (gameRound >= 2) { armorBtn.style.display = 'flex'; damageBtn.style.display = 'flex'; if (upgrades.armor > 0) { armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; armorBtn.querySelector('.hud-cost').style.display = 'none'; } if (upgrades.dmgBoost > 0) { damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; damageBtn.querySelector('.hud-cost').style.display = 'none'; } armorBtn.classList.toggle('can-upgrade', upgrades.armor === 0 && coins >= 300); damageBtn.classList.toggle('can-upgrade', upgrades.dmgBoost === 0 && coins >= 200); } else { armorBtn.style.display = 'none'; damageBtn.style.display = 'none'; }
     if (gameRound === 3 || goingToRound === 3) { superDmgBtn.style.display = 'flex'; pauseSuperDmg.style.display = 'flex'; if (upgrades.superDmgBoost > 0) { superDmgBtn.querySelector('.hud-lvl').textContent = 'MÁX'; superDmgBtn.querySelector('.hud-cost').style.display = 'none'; document.getElementById('pauseSuperDmgLvl').textContent = 'MÁX'; } superDmgBtn.classList.toggle('can-upgrade', upgrades.superDmgBoost === 0 && coins >= 1000); } else { superDmgBtn.style.display = 'none'; pauseSuperDmg.style.display = 'none'; }
     
+    // LÓGICA DE MISIL AUTOMÁTICA SEGÚN NAVE
     let mBtn = document.getElementById('missileBtn');
     if (mBtn) { 
         let emojiDiv = mBtn.querySelector('.hud-emoji'); 
         if (emojiDiv) { 
-            let mIndex = gameStats.selectedMissile;
+            let mIndex = gameStats.selectedShip; // El misil ahora es idéntico a la nave
             let mIcons = ['🐥', '🧶', '🧲', '🥛'];
-            let isPro = gameStats.useProMissile;
+            // Para usar misil pro debes estar usando la nave pro Y tener el trofeo de ese misil
+            let isProM = gameStats.useProShip && gameStats.proMissiles[mIndex];
+            
             let mSrcBase = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
             let mSrcPro = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
-            let imgSrc = isPro ? mSrcPro[mIndex] : mSrcBase[mIndex];
+            let imgSrc = isProM ? mSrcPro[mIndex] : mSrcBase[mIndex];
             if(imgSrc) { emojiDiv.innerHTML = `<img src="${imgSrc}" onerror="this.style.display='none'; this.parentNode.textContent='${mIcons[mIndex]}';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`; } else { emojiDiv.textContent = mIcons[mIndex]; }
         } 
     }
