@@ -89,14 +89,24 @@ function update() {
     if (gameState === 'EVOLVING') {
         evolutionTimer--;
         for (let s of stars) { let dx = (player.x + player.width/2) - s.x; let dy = (player.y + player.height/2) - s.y; s.x += dx * 0.05; s.y += dy * 0.05; }
+        
         if (evolutionTimer === 75) {
             if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } 
             else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } 
             else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); }
             updateUpgradesHUD(); 
-            if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { tutorialStep = 5; activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); }
         }
-        if (evolutionTimer <= 0) { gameState = 'PLAYING'; for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; } }
+        
+        // SOLUCIÓN: El tutorial ahora espera a que termine la animación
+        if (evolutionTimer <= 0) { 
+            gameState = 'PLAYING'; 
+            for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; } 
+            
+            if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { 
+                tutorialStep = 5; 
+                activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); 
+            }
+        }
         return; 
     }
 
@@ -133,7 +143,6 @@ function update() {
 
     if (missileCooldownTimer > 0) { missileCooldownTimer--; let sec = Math.ceil(missileCooldownTimer / 60); document.getElementById('missileCooldown').textContent = sec + 's'; document.getElementById('missileBtn').classList.remove('missile-ready'); } else { document.getElementById('missileCooldown').textContent = 'LISTO'; document.getElementById('missileBtn').classList.add('missile-ready'); }
     
-    // DESBLOQUEO DE MISILES PRO POR TROFEOS
     if (score >= 20000 && !gotTrophy20k) { gotTrophy20k = true; let isNew = !gameStats.proMissiles[0]; if (isNew) { gameStats.proMissiles[0] = true; saveStats(); } showTrophyToast("🥉🐥", assets.trofeoPollito, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t20k'); } 
     if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.proMissiles[1]; if (isNew) { gameStats.proMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); } 
     if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; let isNew = !gameStats.proMissiles[2]; if (isNew) { gameStats.proMissiles[2] = true; saveStats(); } showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t100k'); } 
@@ -182,7 +191,7 @@ function update() {
             if (boss.type === 'corn' && boss.shootCooldown >= 55) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 }); } 
             if (boss.type === 'corn' && boss.minionCooldown >= 110) { 
                 boss.minionCooldown = 0; 
-                let mCoin = 1000; // MINIONS MAIZ DAN 1000
+                let mCoin = 1000; 
                 enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
                 enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
             } 
@@ -266,15 +275,15 @@ function draw() {
         let innerColor = '#ffffff'; 
 
         if (b.isPro) {
-            if (b.shipType === 0) { innerColor = '#ffffff'; outerColor = '#a855f7'; }      // Gallina Pro: Blanco/Morado
-            else if (b.shipType === 1) { innerColor = '#ffffff'; outerColor = '#fbbf24'; } // Oveja Pro: Blanco/Dorado
-            else if (b.shipType === 2) { innerColor = '#fbbf24'; outerColor = '#a855f7'; } // Caballo Pro: Dorado/Morado
-            else if (b.shipType === 3) { innerColor = '#fbbf24'; outerColor = '#a855f7'; } // Vaca Pro: Dorado/Morado
+            if (b.shipType === 0) { innerColor = '#ffffff'; outerColor = '#a855f7'; }      
+            else if (b.shipType === 1) { innerColor = '#ffffff'; outerColor = '#fbbf24'; } 
+            else if (b.shipType === 2) { innerColor = '#fbbf24'; outerColor = '#a855f7'; } 
+            else if (b.shipType === 3) { innerColor = '#fbbf24'; outerColor = '#a855f7'; } 
         } else {
-            if (b.shipType === 0) outerColor = '#ef4444';      // Gallina Normal: Rojo
-            else if (b.shipType === 1) outerColor = '#a855f7'; // Oveja Normal: Morado
-            else if (b.shipType === 2) outerColor = '#fbbf24'; // Caballo Normal: Dorado
-            else if (b.shipType === 3) outerColor = '#3b82f6'; // Vaca Normal: Azul
+            if (b.shipType === 0) outerColor = '#ef4444';      
+            else if (b.shipType === 1) outerColor = '#a855f7'; 
+            else if (b.shipType === 2) outerColor = '#fbbf24'; 
+            else if (b.shipType === 3) outerColor = '#3b82f6'; 
         }
         
         ctx.fillStyle = innerColor; 
