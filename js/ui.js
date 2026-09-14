@@ -21,6 +21,17 @@ document.getElementById('pauseBtn').addEventListener('pointerdown', (e) => { e.s
 document.addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
 document.getElementById('resumeBtn').addEventListener('click', (e) => { e.stopPropagation(); if (gameState === 'PAUSED') { gameState = previousState; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); } });
 
+// NUEVO: Funcionalidad del botón de Abandonar Partida
+document.getElementById('quitMatchBtn').addEventListener('click', (e) => { 
+    e.stopPropagation(); 
+    if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
+    bgMusic.pause(); bgMusic.currentTime = 0;
+    document.getElementById('pauseScreen').style.display = 'none'; 
+    document.getElementById('startScreen').style.display = 'flex'; 
+    gameState = 'START'; previousState = 'START'; 
+    document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
+});
+
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
 document.getElementById('openTutorialBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('tutorialScreen').style.display = 'flex'; });
 document.getElementById('openHangarBtn').addEventListener('click', () => { updateHangarUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('hangarScreen').style.display = 'flex'; });
@@ -38,61 +49,34 @@ window.switchHangarTab = function(tab) {
 }
 
 function updateHangarUI() {
-    // Listas de imágenes necesarias para actualizar el Hangar
     const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
     const misSrc = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
     const misProSrc = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
 
-    // UI HANGAR: Naves
     for(let i=0; i<4; i++) { 
         let card = document.getElementById('hangar-ship-card-'+i);
         if(card) {
             if (gameStats.skins[i]) {
                 card.style.display = 'flex'; 
-                let bNorm = document.getElementById('btn-hs-'+i+'-norm'); 
-                let bPro = document.getElementById('btn-hs-'+i+'-pro');
-                let img = document.getElementById('img-hs-'+i);
-                
+                let bNorm = document.getElementById('btn-hs-'+i+'-norm'); let bPro = document.getElementById('btn-hs-'+i+'-pro'); let img = document.getElementById('img-hs-'+i);
                 bNorm.style.background = (gameStats.selectedShip === i && !gameStats.useProShip) ? '#f59e0b' : '#334155';
                 bPro.style.background = (gameStats.selectedShip === i && gameStats.useProShip) ? '#f59e0b' : '#334155';
-                
-                bPro.disabled = !gameStats.proSkins[i];
-                if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
-                
+                bPro.disabled = !gameStats.proSkins[i]; if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
                 let isPro = (gameStats.selectedShip === i && gameStats.useProShip);
                 if(img) img.src = isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`;
-            } else {
-                card.style.display = 'none'; // Oculta la nave si no la tiene
-            }
+            } else { card.style.display = 'none'; }
         }
     }
     
-    // UI HANGAR: Misiles
     for(let i=0; i<4; i++) { 
-        let bNorm = document.getElementById('btn-hm-'+i+'-norm'); 
-        let bPro = document.getElementById('btn-hm-'+i+'-pro');
-        let img = document.getElementById('img-hm-'+i);
-        
+        let bNorm = document.getElementById('btn-hm-'+i+'-norm'); let bPro = document.getElementById('btn-hm-'+i+'-pro'); let img = document.getElementById('img-hm-'+i);
         if(bNorm && bPro && img) {
             bNorm.style.background = (gameStats.selectedMissile === i && !gameStats.useProMissile) ? '#f59e0b' : '#334155';
             bPro.style.background = (gameStats.selectedMissile === i && gameStats.useProMissile) ? '#f59e0b' : '#334155';
-            
-            bNorm.disabled = !gameStats.missiles[i];
-            bPro.disabled = !gameStats.proMissiles[i]; 
-            
-            if(!gameStats.missiles[i]) bNorm.style.background = '#1e293b';
-            if(!gameStats.proMissiles[i]) bPro.style.background = '#1e293b';
-            
-            if (!gameStats.missiles[i] && !gameStats.proMissiles[i]) {
-                img.style.filter = 'grayscale(100%)';
-                img.style.opacity = '0.5';
-            } else {
-                img.style.filter = 'none';
-                img.style.opacity = '1';
-            }
-            
-            let isPro = (gameStats.selectedMissile === i && gameStats.useProMissile);
-            img.src = isPro ? misProSrc[i] : misSrc[i];
+            bNorm.disabled = !gameStats.missiles[i]; bPro.disabled = !gameStats.proMissiles[i]; 
+            if(!gameStats.missiles[i]) bNorm.style.background = '#1e293b'; if(!gameStats.proMissiles[i]) bPro.style.background = '#1e293b';
+            if (!gameStats.missiles[i] && !gameStats.proMissiles[i]) { img.style.filter = 'grayscale(100%)'; img.style.opacity = '0.5'; } else { img.style.filter = 'none'; img.style.opacity = '1'; }
+            let isPro = (gameStats.selectedMissile === i && gameStats.useProMissile); img.src = isPro ? misProSrc[i] : misSrc[i];
         }
     }
 }
@@ -109,51 +93,21 @@ window.switchShopTab = function(tab) {
 
 function updateShopUI() {
     document.getElementById('shopCoinsVal').textContent = coins; 
-    let bCosts = [0, 1000, 2000, 4000]; 
-    let pCosts = [3000, 3000, 6000, 10000]; 
-    
+    let bCosts = [0, 1000, 2000, 4000]; let pCosts = [3000, 3000, 6000, 10000]; 
     for(let i=0; i<4; i++) { 
-        let btnB = document.getElementById('btn-skin-base-'+i); 
-        let imgB = document.getElementById('shop-img-base-'+i);
-        if (btnB && imgB) {
-            if (gameStats.skins[i]) { 
-                btnB.textContent = 'Comprado'; btnB.style.background = '#475569'; btnB.disabled = true; 
-                imgB.style.filter = 'none'; imgB.style.opacity = '1';
-            } else { 
-                btnB.textContent = `🪙 ${bCosts[i].toLocaleString()}`; btnB.style.background = '#10b981'; btnB.disabled = (coins < bCosts[i]); 
-                imgB.style.filter = 'grayscale(100%)'; imgB.style.opacity = '0.6';
-            } 
-        }
-        
-        let btnP = document.getElementById('btn-skin-pro-'+i); 
-        let imgP = document.getElementById('shop-img-pro-'+i);
-        if (btnP && imgP) {
-            if (gameStats.proSkins[i]) { 
-                btnP.textContent = 'Comprado'; btnP.style.background = '#475569'; btnP.disabled = true; 
-                imgP.style.filter = 'none'; imgP.style.opacity = '1';
-            } else { 
-                btnP.textContent = `🪙 ${pCosts[i].toLocaleString()}`; btnP.style.background = '#10b981'; btnP.disabled = (coins < pCosts[i]); 
-                imgP.style.filter = 'grayscale(100%)'; imgP.style.opacity = '0.6';
-            } 
-        }
+        let btnB = document.getElementById('btn-skin-base-'+i); let imgB = document.getElementById('shop-img-base-'+i);
+        if (btnB && imgB) { if (gameStats.skins[i]) { btnB.textContent = 'Comprado'; btnB.style.background = '#475569'; btnB.disabled = true; imgB.style.filter = 'none'; imgB.style.opacity = '1'; } else { btnB.textContent = `🪙 ${bCosts[i].toLocaleString()}`; btnB.style.background = '#10b981'; btnB.disabled = (coins < bCosts[i]); imgB.style.filter = 'grayscale(100%)'; imgB.style.opacity = '0.6'; } }
+        let btnP = document.getElementById('btn-skin-pro-'+i); let imgP = document.getElementById('shop-img-pro-'+i);
+        if (btnP && imgP) { if (gameStats.proSkins[i]) { btnP.textContent = 'Comprado'; btnP.style.background = '#475569'; btnP.disabled = true; imgP.style.filter = 'none'; imgP.style.opacity = '1'; } else { btnP.textContent = `🪙 ${pCosts[i].toLocaleString()}`; btnP.style.background = '#10b981'; btnP.disabled = (coins < pCosts[i]); imgP.style.filter = 'grayscale(100%)'; imgP.style.opacity = '0.6'; } }
     }
-    
     let b20 = document.getElementById('btn-boost-20'); let b50 = document.getElementById('btn-boost-50'); let b100 = document.getElementById('btn-boost-100');
-    if(b20 && b50 && b100) {
-        [b20, b50, b100].forEach(b => { b.textContent = '🪙 ' + b.getAttribute('data-cost'); b.style.background = '#10b981'; b.disabled = false; });
-        if (coins < 500) b20.disabled = true; if (coins < 2000) b50.disabled = true; if (coins < 10000) b100.disabled = true;
-        if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVO'; b20.style.background = '#3b82f6'; [b50, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVO'; b50.style.background = '#3b82f6'; [b20, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVO'; b100.style.background = '#3b82f6'; [b20, b50].forEach(b=>b.disabled=true); }
-    }
+    if(b20 && b50 && b100) { [b20, b50, b100].forEach(b => { b.textContent = '🪙 ' + b.getAttribute('data-cost'); b.style.background = '#10b981'; b.disabled = false; }); if (coins < 500) b20.disabled = true; if (coins < 2000) b50.disabled = true; if (coins < 10000) b100.disabled = true; if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVO'; b20.style.background = '#3b82f6'; [b50, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVO'; b50.style.background = '#3b82f6'; [b20, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVO'; b100.style.background = '#3b82f6'; [b20, b50].forEach(b=>b.disabled=true); } }
 }
 
-window.buyShip = function(index, isPro, cost) { 
-    if (isPro) { if (!gameStats.proSkins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.proSkins[index] = true; saveStats(); updateShopUI(); } } 
-    else { if (!gameStats.skins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; saveStats(); updateShopUI(); } }
-}
+window.buyShip = function(index, isPro, cost) { if (isPro) { if (!gameStats.proSkins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.proSkins[index] = true; saveStats(); updateShopUI(); } } else { if (!gameStats.skins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; saveStats(); updateShopUI(); } } }
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
 
 const trophyData = { '20k': { name: '🥉 Pollito de Bronce', lock: 'Consigue 20,000 pts', unlock: 'Lograste 20,000 pts.', key: 't20k' }, '50k': { name: '🥈 Lana de Plata', lock: 'Consigue 50,000 pts', unlock: 'Lograste 50,000 pts.', key: 't50k' }, '100k': { name: '🏅 Herradura de Oro', lock: 'Consigue 100,000 pts', unlock: 'Lograste 100,000 pts.', key: 't100k' }, '200k': { name: '🏆 Leche Legendaria', lock: 'Consigue 200,000 pts', unlock: 'Lograste 200,000 pts.', key: 't200k' }, '300k': { name: '💎 Gallina de Diamante', lock: 'Consigue 300,000 pts', unlock: 'Lograste 300,000 pts.', key: 't300k' } };
-
 function updateTrophyMenu() { let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; ['20k', '50k', '100k', '200k', '300k'].forEach(id => { let img = document.getElementById(`img-t${id}`); let emoji = document.getElementById(`fall-${id}`); if(img && emoji) { if(pTrophies[trophyData[id].key]) { img.className = 'trophy-img trophy-unlocked'; emoji.style.filter = 'none'; emoji.style.opacity = '1'; } else { img.className = 'trophy-img trophy-locked'; emoji.style.filter = 'grayscale(100%)'; emoji.style.opacity = '0.3'; } } }); }
 window.showTrophyInfo = function(id) { document.querySelectorAll('.trophy-item').forEach(el => el.classList.remove('selected')); document.querySelector(`.trophy-item[data-id="${id}"]`).classList.add('selected'); let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let tName = document.getElementById('trophyName'); let tDesc = document.getElementById('trophyDesc'); if(pT[trophyData[id].key]) { tName.textContent = trophyData[id].name; tName.style.color = '#fbbf24'; tDesc.textContent = `¡Felicidades! ${trophyData[id].unlock}`; } else { tName.textContent = trophyData[id].name + ' 🔒'; tName.style.color = '#94a3b8'; tDesc.textContent = `Meta: ${trophyData[id].lock}`; } }
 function savePersistentTrophy(key) { let pT = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; if (!pT[key]) { pT[key] = true; localStorage.setItem('farm_space_trophies', JSON.stringify(pT)); } }
@@ -233,15 +187,10 @@ window.updateUpgradesHUD = function() {
             let mIndex = gameStats.selectedMissile;
             let mIcons = ['🐥', '🧶', '🧲', '🥛'];
             let isPro = gameStats.useProMissile;
-            
-            // Recreamos las rutas para el botón de misil
             let mSrcBase = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
             let mSrcPro = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
             let imgSrc = isPro ? mSrcPro[mIndex] : mSrcBase[mIndex];
-            
-            if(imgSrc) {
-                emojiDiv.innerHTML = `<img src="${imgSrc}" onerror="this.style.display='none'; this.parentNode.textContent='${mIcons[mIndex]}';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`;
-            } else { emojiDiv.textContent = mIcons[mIndex]; }
+            if(imgSrc) { emojiDiv.innerHTML = `<img src="${imgSrc}" onerror="this.style.display='none'; this.parentNode.textContent='${mIcons[mIndex]}';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`; } else { emojiDiv.textContent = mIcons[mIndex]; }
         } 
     }
 }
@@ -282,7 +231,6 @@ function checkDailyReward() {
     let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); let lastLogin = gameStats.lastLoginDate || 0; let oneDay = 24 * 60 * 60 * 1000; let diffDays = Math.round((today - lastLogin) / oneDay);
     if (diffDays > 0 || lastLogin === 0) { if (diffDays === 1) { gameStats.loginStreak++; if (gameStats.loginStreak > 7) gameStats.loginStreak = 1; } else { gameStats.loginStreak = 1; } showDailyRewardScreen(); }
 }
-
 function showDailyRewardScreen() {
     document.getElementById('startScreen').style.display = 'none'; document.getElementById('dailyRewardScreen').style.display = 'flex'; let grid = document.getElementById('dailyRewardsGrid'); grid.innerHTML = '';
     for (let i = 0; i < 7; i++) { let dayNum = i + 1; let reward = dailyRewards[i]; let isToday = (dayNum === gameStats.loginStreak); let isClaimed = (dayNum < gameStats.loginStreak); let boxColor = isToday ? '#f59e0b' : (isClaimed ? '#10b981' : '#1e293b'); let textColor = isToday ? '#000' : '#fff'; let opacity = isClaimed ? '0.6' : '1'; let icon = isClaimed ? '✅' : '🪙'; if (dayNum === 7 && !isClaimed) icon = '💎'; let extraStyle = (dayNum === 7) ? 'grid-column: span 3; font-size: 1.1rem; padding: 12px;' : 'padding: 8px;'; grid.innerHTML += `<div style="background: ${boxColor}; color: ${textColor}; ${extraStyle} border-radius: 8px; text-align: center; opacity: ${opacity}; box-shadow: ${isToday ? '0 0 12px #fbbf24' : 'none'}; border: 2px solid ${isToday ? '#fff' : 'transparent'};"><div style="font-size: 0.75rem; font-weight: bold; opacity: 0.9;">DÍA ${dayNum}</div><div style="font-size: ${dayNum===7 ? '1.8rem' : '1.3rem'}; margin: 2px 0;">${icon}</div><div style="font-size: 0.9rem; font-weight: 900;">+${reward.toLocaleString()}</div></div>`; }
