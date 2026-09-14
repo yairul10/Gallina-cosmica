@@ -70,17 +70,30 @@ window.switchHangarTab = function(tab) {
 
 function updateHangarUI() {
     const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    const passives = ['+20% a Maíz', '+20% a Jefes Maíz', '+20% a Lechuga', '+20% a Jefes Lech.'];
+    
     for(let i=0; i<4; i++) { 
         let card = document.getElementById('hangar-ship-card-'+i);
         if(card) {
             if (gameStats.skins[i]) {
                 card.style.display = 'flex'; 
-                let bNorm = document.getElementById('btn-hs-'+i+'-norm'); let bPro = document.getElementById('btn-hs-'+i+'-pro'); let img = document.getElementById('img-hs-'+i);
+                let bNorm = document.getElementById('btn-hs-'+i+'-norm'); let bPro = document.getElementById('btn-hs-'+i+'-pro'); 
+                let img = document.getElementById('img-hs-'+i); let desc = document.getElementById('desc-hs-'+i);
+                
                 bNorm.style.background = (gameStats.selectedShip === i && !gameStats.useProShip) ? '#f59e0b' : '#334155';
                 bPro.style.background = (gameStats.selectedShip === i && gameStats.useProShip) ? '#f59e0b' : '#334155';
                 bPro.disabled = !gameStats.proSkins[i]; if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
+                
                 let isPro = (gameStats.selectedShip === i && gameStats.useProShip);
                 if(img) img.src = isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`;
+                
+                if(desc) {
+                    if (isPro) {
+                        desc.innerHTML = `<span style="color:#fbbf24; font-weight:bold;">+30% Daño Extra</span><span>${passives[i]}</span>`;
+                    } else {
+                        desc.innerHTML = `<span>${passives[i]}</span>`;
+                    }
+                }
             } else { card.style.display = 'none'; }
         }
     }
@@ -149,7 +162,10 @@ function completeTutorialStep(step) {
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
     let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'none'; overlay.style.pointerEvents = 'auto'; gameState = 'PLAYING';
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
-    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1000, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo.", 'missileBtn'); return; }
+    
+    // CORRECCIÓN: El maíz del tutorial ahora da 10 monedas.
+    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 10, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo.", 'missileBtn'); return; }
+    
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
     if (step === 4.5) { 
         // El tutorial espera aquí y NO avanza hasta que la cámara termine
