@@ -47,6 +47,9 @@ window.startGame = function() {
     currentMatchBooster = gameStats.pendingBooster || 1.0; gameStats.pendingBooster = 1.0; saveStats();
     score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; goingToRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false; sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
     
+    // Auto-Vida Reset
+    moduleUsed = false; moduleActiveInMatch = gameStats.equipExtraModule;
+    
     bullets.length = 0; homingMissiles.length = 0; enemies.length = 0; bossBullets.length = 0; bosses.length = 0; 
     
     evolutionStage = 0; evolutionTimer = 0; maxUpgradeLimit = 3; nextBossScoreThreshold = 5000; upgrades.bullets = 0; upgrades.speed = 1; upgrades.armor = 0; upgrades.dmgBoost = 0; upgrades.superDmgBoost = 0; missileCooldownTimer = 0; gotTrophy20k = false; gotTrophy50k = false; gotTrophy100k = false; gotTrophy200k = false; gotTrophy300k = false; doubleBossSpawned = false; doubleBossDefeated = false;
@@ -97,11 +100,11 @@ function update() {
             updateUpgradesHUD(); 
         }
         
-        // SOLUCIÓN: El tutorial ahora espera a que termine la animación
         if (evolutionTimer <= 0) { 
             gameState = 'PLAYING'; 
             for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; } 
             
+            // LA CORRECCIÓN: El mensaje final se dispara únicamente tras terminar la cinemática
             if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { 
                 tutorialStep = 5; 
                 activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); 
