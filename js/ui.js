@@ -130,7 +130,7 @@ function completeTutorialStep(step) {
     gameState = 'PLAYING';
     
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
-    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo.", 'missileBtn'); return; }
+    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo con la imagen del proyectil.", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
     if (step === 4.5) { tutorialStep = 5; activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); }
 }
@@ -196,10 +196,20 @@ window.updateUpgradesHUD = function() {
     if (gameRound >= 2) { armorBtn.style.display = 'flex'; damageBtn.style.display = 'flex'; if (upgrades.armor > 0) { armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; armorBtn.querySelector('.hud-cost').style.display = 'none'; } if (upgrades.dmgBoost > 0) { damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; damageBtn.querySelector('.hud-cost').style.display = 'none'; } armorBtn.classList.toggle('can-upgrade', upgrades.armor === 0 && coins >= 300); damageBtn.classList.toggle('can-upgrade', upgrades.dmgBoost === 0 && coins >= 200); } else { armorBtn.style.display = 'none'; damageBtn.style.display = 'none'; }
     if (gameRound === 3 || goingToRound === 3) { superDmgBtn.style.display = 'flex'; pauseSuperDmg.style.display = 'flex'; if (upgrades.superDmgBoost > 0) { superDmgBtn.querySelector('.hud-lvl').textContent = 'MÁX'; superDmgBtn.querySelector('.hud-cost').style.display = 'none'; document.getElementById('pauseSuperDmgLvl').textContent = 'MÁX'; } superDmgBtn.classList.toggle('can-upgrade', upgrades.superDmgBoost === 0 && coins >= 1000); } else { superDmgBtn.style.display = 'none'; pauseSuperDmg.style.display = 'none'; }
     
-    // NUEVO: ACTUALIZA ICONO DE MISIL BASADO EN LA FASE
-    let missileIcons = ['🐥', '🧶', '🧲', '🥛'];
+    // --- LÓGICA DE IMAGEN EN BOTÓN DE MISIL ---
     let mBtn = document.getElementById('missileBtn');
-    if (mBtn) { let emojiDiv = mBtn.querySelector('.hud-emoji'); if (emojiDiv) emojiDiv.textContent = missileIcons[evolutionStage] || '🎯'; }
+    if (mBtn) { 
+        let emojiDiv = mBtn.querySelector('.hud-emoji'); 
+        if (emojiDiv) { 
+            let isPro = gameStats.equippedMissiles[evolutionStage];
+            let imgSrc = isPro ? misProSrc[evolutionStage] : misSrc[evolutionStage];
+            if(imgSrc) {
+                emojiDiv.innerHTML = `<img src="${imgSrc}" onerror="this.style.display='none'; this.parentNode.textContent='🎯';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`;
+            } else {
+                emojiDiv.textContent = '🎯';
+            }
+        } 
+    }
 }
 
 function updateLivesUI() { document.getElementById('livesVal').textContent = `❤️ x${lives}`; }
@@ -211,21 +221,17 @@ window.buyUpgrade = function(type) {
     else if (type === 'evolve') { 
         if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { 
             if (evolutionStage < 3) { 
-                // NUEVO: INICIA LA CINEMÁTICA EN VEZ DE EVOLUCIONAR DE GOLPE
                 gameState = 'EVOLVING';
-                evolutionTimer = 150; // Dura 2.5 segundos
-                
-                // Si esto pasó en el tutorial, escondemos la pantalla negra temporalmente
+                evolutionTimer = 150; 
                 if (!gameStats.tutorialCompleted && tutorialStep === 4.5) {
                     document.getElementById('activeTutorialOverlay').style.display = 'none';
                     document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto';
                 }
-                // Si el jugador estaba en pausa, cerramos el menú
                 if (document.getElementById('pauseScreen').style.display === 'flex') {
                     document.getElementById('pauseScreen').style.display = 'none';
                     document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused'));
                 }
-                return; // Interrumpe el flujo normal para que la cámara haga lo suyo
+                return; 
             } 
         } 
     }
