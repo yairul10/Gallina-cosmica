@@ -38,11 +38,15 @@ window.switchHangarTab = function(tab) {
 }
 
 function updateHangarUI() {
+    // Listas de imágenes necesarias para actualizar el Hangar
+    const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    const misSrc = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
+    const misProSrc = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
+
     // UI HANGAR: Naves
     for(let i=0; i<4; i++) { 
         let card = document.getElementById('hangar-ship-card-'+i);
         if(card) {
-            // Solo aparece si ya se compró la versión base
             if (gameStats.skins[i]) {
                 card.style.display = 'flex'; 
                 let bNorm = document.getElementById('btn-hs-'+i+'-norm'); 
@@ -56,9 +60,9 @@ function updateHangarUI() {
                 if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
                 
                 let isPro = (gameStats.selectedShip === i && gameStats.useProShip);
-                img.src = isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`;
+                if(img) img.src = isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`;
             } else {
-                card.style.display = 'none'; // Nave oculta por completo si no la tiene
+                card.style.display = 'none'; // Oculta la nave si no la tiene
             }
         }
     }
@@ -79,7 +83,6 @@ function updateHangarUI() {
             if(!gameStats.missiles[i]) bNorm.style.background = '#1e293b';
             if(!gameStats.proMissiles[i]) bPro.style.background = '#1e293b';
             
-            // Si no tiene el misil de ninguna forma, se muestra en gris
             if (!gameStats.missiles[i] && !gameStats.proMissiles[i]) {
                 img.style.filter = 'grayscale(100%)';
                 img.style.opacity = '0.5';
@@ -109,7 +112,6 @@ function updateShopUI() {
     let bCosts = [0, 1000, 2000, 4000]; 
     let pCosts = [3000, 3000, 6000, 10000]; 
     
-    // UI TIENDA: Filtro Gris para Naves no compradas
     for(let i=0; i<4; i++) { 
         let btnB = document.getElementById('btn-skin-base-'+i); 
         let imgB = document.getElementById('shop-img-base-'+i);
@@ -231,12 +233,14 @@ window.updateUpgradesHUD = function() {
             let mIndex = gameStats.selectedMissile;
             let mIcons = ['🐥', '🧶', '🧲', '🥛'];
             let isPro = gameStats.useProMissile;
-            let mSrcBase = [assets.balaPollito, assets.balaLana, assets.balaHerradura, assets.balaLeche];
-            let mSrcPro = [assets.balaPollitoPro, assets.balaLanaPro, assets.balaHerraduraPro, assets.balaLechePro];
-            let imgObj = isPro ? mSrcPro[mIndex] : mSrcBase[mIndex];
             
-            if(imgObj && imgObj.src && imgObj.src !== "") {
-                emojiDiv.innerHTML = `<img src="${imgObj.src}" onerror="this.style.display='none'; this.parentNode.textContent='${mIcons[mIndex]}';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`;
+            // Recreamos las rutas para el botón de misil
+            let mSrcBase = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
+            let mSrcPro = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
+            let imgSrc = isPro ? mSrcPro[mIndex] : mSrcBase[mIndex];
+            
+            if(imgSrc) {
+                emojiDiv.innerHTML = `<img src="${imgSrc}" onerror="this.style.display='none'; this.parentNode.textContent='${mIcons[mIndex]}';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`;
             } else { emojiDiv.textContent = mIcons[mIndex]; }
         } 
     }
