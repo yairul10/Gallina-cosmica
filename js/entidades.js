@@ -54,19 +54,21 @@ window.spawnEnemy = function() {
     if (bosses.length > 0) return; 
     let difficultyTime = score >= 40000 ? timeAt40k : gameTime; let speedMultiplier = 1 + ((difficultyTime / 70) * 0.3); let lastCornHp = 1 + Math.floor((timeAt40k > 0 ? timeAt40k : gameTime) / 12) + (evolutionStage * 5); if (lastCornHp < 1) lastCornHp = 1;
     
-    if (gameRound >= 4) {
-        let scale = Math.floor((score - 250000) / 2000); if (scale < 0) scale = 0; let eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte'; let eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale; let ePts = eType === 'maiz_jefe' ? 1200 : 1000; let eCoin = eType === 'maiz_jefe' ? 3 : 4;
-        if (gameRound >= 2) eCoin += 1;
-        enemies.push({ x: Math.random() * (canvas.width - 56 - 20) + 10, y: -60, width: 56, height: 56, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 0.5) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 }); return;
-    }
-    
     let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 1;
-    if (gameRound === 2 || gameRound === 3) {
+    if (gameRound >= 4) {
+        let scale = Math.floor((score - 250000) / 2000); if (scale < 0) scale = 0; eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte'; eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale; ePts = eType === 'maiz_jefe' ? 1200 : 1000; eCoin = eType === 'maiz_jefe' ? 3 : 4;
+    } else if (gameRound === 2 || gameRound === 3) {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
         if (score >= 200000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 3; } else if (score >= 120000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 3 : 2; } else if (score >= 80000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 2; } else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; } else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
     } else { eHp = lastCornHp; if (eHp > 1) { eType = 'corn_strong'; eCoin = 2; } else { eType = 'corn'; eCoin = 1; } }
     
     if (gameRound >= 2) eCoin += 1;
+    
+    // REGLA UNIVERSAL: TODO EL MAÍZ DA 1000 MONEDAS
+    if (eType === 'corn' || eType === 'corn_strong' || eType === 'maiz_jefe') {
+        eCoin = 1000;
+    }
+    
     enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
 }
 
@@ -119,8 +121,10 @@ window.damageBoss = function(bIndex, dmg) {
         let bCoin = boss.isSuperBoss ? 6 : 3;
         if (gameRound >= 2) bCoin += 1;
         
-        // --- 50 MONEDAS Y X2 EN RONDA INFINITA ---
         if (boss.isSuperBoss && boss.type === 'lechuga') bCoin = 50; 
+        // TODOS los Jefes Maíz dan 1000 Monedas también
+        if (boss.type === 'corn') bCoin = 1000; 
+        
         if (gameRound >= 4) bCoin *= 2; 
         
         handleCoinEarned(bCoin); 
@@ -148,7 +152,6 @@ window.damageEnemy = function(eIndex, dmg) {
     if (e.hp <= 0) { 
         score += e.pts; 
         
-        // --- X2 EN RONDA INFINITA ---
         let finalCoin = e.coin;
         if (gameRound >= 4) finalCoin *= 2; 
         
