@@ -59,7 +59,7 @@ window.spawnEnemy = function() {
         let scale = Math.floor((score - 250000) / 2000); if (scale < 0) scale = 0; eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte'; eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale; ePts = eType === 'maiz_jefe' ? 1200 : 1000; eCoin = eType === 'maiz_jefe' ? 3 : 4;
     } else if (gameRound === 2 || gameRound === 3) {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); 
-        let jefeLechugaHp = Math.ceil(lastCornHp * 3.5); // Aumentado bastante
+        let jefeLechugaHp = Math.ceil(lastCornHp * 3.5);
         
         if (score >= 200000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 3; } else if (score >= 120000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 3 : 2; } else if (score >= 80000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 2; } else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; } else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
     } else { eHp = lastCornHp; if (eHp > 1) { eType = 'corn_strong'; eCoin = 2; } else { eType = 'corn'; eCoin = 1; } }
@@ -72,12 +72,12 @@ window.spawnEnemy = function() {
 
 window.spawnBoss = function() { 
     if (nextBossScoreThreshold === 250000 && gameRound === 3) {
-        let bossHpM = 1680 * 2.5; let bossHpL = 6720 * 3.5; // Lechuga Super mucho más fuerte
+        let bossHpM = 1680 * 2.5; let bossHpL = 6720 * 3.5;
         bosses.push({ x: 20, y: -120, width: 140, height: 110, maxHp: bossHpM, hp: bossHpM, speed: 1.5, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
         bosses.push({ x: canvas.width - 160, y: -180, width: 140, height: 110, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: -1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
         doubleBossSpawned = true;
     } else if (nextBossScoreThreshold === 150000 && gameRound === 2) {
-        let bossHpL = 6720 * 3.0; // Jefe lechuga vida aumentada x2
+        let bossHpL = 6720 * 3.0; 
         bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: 1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
     } else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
         let bossHp = 1680; bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
@@ -95,11 +95,16 @@ window.handleDamage = function() {
     if (upgrades.armor > 0) { if (!partialHit) { partialHit = true; sessionTimeNoHit = 0; return; } else { partialHit = false; } }
     lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; 
     
-    // LÓGICA DE AUTO-VIDA
-    if (lives === 1 && gameStats.equipExtraModule && moduleActiveInMatch && !moduleUsed) {
-        lives += 2; // Compra dos vidas cuando queda solo una (Vuelves a 3)
-        moduleUsed = true;
-        showTrophyToast("❤️", null, "¡Auto-Vida Activada!");
+    // NUEVA LÓGICA: Auto-Vida Permanente si hay dinero
+    if (lives === 1 && gameStats.equipExtraModule && moduleActiveInMatch) {
+        if (coins >= 30) {
+            coins -= 30; gameStats.savedCoins = coins; saveStats();
+            lives += 2;
+            showTrophyToast("❤️", null, "Auto-Vida: -30🪙");
+            updateUpgradesHUD();
+        } else {
+            showTrophyToast("💔", null, "Sin monedas para Auto-Vida");
+        }
     }
     
     updateLivesUI(); if (lives <= 0) gameOver(); 
