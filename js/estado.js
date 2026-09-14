@@ -2,22 +2,31 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = 420; canvas.height = 640;
 
-let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || { 
-    totalGames: 0, totalKills: 0, totalCoins: 0, totalLivesBought: 0, savedCoins: 0, 
-    skins: [false, false, false, false], equippedSkins: [false, false, false, false], 
-    missiles: [false, false, false, false], equippedMissiles: [false, false, false, false], 
-    pendingBooster: 1.0, tutorialCompleted: false, 
-    lastLoginDate: 0, loginStreak: 0, controlMode: 'drag'
-};
+let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || {};
+
+// INICIALIZACIÓN SEGURA DE VARIABLES NUEVAS
+if (gameStats.totalGames === undefined) gameStats.totalGames = 0;
+if (gameStats.totalKills === undefined) gameStats.totalKills = 0;
+if (gameStats.totalCoins === undefined) gameStats.totalCoins = 0;
+if (gameStats.totalLivesBought === undefined) gameStats.totalLivesBought = 0;
+if (gameStats.savedCoins === undefined) gameStats.savedCoins = 0;
 if (gameStats.tutorialCompleted === undefined) gameStats.tutorialCompleted = false;
 if (gameStats.lastLoginDate === undefined) gameStats.lastLoginDate = 0;
 if (gameStats.loginStreak === undefined) gameStats.loginStreak = 0;
 if (!gameStats.controlMode) gameStats.controlMode = 'drag';
-if (!gameStats.skins) gameStats.skins = [false, false, false, false];
-if (!gameStats.equippedSkins) gameStats.equippedSkins = [false, false, false, false];
-if (!gameStats.missiles) gameStats.missiles = [false, false, false, false];
-if (!gameStats.equippedMissiles) gameStats.equippedMissiles = [false, false, false, false];
 if (!gameStats.pendingBooster) gameStats.pendingBooster = 1.0;
+
+// SISTEMA NUEVO DE NAVES (Clase + Evolución Independiente)
+if (!gameStats.skins) gameStats.skins = [true, false, false, false]; // Base (Solo Gallina abierta al inicio)
+if (!gameStats.proSkins) gameStats.proSkins = [false, false, false, false]; // Licencias Pro
+if (gameStats.selectedShip === undefined) gameStats.selectedShip = 0; // 0=Gallina, 1=Oveja, 2=Caballo, 3=Vaca
+if (gameStats.useProShip === undefined) gameStats.useProShip = false;
+
+// MISILES DESVINCULADOS
+if (!gameStats.missiles) gameStats.missiles = [false, false, false, false];
+if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
+if (gameStats.selectedMissile === undefined) gameStats.selectedMissile = 0;
+if (gameStats.useProMissile === undefined) gameStats.useProMissile = false;
 
 function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
 
@@ -26,9 +35,9 @@ const achievData = {
     'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida.' }, 
     'a3': { title: 'Cosecha Estelar', desc: 'Destruye 50 maíces malvados.' }, 
     'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge 300 monedas en total.' }, 
-    'a5': { title: 'Alas de Lana', desc: 'Evoluciona a la Oveja Espacial.' }, 
-    'a6': { title: 'Galope Galáctico', desc: 'Alcanza la Nave Caballo.' }, 
-    'a7': { title: 'La Vaca Sagrada', desc: 'Desbloquea la Vaca Espacial.' }, 
+    'a5': { title: 'Fase 2 Alcanzada', desc: 'Sube a Fase 2 con cualquier nave.' }, 
+    'a6': { title: 'Fase 3 Alcanzada', desc: 'Sube a Fase 3 con cualquier nave.' }, 
+    'a7': { title: 'Fase Máxima', desc: 'Sube a Fase 4 (Máximo Poder).' }, 
     'a8': { title: 'Poder de Fuego I', desc: 'Sube los disparos al máximo.' }, 
     'a9': { title: 'Piloto Veloz', desc: 'Sube la velocidad al máximo.' }, 
     'a10': { title: 'El Terror del Maizal', desc: 'Derrota a tu primer Jefe Maíz.' }, 
@@ -51,13 +60,6 @@ let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || 
 
 function saveLeaderboard() { localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard)); }
 
-const baseNames = ['Gallina', 'Oveja', 'Caballo', 'Vaca'];
-const misNames = ['Misil Pollito', 'Misil Lana', 'Misil Herradura', 'Misil Lácteo'];
-const skinSrc = ['assets/gallina.png', 'assets/oveja.png', 'assets/caballo.png', 'assets/vaca.png'];
-const skinProSrc = ['assets/gallina_pro.png', 'assets/oveja_pro.png', 'assets/caballo_pro.png', 'assets/vaca_pro.png'];
-const misSrc = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
-const misProSrc = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
-
 let score = 0; let coins = gameStats.savedCoins || 0;
 let lives = 3; let gameTime = 0; let gameState = 'START'; let previousState = 'PLAYING';
 let currentMatchBooster = 1.0;
@@ -73,8 +75,6 @@ let missileCooldownTimer = 0; const MISSILE_COOLDOWN = 480;
 let timeAt40k = 0; let shieldUnlocked = false; let shieldActive = false; let gameRound = 1; let goingToRound = 1;
 let sessionKillsNoHit = 0; let sessionTimeNoHit = 0; let sessionLivesBought = 0; let sessionCoinsEarned = 0;
 let partialHit = false; let transitionTimer = 0; let doubleBossSpawned = false; let doubleBossDefeated = false;
-
-// NUEVO: Temporizador para la cámara de evolución
 let evolutionTimer = 0;
 
 let tutorialStep = 0; let bgScrollY = 0;
