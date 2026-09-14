@@ -104,9 +104,9 @@ function update() {
             gameState = 'PLAYING'; 
             for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; } 
             
-            // LA CORRECCIÓN DE TUTORIAL: Se garantiza que solo se cierre al terminar la cámara
-            if (!gameStats.tutorialCompleted && tutorialStep === 5) { 
-                tutorialStep = 5.1; 
+            // CORRECCIÓN DEL BUG: Detecta correctamente el paso 4.5
+            if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { 
+                tutorialStep = 5; 
                 activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); 
             }
         }
