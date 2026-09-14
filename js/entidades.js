@@ -61,11 +61,19 @@ window.spawnEnemy = function() {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); 
         let jefeLechugaHp = Math.ceil(lastCornHp * 3.5);
         
-        if (score >= 200000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 3; } else if (score >= 120000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 3 : 2; } else if (score >= 80000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 2; } else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; } else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
-    } else { eHp = lastCornHp; if (eHp > 1) { eType = 'corn_strong'; eCoin = 2; } else { eType = 'corn'; eCoin = 1; } }
+        // LECHUGAS VALEN EL DOBLE QUE SU EQUIVALENTE DE MAÍZ
+        if (score >= 200000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 6; } 
+        else if (score >= 120000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 6 : 4; } 
+        else if (score >= 80000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 4; } 
+        else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 4 : 2; } 
+        else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 2; }
+    } else { 
+        eHp = lastCornHp; 
+        if (eHp > 1) { eType = 'corn_strong'; eCoin = 2; } 
+        else { eType = 'corn'; eCoin = 1; } 
+    }
     
     if (gameRound >= 2) eCoin += 1;
-    if (eType === 'corn' || eType === 'corn_strong' || eType === 'maiz_jefe') { eCoin = 1000; }
     
     enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
 }
@@ -95,7 +103,6 @@ window.handleDamage = function() {
     if (upgrades.armor > 0) { if (!partialHit) { partialHit = true; sessionTimeNoHit = 0; return; } else { partialHit = false; } }
     lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; 
     
-    // NUEVA LÓGICA: Auto-Vida Permanente si hay dinero
     if (lives === 1 && gameStats.equipExtraModule && moduleActiveInMatch) {
         if (coins >= 30) {
             coins -= 30; gameStats.savedCoins = coins; saveStats();
@@ -131,11 +138,13 @@ window.damageBoss = function(bIndex, dmg) {
 
     if (boss.hp <= 0) { 
         score += boss.isSuperBoss ? 4500 : 2250; 
-        let bCoin = boss.isSuperBoss ? 6 : 3;
-        if (gameRound >= 2) bCoin += 1;
         
-        if (boss.isSuperBoss && boss.type === 'lechuga') bCoin = 50; 
-        if (boss.type === 'corn') bCoin = 1000; 
+        let bCoin = boss.type === 'lechuga' ? 6 : 3;
+        if (boss.isSuperBoss) {
+            bCoin = boss.type === 'lechuga' ? 50 : 6;
+        }
+        
+        if (gameRound >= 2 && !(boss.isSuperBoss && boss.type === 'lechuga')) bCoin += 1;
         if (gameRound >= 4) bCoin *= 2; 
         
         handleCoinEarned(bCoin); 
@@ -162,7 +171,6 @@ window.damageEnemy = function(eIndex, dmg) {
 
     if (e.hp <= 0) { 
         score += e.pts; 
-        
         let finalCoin = e.coin;
         if (gameRound >= 4) finalCoin *= 2; 
         
