@@ -7,37 +7,13 @@ function unlockAchievement(key) { if (!pAchiev[key]) { pAchiev[key] = true; loca
 
 function loadHudPositions() {
     const saved = JSON.parse(localStorage.getItem('farm_space_hud_v11'));
-    if (saved) { 
-        ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn', 'hud-joystick'].forEach(id => { 
-            if(saved[id] && document.getElementById(id)) { 
-                document.getElementById(id).style.left = saved[id].left; 
-                document.getElementById(id).style.top = saved[id].top; 
-            } else if (id === 'hud-joystick' && document.getElementById(id)) {
-                document.getElementById(id).style.left = '8%'; 
-                document.getElementById(id).style.top = '75%';
-            }
-        }); 
-    } else { 
-        document.getElementById('hud-super-damage').style.left = '4%'; document.getElementById('hud-super-damage').style.top = '25%'; 
-        document.getElementById('hud-armor').style.left = '4%'; document.getElementById('hud-armor').style.top = '35%'; 
-        document.getElementById('hud-damage').style.left = '4%'; document.getElementById('hud-damage').style.top = '45%'; 
-        document.getElementById('hud-bullets').style.left = '4%'; document.getElementById('hud-bullets').style.top = '55%'; 
-        document.getElementById('hud-speed').style.left = '4%'; document.getElementById('hud-speed').style.top = '65%'; 
-        document.getElementById('hud-life-evolve').style.left = '4%'; document.getElementById('hud-life-evolve').style.top = '75%'; 
-        document.getElementById('fireBtn').style.left = '78%'; document.getElementById('fireBtn').style.top = '82%'; 
-        document.getElementById('missileBtn').style.left = '60%'; document.getElementById('missileBtn').style.top = '84%'; 
-        document.getElementById('hud-joystick').style.left = '8%'; document.getElementById('hud-joystick').style.top = '75%'; 
-    }
+    if (saved) { ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn', 'hud-joystick'].forEach(id => { if(saved[id] && document.getElementById(id)) { document.getElementById(id).style.left = saved[id].left; document.getElementById(id).style.top = saved[id].top; } else if (id === 'hud-joystick' && document.getElementById(id)) { document.getElementById(id).style.left = '8%'; document.getElementById(id).style.top = '75%'; } }); } 
+    else { document.getElementById('hud-super-damage').style.left = '4%'; document.getElementById('hud-super-damage').style.top = '25%'; document.getElementById('hud-armor').style.left = '4%'; document.getElementById('hud-armor').style.top = '35%'; document.getElementById('hud-damage').style.left = '4%'; document.getElementById('hud-damage').style.top = '45%'; document.getElementById('hud-bullets').style.left = '4%'; document.getElementById('hud-bullets').style.top = '55%'; document.getElementById('hud-speed').style.left = '4%'; document.getElementById('hud-speed').style.top = '65%'; document.getElementById('hud-life-evolve').style.left = '4%'; document.getElementById('hud-life-evolve').style.top = '75%'; document.getElementById('fireBtn').style.left = '78%'; document.getElementById('fireBtn').style.top = '82%'; document.getElementById('missileBtn').style.left = '60%'; document.getElementById('missileBtn').style.top = '84%'; document.getElementById('hud-joystick').style.left = '8%'; document.getElementById('hud-joystick').style.top = '75%'; }
 }
 function saveHudPositions() { const positions = {}; ['hud-bullets', 'hud-speed', 'hud-life-evolve', 'hud-armor', 'hud-damage', 'hud-super-damage', 'fireBtn', 'missileBtn', 'hud-joystick'].forEach(id => { const el = document.getElementById(id); if(el) positions[id] = { left: el.style.left, top: el.style.top }; }); localStorage.setItem('farm_space_hud_v11', JSON.stringify(positions)); }
 loadHudPositions();
 
-window.toggleControlMode = function() {
-    gameStats.controlMode = gameStats.controlMode === 'drag' ? 'joystick' : 'drag';
-    saveStats();
-    document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick';
-    document.getElementById('hud-joystick').style.display = gameStats.controlMode === 'drag' ? 'none' : 'flex';
-};
+window.toggleControlMode = function() { gameStats.controlMode = gameStats.controlMode === 'drag' ? 'joystick' : 'drag'; saveStats(); document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick'; document.getElementById('hud-joystick').style.display = gameStats.controlMode === 'drag' ? 'none' : 'flex'; };
 
 function pauseGame() { if (gameState === 'PLAYING' || gameState === 'TRANSITION') { previousState = gameState; gameState = 'PAUSED'; bgMusic.pause(); document.getElementById('pauseScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.add('paused')); isDraggingShip = false; document.getElementById('toggleControlBtn').innerHTML = gameStats.controlMode === 'drag' ? '🕹️ Control: Arrastrar' : '🕹️ Control: Joystick'; } }
 document.getElementById('muteMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); bgMusic.muted = !bgMusic.muted; e.target.textContent = bgMusic.muted ? '🔇 Activar Música' : '🔊 Silenciar Música'; });
@@ -62,12 +38,32 @@ window.switchHangarTab = function(tab) {
 }
 
 function updateHangarUI() {
-    for(let i=0; i<4; i++) { let btn = document.getElementById('btn-hangar-skin-'+i); let img = document.getElementById('img-hangar-skin-'+i); let name = document.getElementById('name-hangar-skin-'+i); let desc = document.getElementById('desc-hangar-skin-'+i); if (gameStats.skins[i]) { if (gameStats.equippedSkins[i]) { btn.textContent = 'Usar Normal'; btn.style.background = '#f59e0b'; img.src = skinProSrc[i]; name.textContent = baseNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#fbbf24;">+30% Daño Láser</b>'; } else { btn.textContent = 'Equipar Pro'; btn.style.background = '#10b981'; img.src = skinSrc[i]; name.textContent = baseNames[i]; desc.innerHTML = 'Normal'; } btn.disabled = false; } else { btn.textContent = 'Pro Bloqueada'; btn.style.background = '#475569'; img.src = skinSrc[i]; name.textContent = baseNames[i]; desc.innerHTML = 'Normal'; btn.disabled = true; } }
-    for(let i=0; i<4; i++) { let btn = document.getElementById('btn-hangar-missile-'+i); let img = document.getElementById('img-hangar-missile-'+i); let name = document.getElementById('name-hangar-missile-'+i); let desc = document.getElementById('desc-hangar-missile-'+i); if (gameStats.missiles[i]) { if (gameStats.equippedMissiles[i]) { btn.textContent = 'Usar Normal'; btn.style.background = '#f59e0b'; img.src = misProSrc[i]; img.onerror = function() { this.src = misSrc[i]; }; name.textContent = misNames[i] + ' Pro'; desc.innerHTML = '<b style="color:#38bdf8;">+20% Daño Misil</b>'; } else { btn.textContent = 'Equipar Pro'; btn.style.background = '#10b981'; img.src = misSrc[i]; name.textContent = misNames[i]; desc.innerHTML = 'Normal'; } btn.disabled = false; } else { btn.textContent = '🔒 Gana el trofeo'; btn.style.background = '#475569'; img.src = misSrc[i]; name.textContent = misNames[i]; desc.innerHTML = 'Normal'; btn.disabled = true; } }
+    // UI de Naves (Hangar)
+    for(let i=0; i<4; i++) { 
+        let bNorm = document.getElementById('btn-hs-'+i+'-norm'); let bPro = document.getElementById('btn-hs-'+i+'-pro');
+        bNorm.style.background = (gameStats.selectedShip === i && !gameStats.useProShip) ? '#f59e0b' : '#334155';
+        bPro.style.background = (gameStats.selectedShip === i && gameStats.useProShip) ? '#f59e0b' : '#334155';
+        
+        bNorm.disabled = !gameStats.skins[i];
+        bPro.disabled = !gameStats.proSkins[i];
+        if(!gameStats.skins[i]) bNorm.style.background = '#1e293b';
+        if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
+    }
+    // UI de Misiles (Hangar)
+    for(let i=0; i<4; i++) { 
+        let bNorm = document.getElementById('btn-hm-'+i+'-norm'); let bPro = document.getElementById('btn-hm-'+i+'-pro');
+        bNorm.style.background = (gameStats.selectedMissile === i && !gameStats.useProMissile) ? '#f59e0b' : '#334155';
+        bPro.style.background = (gameStats.selectedMissile === i && gameStats.useProMissile) ? '#f59e0b' : '#334155';
+        
+        bNorm.disabled = !gameStats.missiles[i];
+        bPro.disabled = !gameStats.proMissiles[i]; // Asumimos que los misiles Pro se activan igual que antes
+        if(!gameStats.missiles[i]) bNorm.style.background = '#1e293b';
+        if(!gameStats.proMissiles[i]) bPro.style.background = '#1e293b';
+    }
 }
 
-window.toggleHangarSkin = function(index) { gameStats.equippedSkins[index] = !gameStats.equippedSkins[index]; saveStats(); updateHangarUI(); }
-window.toggleHangarMissile = function(index) { gameStats.equippedMissiles[index] = !gameStats.equippedMissiles[index]; saveStats(); updateHangarUI(); }
+window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; saveStats(); updateHangarUI(); } }
+window.equipMissile = function(index, isPro) { if ((isPro && gameStats.proMissiles[index]) || (!isPro && gameStats.missiles[index])) { gameStats.selectedMissile = index; gameStats.useProMissile = isPro; saveStats(); updateHangarUI(); } }
 
 window.switchShopTab = function(tab) {
     document.getElementById('tabSkins').classList.remove('active'); document.getElementById('tabBoosters').classList.remove('active');
@@ -77,15 +73,27 @@ window.switchShopTab = function(tab) {
 }
 
 function updateShopUI() {
-    document.getElementById('shopCoinsVal').textContent = coins; let skinCosts = [1000, 2000, 4000, 8000];
-    for(let i=0; i<4; i++) { let btn = document.getElementById('btn-skin-'+i); if (gameStats.skins[i]) { btn.textContent = 'Adquirido'; btn.style.background = '#475569'; btn.disabled = true; } else { btn.textContent = `🪙 ${skinCosts[i].toLocaleString()}`; btn.style.background = '#10b981'; btn.disabled = (coins < skinCosts[i]); } }
+    document.getElementById('shopCoinsVal').textContent = coins; 
+    let bCosts = [0, 1000, 2000, 4000]; let pCosts = [0, 3000, 6000, 10000]; // Gallina Pro es gratis por trofeo
+    for(let i=1; i<=3; i++) { 
+        let btnB = document.getElementById('btn-skin-base-'+i); 
+        if (gameStats.skins[i]) { btnB.textContent = 'Comprado'; btnB.style.background = '#475569'; btnB.disabled = true; } 
+        else { btnB.textContent = `🪙 ${bCosts[i].toLocaleString()}`; btnB.style.background = '#10b981'; btnB.disabled = (coins < bCosts[i]); } 
+        
+        let btnP = document.getElementById('btn-skin-pro-'+i); 
+        if (gameStats.proSkins[i]) { btnP.textContent = 'Comprado'; btnP.style.background = '#475569'; btnP.disabled = true; } 
+        else { btnP.textContent = `🪙 ${pCosts[i].toLocaleString()}`; btnP.style.background = '#10b981'; btnP.disabled = (coins < pCosts[i]); } 
+    }
     let b20 = document.getElementById('btn-boost-20'); let b50 = document.getElementById('btn-boost-50'); let b100 = document.getElementById('btn-boost-100');
     [b20, b50, b100].forEach(b => { b.textContent = '🪙 ' + b.getAttribute('data-cost'); b.style.background = '#10b981'; b.disabled = false; });
     if (coins < 500) b20.disabled = true; if (coins < 2000) b50.disabled = true; if (coins < 10000) b100.disabled = true;
-    if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVADO'; b20.style.background = '#3b82f6'; [b50, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVADO'; b50.style.background = '#3b82f6'; [b20, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVADO'; b100.style.background = '#3b82f6'; [b20, b50].forEach(b=>b.disabled=true); }
+    if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVO'; b20.style.background = '#3b82f6'; [b50, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVO'; b50.style.background = '#3b82f6'; [b20, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVO'; b100.style.background = '#3b82f6'; [b20, b50].forEach(b=>b.disabled=true); }
 }
 
-window.buySkin = function(index, cost) { if (!gameStats.skins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; gameStats.equippedSkins[index] = true; saveStats(); updateShopUI(); } }
+window.buyShip = function(index, isPro, cost) { 
+    if (isPro) { if (!gameStats.proSkins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.proSkins[index] = true; saveStats(); updateShopUI(); } } 
+    else { if (!gameStats.skins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; saveStats(); updateShopUI(); } }
+}
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
 
 const trophyData = { '20k': { name: '🥉 Pollito de Bronce', lock: 'Consigue 20,000 pts', unlock: 'Lograste 20,000 pts.', key: 't20k' }, '50k': { name: '🥈 Lana de Plata', lock: 'Consigue 50,000 pts', unlock: 'Lograste 50,000 pts.', key: 't50k' }, '100k': { name: '🏅 Herradura de Oro', lock: 'Consigue 100,000 pts', unlock: 'Lograste 100,000 pts.', key: 't100k' }, '200k': { name: '🏆 Leche Legendaria', lock: 'Consigue 200,000 pts', unlock: 'Lograste 200,000 pts.', key: 't200k' }, '300k': { name: '💎 Gallina de Diamante', lock: 'Consigue 300,000 pts', unlock: 'Lograste 300,000 pts.', key: 't300k' } };
@@ -100,35 +108,16 @@ function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTroph
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `<span>#${index + 1} ${item.name}</span> <span>${item.score} pts</span>`; container.appendChild(row); }); }
 
 function activateTutorial(text, targetBtnId) {
-    gameState = 'TUTORIAL'; 
-    let overlay = document.getElementById('activeTutorialOverlay');
-    overlay.style.display = 'flex'; 
-    document.getElementById('activeTutorialText').innerHTML = text;
-    
-    if (targetBtnId === 'none') { 
-        document.getElementById('tutorialOkBtn').style.display = 'none'; 
-        overlay.style.pointerEvents = 'none'; 
-    } 
-    else if (targetBtnId) { 
-        if (Array.isArray(targetBtnId)) { targetBtnId.forEach(id => document.getElementById(id).classList.add('tutorial-highlight')); } 
-        else { document.getElementById(targetBtnId).classList.add('tutorial-highlight'); } 
-        document.getElementById('tutorialOkBtn').style.display = 'none'; 
-        overlay.style.pointerEvents = 'auto'; 
-    } 
-    else { 
-        document.getElementById('tutorialOkBtn').style.display = 'block'; 
-        overlay.style.pointerEvents = 'auto';
-    }
+    gameState = 'TUTORIAL'; let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'flex'; document.getElementById('activeTutorialText').innerHTML = text;
+    if (targetBtnId === 'none') { document.getElementById('tutorialOkBtn').style.display = 'none'; overlay.style.pointerEvents = 'none'; } 
+    else if (targetBtnId) { if (Array.isArray(targetBtnId)) { targetBtnId.forEach(id => document.getElementById(id).classList.add('tutorial-highlight')); } else { document.getElementById(targetBtnId).classList.add('tutorial-highlight'); } document.getElementById('tutorialOkBtn').style.display = 'none'; overlay.style.pointerEvents = 'auto'; } 
+    else { document.getElementById('tutorialOkBtn').style.display = 'block'; overlay.style.pointerEvents = 'auto'; }
 }
 
 function completeTutorialStep(step) {
     if (tutorialStep !== step) return;
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
-    let overlay = document.getElementById('activeTutorialOverlay');
-    overlay.style.display = 'none'; 
-    overlay.style.pointerEvents = 'auto';
-    gameState = 'PLAYING';
-    
+    let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'none'; overlay.style.pointerEvents = 'auto'; gameState = 'PLAYING';
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
     if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo con la imagen del proyectil.", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
@@ -143,11 +132,7 @@ document.querySelectorAll('.draggable-btn').forEach(btn => {
         e.stopPropagation(); e.preventDefault();
         if (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL') {
             const type = btn.getAttribute('data-type');
-            if (type === 'joystick') {
-                joystick.active = true; joystick.pointerId = e.pointerId;
-                const rect = btn.getBoundingClientRect(); joystick.baseX = rect.left + rect.width / 2; joystick.baseY = rect.top + rect.height / 2;
-                document.getElementById('joystick-knob').style.transition = 'none'; return;
-            }
+            if (type === 'joystick') { joystick.active = true; joystick.pointerId = e.pointerId; const rect = btn.getBoundingClientRect(); joystick.baseX = rect.left + rect.width / 2; joystick.baseY = rect.top + rect.height / 2; document.getElementById('joystick-knob').style.transition = 'none'; return; }
             if (gameState === 'TUTORIAL') {
                 if (tutorialStep === 1 && type === 'fire') { completeTutorialStep(1); shootBullet(); }
                 else if (tutorialStep === 1.1 && type === 'missile') { completeTutorialStep(1.1); shootMissile(); }
@@ -165,49 +150,40 @@ document.querySelectorAll('.draggable-btn').forEach(btn => {
 document.addEventListener('pointermove', (e) => { 
     if (joystick.active && e.pointerId === joystick.pointerId && (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL')) {
         if (gameState === 'TUTORIAL' && tutorialStep === 0.5) { completeTutorialStep(0.5); }
-        let dx = e.clientX - joystick.baseX; let dy = e.clientY - joystick.baseY;
-        let dist = Math.hypot(dx, dy); let maxDist = 35; 
-        if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
-        document.getElementById('joystick-knob').style.transform = `translate(${dx}px, ${dy}px)`;
-        joystick.dx = dx / maxDist; joystick.dy = dy / maxDist;
-        return;
+        let dx = e.clientX - joystick.baseX; let dy = e.clientY - joystick.baseY; let dist = Math.hypot(dx, dy); let maxDist = 35; if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+        document.getElementById('joystick-knob').style.transform = `translate(${dx}px, ${dy}px)`; joystick.dx = dx / maxDist; joystick.dy = dy / maxDist; return;
     }
     if (dragObj && gameState === 'PAUSED') { const containerRect = document.getElementById('game-container').getBoundingClientRect(); let newX = e.clientX - containerRect.left - dragOffX; let newY = e.clientY - containerRect.top - dragOffY; if (newX < 0) newX = 0; if (newY < 0) newY = 0; if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight; let pctX = (newX / containerRect.width) * 100; let pctY = (newY / containerRect.height) * 100; dragObj.style.left = pctX + '%'; dragObj.style.top = pctY + '%'; } 
 });
 
-const endJoystick = (e) => {
-    if (joystick.active && e.pointerId === joystick.pointerId) {
-        joystick.active = false; joystick.pointerId = null; joystick.dx = 0; joystick.dy = 0;
-        let knob = document.getElementById('joystick-knob'); if(knob) { knob.style.transition = 'transform 0.2s ease-out'; knob.style.transform = `translate(0px, 0px)`; }
-    }
-};
-
-document.addEventListener('pointerup', (e) => { endJoystick(e); if (dragObj && gameState === 'PAUSED') { dragObj = null; saveHudPositions(); unlockAchievement('a1'); } });
-document.addEventListener('pointercancel', endJoystick);
+const endJoystick = (e) => { if (joystick.active && e.pointerId === joystick.pointerId) { joystick.active = false; joystick.pointerId = null; joystick.dx = 0; joystick.dy = 0; let knob = document.getElementById('joystick-knob'); if(knob) { knob.style.transition = 'transform 0.2s ease-out'; knob.style.transform = `translate(0px, 0px)`; } } };
+document.addEventListener('pointerup', (e) => { endJoystick(e); if (dragObj && gameState === 'PAUSED') { dragObj = null; saveHudPositions(); unlockAchievement('a1'); } }); document.addEventListener('pointercancel', endJoystick);
 
 window.updateUpgradesHUD = function() {
     document.getElementById('coinVal').textContent = coins; const btnBullets = document.getElementById('hud-bullets'); 
     if (upgrades.bullets >= maxUpgradeLimit) { btnBullets.querySelector('.hud-lvl').textContent = 'MÁX'; btnBullets.querySelector('.hud-cost').style.display = 'none'; } else { btnBullets.querySelector('.hud-lvl').textContent = `Lv.${upgrades.bullets}`; btnBullets.querySelector('.hud-cost').style.display = 'block'; } btnBullets.classList.toggle('can-upgrade', upgrades.bullets < maxUpgradeLimit && coins >= 10);
     const btnSpeed = document.getElementById('hud-speed'); if (upgrades.speed >= maxUpgradeLimit) { btnSpeed.querySelector('.hud-lvl').textContent = 'MÁX'; btnSpeed.querySelector('.hud-cost').style.display = 'none'; } else { btnSpeed.querySelector('.hud-lvl').textContent = `Lv.${upgrades.speed}`; btnSpeed.querySelector('.hud-cost').style.display = 'block'; } btnSpeed.classList.toggle('can-upgrade', upgrades.speed < maxUpgradeLimit && coins >= 10);
-    const btnLifeEvolve = document.getElementById('hud-life-evolve'); if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'EVOL.'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; btnLifeEvolve.classList.toggle('can-upgrade', true); } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; if (lives >= 10) { btnLifeEvolve.querySelector('.hud-lvl').textContent = 'MÁX'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; } else { btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; } btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; btnLifeEvolve.classList.toggle('can-upgrade', lives < 10 && coins >= 15); }
+    const btnLifeEvolve = document.getElementById('hud-life-evolve'); if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'F.'+(evolutionStage+2); btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; btnLifeEvolve.classList.toggle('can-upgrade', true); } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; if (lives >= 10) { btnLifeEvolve.querySelector('.hud-lvl').textContent = 'MÁX'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; } else { btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; } btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; btnLifeEvolve.classList.toggle('can-upgrade', lives < 10 && coins >= 15); }
     document.getElementById('pauseBulletsLvl').textContent = upgrades.bullets >= maxUpgradeLimit ? 'MÁX' : `🪙10`; document.getElementById('pauseSpeedLvl').textContent = upgrades.speed >= maxUpgradeLimit ? 'MÁX' : `🪙10`;
     const pauseEv = document.getElementById('pauseEvolveBtn'); if (evolutionStage >= 3) pauseEv.style.display = 'none'; else pauseEv.style.display = 'flex';
     const armorBtn = document.getElementById('hud-armor'); const damageBtn = document.getElementById('hud-damage'); const superDmgBtn = document.getElementById('hud-super-damage'); const pauseSuperDmg = document.getElementById('pauseSuperDmgBtn');
     if (gameRound >= 2) { armorBtn.style.display = 'flex'; damageBtn.style.display = 'flex'; if (upgrades.armor > 0) { armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; armorBtn.querySelector('.hud-cost').style.display = 'none'; } if (upgrades.dmgBoost > 0) { damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; damageBtn.querySelector('.hud-cost').style.display = 'none'; } armorBtn.classList.toggle('can-upgrade', upgrades.armor === 0 && coins >= 300); damageBtn.classList.toggle('can-upgrade', upgrades.dmgBoost === 0 && coins >= 200); } else { armorBtn.style.display = 'none'; damageBtn.style.display = 'none'; }
     if (gameRound === 3 || goingToRound === 3) { superDmgBtn.style.display = 'flex'; pauseSuperDmg.style.display = 'flex'; if (upgrades.superDmgBoost > 0) { superDmgBtn.querySelector('.hud-lvl').textContent = 'MÁX'; superDmgBtn.querySelector('.hud-cost').style.display = 'none'; document.getElementById('pauseSuperDmgLvl').textContent = 'MÁX'; } superDmgBtn.classList.toggle('can-upgrade', upgrades.superDmgBoost === 0 && coins >= 1000); } else { superDmgBtn.style.display = 'none'; pauseSuperDmg.style.display = 'none'; }
     
-    // --- LÓGICA DE IMAGEN EN BOTÓN DE MISIL ---
     let mBtn = document.getElementById('missileBtn');
     if (mBtn) { 
         let emojiDiv = mBtn.querySelector('.hud-emoji'); 
         if (emojiDiv) { 
-            let isPro = gameStats.equippedMissiles[evolutionStage];
-            let imgSrc = isPro ? misProSrc[evolutionStage] : misSrc[evolutionStage];
-            if(imgSrc) {
-                emojiDiv.innerHTML = `<img src="${imgSrc}" onerror="this.style.display='none'; this.parentNode.textContent='🎯';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`;
-            } else {
-                emojiDiv.textContent = '🎯';
-            }
+            let mIndex = gameStats.selectedMissile;
+            let mIcons = ['🐥', '🧶', '🧲', '🥛'];
+            let isPro = gameStats.useProMissile;
+            let mSrcBase = [assets.balaPollito, assets.balaLana, assets.balaHerradura, assets.balaLeche];
+            let mSrcPro = [assets.balaPollitoPro, assets.balaLanaPro, assets.balaHerraduraPro, assets.balaLechePro];
+            let imgObj = isPro ? mSrcPro[mIndex] : mSrcBase[mIndex];
+            
+            if(imgObj && imgObj.src && imgObj.src !== "") {
+                emojiDiv.innerHTML = `<img src="${imgObj.src}" onerror="this.style.display='none'; this.parentNode.textContent='${mIcons[mIndex]}';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`;
+            } else { emojiDiv.textContent = mIcons[mIndex]; }
         } 
     }
 }
@@ -221,16 +197,9 @@ window.buyUpgrade = function(type) {
     else if (type === 'evolve') { 
         if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { 
             if (evolutionStage < 3) { 
-                gameState = 'EVOLVING';
-                evolutionTimer = 150; 
-                if (!gameStats.tutorialCompleted && tutorialStep === 4.5) {
-                    document.getElementById('activeTutorialOverlay').style.display = 'none';
-                    document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto';
-                }
-                if (document.getElementById('pauseScreen').style.display === 'flex') {
-                    document.getElementById('pauseScreen').style.display = 'none';
-                    document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused'));
-                }
+                gameState = 'EVOLVING'; evolutionTimer = 150; 
+                if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto'; }
+                if (document.getElementById('pauseScreen').style.display === 'flex') { document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); }
                 return; 
             } 
         } 
@@ -244,7 +213,7 @@ window.buyUpgrade = function(type) {
         if (tutorialStep === 4 || tutorialStep === 3.5) {
             if (upgrades.bullets >= maxUpgradeLimit) document.getElementById('hud-bullets').classList.remove('tutorial-highlight');
             if (upgrades.speed >= maxUpgradeLimit) document.getElementById('hud-speed').classList.remove('tutorial-highlight');
-            if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { tutorialStep = 4.5; activateTutorial("¡Excelente!<br><br>Ahora toca el botón de <b>Evolución</b> (🌟) para transformar tu nave.", 'hud-life-evolve'); } 
+            if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { tutorialStep = 4.5; activateTutorial("¡Excelente!<br><br>Ahora toca el botón de <b>Evolución</b> (🌟) para ascender a tu siguiente Fase.", 'hud-life-evolve'); } 
             else if (tutorialStep === 4 && coins < 10) { tutorialStep = 3.5; document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight')); document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto'; gameState = 'PLAYING'; }
         }
     }
@@ -252,29 +221,12 @@ window.buyUpgrade = function(type) {
 
 const dailyRewards = [100, 250, 500, 1000, 2000, 4000, 10000];
 function checkDailyReward() {
-    let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    let lastLogin = gameStats.lastLoginDate || 0; let oneDay = 24 * 60 * 60 * 1000; let diffDays = Math.round((today - lastLogin) / oneDay);
-    if (diffDays > 0 || lastLogin === 0) {
-        if (diffDays === 1) { gameStats.loginStreak++; if (gameStats.loginStreak > 7) gameStats.loginStreak = 1; } else { gameStats.loginStreak = 1; }
-        showDailyRewardScreen();
-    }
+    let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); let lastLogin = gameStats.lastLoginDate || 0; let oneDay = 24 * 60 * 60 * 1000; let diffDays = Math.round((today - lastLogin) / oneDay);
+    if (diffDays > 0 || lastLogin === 0) { if (diffDays === 1) { gameStats.loginStreak++; if (gameStats.loginStreak > 7) gameStats.loginStreak = 1; } else { gameStats.loginStreak = 1; } showDailyRewardScreen(); }
 }
 
 function showDailyRewardScreen() {
-    document.getElementById('startScreen').style.display = 'none'; document.getElementById('dailyRewardScreen').style.display = 'flex';
-    let grid = document.getElementById('dailyRewardsGrid'); grid.innerHTML = '';
-    for (let i = 0; i < 7; i++) {
-        let dayNum = i + 1; let reward = dailyRewards[i]; let isToday = (dayNum === gameStats.loginStreak); let isClaimed = (dayNum < gameStats.loginStreak);
-        let boxColor = isToday ? '#f59e0b' : (isClaimed ? '#10b981' : '#1e293b'); let textColor = isToday ? '#000' : '#fff'; let opacity = isClaimed ? '0.6' : '1'; let icon = isClaimed ? '✅' : '🪙'; if (dayNum === 7 && !isClaimed) icon = '💎';
-        let extraStyle = (dayNum === 7) ? 'grid-column: span 3; font-size: 1.1rem; padding: 12px;' : 'padding: 8px;';
-        grid.innerHTML += `<div style="background: ${boxColor}; color: ${textColor}; ${extraStyle} border-radius: 8px; text-align: center; opacity: ${opacity}; box-shadow: ${isToday ? '0 0 12px #fbbf24' : 'none'}; border: 2px solid ${isToday ? '#fff' : 'transparent'};"><div style="font-size: 0.75rem; font-weight: bold; opacity: 0.9;">DÍA ${dayNum}</div><div style="font-size: ${dayNum===7 ? '1.8rem' : '1.3rem'}; margin: 2px 0;">${icon}</div><div style="font-size: 0.9rem; font-weight: 900;">+${reward.toLocaleString()}</div></div>`;
-    }
+    document.getElementById('startScreen').style.display = 'none'; document.getElementById('dailyRewardScreen').style.display = 'flex'; let grid = document.getElementById('dailyRewardsGrid'); grid.innerHTML = '';
+    for (let i = 0; i < 7; i++) { let dayNum = i + 1; let reward = dailyRewards[i]; let isToday = (dayNum === gameStats.loginStreak); let isClaimed = (dayNum < gameStats.loginStreak); let boxColor = isToday ? '#f59e0b' : (isClaimed ? '#10b981' : '#1e293b'); let textColor = isToday ? '#000' : '#fff'; let opacity = isClaimed ? '0.6' : '1'; let icon = isClaimed ? '✅' : '🪙'; if (dayNum === 7 && !isClaimed) icon = '💎'; let extraStyle = (dayNum === 7) ? 'grid-column: span 3; font-size: 1.1rem; padding: 12px;' : 'padding: 8px;'; grid.innerHTML += `<div style="background: ${boxColor}; color: ${textColor}; ${extraStyle} border-radius: 8px; text-align: center; opacity: ${opacity}; box-shadow: ${isToday ? '0 0 12px #fbbf24' : 'none'}; border: 2px solid ${isToday ? '#fff' : 'transparent'};"><div style="font-size: 0.75rem; font-weight: bold; opacity: 0.9;">DÍA ${dayNum}</div><div style="font-size: ${dayNum===7 ? '1.8rem' : '1.3rem'}; margin: 2px 0;">${icon}</div><div style="font-size: 0.9rem; font-weight: 900;">+${reward.toLocaleString()}</div></div>`; }
 }
-document.getElementById('claimRewardBtn').addEventListener('click', () => {
-    let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    let rewardIndex = gameStats.loginStreak - 1; let earned = dailyRewards[rewardIndex];
-    coins += earned; gameStats.savedCoins = coins; gameStats.totalCoins += earned; gameStats.lastLoginDate = today; saveStats();
-    document.getElementById('coinVal').textContent = coins; document.getElementById('dailyRewardScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex';
-    showTrophyToast("🎁", null, `¡+${earned.toLocaleString()} Monedas!`);
-});
-setTimeout(checkDailyReward, 300);
+document.getElementById('claimRewardBtn').addEventListener('click', () => { let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); let rewardIndex = gameStats.loginStreak - 1; let earned = dailyRewards[rewardIndex]; coins += earned; gameStats.savedCoins = coins; gameStats.totalCoins += earned; gameStats.lastLoginDate = today; saveStats(); document.getElementById('coinVal').textContent = coins; document.getElementById('dailyRewardScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; showTrophyToast("🎁", null, `¡+${earned.toLocaleString()} Monedas!`); }); setTimeout(checkDailyReward, 300);
