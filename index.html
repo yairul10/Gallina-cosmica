@@ -18,55 +18,21 @@
         <canvas id="gameCanvas"></canvas>
         
         <div class="ui-layer">
-            <div id="activeTutorialOverlay" style="display:none;">
-                <div id="activeTutorialText"></div>
-                <button id="tutorialOkBtn" class="btn" style="display: none; position: relative; z-index: 101;" onclick="finishTutorial()">¡Entendido!</button>
-            </div>
-
+            <div id="activeTutorialOverlay" style="display:none;"><div id="activeTutorialText"></div><button id="tutorialOkBtn" class="btn" style="display: none; position: relative; z-index: 101;" onclick="finishTutorial()">¡Entendido!</button></div>
             <div class="header-score">
-                <div class="header-left">
-                    <div>Pts: <span id="scoreVal">0</span></div>
-                    <div>🪙 <span id="coinVal">0</span> <span id="trophiesVal"></span></div>
-                </div>
-                <div class="header-right">
-                    <button class="icon-btn" id="pauseBtn" title="Pausar Juego">⏸️</button>
-                    <div id="livesVal">❤️ x3</div>
-                </div>
+                <div class="header-left"><div>Pts: <span id="scoreVal">0</span></div><div>🪙 <span id="coinVal">0</span> <span id="trophiesVal"></span></div></div>
+                <div class="header-right"><button class="icon-btn" id="pauseBtn" title="Pausar Juego">⏸️</button><div id="livesVal">❤️ x3</div></div>
             </div>
 
-            <div id="hud-bullets" class="draggable-btn" data-type="bullets" style="display: none;">
-                <div class="hud-cost">🪙10</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div>
-            </div>
-            <div id="hud-speed" class="draggable-btn" data-type="speed" style="display: none;">
-                <div class="hud-cost">🪙10</div><div class="hud-emoji">⚡</div><div class="hud-lvl">Lv.1</div>
-            </div>
-            <div id="hud-life-evolve" class="draggable-btn" data-type="btn3" style="display: none;">
-                <div class="hud-cost">🪙15</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div>
-            </div>
-            <div id="hud-armor" class="draggable-btn r2-upgrade" data-type="armor" style="display: none; border-color: rgba(59, 130, 246, 0.8);">
-                <div class="hud-cost" style="background:#2563eb;">🪙300</div><div class="hud-emoji">🛡️</div><div class="hud-lvl" style="color:#bfdbfe">DUR.</div>
-            </div>
-            <div id="hud-damage" class="draggable-btn r2-upgrade" data-type="damage" style="display: none; border-color: rgba(239, 68, 68, 0.8);">
-                <div class="hud-cost">🪙200</div><div class="hud-emoji">🔥</div><div class="hud-lvl" style="color:#fecaca">+50%</div>
-            </div>
-            <div id="hud-super-damage" class="draggable-btn r3-upgrade" data-type="superDamage" style="display: none; border-color: #8b5cf6;">
-                <div class="hud-cost" style="background:#6d28d9;">🪙1000</div><div class="hud-emoji">☢️</div><div class="hud-lvl" style="color:#ddd6fe">+50%</div>
-            </div>
-
-            <div id="fireBtn" class="draggable-btn" data-type="fire" style="display: none;">
-                <div class="hud-emoji">🚀</div>
-            </div>
-            
-            <div id="missileBtn" class="draggable-btn" data-type="missile" style="display: none; border-color: #f59e0b;">
-                <div class="hud-emoji">🎯</div>
-                <div id="missileCooldown" style="position:absolute; bottom:2px; font-size:0.5rem; color:#fbbf24; font-weight:bold;">LISTO</div>
-            </div>
-
-            <!-- NUEVO: BASE DEL JOYSTICK FIJO -->
-            <div id="hud-joystick" class="draggable-btn" data-type="joystick" style="display: none; width: 110px; height: 110px; border-radius: 50%; border: 2px solid rgba(56, 189, 248, 0.3); background: rgba(15, 23, 42, 0.4); justify-content: center; align-items: center; z-index: 50;">
-                <div id="joystick-knob" style="width: 45px; height: 45px; border-radius: 50%; background: rgba(56, 189, 248, 0.8); box-shadow: 0 0 10px #38bdf8; pointer-events: none; transition: transform 0.2s ease-out;"></div>
-            </div>
-
+            <div id="hud-bullets" class="draggable-btn" data-type="bullets" style="display: none;"><div class="hud-cost">🪙10</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div></div>
+            <div id="hud-speed" class="draggable-btn" data-type="speed" style="display: none;"><div class="hud-cost">🪙10</div><div class="hud-emoji">⚡</div><div class="hud-lvl">Lv.1</div></div>
+            <div id="hud-life-evolve" class="draggable-btn" data-type="btn3" style="display: none;"><div class="hud-cost">🪙15</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div></div>
+            <div id="hud-armor" class="draggable-btn r2-upgrade" data-type="armor" style="display: none; border-color: rgba(59, 130, 246, 0.8);"><div class="hud-cost" style="background:#2563eb;">🪙300</div><div class="hud-emoji">🛡️</div><div class="hud-lvl" style="color:#bfdbfe">DUR.</div></div>
+            <div id="hud-damage" class="draggable-btn r2-upgrade" data-type="damage" style="display: none; border-color: rgba(239, 68, 68, 0.8);"><div class="hud-cost">🪙200</div><div class="hud-emoji">🔥</div><div class="hud-lvl" style="color:#fecaca">+50%</div></div>
+            <div id="hud-super-damage" class="draggable-btn r3-upgrade" data-type="superDamage" style="display: none; border-color: #8b5cf6;"><div class="hud-cost" style="background:#6d28d9;">🪙1000</div><div class="hud-emoji">☢️</div><div class="hud-lvl" style="color:#ddd6fe">+50%</div></div>
+            <div id="fireBtn" class="draggable-btn" data-type="fire" style="display: none;"><div class="hud-emoji">🚀</div></div>
+            <div id="missileBtn" class="draggable-btn" data-type="missile" style="display: none; border-color: #f59e0b;"><div class="hud-emoji">🎯</div><div id="missileCooldown" style="position:absolute; bottom:2px; font-size:0.5rem; color:#fbbf24; font-weight:bold;">LISTO</div></div>
+            <div id="hud-joystick" class="draggable-btn" data-type="joystick" style="display: none; width: 110px; height: 110px; border-radius: 50%; border: 2px solid rgba(56, 189, 248, 0.3); background: rgba(15, 23, 42, 0.4); justify-content: center; align-items: center; z-index: 50;"><div id="joystick-knob" style="width: 45px; height: 45px; border-radius: 50%; background: rgba(56, 189, 248, 0.8); box-shadow: 0 0 10px #38bdf8; pointer-events: none; transition: transform 0.2s ease-out;"></div></div>
         </div>
 
         <div id="startScreen" class="screen-overlay">
@@ -76,70 +42,50 @@
             <button class="btn btn-secondary" id="openTutorialBtn">📖 Cómo Jugar</button>
             <button class="btn btn-secondary" id="openHangarBtn">🛸 Hangar (Equipo)</button>
             <button class="btn btn-secondary" id="openShopBtn">🛒 Tienda</button>
-            
-            <div style="display: flex; gap: 8px; width: 100%; max-width: 200px;">
-                <button class="btn btn-secondary" id="openRecordsBtn" title="Récords" style="flex: 1; font-size: 1.2rem; padding: 6px;">🥇</button>
-                <button class="btn btn-secondary" id="openTrophiesBtn" title="Trofeos" style="flex: 1; font-size: 1.2rem; padding: 6px;">🏆</button>
-                <button class="btn btn-secondary" id="openAchievBtn" title="Logros" style="flex: 1; font-size: 1.2rem; padding: 6px;">🏅</button>
-            </div>
+            <div style="display: flex; gap: 8px; width: 100%; max-width: 200px;"><button class="btn btn-secondary" id="openRecordsBtn" title="Récords" style="flex: 1; font-size: 1.2rem; padding: 6px;">🥇</button><button class="btn btn-secondary" id="openTrophiesBtn" title="Trofeos" style="flex: 1; font-size: 1.2rem; padding: 6px;">🏆</button><button class="btn btn-secondary" id="openAchievBtn" title="Logros" style="flex: 1; font-size: 1.2rem; padding: 6px;">🏅</button></div>
         </div>
 
-        <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;">
-            <h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1>
-            <p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p>
-            <div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;"></div>
-            <button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button>
-        </div>
+        <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;"><h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1><p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p><div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;"></div><button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button></div>
+        <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1><div class="tutorial-content"><h3 style="color: #38bdf8;">🕹️ Movimiento</h3><p>• <b>Arrastrar / Joystick:</b> Configúralo en el menú de pausa.<br>• <b>PC:</b> Usa las flechas del teclado o W, A, S, D.</p><h3 style="color: #ef4444;">🚀 Combate</h3><p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparos múltiples.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯).</p><h3 style="color: #10b981;">⚙️ Mejoras</h3><p>• Los botones de la izquierda <b>brillarán ✨</b> con monedas suficientes.</p><h3 style="color: #fbbf24;">✨ Personalizar Botones</h3><p>Toca <b>Pausa ⏸️</b> arriba a la derecha para organizar tu interfaz.</p></div><button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button></div>
 
-        <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
-            <h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1>
-            <div class="tutorial-content">
-                <h3 style="color: #38bdf8;">🕹️ Movimiento</h3>
-                <p>• <b>Arrastrar / Joystick:</b> Configúralo en el menú de pausa.<br>• <b>PC:</b> Usa las flechas del teclado o W, A, S, D.</p>
-                <h3 style="color: #ef4444;">🚀 Combate</h3>
-                <p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparos múltiples.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯).</p>
-                <h3 style="color: #10b981;">⚙️ Mejoras</h3>
-                <p>• Los botones de la izquierda <b>brillarán ✨</b> con monedas suficientes.</p>
-                <h3 style="color: #fbbf24;">✨ Personalizar Botones</h3>
-                <p>Toca <b>Pausa ⏸️</b> arriba a la derecha para organizar tu interfaz.</p>
-            </div>
-            <button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button>
-        </div>
-
+        <!-- HANGAR ACTUALIZADO -->
         <div id="hangarScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 5px;">🛸 Hangar</h1>
-            <p>Activa tus mejoras visuales y armas desbloqueadas.</p>
+            <p>Elige tu nave base y tu tipo de misil favorito.</p>
             <div class="shop-tabs">
-                <button class="shop-tab active" id="tabHangarSkins" onclick="switchHangarTab('skins')">Skins Naves</button>
-                <button class="shop-tab" id="tabHangarMissiles" onclick="switchHangarTab('missiles')">Skins Misiles (🎯)</button>
+                <button class="shop-tab active" id="tabHangarSkins" onclick="switchHangarTab('skins')">Naves (Clases)</button>
+                <button class="shop-tab" id="tabHangarMissiles" onclick="switchHangarTab('missiles')">Misiles</button>
             </div>
             <div id="hangarSkins" class="shop-grid">
-                <div class="shop-item"><h4 id="name-hangar-skin-0">Gallina</h4><img id="img-hangar-skin-0" src="assets/gallina.png" class="shop-img"><p id="desc-hangar-skin-0">Normal</p><button class="shop-btn" id="btn-hangar-skin-0" onclick="toggleHangarSkin(0)">Pro Bloqueada</button></div>
-                <div class="shop-item"><h4 id="name-hangar-skin-1">Oveja</h4><img id="img-hangar-skin-1" src="assets/oveja.png" class="shop-img"><p id="desc-hangar-skin-1">Normal</p><button class="shop-btn" id="btn-hangar-skin-1" onclick="toggleHangarSkin(1)">Pro Bloqueada</button></div>
-                <div class="shop-item"><h4 id="name-hangar-skin-2">Caballo</h4><img id="img-hangar-skin-2" src="assets/caballo.png" class="shop-img"><p id="desc-hangar-skin-2">Normal</p><button class="shop-btn" id="btn-hangar-skin-2" onclick="toggleHangarSkin(2)">Pro Bloqueada</button></div>
-                <div class="shop-item"><h4 id="name-hangar-skin-3">Vaca</h4><img id="img-hangar-skin-3" src="assets/vaca.png" class="shop-img"><p id="desc-hangar-skin-3">Normal</p><button class="shop-btn" id="btn-hangar-skin-3" onclick="toggleHangarSkin(3)">Pro Bloqueada</button></div>
+                <div class="shop-item"><h4>Gallina</h4><div style="font-size:2rem;">🐔</div><p style="font-size:0.75rem; color:#94a3b8;">+20% Daño a Maíz</p><div style="display:flex; gap:4px;"><button class="shop-btn" id="btn-hs-0-norm" onclick="equipShip(0, false)">Normal</button><button class="shop-btn" id="btn-hs-0-pro" onclick="equipShip(0, true)">Pro</button></div></div>
+                <div class="shop-item"><h4>Oveja</h4><div style="font-size:2rem;">🐑</div><p style="font-size:0.75rem; color:#94a3b8;">+20% a Jefes Maíz</p><div style="display:flex; gap:4px;"><button class="shop-btn" id="btn-hs-1-norm" onclick="equipShip(1, false)">Normal</button><button class="shop-btn" id="btn-hs-1-pro" onclick="equipShip(1, true)">Pro</button></div></div>
+                <div class="shop-item"><h4>Caballo</h4><div style="font-size:2rem;">🐴</div><p style="font-size:0.75rem; color:#94a3b8;">+20% Daño a Lechuga</p><div style="display:flex; gap:4px;"><button class="shop-btn" id="btn-hs-2-norm" onclick="equipShip(2, false)">Normal</button><button class="shop-btn" id="btn-hs-2-pro" onclick="equipShip(2, true)">Pro</button></div></div>
+                <div class="shop-item"><h4>Vaca</h4><div style="font-size:2rem;">🐮</div><p style="font-size:0.75rem; color:#94a3b8;">+20% a Jefes Lechuga</p><div style="display:flex; gap:4px;"><button class="shop-btn" id="btn-hs-3-norm" onclick="equipShip(3, false)">Normal</button><button class="shop-btn" id="btn-hs-3-pro" onclick="equipShip(3, true)">Pro</button></div></div>
             </div>
             <div id="hangarMissiles" class="shop-grid" style="display: none;">
-                <div class="shop-item"><h4 id="name-hangar-missile-0">Misil Pollito</h4><img id="img-hangar-missile-0" src="assets/bala_pollito.png" class="shop-img" style="height: 35px;"><p id="desc-hangar-missile-0">Normal</p><button class="shop-btn" id="btn-hangar-missile-0" onclick="toggleHangarMissile(0)">Pro Bloqueado</button></div>
-                <div class="shop-item"><h4 id="name-hangar-missile-1">Misil Lana</h4><img id="img-hangar-missile-1" src="assets/bala_lana.png" class="shop-img" style="height: 35px;"><p id="desc-hangar-missile-1">Normal</p><button class="shop-btn" id="btn-hangar-missile-1" onclick="toggleHangarMissile(1)">Pro Bloqueado</button></div>
-                <div class="shop-item"><h4 id="name-hangar-missile-2">Misil Herradura</h4><img id="img-hangar-missile-2" src="assets/bala_herradura.png" class="shop-img" style="height: 35px;"><p id="desc-hangar-missile-2">Normal</p><button class="shop-btn" id="btn-hangar-missile-2" onclick="toggleHangarMissile(2)">Pro Bloqueado</button></div>
-                <div class="shop-item"><h4 id="name-hangar-missile-3">Misil Lácteo</h4><img id="img-hangar-missile-3" src="assets/bala_leche.png" class="shop-img" style="height: 35px;"><p id="desc-hangar-missile-3">Normal</p><button class="shop-btn" id="btn-hangar-missile-3" onclick="toggleHangarMissile(3)">Pro Bloqueado</button></div>
+                <div class="shop-item"><h4>Misil Pollito</h4><div style="font-size:2rem;">🐥</div><p style="font-size:0.75rem;">Homing Básico</p><div style="display:flex; gap:4px;"><button class="shop-btn" id="btn-hm-0-norm" onclick="equipMissile(0, false)">Normal</button><button class="shop-btn" id="btn-hm-0-pro" onclick="equipMissile(0, true)">Pro</button></div></div>
+                <div class="shop-item"><h4>Misil Lana</h4><div style="font-size:2rem;">🧶</div><p style="font-size:0.75rem;">Homing Suave</p><div style="display:flex; gap:4px;"><button class="shop-btn" id="btn-hm-1-norm" onclick="equipMissile(1, false)">Normal</button><button class="shop-btn" id="btn-hm-1-pro" onclick="equipMissile(1, true)">Pro</button></div></div>
+                <div class="shop-item"><h4>Misil Herradura</h4><div style="font-size:2rem;">🧲</div><p style="font-size:0.75rem;">Homing Pesado</p><div style="display:flex; gap:4px;"><button class="shop-btn" id="btn-hm-2-norm" onclick="equipMissile(2, false)">Normal</button><button class="shop-btn" id="btn-hm-2-pro" onclick="equipMissile(2, true)">Pro</button></div></div>
+                <div class="shop-item"><h4>Misil Lácteo</h4><div style="font-size:2rem;">🥛</div><p style="font-size:0.75rem;">Homing Rápido</p><div style="display:flex; gap:4px;"><button class="shop-btn" id="btn-hm-3-norm" onclick="equipMissile(3, false)">Normal</button><button class="shop-btn" id="btn-hm-3-pro" onclick="equipMissile(3, true)">Pro</button></div></div>
             </div>
             <button class="btn btn-secondary" onclick="closeScreen('hangarScreen')" style="margin-top: 10px;">🔙 Volver</button>
         </div>
 
+        <!-- TIENDA ACTUALIZADA -->
         <div id="shopScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
             <h1 style="margin-bottom: 5px;">🛒 Tienda Galáctica</h1>
             <div style="color: #fbbf24; font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;">Tus Monedas: 🪙 <span id="shopCoinsVal">0</span></div>
             <div class="shop-tabs">
-                <button class="shop-tab active" id="tabSkins" onclick="switchShopTab('skins')">Skins</button>
+                <button class="shop-tab active" id="tabSkins" onclick="switchShopTab('skins')">Naves y Licencias Pro</button>
                 <button class="shop-tab" id="tabBoosters" onclick="switchShopTab('boosters')">Potenciadores</button>
             </div>
             <div id="shopSkins" class="shop-grid">
-                <div class="shop-item"><h4>Gallina Pro</h4><img src="assets/gallina_pro.png" class="shop-img"><p>Mejora dorada.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-0" onclick="buySkin(0, 1000)">🪙 1,000</button></div>
-                <div class="shop-item"><h4>Oveja Pro</h4><img src="assets/oveja_pro.png" class="shop-img"><p>Lana de titanio.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-1" onclick="buySkin(1, 2000)">🪙 2,000</button></div>
-                <div class="shop-item"><h4>Caballo Pro</h4><img src="assets/caballo_pro.png" class="shop-img"><p>Armadura veloz.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-2" onclick="buySkin(2, 4000)">🪙 4,000</button></div>
-                <div class="shop-item"><h4>Vaca Pro</h4><img src="assets/vaca_pro.png" class="shop-img"><p>Tanque total.<br><b style="color: #fbbf24;">+30% Daño Láser</b></p><button class="shop-btn" id="btn-skin-3" onclick="buySkin(3, 8000)">🪙 8,000</button></div>
+                <div class="shop-item"><h4>Oveja Base</h4><p style="font-size:0.8rem;">Desbloquea animal.</p><button class="shop-btn" id="btn-skin-base-1" onclick="buyShip(1, false, 1000)">🪙 1,000</button></div>
+                <div class="shop-item"><h4>Oveja Pro</h4><p style="font-size:0.8rem;">Daño +30%.</p><button class="shop-btn" id="btn-skin-pro-1" onclick="buyShip(1, true, 3000)">🪙 3,000</button></div>
+                <div class="shop-item"><h4>Caballo Base</h4><p style="font-size:0.8rem;">Desbloquea animal.</p><button class="shop-btn" id="btn-skin-base-2" onclick="buyShip(2, false, 2000)">🪙 2,000</button></div>
+                <div class="shop-item"><h4>Caballo Pro</h4><p style="font-size:0.8rem;">Daño +30%.</p><button class="shop-btn" id="btn-skin-pro-2" onclick="buyShip(2, true, 6000)">🪙 6,000</button></div>
+                <div class="shop-item"><h4>Vaca Base</h4><p style="font-size:0.8rem;">Desbloquea animal.</p><button class="shop-btn" id="btn-skin-base-3" onclick="buyShip(3, false, 4000)">🪙 4,000</button></div>
+                <div class="shop-item"><h4>Vaca Pro</h4><p style="font-size:0.8rem;">Daño +30%.</p><button class="shop-btn" id="btn-skin-pro-3" onclick="buyShip(3, true, 10000)">🪙 10,000</button></div>
             </div>
             <div id="shopBoosters" class="shop-grid" style="display: none;">
                 <div class="shop-item" style="grid-column: span 2;"><h4>+20% Daño (1 Partida)</h4><p>Ligera ventaja bélica.</p><button class="shop-btn" id="btn-boost-20" data-cost="500" onclick="buyBooster(1.2, 500)">🪙 500</button></div>
@@ -149,71 +95,12 @@
             <button class="btn btn-secondary" onclick="closeScreen('shopScreen')" style="margin-top: 10px;">🔙 Volver</button>
         </div>
 
-        <div id="recordsScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
-            <h1 style="margin-bottom: 24px;">🥇 Récords Mundiales</h1>
-            <div class="leaderboard-box"><h3>🏆 Top Puntajes</h3><div id="startLeaderboardList"></div></div>
-            <button class="btn btn-secondary" onclick="closeScreen('recordsScreen')" style="margin-top: 15px;">🔙 Volver</button>
-        </div>
+        <div id="recordsScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 24px;">🥇 Récords Mundiales</h1><div class="leaderboard-box"><h3>🏆 Top Puntajes</h3><div id="startLeaderboardList"></div></div><button class="btn btn-secondary" onclick="closeScreen('recordsScreen')" style="margin-top: 15px;">🔙 Volver</button></div>
+        <div id="trophiesScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 24px;">🏆 Salón de la Fama</h1><div class="trophy-rack"><div class="trophy-item" data-id="20k" onclick="showTrophyInfo('20k')"><span id="fall-20k" class="trophy-emoji-fallback">🥉</span><img src="assets/trofeo_pollito.png" id="img-t20k" class="trophy-img" onload="document.getElementById('fall-20k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="50k" onclick="showTrophyInfo('50k')"><span id="fall-50k" class="trophy-emoji-fallback">🥈</span><img src="assets/trofeo_lana.png" id="img-t50k" class="trophy-img" onload="document.getElementById('fall-50k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="100k" onclick="showTrophyInfo('100k')"><span id="fall-100k" class="trophy-emoji-fallback">🏅</span><img src="assets/trofeo_herradura.png" id="img-t100k" class="trophy-img" onload="document.getElementById('fall-100k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="200k" onclick="showTrophyInfo('200k')"><span id="fall-200k" class="trophy-emoji-fallback">🏆</span><img src="assets/trofeo_leche.png" id="img-t200k" class="trophy-img" onload="document.getElementById('fall-200k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="300k" onclick="showTrophyInfo('300k')"><span id="fall-300k" class="trophy-emoji-fallback">💎</span><img src="assets/trofeo_diamante.png" id="img-t300k" class="trophy-img" onload="document.getElementById('fall-300k').style.display='none'" onerror="this.style.display='none'"></div></div><div id="trophyInfoBox" class="leaderboard-box" style="margin-top: 15px; text-align: center; min-height: 80px;"><h3 id="trophyName" style="color: #fff; margin-bottom: 8px;">Toca un trofeo</h3><p id="trophyDesc" style="font-size: 0.85rem; color: #94a3b8;">Para ver la información y requisitos.</p></div><button class="btn btn-secondary" onclick="closeScreen('trophiesScreen')" style="margin-top: 20px;">🔙 Volver</button></div>
+        <div id="achievScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 15px;">🏅 Logros</h1><div class="achievements-list" id="achievListUI"></div><div class="leaderboard-box" style="margin-top: 10px; text-align: center; min-height: 70px; margin-bottom: 5px;"><h3 id="achievNameUI" style="color: #fff; margin-bottom: 6px;">Toca un logro</h3><p id="achievDescUI" style="font-size: 0.8rem; color: #94a3b8;">Para ver su información detallada.</p></div><button class="btn btn-secondary" onclick="closeScreen('achievScreen')">🔙 Volver</button></div>
 
-        <div id="trophiesScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
-            <h1 style="margin-bottom: 24px;">🏆 Salón de la Fama</h1>
-            <div class="trophy-rack">
-                <div class="trophy-item" data-id="20k" onclick="showTrophyInfo('20k')"><span id="fall-20k" class="trophy-emoji-fallback">🥉</span><img src="assets/trofeo_pollito.png" id="img-t20k" class="trophy-img" onload="document.getElementById('fall-20k').style.display='none'" onerror="this.style.display='none'"></div>
-                <div class="trophy-item" data-id="50k" onclick="showTrophyInfo('50k')"><span id="fall-50k" class="trophy-emoji-fallback">🥈</span><img src="assets/trofeo_lana.png" id="img-t50k" class="trophy-img" onload="document.getElementById('fall-50k').style.display='none'" onerror="this.style.display='none'"></div>
-                <div class="trophy-item" data-id="100k" onclick="showTrophyInfo('100k')"><span id="fall-100k" class="trophy-emoji-fallback">🏅</span><img src="assets/trofeo_herradura.png" id="img-t100k" class="trophy-img" onload="document.getElementById('fall-100k').style.display='none'" onerror="this.style.display='none'"></div>
-                <div class="trophy-item" data-id="200k" onclick="showTrophyInfo('200k')"><span id="fall-200k" class="trophy-emoji-fallback">🏆</span><img src="assets/trofeo_leche.png" id="img-t200k" class="trophy-img" onload="document.getElementById('fall-200k').style.display='none'" onerror="this.style.display='none'"></div>
-                <div class="trophy-item" data-id="300k" onclick="showTrophyInfo('300k')"><span id="fall-300k" class="trophy-emoji-fallback">💎</span><img src="assets/trofeo_diamante.png" id="img-t300k" class="trophy-img" onload="document.getElementById('fall-300k').style.display='none'" onerror="this.style.display='none'"></div>
-            </div>
-            <div id="trophyInfoBox" class="leaderboard-box" style="margin-top: 15px; text-align: center; min-height: 80px;">
-                <h3 id="trophyName" style="color: #fff; margin-bottom: 8px;">Toca un trofeo</h3><p id="trophyDesc" style="font-size: 0.85rem; color: #94a3b8;">Para ver la información y requisitos.</p>
-            </div>
-            <button class="btn btn-secondary" onclick="closeScreen('trophiesScreen')" style="margin-top: 20px;">🔙 Volver</button>
-        </div>
-
-        <div id="achievScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);">
-            <h1 style="margin-bottom: 15px;">🏅 Logros</h1>
-            <div class="achievements-list" id="achievListUI"></div>
-            <div class="leaderboard-box" style="margin-top: 10px; text-align: center; min-height: 70px; margin-bottom: 5px;">
-                <h3 id="achievNameUI" style="color: #fff; margin-bottom: 6px;">Toca un logro</h3><p id="achievDescUI" style="font-size: 0.8rem; color: #94a3b8;">Para ver su información detallada.</p>
-            </div>
-            <button class="btn btn-secondary" onclick="closeScreen('achievScreen')">🔙 Volver</button>
-        </div>
-
-        <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.92);">
-            <h1 style="margin-bottom: 4px;">⏸️ Pausa</h1>
-            <p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p>
-            <div class="pause-shop-grid">
-                <button class="pause-shop-btn" onclick="buyUpgrade('bullets')"><span>⚔️ Daño Láser</span><span id="pauseBulletsLvl" style="color:#38bdf8;">🪙10</span></button>
-                <button class="pause-shop-btn" onclick="buyUpgrade('speed')"><span>⚡ Velocidad</span><span id="pauseSpeedLvl" style="color:#38bdf8;">🪙10</span></button>
-                <button class="pause-shop-btn" onclick="buyUpgrade('life')"><span>❤️ Vida Extra</span><span style="color:#38bdf8;">🪙15</span></button>
-                <button class="pause-shop-btn" onclick="buyUpgrade('evolve')" id="pauseEvolveBtn"><span>🌟 Evolución</span><span style="color:#fbbf24;">Condición</span></button>
-                <button class="pause-shop-btn" id="pauseSuperDmgBtn" style="display:none;" onclick="buyUpgrade('superDamage')"><span>☢️ Daño Omega</span><span id="pauseSuperDmgLvl" style="color:#8b5cf6;">🪙1000</span></button>
-            </div>
-            
-            <button class="btn btn-secondary" id="toggleControlBtn" onclick="toggleControlMode()" style="margin-top: 10px; margin-bottom: 10px; border: 2px solid #38bdf8;">🕹️ Control: Arrastrar</button>
-
-            <button class="btn" id="resumeBtn">▶️ Reanudar</button>
-            <button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button>
-        </div>
-
-        <div id="gameOverScreen" class="screen-overlay" style="display: none;">
-            <h1 style="margin-bottom: 4px;">¡Nave Destruida!</h1>
-            <p style="margin-bottom: 15px;">Puntuación final: <strong id="finalScore" style="font-size:1.2rem; color:#38bdf8;">0</strong></p>
-            <p id="coinsStatus" style="color: #fbbf24; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Tienes: 🪙 0</p>
-            <button class="btn" id="reviveBtn" style="background-color: #f59e0b; color: #fff; margin-bottom: 15px; border: 2px solid #fbbf24;">❤️ Revivir (500 🪙)</button>
-            <div id="saveScoreSection">
-                <p style="font-size:0.8rem; margin-bottom:4px;">¡Nuevo Récord! Ingresa tus 3 iniciales:</p>
-                <div class="initials-input-container">
-                    <input type="text" id="playerInitials" maxlength="3" value="AAA">
-                    <button class="btn" id="saveScoreBtn" style="padding: 8px 14px; font-size: 0.85rem; margin-bottom: 0;">Guardar</button>
-                </div>
-            </div>
-            <div class="leaderboard-box" style="margin-bottom: 10px;">
-                <h3>🏆 Top Puntajes</h3><div id="endLeaderboardList"></div>
-            </div>
-            <button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button>
-            <button class="btn btn-secondary" id="mainMenuBtn">Menú Principal</button>
-        </div>
+        <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.92);"><h1 style="margin-bottom: 4px;">⏸️ Pausa</h1><p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p><div class="pause-shop-grid"><button class="pause-shop-btn" onclick="buyUpgrade('bullets')"><span>⚔️ Daño Láser</span><span id="pauseBulletsLvl" style="color:#38bdf8;">🪙10</span></button><button class="pause-shop-btn" onclick="buyUpgrade('speed')"><span>⚡ Velocidad</span><span id="pauseSpeedLvl" style="color:#38bdf8;">🪙10</span></button><button class="pause-shop-btn" onclick="buyUpgrade('life')"><span>❤️ Vida Extra</span><span style="color:#38bdf8;">🪙15</span></button><button class="pause-shop-btn" onclick="buyUpgrade('evolve')" id="pauseEvolveBtn"><span>🌟 Evolución</span><span style="color:#fbbf24;">Condición</span></button><button class="pause-shop-btn" id="pauseSuperDmgBtn" style="display:none;" onclick="buyUpgrade('superDamage')"><span>☢️ Daño Omega</span><span id="pauseSuperDmgLvl" style="color:#8b5cf6;">🪙1000</span></button></div><button class="btn btn-secondary" id="toggleControlBtn" onclick="toggleControlMode()" style="margin-top: 10px; margin-bottom: 10px; border: 2px solid #38bdf8;">🕹️ Control: Arrastrar</button><button class="btn" id="resumeBtn">▶️ Reanudar</button><button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button></div>
+        <div id="gameOverScreen" class="screen-overlay" style="display: none;"><h1 style="margin-bottom: 4px;">¡Nave Destruida!</h1><p style="margin-bottom: 15px;">Puntuación final: <strong id="finalScore" style="font-size:1.2rem; color:#38bdf8;">0</strong></p><p id="coinsStatus" style="color: #fbbf24; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Tienes: 🪙 0</p><button class="btn" id="reviveBtn" style="background-color: #f59e0b; color: #fff; margin-bottom: 15px; border: 2px solid #fbbf24;">❤️ Revivir (500 🪙)</button><div id="saveScoreSection"><p style="font-size:0.8rem; margin-bottom:4px;">¡Nuevo Récord! Ingresa tus 3 iniciales:</p><div class="initials-input-container"><input type="text" id="playerInitials" maxlength="3" value="AAA"><button class="btn" id="saveScoreBtn" style="padding: 8px 14px; font-size: 0.85rem; margin-bottom: 0;">Guardar</button></div></div><div class="leaderboard-box" style="margin-bottom: 10px;"><h3>🏆 Top Puntajes</h3><div id="endLeaderboardList"></div></div><button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button><button class="btn btn-secondary" id="mainMenuBtn">Menú Principal</button></div>
     </div>
 
     <script src="js/estado.js"></script>
