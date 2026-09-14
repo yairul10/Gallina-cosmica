@@ -58,43 +58,51 @@ window.spawnEnemy = function() {
     if (gameRound >= 4) {
         let scale = Math.floor((score - 250000) / 2000); if (scale < 0) scale = 0; eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte'; eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale; ePts = eType === 'maiz_jefe' ? 1200 : 1000; eCoin = eType === 'maiz_jefe' ? 3 : 4;
     } else if (gameRound === 2 || gameRound === 3) {
-        let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); let jefeLechugaHp = Math.ceil(lastCornHp * 2.0);
+        let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); 
+        let jefeLechugaHp = Math.ceil(lastCornHp * 3.5); // Aumentado bastante
+        
         if (score >= 200000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 3; } else if (score >= 120000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 3 : 2; } else if (score >= 80000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 2; } else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 2 : 1; } else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 1; }
     } else { eHp = lastCornHp; if (eHp > 1) { eType = 'corn_strong'; eCoin = 2; } else { eType = 'corn'; eCoin = 1; } }
     
     if (gameRound >= 2) eCoin += 1;
-    
-    // REGLA UNIVERSAL: TODO EL MAÍZ DA 1000 MONEDAS
-    if (eType === 'corn' || eType === 'corn_strong' || eType === 'maiz_jefe') {
-        eCoin = 1000;
-    }
+    if (eType === 'corn' || eType === 'corn_strong' || eType === 'maiz_jefe') { eCoin = 1000; }
     
     enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
 }
 
 window.spawnBoss = function() { 
     if (nextBossScoreThreshold === 250000 && gameRound === 3) {
-        let bossHpM = 1680 * 2.5; let bossHpL = 6720 * 2.5; 
+        let bossHpM = 1680 * 2.5; let bossHpL = 6720 * 3.5; // Lechuga Super mucho más fuerte
         bosses.push({ x: 20, y: -120, width: 140, height: 110, maxHp: bossHpM, hp: bossHpM, speed: 1.5, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
         bosses.push({ x: canvas.width - 160, y: -180, width: 140, height: 110, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: -1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
         doubleBossSpawned = true;
     } else if (nextBossScoreThreshold === 150000 && gameRound === 2) {
-        let bossHpL = 6720 * 1.5; bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: 1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
+        let bossHpL = 6720 * 3.0; // Jefe lechuga vida aumentada x2
+        bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHpL, hp: bossHpL, speed: 1.3, direction: 1, shootCooldown: 20, minionCooldown: 40, isSuperBoss: true, type: 'lechuga', entered: false, dirY: 1 });
     } else if (nextBossScoreThreshold === 50000 && gameRound === 1) {
         let bossHp = 1680; bosses.push({ x: canvas.width / 2 - 80, y: -120, width: 160, height: 130, maxHp: bossHp, hp: bossHp, speed: 1.2, direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: true, type: 'corn', entered: false, dirY: 1 });
     } else if (gameRound === 1) {
         let bossLevel = Math.floor(score / 5000); let bossHp = Math.floor((60 + (bossLevel * 45)) * 1.5); bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.5 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'corn', entered: false, dirY: 1 }); 
     } else if (gameRound === 2) {
-        let bossLevel = Math.floor((score - 50000) / 25000); let bossHp = Math.floor((200 + (bossLevel * 100)) * 1.5); bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.2 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'lechuga', entered: false, dirY: 1 });
+        let bossLevel = Math.floor((score - 50000) / 25000); let bossHp = Math.floor((200 + (bossLevel * 100)) * 3.0); bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.2 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: 'lechuga', entered: false, dirY: 1 });
     } else if (gameRound === 3) {
-        let bossLevel = Math.floor((score - 150000) / 25000); let bossHp = Math.floor((400 + (bossLevel * 150)) * 1.5); let type = Math.random() > 0.5 ? 'corn' : 'lechuga'; bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.4 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: type, entered: false, dirY: 1 });
+        let bossLevel = Math.floor((score - 150000) / 25000); let bossHp = Math.floor((400 + (bossLevel * 150)) * 2.5); let type = Math.random() > 0.5 ? 'corn' : 'lechuga'; bosses.push({ x: canvas.width / 2 - 60, y: -100, width: 120, height: 100, maxHp: bossHp, hp: bossHp, speed: 1.4 + (bossLevel * 0.1), direction: 1, shootCooldown: 0, minionCooldown: 0, isSuperBoss: false, type: type, entered: false, dirY: 1 });
     }
 }
 
 window.handleDamage = function() { 
     if (shieldActive) { shieldActive = false; sessionTimeNoHit = 0; return; }
     if (upgrades.armor > 0) { if (!partialHit) { partialHit = true; sessionTimeNoHit = 0; return; } else { partialHit = false; } }
-    lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; updateLivesUI(); if (lives <= 0) gameOver(); 
+    lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; 
+    
+    // LÓGICA DE AUTO-VIDA
+    if (lives === 1 && gameStats.equipExtraModule && moduleActiveInMatch && !moduleUsed) {
+        lives += 2; // Compra dos vidas cuando queda solo una (Vuelves a 3)
+        moduleUsed = true;
+        showTrophyToast("❤️", null, "¡Auto-Vida Activada!");
+    }
+    
+    updateLivesUI(); if (lives <= 0) gameOver(); 
 }
 
 window.handleCoinEarned = function(amount) { 
@@ -122,9 +130,7 @@ window.damageBoss = function(bIndex, dmg) {
         if (gameRound >= 2) bCoin += 1;
         
         if (boss.isSuperBoss && boss.type === 'lechuga') bCoin = 50; 
-        // TODOS los Jefes Maíz dan 1000 Monedas también
         if (boss.type === 'corn') bCoin = 1000; 
-        
         if (gameRound >= 4) bCoin *= 2; 
         
         handleCoinEarned(bCoin); 
