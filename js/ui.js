@@ -38,27 +38,59 @@ window.switchHangarTab = function(tab) {
 }
 
 function updateHangarUI() {
-    // UI de Naves (Hangar)
+    // UI HANGAR: Naves
     for(let i=0; i<4; i++) { 
-        let bNorm = document.getElementById('btn-hs-'+i+'-norm'); let bPro = document.getElementById('btn-hs-'+i+'-pro');
-        bNorm.style.background = (gameStats.selectedShip === i && !gameStats.useProShip) ? '#f59e0b' : '#334155';
-        bPro.style.background = (gameStats.selectedShip === i && gameStats.useProShip) ? '#f59e0b' : '#334155';
-        
-        bNorm.disabled = !gameStats.skins[i];
-        bPro.disabled = !gameStats.proSkins[i];
-        if(!gameStats.skins[i]) bNorm.style.background = '#1e293b';
-        if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
+        let card = document.getElementById('hangar-ship-card-'+i);
+        if(card) {
+            // Solo aparece si ya se compró la versión base
+            if (gameStats.skins[i]) {
+                card.style.display = 'flex'; 
+                let bNorm = document.getElementById('btn-hs-'+i+'-norm'); 
+                let bPro = document.getElementById('btn-hs-'+i+'-pro');
+                let img = document.getElementById('img-hs-'+i);
+                
+                bNorm.style.background = (gameStats.selectedShip === i && !gameStats.useProShip) ? '#f59e0b' : '#334155';
+                bPro.style.background = (gameStats.selectedShip === i && gameStats.useProShip) ? '#f59e0b' : '#334155';
+                
+                bPro.disabled = !gameStats.proSkins[i];
+                if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
+                
+                let isPro = (gameStats.selectedShip === i && gameStats.useProShip);
+                img.src = isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`;
+            } else {
+                card.style.display = 'none'; // Nave oculta por completo si no la tiene
+            }
+        }
     }
-    // UI de Misiles (Hangar)
+    
+    // UI HANGAR: Misiles
     for(let i=0; i<4; i++) { 
-        let bNorm = document.getElementById('btn-hm-'+i+'-norm'); let bPro = document.getElementById('btn-hm-'+i+'-pro');
-        bNorm.style.background = (gameStats.selectedMissile === i && !gameStats.useProMissile) ? '#f59e0b' : '#334155';
-        bPro.style.background = (gameStats.selectedMissile === i && gameStats.useProMissile) ? '#f59e0b' : '#334155';
+        let bNorm = document.getElementById('btn-hm-'+i+'-norm'); 
+        let bPro = document.getElementById('btn-hm-'+i+'-pro');
+        let img = document.getElementById('img-hm-'+i);
         
-        bNorm.disabled = !gameStats.missiles[i];
-        bPro.disabled = !gameStats.proMissiles[i]; // Asumimos que los misiles Pro se activan igual que antes
-        if(!gameStats.missiles[i]) bNorm.style.background = '#1e293b';
-        if(!gameStats.proMissiles[i]) bPro.style.background = '#1e293b';
+        if(bNorm && bPro && img) {
+            bNorm.style.background = (gameStats.selectedMissile === i && !gameStats.useProMissile) ? '#f59e0b' : '#334155';
+            bPro.style.background = (gameStats.selectedMissile === i && gameStats.useProMissile) ? '#f59e0b' : '#334155';
+            
+            bNorm.disabled = !gameStats.missiles[i];
+            bPro.disabled = !gameStats.proMissiles[i]; 
+            
+            if(!gameStats.missiles[i]) bNorm.style.background = '#1e293b';
+            if(!gameStats.proMissiles[i]) bPro.style.background = '#1e293b';
+            
+            // Si no tiene el misil de ninguna forma, se muestra en gris
+            if (!gameStats.missiles[i] && !gameStats.proMissiles[i]) {
+                img.style.filter = 'grayscale(100%)';
+                img.style.opacity = '0.5';
+            } else {
+                img.style.filter = 'none';
+                img.style.opacity = '1';
+            }
+            
+            let isPro = (gameStats.selectedMissile === i && gameStats.useProMissile);
+            img.src = isPro ? misProSrc[i] : misSrc[i];
+        }
     }
 }
 
@@ -74,20 +106,42 @@ window.switchShopTab = function(tab) {
 
 function updateShopUI() {
     document.getElementById('shopCoinsVal').textContent = coins; 
-    let bCosts = [0, 1000, 2000, 4000]; let pCosts = [0, 3000, 6000, 10000]; // Gallina Pro es gratis por trofeo
-    for(let i=1; i<=3; i++) { 
+    let bCosts = [0, 1000, 2000, 4000]; 
+    let pCosts = [3000, 3000, 6000, 10000]; 
+    
+    // UI TIENDA: Filtro Gris para Naves no compradas
+    for(let i=0; i<4; i++) { 
         let btnB = document.getElementById('btn-skin-base-'+i); 
-        if (gameStats.skins[i]) { btnB.textContent = 'Comprado'; btnB.style.background = '#475569'; btnB.disabled = true; } 
-        else { btnB.textContent = `🪙 ${bCosts[i].toLocaleString()}`; btnB.style.background = '#10b981'; btnB.disabled = (coins < bCosts[i]); } 
+        let imgB = document.getElementById('shop-img-base-'+i);
+        if (btnB && imgB) {
+            if (gameStats.skins[i]) { 
+                btnB.textContent = 'Comprado'; btnB.style.background = '#475569'; btnB.disabled = true; 
+                imgB.style.filter = 'none'; imgB.style.opacity = '1';
+            } else { 
+                btnB.textContent = `🪙 ${bCosts[i].toLocaleString()}`; btnB.style.background = '#10b981'; btnB.disabled = (coins < bCosts[i]); 
+                imgB.style.filter = 'grayscale(100%)'; imgB.style.opacity = '0.6';
+            } 
+        }
         
         let btnP = document.getElementById('btn-skin-pro-'+i); 
-        if (gameStats.proSkins[i]) { btnP.textContent = 'Comprado'; btnP.style.background = '#475569'; btnP.disabled = true; } 
-        else { btnP.textContent = `🪙 ${pCosts[i].toLocaleString()}`; btnP.style.background = '#10b981'; btnP.disabled = (coins < pCosts[i]); } 
+        let imgP = document.getElementById('shop-img-pro-'+i);
+        if (btnP && imgP) {
+            if (gameStats.proSkins[i]) { 
+                btnP.textContent = 'Comprado'; btnP.style.background = '#475569'; btnP.disabled = true; 
+                imgP.style.filter = 'none'; imgP.style.opacity = '1';
+            } else { 
+                btnP.textContent = `🪙 ${pCosts[i].toLocaleString()}`; btnP.style.background = '#10b981'; btnP.disabled = (coins < pCosts[i]); 
+                imgP.style.filter = 'grayscale(100%)'; imgP.style.opacity = '0.6';
+            } 
+        }
     }
+    
     let b20 = document.getElementById('btn-boost-20'); let b50 = document.getElementById('btn-boost-50'); let b100 = document.getElementById('btn-boost-100');
-    [b20, b50, b100].forEach(b => { b.textContent = '🪙 ' + b.getAttribute('data-cost'); b.style.background = '#10b981'; b.disabled = false; });
-    if (coins < 500) b20.disabled = true; if (coins < 2000) b50.disabled = true; if (coins < 10000) b100.disabled = true;
-    if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVO'; b20.style.background = '#3b82f6'; [b50, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVO'; b50.style.background = '#3b82f6'; [b20, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVO'; b100.style.background = '#3b82f6'; [b20, b50].forEach(b=>b.disabled=true); }
+    if(b20 && b50 && b100) {
+        [b20, b50, b100].forEach(b => { b.textContent = '🪙 ' + b.getAttribute('data-cost'); b.style.background = '#10b981'; b.disabled = false; });
+        if (coins < 500) b20.disabled = true; if (coins < 2000) b50.disabled = true; if (coins < 10000) b100.disabled = true;
+        if (gameStats.pendingBooster === 1.2) { b20.textContent = 'ACTIVO'; b20.style.background = '#3b82f6'; [b50, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 1.5) { b50.textContent = 'ACTIVO'; b50.style.background = '#3b82f6'; [b20, b100].forEach(b=>b.disabled=true); } else if (gameStats.pendingBooster === 2.0) { b100.textContent = 'ACTIVO'; b100.style.background = '#3b82f6'; [b20, b50].forEach(b=>b.disabled=true); }
+    }
 }
 
 window.buyShip = function(index, isPro, cost) { 
@@ -119,7 +173,7 @@ function completeTutorialStep(step) {
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
     let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'none'; overlay.style.pointerEvents = 'auto'; gameState = 'PLAYING';
     if (step === 0.5) { tutorialStep = 1; activateTutorial("¡Excelente!<br><br>Ahora toca el botón rojo de Disparo (🚀) para atacar.", 'fireBtn'); return; }
-    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo con la imagen del proyectil.", 'missileBtn'); return; }
+    if (step === 1) { tutorialStep = 1.1; enemies.push({ x: canvas.width / 2 - 24, y: 80, width: 48, height: 48, hp: 1, maxHp: 1, speed: 0.2, wobble: 0, type: 'corn', pts: 150, coin: 1, shootCooldown: 0 }); activateTutorial("¡Buen tiro!<br><br>Ahora prueba el <b>Misil Rastreador</b> tocando el botón amarillo.", 'missileBtn'); return; }
     if (step === 1.1) tutorialStep = 1.5; if (step === 2) tutorialStep = 2.5; if (step === 3) tutorialStep = 3.5;
     if (step === 4.5) { tutorialStep = 5; activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); }
 }
