@@ -32,7 +32,6 @@ assets.balaLeche.src = 'assets/bala_leche.png'; assets.balaLechePro.src = 'asset
 assets.maiz.src = 'assets/maiz.png'; assets.maizFuerte.src = 'assets/maiz_fuerte.png';
 assets.jefeMaiz.src = 'assets/jefe_maiz.png'; assets.superJefeMaiz.src = 'assets/super_jefe_maiz.png';
 
-// CORRECCIÓN DE NOMBRES Y CACHÉ
 assets.lechuga.src = 'assets/lechuga.png'; 
 assets.lechugaFuerte.src = 'assets/lechuga_fuerte.png?v=2'; 
 assets.jefeLechuga.src = 'assets/lechuga_jefe.png?v=2'; 
