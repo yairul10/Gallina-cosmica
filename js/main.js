@@ -48,7 +48,7 @@ window.startGame = function() {
     score = 0; coins = gameStats.savedCoins || 0; lives = 3; gameTime = 0; gameRound = 1; goingToRound = 1; timeAt40k = 0; shieldUnlocked = false; shieldActive = false; partialHit = false; sessionKillsNoHit = 0; sessionTimeNoHit = 0; sessionLivesBought = 0; sessionCoinsEarned = 0;
     
     // Auto-Vida Reset
-    moduleUsed = false; moduleActiveInMatch = gameStats.equipExtraModule;
+    moduleActiveInMatch = gameStats.equipExtraModule;
     
     bullets.length = 0; homingMissiles.length = 0; enemies.length = 0; bossBullets.length = 0; bosses.length = 0; 
     
@@ -104,9 +104,9 @@ function update() {
             gameState = 'PLAYING'; 
             for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; } 
             
-            // LA CORRECCIÓN: El mensaje final se dispara únicamente tras terminar la cinemática
-            if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { 
-                tutorialStep = 5; 
+            // LA CORRECCIÓN DE TUTORIAL: Se garantiza que solo se cierre al terminar la cámara
+            if (!gameStats.tutorialCompleted && tutorialStep === 5) { 
+                tutorialStep = 5.1; 
                 activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); 
             }
         }
