@@ -15,12 +15,17 @@ if (gameStats.loginStreak === undefined) gameStats.loginStreak = 0;
 if (!gameStats.controlMode) gameStats.controlMode = 'drag';
 if (!gameStats.pendingBooster) gameStats.pendingBooster = 1.0;
 
+// Variables de Módulos (Auto-Vida)
+if (gameStats.extraModule === undefined) gameStats.extraModule = false;
+if (gameStats.equipExtraModule === undefined) gameStats.equipExtraModule = false;
+let moduleActiveInMatch = false;
+let moduleUsed = false;
+
 if (!gameStats.skins) gameStats.skins = [true, false, false, false]; 
 if (!gameStats.proSkins) gameStats.proSkins = [false, false, false, false]; 
 if (gameStats.selectedShip === undefined) gameStats.selectedShip = 0; 
 if (gameStats.useProShip === undefined) gameStats.useProShip = false;
 
-// Los misiles base ahora vienen incluidos con la nave, por lo que solo guardamos los Pro
 if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
 
 function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
