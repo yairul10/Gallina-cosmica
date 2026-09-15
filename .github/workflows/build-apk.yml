@@ -36,7 +36,7 @@ jobs:
         run: |
           mkdir -p www
           cp index.html www/
-          cp game.js www/
+          cp -r js www/
           cp style.css www/
           cp -r assets www/
 
