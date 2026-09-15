@@ -85,6 +85,17 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/gallina-cosmica-upload.jks
+      - name: Mostrar huella de la clave de subida
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          keytool -list -v \
+            -keystore android/app/gallina-cosmica-upload.jks \
+            -alias "$KEY_ALIAS" \
+            -storepass "$KEYSTORE_PASSWORD" \
+            | grep "SHA256:"
+
 
           python3 - <<'PY'
           from pathlib import Path
