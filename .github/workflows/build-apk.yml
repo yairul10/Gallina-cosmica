@@ -123,8 +123,8 @@ jobs:
               1
           )
           text = text.replace(
-              "buildTypes {\n    release {",
-              "buildTypes {\n    release {\n        signingConfig signingConfigs.release",
+              "release {",
+              "release {\n        signingConfig signingConfigs.release",
               1
           )
 
