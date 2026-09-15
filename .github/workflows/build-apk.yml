@@ -81,7 +81,6 @@ jobs:
       - name: Configurar firma de Google Play
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/gallina-cosmica-upload.jks
@@ -109,7 +108,7 @@ jobs:
                   storeFile file("gallina-cosmica-upload.jks")
                   storePassword System.getenv("KEYSTORE_PASSWORD")
                   keyAlias System.getenv("KEY_ALIAS")
-                  keyPassword System.getenv("KEY_PASSWORD")
+                  keyPassword System.getenv("KEYSTORE_PASSWORD")
               }
           }
           """
@@ -132,7 +131,6 @@ jobs:
       - name: Compilar AAB Release
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           cd android
