@@ -122,10 +122,16 @@ jobs:
               signing + "\nbuildTypes {",
               1
           )
-          text = text.replace(
-              "release {",
-              "release {\n        signingConfig signingConfigs.release",
-              1
+          build_types = text.index("buildTypes {")
+          release = text.index("release {", build_types)
+          line_start = text.rfind("\n", 0, release) + 1
+          indent = text[line_start:release]
+          line_end = text.index("\n", release) + 1
+          text = (
+              text[:line_end]
+              + indent
+              + "    signingConfig signingConfigs.release\n"
+              + text[line_end:]
           )
 
           p.write_text(text)
