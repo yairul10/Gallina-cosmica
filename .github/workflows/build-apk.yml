@@ -128,6 +128,10 @@ jobs:
           chmod +x gradlew
           ./gradlew bundleRelease
 
+      - name: Verificar que el AAB esté firmado
+        run: |
+          jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab
+
       - name: Guardar AAB
         uses: actions/upload-artifact@v4
         with:
