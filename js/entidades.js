@@ -54,26 +54,25 @@ window.spawnEnemy = function() {
     if (bosses.length > 0) return; 
     let difficultyTime = score >= 40000 ? timeAt40k : gameTime; let speedMultiplier = 1 + ((difficultyTime / 70) * 0.3); let lastCornHp = 1 + Math.floor((timeAt40k > 0 ? timeAt40k : gameTime) / 12) + (evolutionStage * 5); if (lastCornHp < 1) lastCornHp = 1;
     
-    let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 1;
+    let eType = 'corn'; let eHp = 1; let ePts = 150; let eCoin = 10;
     if (gameRound >= 4) {
-        let scale = Math.floor((score - 250000) / 2000); if (scale < 0) scale = 0; eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte'; eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale; ePts = eType === 'maiz_jefe' ? 1200 : 1000; eCoin = eType === 'maiz_jefe' ? 3 : 4;
+        let scale = Math.floor((score - 250000) / 2000); if (scale < 0) scale = 0; eType = Math.random() > 0.5 ? 'maiz_jefe' : 'lechuga_fuerte'; eHp = eType === 'maiz_jefe' ? Math.ceil(lastCornHp * 2.5) + scale : Math.ceil(lastCornHp * 2.0) + scale; ePts = eType === 'maiz_jefe' ? 1200 : 1000; eCoin = eType === 'maiz_jefe' ? 30 : 40;
     } else if (gameRound === 2 || gameRound === 3) {
         let baseLechugaHp = Math.ceil(lastCornHp * 1.2); let fuerteLechugaHp = Math.ceil(lastCornHp * 1.5); 
         let jefeLechugaHp = Math.ceil(lastCornHp * 3.5);
         
-        // LECHUGAS VALEN EL DOBLE QUE SU EQUIVALENTE DE MAÍZ
-        if (score >= 200000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 6; } 
-        else if (score >= 120000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 6 : 4; } 
-        else if (score >= 80000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 4; } 
-        else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 4 : 2; } 
-        else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 2; }
+        if (score >= 200000) { eType = 'lechuga_jefe'; eHp = jefeLechugaHp; ePts = 600; eCoin = 60; } 
+        else if (score >= 120000) { eType = Math.random() < 0.5 ? 'lechuga_fuerte' : 'lechuga_jefe'; eHp = eType === 'lechuga_jefe' ? jefeLechugaHp : fuerteLechugaHp; ePts = eType === 'lechuga_jefe' ? 600 : 300; eCoin = eType === 'lechuga_jefe' ? 60 : 40; } 
+        else if (score >= 80000) { eType = 'lechuga_fuerte'; eHp = fuerteLechugaHp; ePts = 300; eCoin = 40; } 
+        else if (score >= 60000) { eType = Math.random() < 0.5 ? 'lechuga' : 'lechuga_fuerte'; eHp = eType === 'lechuga_fuerte' ? fuerteLechugaHp : baseLechugaHp; ePts = eType === 'lechuga_fuerte' ? 300 : 150; eCoin = eType === 'lechuga_fuerte' ? 40 : 20; } 
+        else { eType = 'lechuga'; eHp = baseLechugaHp; ePts = 150; eCoin = 20; }
     } else { 
         eHp = lastCornHp; 
-        if (eHp > 1) { eType = 'corn_strong'; eCoin = 2; } 
-        else { eType = 'corn'; eCoin = 1; } 
+        if (eHp > 1) { eType = 'corn_strong'; eCoin = 20; } 
+        else { eType = 'corn'; eCoin = 10; } 
     }
     
-    if (gameRound >= 2) eCoin += 1;
+    if (gameRound >= 2) eCoin += 10;
     
     enemies.push({ x: Math.random() * (canvas.width - 48 - 20) + 10, y: -60, width: 48, height: 48, hp: eHp, maxHp: eHp, speed: (1.2 + Math.random() * 1.0) * speedMultiplier, wobble: Math.random() * Math.PI, type: eType, pts: ePts, coin: eCoin, shootCooldown: 0 });
 }
@@ -104,10 +103,10 @@ window.handleDamage = function() {
     lives--; sessionKillsNoHit = 0; sessionTimeNoHit = 0; 
     
     if (lives === 1 && gameStats.equipExtraModule && moduleActiveInMatch) {
-        if (coins >= 30) {
-            coins -= 30; gameStats.savedCoins = coins; saveStats();
+        if (coins >= 300) {
+            coins -= 300; gameStats.savedCoins = coins; saveStats();
             lives += 2;
-            showTrophyToast("❤️", null, "Auto-Vida: -30🪙");
+            showTrophyToast("❤️", null, "Auto-Vida: -300🪙");
             updateUpgradesHUD();
         } else {
             showTrophyToast("💔", null, "Sin monedas para Auto-Vida");
@@ -119,10 +118,10 @@ window.handleDamage = function() {
 
 window.handleCoinEarned = function(amount) { 
     coins += amount; gameStats.savedCoins = coins; sessionCoinsEarned += amount; gameStats.totalCoins += amount; saveStats(); 
-    if (gameStats.totalCoins >= 300) unlockAchievement('a4'); if (gameStats.totalCoins >= 10000) unlockAchievement('a22'); if (coins >= 10000) unlockAchievement('a23'); 
-    if (tutorialStep === 1.5 && coins >= 10) { tutorialStep = 2; activateTutorial("¡Conseguiste 10 monedas!<br><br>Toca el botón brillante para <b>Mejorar el Daño</b> (⚔️).", 'hud-bullets'); } 
-    else if (tutorialStep === 2.5 && coins >= 10) { tutorialStep = 3; activateTutorial("¡Otras 10 monedas!<br><br>Toca el botón para <b>Mejorar Velocidad</b> (⚡).", 'hud-speed'); } 
-    else if (tutorialStep === 3.5) { let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10; if (coins >= needed && needed > 0) { tutorialStep = 4; let targets = []; if (upgrades.bullets < maxUpgradeLimit) targets.push('hud-bullets'); if (upgrades.speed < maxUpgradeLimit) targets.push('hud-speed'); activateTutorial("¡Tienes las monedas necesarias!<br><br>Mejora al <b>MÁXIMO</b> el Daño y Velocidad para ascender.", targets); } }
+    if (gameStats.totalCoins >= 3000) unlockAchievement('a4'); if (gameStats.totalCoins >= 100000) unlockAchievement('a22'); if (coins >= 100000) unlockAchievement('a23'); 
+    if (tutorialStep === 1.5 && coins >= 100) { tutorialStep = 2; activateTutorial("¡Conseguiste 100 monedas!<br><br>Toca el botón brillante para <b>Mejorar el Daño</b> (⚔️).", 'hud-bullets'); } 
+    else if (tutorialStep === 2.5 && coins >= 100) { tutorialStep = 3; activateTutorial("¡Otras 100 monedas!<br><br>Toca el botón para <b>Mejorar Velocidad</b> (⚡).", 'hud-speed'); } 
+    else if (tutorialStep === 3.5) { let needed = (maxUpgradeLimit - upgrades.bullets) * 100 + (maxUpgradeLimit - upgrades.speed) * 100; if (coins >= needed && needed > 0) { tutorialStep = 4; let targets = []; if (upgrades.bullets < maxUpgradeLimit) targets.push('hud-bullets'); if (upgrades.speed < maxUpgradeLimit) targets.push('hud-speed'); activateTutorial("¡Tienes las monedas necesarias!<br><br>Mejora al <b>MÁXIMO</b> el Daño y Velocidad para ascender.", targets); } }
     updateUpgradesHUD();
 }
 
@@ -139,12 +138,12 @@ window.damageBoss = function(bIndex, dmg) {
     if (boss.hp <= 0) { 
         score += boss.isSuperBoss ? 4500 : 2250; 
         
-        let bCoin = boss.type === 'lechuga' ? 6 : 3;
+        let bCoin = boss.type === 'lechuga' ? 60 : 30;
         if (boss.isSuperBoss) {
-            bCoin = boss.type === 'lechuga' ? 50 : 6;
+            bCoin = boss.type === 'lechuga' ? 500 : 60;
         }
         
-        if (gameRound >= 2 && !(boss.isSuperBoss && boss.type === 'lechuga')) bCoin += 1;
+        if (gameRound >= 2 && !(boss.isSuperBoss && boss.type === 'lechuga')) bCoin += 10;
         if (gameRound >= 4) bCoin *= 2; 
         
         handleCoinEarned(bCoin); 
