@@ -25,8 +25,8 @@ document.getElementById('saveScoreBtn').addEventListener('click', () => {
 });
 
 document.getElementById('reviveBtn').addEventListener('click', () => {
-    if (coins >= 500) {
-        coins -= 500; gameStats.savedCoins = coins; saveStats(); lives = 3; 
+    if (coins >= 5000) {
+        coins -= 5000; gameStats.savedCoins = coins; saveStats(); lives = 3; 
         enemies.length = 0; bossBullets.length = 0; 
         shieldActive = true; partialHit = false; 
         updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
@@ -78,7 +78,7 @@ window.startGame = function() {
 window.gameOver = function() { 
     gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
     document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
-    const reviveBtn = document.getElementById('reviveBtn'); if (coins >= 500) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
+    const reviveBtn = document.getElementById('reviveBtn'); if (coins >= 5000) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
     let isTop5 = false; if (leaderboard.length < 5) { isTop5 = true; } else { isTop5 = score > leaderboard[leaderboard.length - 1].score; }
     if (isTop5 && score > 0) { document.getElementById('saveScoreSection').style.display = 'block'; } else { document.getElementById('saveScoreSection').style.display = 'none'; }
     document.getElementById('gameOverScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
@@ -148,7 +148,7 @@ function update() {
     if (score >= 50000 && !gotTrophy50k) { gotTrophy50k = true; let isNew = !gameStats.proMissiles[1]; if (isNew) { gameStats.proMissiles[1] = true; saveStats(); } showTrophyToast("🥈🧶", assets.trofeoLana, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t50k'); } 
     if (score >= 100000 && !gotTrophy100k) { gotTrophy100k = true; let isNew = !gameStats.proMissiles[2]; if (isNew) { gameStats.proMissiles[2] = true; saveStats(); } showTrophyToast("🏅🧲", assets.trofeoHerradura, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t100k'); } 
     if (score >= 200000 && !gotTrophy200k) { gotTrophy200k = true; let isNew = !gameStats.proMissiles[3]; if (isNew) { gameStats.proMissiles[3] = true; saveStats(); } showTrophyToast("🏆🥛", assets.trofeoLeche, isNew ? "¡Misil Pro Desbloqueado!" : ""); updateTrophiesHUD(); savePersistentTrophy('t200k'); unlockAchievement('a19'); } 
-    if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let sub = ""; if (!pTrophies['t300k']) { if (gameStats.proSkins[0]) { coins += 4000; gameStats.savedCoins = coins; sub = "Gallina Pro Reembolsada (+4,000🪙)"; } else { gameStats.proSkins[0] = true; sub = "¡Licencia Gallina Pro Desbloqueada!"; } } saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); } 
+    if (score >= 300000 && !gotTrophy300k) { gotTrophy300k = true; let pTrophies = JSON.parse(localStorage.getItem('farm_space_trophies')) || {}; let sub = ""; if (!pTrophies['t300k']) { if (gameStats.proSkins[0]) { coins += 40000; gameStats.savedCoins = coins; sub = "Gallina Pro Reembolsada (+40,000🪙)"; } else { gameStats.proSkins[0] = true; sub = "¡Licencia Gallina Pro Desbloqueada!"; } } saveStats(); showTrophyToast("💎🐔", assets.trofeoDiamante, sub); updateTrophiesHUD(); savePersistentTrophy('t300k'); } 
     if (score >= 500000) unlockAchievement('a20'); if (score >= 40000 && !shieldUnlocked) { shieldUnlocked = true; shieldActive = true; timeAt40k = gameTime; } if (shieldUnlocked && !shieldActive && sessionTimeNoHit >= 5) { shieldActive = true; }
     
     if (score >= nextBossScoreThreshold && bosses.length === 0) { 
@@ -192,14 +192,14 @@ function update() {
             if (boss.type === 'corn' && boss.shootCooldown >= 55) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -2.5 }); bossBullets.push({ x: boss.x + boss.width / 2 - 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: -0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 15, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 0.8 }); bossBullets.push({ x: boss.x + boss.width / 2 + 40, y: boss.y + boss.height - 10, width: 16, height: 16, speed: 6.5, dx: 2.5 }); } 
             if (boss.type === 'corn' && boss.minionCooldown >= 110) { 
                 boss.minionCooldown = 0; 
-                let mCoin = gameRound >= 2 ? 3 : 2;
+                let mCoin = gameRound >= 2 ? 30 : 20;
                 enemies.push({ x: boss.x + 20, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: 0, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
                 enemies.push({ x: boss.x + boss.width - 68, y: boss.y + boss.height - 30, width: 48, height: 48, hp: 3, maxHp: 3, speed: 2, wobble: Math.PI, type: 'corn_strong', pts: 150, coin: mCoin, shootCooldown: 0 }); 
             } 
             if (boss.type === 'lechuga' && boss.shootCooldown >= 45) { boss.shootCooldown = 0; bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -2.0, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 - 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: -0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 10, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 0.6, isLechugaBala: true }); bossBullets.push({ x: boss.x + boss.width / 2 + 30, y: boss.y + boss.height, width: 16, height: 16, speed: 7, dx: 2.0, isLechugaBala: true }); } 
             if (boss.type === 'lechuga' && boss.minionCooldown >= 90) { 
                 boss.minionCooldown = 0; 
-                let mCoin = gameRound >= 2 ? 5 : 4;
+                let mCoin = gameRound >= 2 ? 50 : 40;
                 enemies.push({ x: boss.x + boss.width / 2 - 24, y: boss.y + boss.height, width: 48, height: 48, hp: 5, maxHp: 5, type: 'lechuga_fuerte', speed: 1.5, wobble: 0, pts: 300, coin: mCoin, shootCooldown: 0 }); 
             } 
         } else { 
@@ -221,10 +221,10 @@ function update() {
                 enemies[i].shootCooldown = 0; let isL = enemies[i].type.includes('lechuga'); 
                 bossBullets.push({ x: enemies[i].x + enemies[i].width/2 - 6, y: enemies[i].y + enemies[i].height - 10, width: 12, height: 12, speed: 4.5, dx: 0, isLechugaBala: isL }); 
                 if (enemies[i].type === 'lechuga_jefe' && gameRound < 3) { 
-                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 2 : 1), shootCooldown: 0 }); 
+                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 3, maxHp: 3, type: 'lechuga', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 20 : 10), shootCooldown: 0 }); 
                 } 
                 if (enemies[i].type === 'maiz_jefe') { 
-                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 3 : 2), shootCooldown: 0 }); 
+                    enemies.push({ x: enemies[i].x, y: enemies[i].y + 40, width: 48, height: 48, hp: 4, maxHp: 4, type: 'corn_strong', speed: enemies[i].speed * 1.1, wobble: 0, pts: 150, coin: (gameRound >= 2 ? 30 : 20), shootCooldown: 0 }); 
                 } 
             } 
         }
@@ -313,7 +313,7 @@ function draw() {
         ctx.fillText('¡EVOLUCIONANDO!', canvas.width / 2, canvas.height / 4); ctx.shadowBlur = 0;
     }
     
-    if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') { let needed = (maxUpgradeLimit - upgrades.bullets) * 10 + (maxUpgradeLimit - upgrades.speed) * 10; if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); } }
+    if ((tutorialStep === 3.5 || tutorialStep === 4) && !gameStats.tutorialCompleted && gameState === 'PLAYING') { let needed = (maxUpgradeLimit - upgrades.bullets) * 100 + (maxUpgradeLimit - upgrades.speed) * 100; if (needed > 0) { ctx.save(); ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText(`Faltan para ascender: 🪙 ${coins} / ${needed}`, canvas.width / 2, 80); ctx.restore(); } }
     if (toastTimer > 0 && gameState === 'PLAYING') { ctx.save(); ctx.globalAlpha = Math.min(1, toastTimer / 30); let floatY = 180 - ((180 - toastTimer) * 0.3); if (toastImg && toastImg.complete && toastImg.naturalWidth > 0) { ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.drawImage(toastImg, canvas.width / 2 - 40, floatY - 40, 80, 80); } else { ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; ctx.shadowBlur = 20; ctx.fillText(toastIcon, canvas.width / 2, floatY); } if (toastSubtitle) { ctx.shadowBlur = 4; ctx.shadowColor = 'black'; ctx.font = 'bold 15px sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'center'; ctx.fillText(toastSubtitle, canvas.width / 2, floatY + 60); } ctx.restore(); toastTimer--; }
     
     if (gameState === 'TRANSITION') { 
