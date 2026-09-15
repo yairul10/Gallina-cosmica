@@ -42,35 +42,16 @@ jobs:
 
       - name: Preparar imágenes
         run: |
-          python3 -m pip install Pillow
-          python3 - <<'PY'
-          from PIL import Image
-          import os
-
-          os.makedirs("assets", exist_ok=True)
-
-          if os.path.exists("assets/icon.png"):
-              icon = Image.open("assets/icon.png").convert("RGBA")
-              icon = icon.resize((1024, 1024), Image.Resampling.LANCZOS)
-              icon.save("assets/icon-only.png")
-              icon.save("assets/icon-foreground.png")
-
-              background = Image.new("RGBA", (1024, 1024), (0, 0, 0, 255))
-              background.save("assets/icon-background.png")
-
-          if os.path.exists("assets/splash.png"):
-              splash = Image.open("assets/splash.png").convert("RGB")
-              splash = splash.resize((2732, 2732), Image.Resampling.LANCZOS)
-              splash.save("assets/splash.png", quality=100)
-              splash.save("assets/splash-dark.png", quality=100)
-          PY
+          mkdir -p resources
+          cp assets/icon.png resources/icon.png
+          cp assets/splash.png resources/splash.png
 
       - name: Crear proyecto Android
         run: |
           npx cap init "Gallina Cosmica" "com.gallinacosmica.app" --web-dir www
           npx cap add android
 
-      - name: Generar icono
+      - name: Generar icono y splash
         run: |
           npx capacitor-assets generate \
             --android \
@@ -85,23 +66,27 @@ jobs:
 
       - name: Configurar version de la app
         run: |
-          python3 - <<'PY2'
+          python3 - <<'PY'
           from pathlib import Path
+
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          s = s.replace("versionCode 1", "versionCode 2")
-          s = s.replace('versionName "1.0"', 'versionName "1.1"')
+
+          s = s.replace("versionCode 1", "versionCode 3")
+          s = s.replace('versionName "1.0"', 'versionName "1.2"')
+
           p.write_text(s)
-          PY2
+          PY
 
       - name: Configurar firma de Google Play
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/gallina-cosmica-upload.jks
 
-          python3 - <<'PY2'
+          python3 - <<'PY'
           from pathlib import Path
 
           p = Path("android/app/build.gradle")
@@ -113,7 +98,7 @@ jobs:
                   storeFile file("gallina-cosmica-upload.jks")
                   storePassword System.getenv("KEYSTORE_PASSWORD")
                   keyAlias System.getenv("KEY_ALIAS")
-                  keyPassword System.getenv("KEYSTORE_PASSWORD")
+                  keyPassword System.getenv("KEY_PASSWORD")
               }
           }
           """
@@ -131,20 +116,17 @@ jobs:
           )
 
           p.write_text(text)
-          PY2
+          PY
 
       - name: Compilar AAB Release
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           cd android
           chmod +x gradlew
           ./gradlew bundleRelease
-
-          jarsigner             -keystore app/gallina-cosmica-upload.jks             -storepass "$KEYSTORE_PASSWORD"             -keypass "$KEYSTORE_PASSWORD"             app/build/outputs/bundle/release/app-release.aab             "$KEY_ALIAS"
-
-          jarsigner -verify -verbose -certs             app/build/outputs/bundle/release/app-release.aab
 
       - name: Guardar AAB
         uses: actions/upload-artifact@v4
