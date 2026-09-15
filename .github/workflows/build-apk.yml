@@ -36,22 +36,40 @@ jobs:
         run: |
           mkdir -p www
           cp index.html www/
-          cp -r js www/
+          cp game.js www/
           cp style.css www/
           cp -r assets www/
 
       - name: Preparar imágenes
         run: |
-          mkdir -p resources
-          cp assets/icon.png resources/icon.png
-          cp assets/splash.png resources/splash.png
+          python3 -m pip install Pillow
+          python3 - <<'PY'
+          from PIL import Image
+          import os
+
+          os.makedirs("assets", exist_ok=True)
+
+          if os.path.exists("assets/icon.png"):
+              icon = Image.open("assets/icon.png").convert("RGBA")
+              icon = icon.resize((1024, 1024), Image.Resampling.LANCZOS)
+              icon.save("assets/icon-only.png")
+              icon.save("assets/icon-foreground.png")
+              background = Image.new("RGBA", (1024, 1024), (0, 0, 0, 255))
+              background.save("assets/icon-background.png")
+
+          if os.path.exists("assets/splash.png"):
+              splash = Image.open("assets/splash.png").convert("RGB")
+              splash = splash.resize((2732, 2732), Image.Resampling.LANCZOS)
+              splash.save("assets/splash.png", quality=100)
+              splash.save("assets/splash-dark.png", quality=100)
+          PY
 
       - name: Crear proyecto Android
         run: |
           npx cap init "Gallina Cosmica" "com.gallinacosmica.app" --web-dir www
           npx cap add android
 
-      - name: Generar icono y splash
+      - name: Generar icono
         run: |
           npx capacitor-assets generate \
             --android \
@@ -66,49 +84,35 @@ jobs:
 
       - name: Configurar version de la app
         run: |
-          python3 - <<'PY'
+          python3 - <<'PY2'
           from pathlib import Path
-
           p = Path("android/app/build.gradle")
           s = p.read_text()
-
           s = s.replace("versionCode 1", "versionCode 3")
           s = s.replace('versionName "1.0"', 'versionName "1.2"')
-
           p.write_text(s)
-          PY
+          PY2
 
       - name: Configurar firma de Google Play
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/gallina-cosmica-upload.jks
-      - name: Mostrar huella de la clave de subida
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        run: |
-          keytool -list -v \
-            -keystore android/app/gallina-cosmica-upload.jks \
-            -alias "$KEY_ALIAS" \
-            -storepass "$KEYSTORE_PASSWORD" \
-            | grep "SHA256:"
+          printf '%s' "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/gallina-cosmica-upload.jks
 
-
-          python3 - <<'PY'
+          python3 - <<'PY2'
           from pathlib import Path
 
           p = Path("android/app/build.gradle")
           text = p.read_text()
-
           signing = """
           signingConfigs {
               release {
                   storeFile file("gallina-cosmica-upload.jks")
                   storePassword System.getenv("KEYSTORE_PASSWORD")
                   keyAlias System.getenv("KEY_ALIAS")
-                  keyPassword System.getenv("KEYSTORE_PASSWORD")
+                  keyPassword System.getenv("KEY_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD")
               }
           }
           """
@@ -118,7 +122,6 @@ jobs:
               signing + "\nbuildTypes {",
               1
           )
-
           text = text.replace(
               "buildTypes {\n    release {",
               "buildTypes {\n    release {\n        signingConfig signingConfigs.release",
@@ -126,20 +129,42 @@ jobs:
           )
 
           p.write_text(text)
-          PY
+          PY2
 
-      - name: Compilar AAB Release
+      - name: Compilar y mostrar reporte de firma
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew bundleRelease
+          ./gradlew signingReport bundleRelease
 
       - name: Verificar que el AAB esté firmado
         run: |
-          jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -f "$AAB"
+
+          echo "=== Archivos de firma dentro del AAB ==="
+          unzip -l "$AAB" | grep -E 'META-INF/.*\.(RSA|DSA|EC)$' || {
+            echo "ERROR: El AAB no contiene archivos de firma."
+            exit 1
+          }
+
+          echo "=== Verificación jarsigner ==="
+          jarsigner -verify -verbose -certs "$AAB" > /tmp/jarsigner.txt 2>&1 || {
+            cat /tmp/jarsigner.txt
+            exit 1
+          }
+          cat /tmp/jarsigner.txt
+
+          if grep -qi "jar is unsigned" /tmp/jarsigner.txt || ! grep -qi "jar verified" /tmp/jarsigner.txt; then
+            echo "ERROR: No se pudo confirmar la firma del AAB."
+            exit 1
+          fi
+
+          echo "OK: AAB firmado correctamente."
 
       - name: Guardar AAB
         uses: actions/upload-artifact@v4
