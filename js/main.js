@@ -27,7 +27,13 @@ document.getElementById('saveScoreBtn').addEventListener('click', () => {
 document.getElementById('reviveBtn').addEventListener('click', () => {
     if (coins >= 5000) {
         coins -= 5000; gameStats.savedCoins = coins; saveStats(); lives = 3; 
-        enemies.length = 0; bossBullets.length = 0; 
+        
+        // Si estamos en el modo normal limpiamos enemigos, pero en el modo superjefes NO vaciamos 'enemies' para no borrar los súbditos redivivos
+        if (typeof window.isSuperBossModeActive === 'undefined' || !window.isSuperBossModeActive) {
+            enemies.length = 0; 
+        }
+        bossBullets.length = 0; 
+        
         shieldActive = true; partialHit = false; 
         updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
         document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); 
@@ -64,9 +70,12 @@ window.startGame = function() {
     updateUpgradesHUD(); 
     gameState = 'PLAYING'; previousState = 'PLAYING';
     
+    // Si el usuario entra por primera vez y muere, marcamos de una vez el tutorial como visto o en proceso para que no se repita infinitamente si muere al inicio
     if (!gameStats.tutorialCompleted) { 
         tutorialStep = 0.5; 
         activateTutorial("¡Bienvenido Granero Espacial!<br><br>Muévete por la pantalla con tu dedo 👆, o usa las flechas / W,A,S,D ⌨️ en PC.", 'none'); 
+        gameStats.tutorialCompleted = true; // Guardamos para evitar que se repita si pierde de inmediato
+        saveStats();
     } else { tutorialStep = 0; }
     
     if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); 
@@ -77,7 +86,7 @@ window.startGame = function() {
 
 window.gameOver = function() { 
     gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
-    document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
+    document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('coinsStatus', `Tienes: 🪙 ${coins}`);
     const reviveBtn = document.getElementById('reviveBtn'); if (coins >= 5000) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
     let isTop5 = false; if (leaderboard.length < 5) { isTop5 = true; } else { isTop5 = score > leaderboard[leaderboard.length - 1].score; }
     if (isTop5 && score > 0) { document.getElementById('saveScoreSection').style.display = 'block'; } else { document.getElementById('saveScoreSection').style.display = 'none'; }
@@ -102,11 +111,6 @@ function update() {
         if (evolutionTimer <= 0) { 
             gameState = 'PLAYING'; 
             for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; } 
-            
-            if (!gameStats.tutorialCompleted && tutorialStep === 5) { 
-                tutorialStep = 5.1; 
-                activateTutorial("¡Genial! Ya tienes tu primera evolución.<br><br>💡 <b>TIP EXTRA:</b> Si quieres cambiar los botones de posición, puedes <b>PAUSAR</b> el juego y moverlos libremente donde quieras.", null); 
-            }
         }
         return; 
     }
