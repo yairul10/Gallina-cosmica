@@ -1,8 +1,8 @@
-/* Coordina el modo seleccionable de Superjefes con vida reducida en los maíces acompañantes y 2 Superjefes/3 Jefes Lechuga en Fase 2. */
+/* Coordina el modo de Superjefes con 4 rondas personalizadas, aumento de vida en lechugas, reaparición y 50k monedas al finalizar. */
 (() => {
     let active = false;
     let hitCooldown = 0;
-    let phase = 1;
+    let currentWave = 1;
     const normalUpdate = update;
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const overlaps = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x &&
@@ -36,6 +36,16 @@
         if (lives <= 0) gameOver();
     }
 
+    // Creación de superjefes con +50% de vida si es lechuga
+    function createCustomSuperBoss(index, type = 'corn') {
+        const baseBoss = SuperJefeMaiz.create(index, type);
+        if (type === 'lechuga') {
+            baseBoss.maxHp = Math.floor(baseBoss.maxHp * 1.5);
+            baseBoss.hp = baseBoss.maxHp;
+        }
+        return baseBoss;
+    }
+
     function damageBoss(index, damage) {
         const boss = bosses[index];
         if (!boss) return;
@@ -48,21 +58,50 @@
         score += 10000;
         handleCoinEarned(250);
         updateScore();
+
+        // Si ya no quedan superjefes en pantalla, avanzamos de ronda o finalizamos
         if (!bosses.length) {
-            if (phase === 1) startFinalPhase();
+            if (currentWave === 1) startWave(2);
+            else if (currentWave === 2) startWave(3);
+            else if (currentWave === 3) startWave(4);
             else finishMode();
         }
     }
 
-    function spawnRandomCornMinion() {
-        if (phase !== 1 || bosses.length === 0) return;
+    // Generador de súbditos aleatorios en los bordes para la reaparición infinita según la ronda actual
+    function spawnMinionForCurrentWave() {
+        if (bosses.length === 0) return;
         const side = Math.floor(Math.random() * 4);
         let x = 0, y = 0;
-        // Vida reducida para los acompañantes de maíz que reaparecen
-        const types = [
-            { width: 60, height: 60, maxHp: 180, hp: 180, type: 'maiz_jefe', pts: 1200, coin: 40 },
-            { width: 48, height: 48, maxHp: 100, hp: 100, type: 'corn_strong', pts: 1500, coin: 50 }
-        ];
+        let types = [];
+
+        if (currentWave === 1) {
+            types = [
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20 }
+            ];
+        } else if (currentWave === 2) {
+            types = [
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 },
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 }
+            ];
+        } else if (currentWave === 3) {
+            types = [
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 },
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40 }
+            ];
+        } else if (currentWave === 4) {
+            types = [
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 }
+            ];
+        }
+
+        if (types.length === 0) return;
         const cfg = types[Math.floor(Math.random() * types.length)];
 
         if (side === 0) { x = Math.random() * (canvas.width - cfg.width); y = -60; }
@@ -73,63 +112,61 @@
         enemies.push({ ...cfg, x, y, speed: 1.1, wobble: Math.random() * Math.PI });
     }
 
-    function spawnRandomLettuceMinion() {
-        if (phase !== 2 || bosses.length === 0) return;
-        const side = Math.floor(Math.random() * 4);
-        let x = 0, y = 0;
-        const types = [
-            { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
-            { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 }
-        ];
-        const cfg = types[Math.floor(Math.random() * types.length)];
-
-        if (side === 0) { x = Math.random() * (canvas.width - cfg.width); y = -60; }
-        else if (side === 1) { x = Math.random() * (canvas.width - cfg.width); y = canvas.height + 20; }
-        else if (side === 2) { x = -60; y = Math.random() * (canvas.height - cfg.height); }
-        else { x = canvas.width + 20; y = Math.random() * (canvas.height - cfg.height); }
-
-        enemies.push({ ...cfg, x, y, speed: 1.2, wobble: Math.random() * Math.PI });
-    }
-
-    function createInitialWave() {
-        bosses.push(SuperJefeMaiz.create(0, 'corn'));
-        bosses.push(SuperJefeMaiz.create(1, 'corn'));
-
-        // Vida reducida para los maíces iniciales que acompañan al superjefe de maíz
-        const initialCorns = [
-            { width: 60, height: 60, maxHp: 180, hp: 180, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
-            { width: 48, height: 48, maxHp: 100, hp: 100, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.2, y: 70, speed: 1.1 },
-            { width: 48, height: 48, maxHp: 100, hp: 100, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.75, y: 70, speed: 1.0 }
-        ];
-
-        initialCorns.forEach(cfg => enemies.push(cfg));
-    }
-
-    function startFinalPhase() {
-        phase = 2;
-        bossBullets.length = 0;
+    // Configuración de las 4 Rondas
+    function startWave(waveNum) {
+        currentWave = waveNum;
+        bosses.length = 0;
         enemies.length = 0;
-        
-        // 2 Superjefes Lechuga
-        bosses.push(SuperJefeMaiz.create(2, 'lechuga'));
-        bosses.push(SuperJefeMaiz.create(3, 'lechuga'));
+        bossBullets.length = 0;
 
-        // 3 Jefes Lechuga iniciales de la fase 2
-        const initialLettuce = [
-            { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
-            { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
-            { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 }
-        ];
-
-        initialLettuce.forEach(cfg => {
-            const side = Math.floor(Math.random() * 4);
-            let x = 0, y = 0;
-            if (side === 0) { x = Math.random() * (canvas.width - cfg.width); y = -60; }
-            else if (side === 1) { x = Math.random() * (canvas.width - cfg.width); y = canvas.height + 20; }
-            else if (side === 2) { x = -60; y = Math.random() * (canvas.height - cfg.height); }
-            else { x = canvas.width + 20; y = Math.random() * (canvas.height - cfg.height); }
-            enemies.push({ ...cfg, x, y, speed: 1.2, wobble: Math.random() * Math.PI });
-        });
+        if (waveNum === 1) {
+            // R1: 1 Superjefe Maíz, 1 Maíz Jefe, 3 Maíces Fuertes, 3 Maíces normales
+            bosses.push(createCustomSuperBoss(0, 'corn'));
+            enemies.push(
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.15, y: 70, speed: 1.1 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.5, y: 80, speed: 1.0 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.85, y: 70, speed: 1.1 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.3, y: 100, speed: 1.2 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.6, y: 100, speed: 1.2 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.5, y: 120, speed: 1.3 }
+            );
+        } else if (waveNum === 2) {
+            // R2: 2 Superjefes Maíz, 1 Maíz Jefe, 2 Maíces Fuertes, 2 Lechugas Fuertes, 1 Lechuga Jefe
+            bosses.push(createCustomSuperBoss(0, 'corn'), createCustomSuperBoss(1, 'corn'));
+            enemies.push(
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.2, y: 70, speed: 1.1 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.8, y: 70, speed: 1.0 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.35, y: 90, speed: 1.2 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.65, y: 90, speed: 1.2 },
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width / 2 - 28, y: 110, speed: 1.0 }
+            );
+        } else if (waveNum === 3) {
+            // R3: 1 Superjefe Lechuga, 2 Jefes Lechuga, 2 Lechugas Fuertes, 1 Superjefe Maíz, 1 Maíz Jefe
+            bosses.push(createCustomSuperBoss(2, 'lechuga'), createCustomSuperBoss(0, 'corn'));
+            enemies.push(
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.25, y: 60, speed: 1.0 },
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.75, y: 60, speed: 1.0 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.2, y: 90, speed: 1.2 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.8, y: 90, speed: 1.2 },
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 70, speed: 0.9 }
+            );
+        } else if (waveNum === 4) {
+            // R4: 3 Superjefes Lechuga, 2 Jefes Lechuga, 3 Lechugas Fuertes
+            bosses.push(
+                createCustomSuperBoss(2, 'lechuga'),
+                createCustomSuperBoss(3, 'lechuga'),
+                createCustomSuperBoss(4, 'lechuga')
+            );
+            enemies.push(
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.3, y: 60, speed: 1.1 },
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.7, y: 60, speed: 1.1 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.2, y: 90, speed: 1.2 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.5, y: 100, speed: 1.2 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.8, y: 90, speed: 1.2 }
+            );
+        }
     }
 
     function damageEnemyInMode(index, damage) {
@@ -145,10 +182,9 @@
         handleCoinEarned(enemy.coin);
         updateScore();
 
-        if (phase === 1 && bosses.length > 0) {
-            spawnRandomCornMinion();
-        } else if (phase === 2 && bosses.length > 0) {
-            spawnRandomLettuceMinion();
+        // Reaparición automática mientras queden superjefes en la ronda
+        if (bosses.length > 0) {
+            spawnMinionForCurrentWave();
         }
     }
 
@@ -163,10 +199,8 @@
             if (overlaps(player, enemy)) {
                 enemies.splice(i, 1);
                 damagePlayer(1);
-                if (phase === 1 && bosses.length > 0) {
-                    spawnRandomCornMinion();
-                } else if (phase === 2 && bosses.length > 0) {
-                    spawnRandomLettuceMinion();
+                if (bosses.length > 0) {
+                    spawnMinionForCurrentWave();
                 }
             }
         }
@@ -176,10 +210,18 @@
         active = false;
         window.isSuperBossModeActive = false;
         bossBullets.length = 0;
+        
+        // Otorgar 50,000 monedas al finalizar con éxito el modo
+        coins += 50000;
+        gameStats.savedCoins = coins;
+        gameStats.totalCoins += 50000;
+        saveStats();
+        updateUpgradesHUD();
+
         document.querySelectorAll('.draggable-btn').forEach((button) => {
             button.style.display = 'none';
         });
-        document.querySelector('#startScreen h1').textContent = '🏆 ¡Superjefes derrotados!';
+        document.querySelector('#startScreen h1').textContent = '🏆 ¡Superjefes derrotados! (+50,000🪙)';
         document.getElementById('startScreen').style.display = 'flex';
     }
 
@@ -383,14 +425,13 @@
         score = 0;
         enemies.length = bullets.length = homingMissiles.length = bossBullets.length = bosses.length = 0;
         hitCooldown = 0;
-        phase = 1;
         player.autoAimAngle = 0;
         shieldActive = partialHit = false;
         player.x = canvas.width / 2 - player.width / 2;
         player.y = canvas.height - player.height - 20;
         document.getElementById('activeTutorialOverlay').style.display = 'none';
         
-        createInitialWave();
+        startWave(1); // Iniciar directamente en la Ronda 1 personalizada
         updateScore();
         updateUpgradesHUD();
     };
