@@ -184,13 +184,26 @@ function completeTutorialStep(step) {
 
 window.finishTutorial = function() { document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto'; tutorialStep = 0; gameStats.tutorialCompleted = true; saveStats(); gameState = 'PLAYING'; }
 
-let dragObj = null; let dragOffX = 0; let dragOffY = 0;
+let dragObj = null; let dragOffX = 0; let dragOffY = 0; let isDraggingAction = false;
+
 document.querySelectorAll('.draggable-btn').forEach(btn => {
     btn.addEventListener('pointerdown', (e) => {
         e.stopPropagation(); e.preventDefault();
-        if (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL') {
+        isDraggingAction = false;
+        
+        if (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'TUTORIAL' || gameState === 'PAUSED') {
             const type = btn.getAttribute('data-type');
-            if (type === 'joystick') { joystick.active = true; joystick.pointerId = e.pointerId; const rect = btn.getBoundingClientRect(); joystick.baseX = rect.left + rect.width / 2; joystick.baseY = rect.top + rect.height / 2; document.getElementById('joystick-knob').style.transition = 'none'; return; }
+            
+            if (type === 'joystick') { 
+                if (gameState === 'PAUSED') return;
+                joystick.active = true; joystick.pointerId = e.pointerId; 
+                const rect = btn.getBoundingClientRect(); 
+                joystick.baseX = rect.left + rect.width / 2; 
+                joystick.baseY = rect.top + rect.height / 2; 
+                document.getElementById('joystick-knob').style.transition = 'none'; 
+                return; 
+            }
+            
             if (gameState === 'TUTORIAL') {
                 if (tutorialStep === 1 && type === 'fire') { completeTutorialStep(1); shootBullet(); }
                 else if (tutorialStep === 1.1 && type === 'missile') { completeTutorialStep(1.1); shootMissile(); }
@@ -200,8 +213,22 @@ document.querySelectorAll('.draggable-btn').forEach(btn => {
                 else if (tutorialStep === 4.5 && type === 'btn3') { completeTutorialStep(4.5); buyUpgrade('evolve'); }
                 return;
             }
-            if (type === 'fire') shootBullet(); else if (type === 'missile') shootMissile(); else if (type === 'btn3') { (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); } else buyUpgrade(type);
-        } else if (gameState === 'PAUSED') { dragObj = btn; const rect = btn.getBoundingClientRect(); dragOffX = e.clientX - rect.left; dragOffY = e.clientY - rect.top; }
+
+            if (gameState === 'PAUSED') {
+                dragObj = btn; 
+                const rect = btn.getBoundingClientRect(); 
+                dragOffX = e.clientX - rect.left; 
+                dragOffY = e.clientY - rect.top;
+                return;
+            }
+
+            if (type === 'fire') shootBullet(); 
+            else if (type === 'missile') shootMissile(); 
+            else if (type === 'btn3') { 
+                (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); 
+            } 
+            else { buyUpgrade(type); }
+        }
     });
 });
 
@@ -211,11 +238,42 @@ document.addEventListener('pointermove', (e) => {
         let dx = e.clientX - joystick.baseX; let dy = e.clientY - joystick.baseY; let dist = Math.hypot(dx, dy); let maxDist = 35; if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
         document.getElementById('joystick-knob').style.transform = `translate(${dx}px, ${dy}px)`; joystick.dx = dx / maxDist; joystick.dy = dy / maxDist; return;
     }
-    if (dragObj && gameState === 'PAUSED') { const containerRect = document.getElementById('game-container').getBoundingClientRect(); let newX = e.clientX - containerRect.left - dragOffX; let newY = e.clientY - containerRect.top - dragOffY; if (newX < 0) newX = 0; if (newY < 0) newY = 0; if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight; let pctX = (newX / containerRect.width) * 100; let pctY = (newY / containerRect.height) * 100; dragObj.style.left = pctX + '%'; dragObj.style.top = pctY + '%'; } 
+    
+    if (dragObj && gameState === 'PAUSED') { 
+        isDraggingAction = true;
+        const containerRect = document.getElementById('game-container').getBoundingClientRect(); 
+        let newX = e.clientX - containerRect.left - dragOffX; 
+        let newY = e.clientY - containerRect.top - dragOffY; 
+        if (newX < 0) newX = 0; 
+        if (newY < 70) newY = 70; // Restricción para no tapar el botón de pausa superior
+        if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; 
+        if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight; 
+        dragObj.style.left = (newX / containerRect.width) * 100 + '%'; 
+        dragObj.style.top = (newY / containerRect.height) * 100 + '%'; 
+    } 
 });
 
 const endJoystick = (e) => { if (joystick.active && e.pointerId === joystick.pointerId) { joystick.active = false; joystick.pointerId = null; joystick.dx = 0; joystick.dy = 0; let knob = document.getElementById('joystick-knob'); if(knob) { knob.style.transition = 'transform 0.2s ease-out'; knob.style.transform = `translate(0px, 0px)`; } } };
-document.addEventListener('pointerup', (e) => { endJoystick(e); if (dragObj && gameState === 'PAUSED') { dragObj = null; saveHudPositions(); unlockAchievement('a1'); } }); document.addEventListener('pointercancel', endJoystick);
+
+document.addEventListener('pointerup', (e) => { 
+    endJoystick(e); 
+    if (dragObj && gameState === 'PAUSED') { 
+        if (!isDraggingAction) {
+            const type = dragObj.getAttribute('data-type');
+            if (type && type !== 'fire' && type !== 'missile' && type !== 'joystick') {
+                if (type === 'btn3') {
+                    (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life');
+                } else {
+                    buyUpgrade(type);
+                }
+            }
+        }
+        dragObj = null; 
+        saveHudPositions(); 
+        unlockAchievement('a1'); 
+    } 
+}); 
+document.addEventListener('pointercancel', endJoystick);
 
 window.updateUpgradesHUD = function() {
     document.getElementById('coinVal').textContent = coins; const btnBullets = document.getElementById('hud-bullets'); 
@@ -230,7 +288,6 @@ window.updateUpgradesHUD = function() {
     const superDmgBtn = document.getElementById('hud-super-damage'); 
     const pauseSuperDmg = document.getElementById('pauseSuperDmgBtn');
 
-    // Mostrar y actualizar botones avanzados solo si se desbloquearon por ronda o si el jugador ya los compró
     if (gameRound >= 2) { 
         armorBtn.style.display = 'flex'; 
         damageBtn.style.display = 'flex'; 
