@@ -1,4 +1,4 @@
-/* Coordina el modo seleccionable de Superjefes con reaparición infinita de súbditos en todo el modo. */
+/* Coordina el modo seleccionable de Superjefes con misiles funcionales, reaparición infinita y reinicio de mejoras al reintentar. */
 (() => {
     let active = false;
     let hitCooldown = 0;
@@ -50,11 +50,10 @@
         updateScore();
         if (!bosses.length) {
             if (phase === 1) startFinalPhase();
-            else finishMode(); // Termina cuando mueren los superjefes de la fase 2
+            else finishMode();
         }
     }
 
-    // Generar un súbdito de Maíz aleatorio en los bordes para la Fase 1
     function spawnRandomCornMinion() {
         if (phase !== 1 || bosses.length === 0) return;
         const side = Math.floor(Math.random() * 4);
@@ -73,7 +72,6 @@
         enemies.push({ ...cfg, x, y, speed: 1.1, wobble: Math.random() * Math.PI });
     }
 
-    // Generar un súbdito de Lechuga aleatorio en los bordes para la Fase 2
     function spawnRandomLettuceMinion() {
         if (phase !== 2 || bosses.length === 0) return;
         const side = Math.floor(Math.random() * 4);
@@ -93,11 +91,9 @@
     }
 
     function createInitialWave() {
-        // 2 Superjefes Maíz
         bosses.push(SuperJefeMaiz.create(0, 'corn'));
         bosses.push(SuperJefeMaiz.create(1, 'corn'));
 
-        // 1 Jefe Maíz y 2 Maíces Fuertes iniciales
         const initialCorns = [
             { width: 60, height: 60, maxHp: 400, hp: 400, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
             { width: 48, height: 48, maxHp: 220, hp: 220, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.2, y: 70, speed: 1.1 },
@@ -110,12 +106,10 @@
     function startFinalPhase() {
         phase = 2;
         bossBullets.length = 0;
-        enemies.length = 0; // Limpiar súbditos de la fase anterior
+        enemies.length = 0;
         
-        // 1 Superjefe Lechuga
         bosses.push(SuperJefeMaiz.create(2, 'lechuga'));
 
-        // 2 Jefes Lechuga y 3 Lechugas Fuertes iniciales de la fase 2
         const initialLettuce = [
             { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
             { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
@@ -148,7 +142,6 @@
         handleCoinEarned(enemy.coin);
         updateScore();
 
-        // Reaparición automática según la fase activa mientras queden superjefes vivos
         if (phase === 1 && bosses.length > 0) {
             spawnRandomCornMinion();
         } else if (phase === 2 && bosses.length > 0) {
@@ -167,7 +160,6 @@
             if (overlaps(player, enemy)) {
                 enemies.splice(i, 1);
                 damagePlayer(1);
-                // Si chocan con el jugador también reaparecen si el superjefe sigue con vida
                 if (phase === 1 && bosses.length > 0) {
                     spawnRandomCornMinion();
                 } else if (phase === 2 && bosses.length > 0) {
@@ -377,6 +369,12 @@
         gameState = 'PLAYING';
         previousState = 'PLAYING';
         gameRound = 4;
+        
+        // REINICIO DE MEJORAS AVANZADAS AL REINTENTAR EL MODO
+        upgrades.armor = 0;
+        upgrades.dmgBoost = 0;
+        upgrades.superDmgBoost = 0;
+
         nextBossScoreThreshold = Number.MAX_SAFE_INTEGER;
         score = 0;
         enemies.length = bullets.length = homingMissiles.length = bossBullets.length = bosses.length = 0;
@@ -390,6 +388,7 @@
         
         createInitialWave();
         updateScore();
+        updateUpgradesHUD();
     };
 
     const missileBtnElement = document.getElementById('missileBtn');
