@@ -1,4 +1,4 @@
-/* Coordina el modo seleccionable de Superjefes con misiles funcionales, reaparición infinita y reinicio de mejoras al reintentar. */
+/* Coordina el modo seleccionable de Superjefes con 2 Superjefes Lechuga y 3 Jefes Lechuga en la Fase 2, reaparición infinita y protección de súbditos al revivir. */
 (() => {
     let active = false;
     let hitCooldown = 0;
@@ -108,14 +108,15 @@
         bossBullets.length = 0;
         enemies.length = 0;
         
+        // 2 Superjefes Lechuga
         bosses.push(SuperJefeMaiz.create(2, 'lechuga'));
+        bosses.push(SuperJefeMaiz.create(3, 'lechuga'));
 
+        // 3 Jefes Lechuga iniciales de la fase 2
         const initialLettuce = [
             { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
             { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
-            { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 },
-            { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 },
-            { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 }
+            { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 }
         ];
 
         initialLettuce.forEach(cfg => {
@@ -171,6 +172,7 @@
 
     function finishMode() {
         active = false;
+        window.isSuperBossModeActive = false;
         bossBullets.length = 0;
         document.querySelectorAll('.draggable-btn').forEach((button) => {
             button.style.display = 'none';
@@ -366,11 +368,11 @@
     window.startSuperBossMode = function () {
         window.startGame();
         active = true;
+        window.isSuperBossModeActive = true; // Bandera para proteger a los súbditos al revivir
         gameState = 'PLAYING';
         previousState = 'PLAYING';
         gameRound = 4;
         
-        // REINICIO DE MEJORAS AVANZADAS AL REINTENTAR EL MODO
         upgrades.armor = 0;
         upgrades.dmgBoost = 0;
         upgrades.superDmgBoost = 0;
@@ -461,6 +463,7 @@
 
     document.getElementById('startBtn').addEventListener('click', () => {
         active = false;
+        window.isSuperBossModeActive = false;
         player.autoAimAngle = 0;
     }, true);
     document.getElementById('restartBtn').addEventListener('click', (event) => {
