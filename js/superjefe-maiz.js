@@ -1,4 +1,4 @@
-/* Comportamiento reutilizable de un Superjefe de Maíz. */
+/* Comportamiento reutilizable de un Superjefe de Maíz o Lechuga. */
 (() => {
     const PADDING = 12;
     const TELEPORT_FRAMES = 300; // 5 segundos a 60 FPS.
@@ -41,7 +41,7 @@
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
             damage: 1,
-            isLechugaBala: false
+            isLechugaBala: (boss.type === 'lechuga')
         });
     }
 
@@ -50,12 +50,10 @@
         const boss = {
             x: 0,
             y: 0,
-            // Más pequeños para conservar espacio de maniobra en el duelo.
             width: isLettuce ? 100 : 92,
             height: isLettuce ? 80 : 74,
             maxHp: isLettuce ? 3600 : 2600,
             hp: isLettuce ? 3600 : 2600,
-            // Más lentos que los jefes de las rondas normales.
             speed: isLettuce ? 0.74 : 0.88 + index * 0.08,
             type,
             isSuperBoss: true,
@@ -66,7 +64,6 @@
         return boss;
     }
 
-    // Devuelve true cuando el jefe toca la nave; el modo decide cuánto daño aplicar.
     function update(boss) {
         const targetX = player.x + player.width / 2;
         const targetY = player.y + player.height / 2;
