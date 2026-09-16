@@ -1,4 +1,4 @@
-/* Coordina el modo seleccionable de dos Superjefes de Maíz. */
+/* Coordina el modo seleccionable de Superjefes con oleadas mejoradas y misiles activos. */
 (() => {
     let active = false;
     let hitCooldown = 0;
@@ -54,32 +54,101 @@
         }
     }
 
-    function createStrongCorn(index) {
-        const width = 56;
-        const height = 56;
-        const x = index === 0 ? canvas.width * 0.18 : canvas.width * 0.72;
-        return {
-            x: clamp(x - width / 2, 12, canvas.width - width - 12),
-            y: 32 + index * (canvas.height - height - 64),
-            width,
-            height,
+    // Creación de enemigos fase 1 (Maíz)
+    function createInitialWave() {
+        // 2 Superjefes Maíz (se añaden directo a bosses)
+        bosses.push(SuperJefeMaiz.create(0, 'corn'));
+        bosses.push(SuperJefeMaiz.create(1, 'corn'));
+
+        // 1 Jefe Maíz y 2 Maíces Fuertes (se añaden a enemies)
+        const jefeMaiz = {
+            x: canvas.width / 2 - 30,
+            y: 40,
+            width: 60,
+            height: 60,
+            maxHp: 400,
+            hp: 400,
+            speed: 0.9,
+            type: 'maiz_jefe',
+            pts: 1200,
+            coin: 40,
+            wobble: 0
+        };
+
+        const maizFuerte1 = {
+            x: canvas.width * 0.2,
+            y: 70,
+            width: 48,
+            height: 48,
             maxHp: 220,
             hp: 220,
-            speed: 1.05 + index * 0.1,
+            speed: 1.1,
             type: 'corn_strong',
             pts: 1500,
-            coin: 50
+            coin: 50,
+            wobble: 0
         };
+
+        const maizFuerte2 = {
+            x: canvas.width * 0.75,
+            y: 70,
+            width: 48,
+            height: 48,
+            maxHp: 220,
+            hp: 220,
+            speed: 1.0,
+            type: 'corn_strong',
+            pts: 1500,
+            coin: 50,
+            wobble: Math.PI
+        };
+
+        enemies.push(jefeMaiz, maizFuerte1, maizFuerte2);
     }
 
+    // Creación de fase 2 (Lechuga - Entrando aleatoriamente por cualquiera de los 4 lados)
     function startFinalPhase() {
         phase = 2;
         bossBullets.length = 0;
+        
+        // 1 Superjefe Lechuga
         bosses.push(SuperJefeMaiz.create(2, 'lechuga'));
-        enemies.push(createStrongCorn(0), createStrongCorn(1));
+
+        // Definir los 4 tipos de spawn aleatorio por los bordes (0: Arriba, 1: Abajo, 2: Izquierda, 3: Derecha)
+        function spawnAtRandomBorder(config) {
+            const side = Math.floor(Math.random() * 4);
+            let x = 0, y = 0;
+            if (side === 0) { // Arriba
+                x = Math.random() * (canvas.width - config.width);
+                y = -60;
+            } else if (side === 1) { // Abajo
+                x = Math.random() * (canvas.width - config.width);
+                y = canvas.height + 20;
+            } else if (side === 2) { // Izquierda
+                x = -60;
+                y = Math.random() * (canvas.height - config.height);
+            } else { // Derecha
+                x = canvas.width + 20;
+                y = Math.random() * (canvas.height - config.height);
+            }
+            return { ...config, x, y, speed: 1.2, wobble: Math.random() * Math.PI };
+        }
+
+        // 2 Jefes Lechuga y 3 Lechugas Fuertes
+        const lettuceWaveConfigs = [
+            { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
+            { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
+            { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 },
+            { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 },
+            { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 }
+        ];
+
+        lettuceWaveConfigs.forEach(cfg => {
+            enemies.push(spawnAtRandomBorder(cfg));
+        });
     }
 
-    function damageStrongCorn(index, damage) {
+    function damageEnemyInMode(index, damage) {
         const enemy = enemies[index];
         if (!enemy) return;
         let multiplier = gameStats.selectedShip === 1 ? 1.2 : 1;
@@ -94,14 +163,14 @@
         if (phase === 2 && !bosses.length && !enemies.length) finishMode();
     }
 
-    function updateStrongCorns() {
+    function updateEnemiesInMode() {
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
             const dx = player.x + player.width / 2 - (enemy.x + enemy.width / 2);
             const dy = player.y + player.height / 2 - (enemy.y + enemy.height / 2);
             const distance = Math.max(1, Math.hypot(dx, dy));
-            enemy.x = clamp(enemy.x + (dx / distance) * enemy.speed, 12, canvas.width - enemy.width - 12);
-            enemy.y = clamp(enemy.y + (dy / distance) * enemy.speed, 12, canvas.height - enemy.height - 12);
+            enemy.x = clamp(enemy.x + (dx / distance) * enemy.speed, 10, canvas.width - enemy.width - 10);
+            enemy.y = clamp(enemy.y + (dy / distance) * enemy.speed, 10, canvas.height - enemy.height - 10);
             if (overlaps(player, enemy)) {
                 enemies.splice(i, 1);
                 damagePlayer(1);
@@ -189,7 +258,6 @@
     function updatePlayerShots() {
         for (let i = bullets.length - 1; i >= 0; i--) {
             const bullet = bullets[i];
-            // En el duelo los disparos se dirigen al objetivo más cercano.
             if (!aimAtClosestTarget(bullet)) {
                 bullet.y -= bullet.speed;
                 if (bullet.dx) bullet.x += bullet.dx;
@@ -211,12 +279,15 @@
             for (let j = enemies.length - 1; j >= 0; j--) {
                 if (overlaps(bullet, enemies[j])) {
                     bullets.splice(i, 1);
-                    damageStrongCorn(j, bullet.damage);
+                    damageEnemyInMode(j, bullet.damage);
                     break;
                 }
             }
         }
+    }
 
+    // --- SOPORTE DE MISILES EN EL MODO SUPERJEFES ---
+    function updatePlayerMissiles() {
         for (let i = homingMissiles.length - 1; i >= 0; i--) {
             const missile = homingMissiles[i];
             const target = closestTargetTo(missile);
@@ -245,7 +316,7 @@
             for (let j = enemies.length - 1; j >= 0; j--) {
                 if (overlaps(missile, enemies[j])) {
                     homingMissiles.splice(i, 1);
-                    damageStrongCorn(j, missile.damage);
+                    damageEnemyInMode(j, missile.damage);
                     break;
                 }
             }
@@ -270,7 +341,6 @@
 
     update = function () {
         if (!active) return normalUpdate();
-        // La evolución usa la animación y el temporizador del modo normal.
         if (gameState === 'EVOLVING') return normalUpdate();
         if (gameState !== 'PLAYING') return;
         if (hitCooldown) hitCooldown--;
@@ -279,9 +349,10 @@
             if (star.y > canvas.height) star.y = 0;
         }
         movePlayer();
-        updateStrongCorns();
+        updateEnemiesInMode();
         updatePlayerAim();
         updatePlayerShots();
+        updatePlayerMissiles(); // Procesamiento activo de misiles
         updateBossShots();
         for (const boss of bosses) {
             if (SuperJefeMaiz.update(boss)) damagePlayer(2);
@@ -304,11 +375,21 @@
         player.x = canvas.width / 2 - player.width / 2;
         player.y = canvas.height - player.height - 20;
         document.getElementById('activeTutorialOverlay').style.display = 'none';
-        bosses.push(SuperJefeMaiz.create(0), SuperJefeMaiz.create(1));
+        
+        createInitialWave(); // Cargar la nueva composición de oleada inicial
         updateScore();
     };
 
-    // El arrastre ignora el límite inferior que usan las rondas normales.
+    // Control táctil de misil específico para este modo
+    const missileBtnElement = document.getElementById('missileBtn');
+    if (missileBtnElement) {
+        missileBtnElement.addEventListener('pointerdown', (event) => {
+            if (!active || gameState !== 'PLAYING') return;
+            window.shootMissile();
+            event.stopImmediatePropagation();
+        }, true);
+    }
+
     canvas.addEventListener('pointerdown', (event) => {
         if (!active || gameState !== 'PLAYING') return;
         dragPointerId = event.pointerId;
@@ -382,7 +463,7 @@
     const button = document.createElement('button');
     button.className = 'btn btn-secondary';
     button.id = 'superBossModeBtn';
-    button.textContent = '🌽⚡ Duelo: 2 Superjefes';
+    button.textContent = '🌽⚡ Duelo: Superjefes y Hordas';
     button.addEventListener('click', () => {
         requestGameFullscreen();
         window.startSuperBossMode();
