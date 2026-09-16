@@ -27,8 +27,6 @@ document.getElementById('saveScoreBtn').addEventListener('click', () => {
 document.getElementById('reviveBtn').addEventListener('click', () => {
     if (coins >= 5000) {
         coins -= 5000; gameStats.savedCoins = coins; saveStats(); lives = 3; 
-        
-        // Si estamos en el modo normal limpiamos enemigos, pero en el modo superjefes NO vaciamos 'enemies' para no borrar los súbditos redivivos
         if (typeof window.isSuperBossModeActive === 'undefined' || !window.isSuperBossModeActive) {
             enemies.length = 0; 
         }
@@ -70,11 +68,10 @@ window.startGame = function() {
     updateUpgradesHUD(); 
     gameState = 'PLAYING'; previousState = 'PLAYING';
     
-    // Si el usuario entra por primera vez y muere, marcamos de una vez el tutorial como visto o en proceso para que no se repita infinitamente si muere al inicio
     if (!gameStats.tutorialCompleted) { 
         tutorialStep = 0.5; 
         activateTutorial("¡Bienvenido Granero Espacial!<br><br>Muévete por la pantalla con tu dedo 👆, o usa las flechas / W,A,S,D ⌨️ en PC.", 'none'); 
-        gameStats.tutorialCompleted = true; // Guardamos para evitar que se repita si pierde de inmediato
+        gameStats.tutorialCompleted = true; 
         saveStats();
     } else { tutorialStep = 0; }
     
@@ -86,7 +83,7 @@ window.startGame = function() {
 
 window.gameOver = function() { 
     gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
-    document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('coinsStatus', `Tienes: 🪙 ${coins}`);
+    document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
     const reviveBtn = document.getElementById('reviveBtn'); if (coins >= 5000) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
     let isTop5 = false; if (leaderboard.length < 5) { isTop5 = true; } else { isTop5 = score > leaderboard[leaderboard.length - 1].score; }
     if (isTop5 && score > 0) { document.getElementById('saveScoreSection').style.display = 'block'; } else { document.getElementById('saveScoreSection').style.display = 'none'; }
@@ -257,7 +254,17 @@ function draw() {
     else if (gameRound === 2 && assets.fondoRonda2.complete && assets.fondoRonda2.naturalWidth > 0) bgImg = assets.fondoRonda2;
     else if (assets.fondoGalaxia.complete && assets.fondoGalaxia.naturalWidth > 0) bgImg = assets.fondoGalaxia;
     
-    if (bgImg) { ctx.drawImage(bgImg, 0, y, canvas.width, canvas.height); ctx.drawImage(bgImg, 0, y - canvas.height + 2, canvas.width, canvas.height); }
+    // --- ZOOM DEL FONDO DE PANTALLA (Aumentado un 15% para evitar bordes y retrasar la unión) ---
+    if (bgImg) { 
+        let zoomFactor = 1.15; 
+        let drawW = canvas.width * zoomFactor;
+        let drawH = canvas.height * zoomFactor;
+        let offsetX = (canvas.width - drawW) / 2;
+        let scaledY = y * zoomFactor;
+
+        ctx.drawImage(bgImg, offsetX, scaledY, drawW, drawH); 
+        ctx.drawImage(bgImg, offsetX, scaledY - drawH + 2, drawW, drawH); 
+    }
     
     let bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     if (gameRound === 1) { bgGradient.addColorStop(0, 'rgba(9, 11, 20, 0.7)'); bgGradient.addColorStop(1, 'rgba(30, 27, 75, 0.8)'); } 
