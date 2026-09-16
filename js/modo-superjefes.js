@@ -1,4 +1,4 @@
-/* Coordina el modo seleccionable de Superjefes con oleadas mejoradas y misiles activos. */
+/* Coordina el modo seleccionable de Superjefes con misiles funcionales y reaparición infinita de súbditos en Fase 2. */
 (() => {
     let active = false;
     let hitCooldown = 0;
@@ -6,7 +6,7 @@
     const normalUpdate = update;
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const overlaps = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x &&
-        a.y < b.y + b.height && a.y + a.height > b.y;
+        a.y < b.y + b.height && a.y + b.height > b.y;
 
     function updateScore() {
         document.getElementById('scoreVal').textContent = score;
@@ -50,17 +50,14 @@
         updateScore();
         if (!bosses.length) {
             if (phase === 1) startFinalPhase();
-            else if (!enemies.length) finishMode();
+            else finishMode(); // Termina al morir el superjefe de la fase 2
         }
     }
 
-    // Creación de enemigos fase 1 (Maíz)
     function createInitialWave() {
-        // 2 Superjefes Maíz (se añaden directo a bosses)
         bosses.push(SuperJefeMaiz.create(0, 'corn'));
         bosses.push(SuperJefeMaiz.create(1, 'corn'));
 
-        // 1 Jefe Maíz y 2 Maíces Fuertes (se añaden a enemies)
         const jefeMaiz = {
             x: canvas.width / 2 - 30,
             y: 40,
@@ -106,36 +103,31 @@
         enemies.push(jefeMaiz, maizFuerte1, maizFuerte2);
     }
 
-    // Creación de fase 2 (Lechuga - Entrando aleatoriamente por cualquiera de los 4 lados)
+    function spawnRandomLettuceMinion() {
+        if (phase !== 2 || bosses.length === 0) return;
+        const side = Math.floor(Math.random() * 4);
+        let x = 0, y = 0;
+        const types = [
+            { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
+            { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 }
+        ];
+        const cfg = types[Math.floor(Math.random() * types.length)];
+
+        if (side === 0) { x = Math.random() * (canvas.width - cfg.width); y = -60; }
+        else if (side === 1) { x = Math.random() * (canvas.width - cfg.width); y = canvas.height + 20; }
+        else if (side === 2) { x = -60; y = Math.random() * (canvas.height - cfg.height); }
+        else { x = canvas.width + 20; y = Math.random() * (canvas.height - cfg.height); }
+
+        enemies.push({ ...cfg, x, y, speed: 1.2, wobble: Math.random() * Math.PI });
+    }
+
     function startFinalPhase() {
         phase = 2;
         bossBullets.length = 0;
-        
-        // 1 Superjefe Lechuga
         bosses.push(SuperJefeMaiz.create(2, 'lechuga'));
 
-        // Definir los 4 tipos de spawn aleatorio por los bordes (0: Arriba, 1: Abajo, 2: Izquierda, 3: Derecha)
-        function spawnAtRandomBorder(config) {
-            const side = Math.floor(Math.random() * 4);
-            let x = 0, y = 0;
-            if (side === 0) { // Arriba
-                x = Math.random() * (canvas.width - config.width);
-                y = -60;
-            } else if (side === 1) { // Abajo
-                x = Math.random() * (canvas.width - config.width);
-                y = canvas.height + 20;
-            } else if (side === 2) { // Izquierda
-                x = -60;
-                y = Math.random() * (canvas.height - config.height);
-            } else { // Derecha
-                x = canvas.width + 20;
-                y = Math.random() * (canvas.height - config.height);
-            }
-            return { ...config, x, y, speed: 1.2, wobble: Math.random() * Math.PI };
-        }
-
-        // 2 Jefes Lechuga y 3 Lechugas Fuertes
-        const lettuceWaveConfigs = [
+        // Oleada inicial de la fase 2 con reaparición automática
+        const initialConfigs = [
             { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
             { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50 },
             { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 },
@@ -143,8 +135,14 @@
             { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30 }
         ];
 
-        lettuceWaveConfigs.forEach(cfg => {
-            enemies.push(spawnAtRandomBorder(cfg));
+        initialConfigs.forEach(cfg => {
+            const side = Math.floor(Math.random() * 4);
+            let x = 0, y = 0;
+            if (side === 0) { x = Math.random() * (canvas.width - cfg.width); y = -60; }
+            else if (side === 1) { x = Math.random() * (canvas.width - cfg.width); y = canvas.height + 20; }
+            else if (side === 2) { x = -60; y = Math.random() * (canvas.height - cfg.height); }
+            else { x = canvas.width + 20; y = Math.random() * (canvas.height - cfg.height); }
+            enemies.push({ ...cfg, x, y, speed: 1.2, wobble: Math.random() * Math.PI });
         });
     }
 
@@ -160,7 +158,11 @@
         score += enemy.pts;
         handleCoinEarned(enemy.coin);
         updateScore();
-        if (phase === 2 && !bosses.length && !enemies.length) finishMode();
+
+        // Si estamos en la fase 2 y mueren, respawnean de inmediato mientras el superjefe siga vivo
+        if (phase === 2 && bosses.length > 0) {
+            spawnRandomLettuceMinion();
+        }
     }
 
     function updateEnemiesInMode() {
@@ -174,7 +176,9 @@
             if (overlaps(player, enemy)) {
                 enemies.splice(i, 1);
                 damagePlayer(1);
-                if (phase === 2 && !bosses.length && !enemies.length) finishMode();
+                if (phase === 2 && bosses.length > 0) {
+                    spawnRandomLettuceMinion();
+                }
             }
         }
     }
@@ -286,7 +290,6 @@
         }
     }
 
-    // --- SOPORTE DE MISILES EN EL MODO SUPERJEFES ---
     function updatePlayerMissiles() {
         for (let i = homingMissiles.length - 1; i >= 0; i--) {
             const missile = homingMissiles[i];
@@ -344,6 +347,22 @@
         if (gameState === 'EVOLVING') return normalUpdate();
         if (gameState !== 'PLAYING') return;
         if (hitCooldown) hitCooldown--;
+
+        // Actualizar temporizador de recarga de misiles en este modo
+        if (missileCooldownTimer > 0) {
+            missileCooldownTimer--;
+            let sec = Math.ceil(missileCooldownTimer / 60);
+            const cooldownEl = document.getElementById('missileCooldown');
+            if (cooldownEl) cooldownEl.textContent = sec + 's';
+            const missileBtnEl = document.getElementById('missileBtn');
+            if (missileBtnEl) missileBtnEl.classList.remove('missile-ready');
+        } else {
+            const cooldownEl = document.getElementById('missileCooldown');
+            if (cooldownEl) cooldownEl.textContent = 'LISTO';
+            const missileBtnEl = document.getElementById('missileBtn');
+            if (missileBtnEl) missileBtnEl.classList.add('missile-ready');
+        }
+
         for (const star of stars) {
             star.y += star.speed;
             if (star.y > canvas.height) star.y = 0;
@@ -352,7 +371,7 @@
         updateEnemiesInMode();
         updatePlayerAim();
         updatePlayerShots();
-        updatePlayerMissiles(); // Procesamiento activo de misiles
+        updatePlayerMissiles();
         updateBossShots();
         for (const boss of bosses) {
             if (SuperJefeMaiz.update(boss)) damagePlayer(2);
@@ -376,11 +395,10 @@
         player.y = canvas.height - player.height - 20;
         document.getElementById('activeTutorialOverlay').style.display = 'none';
         
-        createInitialWave(); // Cargar la nueva composición de oleada inicial
+        createInitialWave();
         updateScore();
     };
 
-    // Control táctil de misil específico para este modo
     const missileBtnElement = document.getElementById('missileBtn');
     if (missileBtnElement) {
         missileBtnElement.addEventListener('pointerdown', (event) => {
