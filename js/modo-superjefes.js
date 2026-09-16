@@ -1,4 +1,4 @@
-/* Coordina el modo de Superjefes con 4 rondas, respiro de 1 segundo, reaparición y desvanecimiento suave en enemigos/jefes. */
+/* Coordina el modo de Superjefes con 4 rondas progresivas, respiro limpio, reaparición, desvanecimiento suave y 200k monedas de recompensa al finalizar. */
 (() => {
     let active = false;
     let hitCooldown = 0;
@@ -43,7 +43,6 @@
             baseBoss.maxHp = Math.floor(baseBoss.maxHp * 1.5);
             baseBoss.hp = baseBoss.maxHp;
         }
-        // Añadir alpha inicial para aparición gradual suave
         baseBoss.alpha = 0;
         return baseBoss;
     }
@@ -56,10 +55,9 @@
         boss.hp -= damage * multiplier;
         if (boss.hp > 0) return;
 
-        // En lugar de borrarlo de golpe, iniciamos desvanecimiento al morir
         boss.isDead = true;
         boss.alpha = 1;
-        boss.deathTimer = 35; // Duración de la transición de muerte (aproximadamente medio segundo)
+        boss.deathTimer = 35;
     }
 
     function spawnMinionForCurrentWave() {
@@ -102,7 +100,6 @@
         else if (side === 2) { x = -60; y = Math.random() * (canvas.height - cfg.height); }
         else { x = canvas.width + 20; y = Math.random() * (canvas.height - cfg.height); }
 
-        // Súbditos con alpha 0 para aparición gradual suave
         enemies.push({ ...cfg, x, y, speed: 1.1, wobble: Math.random() * Math.PI, alpha: 0 });
     }
 
@@ -166,9 +163,8 @@
         enemy.hp -= damage * multiplier;
         if (enemy.hp > 0) return;
 
-        // Iniciar desvanecimiento suave al morir el súbdito
         enemy.isDead = true;
-        enemy.deathTimer = 25; // Duración de transición de muerte para súbditos
+        enemy.deathTimer = 25;
         score += enemy.pts;
         handleCoinEarned(enemy.coin);
         updateScore();
@@ -178,12 +174,10 @@
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
 
-            // Incrementar opacidad gradualmente al aparecer
             if (enemy.alpha < 1 && !enemy.isDead) {
                 enemy.alpha = Math.min(1, enemy.alpha + 0.05);
             }
 
-            // Gestionar desvanecimiento si está muriendo
             if (enemy.isDead) {
                 enemy.deathTimer--;
                 enemy.alpha = Math.max(0, enemy.deathTimer / 25);
@@ -214,9 +208,10 @@
         window.isSuperBossModeActive = false;
         bossBullets.length = 0;
         
-        coins += 50000;
+        // Premio actualizado a 200,000 monedas
+        coins += 200000;
         gameStats.savedCoins = coins;
-        gameStats.totalCoins += 50000;
+        gameStats.totalCoins += 200000;
         saveStats();
         updateUpgradesHUD();
 
@@ -437,12 +432,10 @@
         for (let bIndex = bosses.length - 1; bIndex >= 0; bIndex--) {
             const boss = bosses[bIndex];
             
-            // Aparecer gradualmente al inicio
             if (boss.alpha < 1 && !boss.isDead) {
                 boss.alpha = Math.min(1, boss.alpha + 0.04);
             }
 
-            // Gestionar desvanecimiento si muere
             if (boss.isDead) {
                 boss.deathTimer--;
                 boss.alpha = Math.max(0, boss.deathTimer / 35);
