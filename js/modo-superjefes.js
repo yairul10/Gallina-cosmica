@@ -1,9 +1,9 @@
-/* Coordina el modo de Superjefes con 4 rondas progresivas, respiro de 1 segundo sin mensajes y reaparición infinita. */
+/* Coordina el modo de Superjefes con 4 rondas progresivas, respiro limpio, reaparición y soporte completo de evolución/pausa. */
 (() => {
     let active = false;
     let hitCooldown = 0;
     let currentWave = 1;
-    let waveTransitionTimer = 0; // Temporizador para el respiro de 1 segundo sin mensajes
+    let waveTransitionTimer = 0;
     const normalUpdate = update;
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const overlaps = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x &&
@@ -59,10 +59,9 @@
         handleCoinEarned(250);
         updateScore();
 
-        // Al derrotar al último jefe, iniciamos un respiro limpio de 1 segundo (60 frames) sin mostrar avisos
         if (!bosses.length) {
             if (currentWave < 4) {
-                waveTransitionTimer = 60; // 1 segundo de respiro antes de la siguiente ronda
+                waveTransitionTimer = 60;
             } else {
                 finishMode();
             }
@@ -369,16 +368,33 @@
 
     update = function () {
         if (!active) return normalUpdate();
-        if (gameState === 'EVOLVING') return normalUpdate();
+
+        // Soporte completo para el estado de evolución y reanudación musical al salir de pausa
+        if (gameState === 'EVOLVING') {
+            evolutionTimer--;
+            for (let s of stars) { let dx = (player.x + player.width/2) - s.x; let dy = (player.y + player.height/2) - s.y; s.x += dx * 0.05; s.y += dy * 0.05; }
+            if (evolutionTimer === 75) {
+                if (evolutionStage === 0) { evolutionStage = 1; maxUpgradeLimit = 6; unlockAchievement('a5'); } 
+                else if (evolutionStage === 1) { evolutionStage = 2; maxUpgradeLimit = 10; unlockAchievement('a6'); } 
+                else if (evolutionStage === 2) { evolutionStage = 3; maxUpgradeLimit = 10; unlockAchievement('a7'); }
+                updateUpgradesHUD(); 
+            }
+            if (evolutionTimer <= 0) { 
+                gameState = 'PLAYING'; 
+                if (!bgMusic.paused === false && !bgMusic.muted) bgMusic.play().catch(e => console.log(e));
+                for (let s of stars) { s.x = Math.random() * canvas.width; s.y = Math.random() * canvas.height; } 
+            }
+            return;
+        }
+
         if (gameState !== 'PLAYING') return;
 
-        // Manejo del respiro de 1 segundo (60 frames) sin mostrar ningún aviso
         if (waveTransitionTimer > 0) {
             waveTransitionTimer--;
             if (waveTransitionTimer === 0) {
                 startWave(currentWave + 1);
             }
-            return; // Pausa breve de acción durante el respiro limpio
+            return;
         }
 
         if (hitCooldown) hitCooldown--;
