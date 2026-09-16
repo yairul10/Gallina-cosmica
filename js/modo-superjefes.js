@@ -1,4 +1,4 @@
-/* Coordina el modo de Superjefes con 4 rondas progresivas, respiro limpio, reaparición y soporte completo de evolución/pausa. */
+/* Coordina el modo de Superjefes con 4 rondas, respiro de 1 segundo, reaparición y desvanecimiento suave en enemigos/jefes. */
 (() => {
     let active = false;
     let hitCooldown = 0;
@@ -43,6 +43,8 @@
             baseBoss.maxHp = Math.floor(baseBoss.maxHp * 1.5);
             baseBoss.hp = baseBoss.maxHp;
         }
+        // Añadir alpha inicial para aparición gradual suave
+        baseBoss.alpha = 0;
         return baseBoss;
     }
 
@@ -54,18 +56,10 @@
         boss.hp -= damage * multiplier;
         if (boss.hp > 0) return;
 
-        bosses.splice(index, 1);
-        score += 10000;
-        handleCoinEarned(250);
-        updateScore();
-
-        if (!bosses.length) {
-            if (currentWave < 4) {
-                waveTransitionTimer = 60;
-            } else {
-                finishMode();
-            }
-        }
+        // En lugar de borrarlo de golpe, iniciamos desvanecimiento al morir
+        boss.isDead = true;
+        boss.alpha = 1;
+        boss.deathTimer = 35; // Duración de la transición de muerte (aproximadamente medio segundo)
     }
 
     function spawnMinionForCurrentWave() {
@@ -108,7 +102,8 @@
         else if (side === 2) { x = -60; y = Math.random() * (canvas.height - cfg.height); }
         else { x = canvas.width + 20; y = Math.random() * (canvas.height - cfg.height); }
 
-        enemies.push({ ...cfg, x, y, speed: 1.1, wobble: Math.random() * Math.PI });
+        // Súbditos con alpha 0 para aparición gradual suave
+        enemies.push({ ...cfg, x, y, speed: 1.1, wobble: Math.random() * Math.PI, alpha: 0 });
     }
 
     function startWave(waveNum) {
@@ -120,32 +115,32 @@
         if (waveNum === 1) {
             bosses.push(createCustomSuperBoss(0, 'corn'));
             enemies.push(
-                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
-                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.15, y: 70, speed: 1.1 },
-                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.5, y: 80, speed: 1.0 },
-                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.85, y: 70, speed: 1.1 },
-                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.3, y: 100, speed: 1.2 },
-                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.6, y: 100, speed: 1.2 },
-                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.5, y: 120, speed: 1.3 }
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9, alpha: 0 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.15, y: 70, speed: 1.1, alpha: 0 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.5, y: 80, speed: 1.0, alpha: 0 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.85, y: 70, speed: 1.1, alpha: 0 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.3, y: 100, speed: 1.2, alpha: 0 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.6, y: 100, speed: 1.2, alpha: 0 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.5, y: 120, speed: 1.3, alpha: 0 }
             );
         } else if (waveNum === 2) {
             bosses.push(createCustomSuperBoss(0, 'corn'), createCustomSuperBoss(1, 'corn'));
             enemies.push(
-                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
-                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.2, y: 70, speed: 1.1 },
-                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.8, y: 70, speed: 1.0 },
-                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.35, y: 90, speed: 1.2 },
-                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.65, y: 90, speed: 1.2 },
-                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width / 2 - 28, y: 110, speed: 1.0 }
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9, alpha: 0 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.2, y: 70, speed: 1.1, alpha: 0 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.8, y: 70, speed: 1.0, alpha: 0 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.35, y: 90, speed: 1.2, alpha: 0 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.65, y: 90, speed: 1.2, alpha: 0 },
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width / 2 - 28, y: 110, speed: 1.0, alpha: 0 }
             );
         } else if (waveNum === 3) {
             bosses.push(createCustomSuperBoss(2, 'lechuga'), createCustomSuperBoss(0, 'corn'));
             enemies.push(
-                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.25, y: 60, speed: 1.0 },
-                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.75, y: 60, speed: 1.0 },
-                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.2, y: 90, speed: 1.2 },
-                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.8, y: 90, speed: 1.2 },
-                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 70, speed: 0.9 }
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.25, y: 60, speed: 1.0, alpha: 0 },
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.75, y: 60, speed: 1.0, alpha: 0 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.2, y: 90, speed: 1.2, alpha: 0 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.8, y: 90, speed: 1.2, alpha: 0 },
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 70, speed: 0.9, alpha: 0 }
             );
         } else if (waveNum === 4) {
             bosses.push(
@@ -154,47 +149,62 @@
                 createCustomSuperBoss(4, 'lechuga')
             );
             enemies.push(
-                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.3, y: 60, speed: 1.1 },
-                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.7, y: 60, speed: 1.1 },
-                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.2, y: 90, speed: 1.2 },
-                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.5, y: 100, speed: 1.2 },
-                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.8, y: 90, speed: 1.2 }
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.3, y: 60, speed: 1.1, alpha: 0 },
+                { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.7, y: 60, speed: 1.1, alpha: 0 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.2, y: 90, speed: 1.2, alpha: 0 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.5, y: 100, speed: 1.2, alpha: 0 },
+                { width: 48, height: 48, maxHp: 280, hp: 280, type: 'lechuga_fuerte', pts: 400, coin: 30, x: canvas.width * 0.8, y: 90, speed: 1.2, alpha: 0 }
             );
         }
     }
 
     function damageEnemyInMode(index, damage) {
         const enemy = enemies[index];
-        if (!enemy) return;
+        if (!enemy || enemy.isDead) return;
         let multiplier = gameStats.selectedShip === 1 ? 1.2 : 1;
         if (gameStats.useProShip) multiplier *= 1.3;
         enemy.hp -= damage * multiplier;
         if (enemy.hp > 0) return;
 
-        enemies.splice(index, 1);
+        // Iniciar desvanecimiento suave al morir el súbdito
+        enemy.isDead = true;
+        enemy.deathTimer = 25; // Duración de transición de muerte para súbditos
         score += enemy.pts;
         handleCoinEarned(enemy.coin);
         updateScore();
-
-        if (bosses.length > 0) {
-            spawnMinionForCurrentWave();
-        }
     }
 
     function updateEnemiesInMode() {
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
+
+            // Incrementar opacidad gradualmente al aparecer
+            if (enemy.alpha < 1 && !enemy.isDead) {
+                enemy.alpha = Math.min(1, enemy.alpha + 0.05);
+            }
+
+            // Gestionar desvanecimiento si está muriendo
+            if (enemy.isDead) {
+                enemy.deathTimer--;
+                enemy.alpha = Math.max(0, enemy.deathTimer / 25);
+                if (enemy.deathTimer <= 0) {
+                    enemies.splice(i, 1);
+                    if (bosses.length > 0) {
+                        spawnMinionForCurrentWave();
+                    }
+                }
+                continue;
+            }
+
             const dx = player.x + player.width / 2 - (enemy.x + enemy.width / 2);
             const dy = player.y + player.height / 2 - (enemy.y + enemy.height / 2);
             const distance = Math.max(1, Math.hypot(dx, dy));
             enemy.x = clamp(enemy.x + (dx / distance) * enemy.speed, 10, canvas.width - enemy.width - 10);
             enemy.y = clamp(enemy.y + (dy / distance) * enemy.speed, 10, canvas.height - enemy.height - 10);
             if (overlaps(player, enemy)) {
-                enemies.splice(i, 1);
+                enemy.isDead = true;
+                enemy.deathTimer = 25;
                 damagePlayer(1);
-                if (bosses.length > 0) {
-                    spawnMinionForCurrentWave();
-                }
             }
         }
     }
@@ -239,6 +249,7 @@
 
         for (const group of [bosses, enemies]) {
             for (const target of group) {
+                if (target.isDead) continue;
                 const distance = Math.hypot(
                     target.x + target.width / 2 - originX,
                     target.y + target.height / 2 - originY
@@ -296,7 +307,7 @@
             }
             let hitBoss = false;
             for (let j = bosses.length - 1; j >= 0; j--) {
-                if (overlaps(bullet, bosses[j])) {
+                if (!bosses[j].isDead && overlaps(bullet, bosses[j])) {
                     bullets.splice(i, 1);
                     damageBoss(j, bullet.damage);
                     hitBoss = true;
@@ -305,7 +316,7 @@
             }
             if (hitBoss) continue;
             for (let j = enemies.length - 1; j >= 0; j--) {
-                if (overlaps(bullet, enemies[j])) {
+                if (!enemies[j].isDead && overlaps(bullet, enemies[j])) {
                     bullets.splice(i, 1);
                     damageEnemyInMode(j, bullet.damage);
                     break;
@@ -332,7 +343,7 @@
             }
             let hitBoss = false;
             for (let j = bosses.length - 1; j >= 0; j--) {
-                if (overlaps(missile, bosses[j])) {
+                if (!bosses[j].isDead && overlaps(missile, bosses[j])) {
                     homingMissiles.splice(i, 1);
                     damageBoss(j, missile.damage);
                     hitBoss = true;
@@ -341,7 +352,7 @@
             }
             if (hitBoss) continue;
             for (let j = enemies.length - 1; j >= 0; j--) {
-                if (overlaps(missile, enemies[j])) {
+                if (!enemies[j].isDead && overlaps(missile, enemies[j])) {
                     homingMissiles.splice(i, 1);
                     damageEnemyInMode(j, missile.damage);
                     break;
@@ -369,7 +380,6 @@
     update = function () {
         if (!active) return normalUpdate();
 
-        // Soporte completo para el estado de evolución y reanudación musical al salir de pausa
         if (gameState === 'EVOLVING') {
             evolutionTimer--;
             for (let s of stars) { let dx = (player.x + player.width/2) - s.x; let dy = (player.y + player.height/2) - s.y; s.x += dx * 0.05; s.y += dy * 0.05; }
@@ -423,7 +433,32 @@
         updatePlayerShots();
         updatePlayerMissiles();
         updateBossShots();
-        for (const boss of bosses) {
+
+        for (let bIndex = bosses.length - 1; bIndex >= 0; bIndex--) {
+            const boss = bosses[bIndex];
+            
+            // Aparecer gradualmente al inicio
+            if (boss.alpha < 1 && !boss.isDead) {
+                boss.alpha = Math.min(1, boss.alpha + 0.04);
+            }
+
+            // Gestionar desvanecimiento si muere
+            if (boss.isDead) {
+                boss.deathTimer--;
+                boss.alpha = Math.max(0, boss.deathTimer / 35);
+                if (boss.deathTimer <= 0) {
+                    bosses.splice(bIndex, 1);
+                    if (!bosses.length) {
+                        if (currentWave < 4) {
+                            waveTransitionTimer = 60;
+                        } else {
+                            finishMode();
+                        }
+                    }
+                }
+                continue;
+            }
+
             if (SuperJefeMaiz.update(boss)) damagePlayer(2);
         }
     };
