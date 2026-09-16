@@ -36,7 +36,6 @@
         if (lives <= 0) gameOver();
     }
 
-    // Creación de superjefes con +50% de vida si es lechuga
     function createCustomSuperBoss(index, type = 'corn') {
         const baseBoss = SuperJefeMaiz.create(index, type);
         if (type === 'lechuga') {
@@ -59,7 +58,6 @@
         handleCoinEarned(250);
         updateScore();
 
-        // Si ya no quedan superjefes en pantalla, avanzamos de ronda o finalizamos
         if (!bosses.length) {
             if (currentWave === 1) startWave(2);
             else if (currentWave === 2) startWave(3);
@@ -68,7 +66,6 @@
         }
     }
 
-    // Generador de súbditos aleatorios en los bordes para la reaparición infinita según la ronda actual
     function spawnMinionForCurrentWave() {
         if (bosses.length === 0) return;
         const side = Math.floor(Math.random() * 4);
@@ -112,7 +109,6 @@
         enemies.push({ ...cfg, x, y, speed: 1.1, wobble: Math.random() * Math.PI });
     }
 
-    // Configuración de las 4 Rondas
     function startWave(waveNum) {
         currentWave = waveNum;
         bosses.length = 0;
@@ -120,7 +116,6 @@
         bossBullets.length = 0;
 
         if (waveNum === 1) {
-            // R1: 1 Superjefe Maíz, 1 Maíz Jefe, 3 Maíces Fuertes, 3 Maíces normales
             bosses.push(createCustomSuperBoss(0, 'corn'));
             enemies.push(
                 { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
@@ -132,7 +127,6 @@
                 { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.5, y: 120, speed: 1.3 }
             );
         } else if (waveNum === 2) {
-            // R2: 2 Superjefes Maíz, 1 Maíz Jefe, 2 Maíces Fuertes, 2 Lechugas Fuertes, 1 Lechuga Jefe
             bosses.push(createCustomSuperBoss(0, 'corn'), createCustomSuperBoss(1, 'corn'));
             enemies.push(
                 { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
@@ -143,7 +137,6 @@
                 { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width / 2 - 28, y: 110, speed: 1.0 }
             );
         } else if (waveNum === 3) {
-            // R3: 1 Superjefe Lechuga, 2 Jefes Lechuga, 2 Lechugas Fuertes, 1 Superjefe Maíz, 1 Maíz Jefe
             bosses.push(createCustomSuperBoss(2, 'lechuga'), createCustomSuperBoss(0, 'corn'));
             enemies.push(
                 { width: 56, height: 56, maxHp: 500, hp: 500, type: 'lechuga_jefe', pts: 800, coin: 50, x: canvas.width * 0.25, y: 60, speed: 1.0 },
@@ -153,7 +146,6 @@
                 { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 70, speed: 0.9 }
             );
         } else if (waveNum === 4) {
-            // R4: 3 Superjefes Lechuga, 2 Jefes Lechuga, 3 Lechugas Fuertes
             bosses.push(
                 createCustomSuperBoss(2, 'lechuga'),
                 createCustomSuperBoss(3, 'lechuga'),
@@ -182,7 +174,6 @@
         handleCoinEarned(enemy.coin);
         updateScore();
 
-        // Reaparición automática mientras queden superjefes en la ronda
         if (bosses.length > 0) {
             spawnMinionForCurrentWave();
         }
@@ -211,7 +202,6 @@
         window.isSuperBossModeActive = false;
         bossBullets.length = 0;
         
-        // Otorgar 50,000 monedas al finalizar con éxito el modo
         coins += 50000;
         gameStats.savedCoins = coins;
         gameStats.totalCoins += 50000;
@@ -221,7 +211,7 @@
         document.querySelectorAll('.draggable-btn').forEach((button) => {
             button.style.display = 'none';
         });
-        document.querySelector('#startScreen h1').textContent = '🏆 ¡Superjefes derrotados! (+50,000🪙)';
+        document.querySelector('#startScreen h1').textContent = '🏆 ¡Superjefes derrotados!';
         document.getElementById('startScreen').style.display = 'flex';
     }
 
@@ -431,7 +421,7 @@
         player.y = canvas.height - player.height - 20;
         document.getElementById('activeTutorialOverlay').style.display = 'none';
         
-        startWave(1); // Iniciar directamente en la Ronda 1 personalizada
+        startWave(1);
         updateScore();
         updateUpgradesHUD();
     };
