@@ -20,7 +20,19 @@
         lives -= amount;
         sessionKillsNoHit = 0;
         sessionTimeNoHit = 0;
+        if (lives === 1 && gameStats.equipExtraModule && moduleActiveInMatch) {
+            if (coins >= 300) {
+                coins -= 300;
+                gameStats.savedCoins = coins;
+                saveStats();
+                lives += 2;
+                showTrophyToast('❤️', null, 'Auto-Vida: -300🪙');
+            } else {
+                showTrophyToast('💔', null, 'Sin monedas para Auto-Vida');
+            }
+        }
         updateLivesUI();
+        updateUpgradesHUD();
         if (lives <= 0) gameOver();
     }
 
@@ -258,6 +270,8 @@
 
     update = function () {
         if (!active) return normalUpdate();
+        // La evolución usa la animación y el temporizador del modo normal.
+        if (gameState === 'EVOLVING') return normalUpdate();
         if (gameState !== 'PLAYING') return;
         if (hitCooldown) hitCooldown--;
         for (const star of stars) {
