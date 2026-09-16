@@ -82,6 +82,9 @@ jobs:
         run: |
           npx cap sync android
 
+      - name: Configurar Play Games Services v2
+        run: python3 scripts/configure_play_games.py
+
       - name: Configurar version de la app
         run: |
           python3 - <<'PY2'
