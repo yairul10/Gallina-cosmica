@@ -1,8 +1,9 @@
-/* Coordina el modo de Superjefes con 4 rondas personalizadas, aumento de vida en lechugas, reaparición y 50k monedas al finalizar. */
+/* Coordina el modo de Superjefes con 4 rondas progresivas, respiro de 1 segundo sin mensajes y reaparición infinita. */
 (() => {
     let active = false;
     let hitCooldown = 0;
     let currentWave = 1;
+    let waveTransitionTimer = 0; // Temporizador para el respiro de 1 segundo sin mensajes
     const normalUpdate = update;
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const overlaps = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x &&
@@ -58,11 +59,13 @@
         handleCoinEarned(250);
         updateScore();
 
+        // Al derrotar al último jefe, iniciamos un respiro limpio de 1 segundo (60 frames) sin mostrar avisos
         if (!bosses.length) {
-            if (currentWave === 1) startWave(2);
-            else if (currentWave === 2) startWave(3);
-            else if (currentWave === 3) startWave(4);
-            else finishMode();
+            if (currentWave < 4) {
+                waveTransitionTimer = 60; // 1 segundo de respiro antes de la siguiente ronda
+            } else {
+                finishMode();
+            }
         }
     }
 
@@ -368,6 +371,16 @@
         if (!active) return normalUpdate();
         if (gameState === 'EVOLVING') return normalUpdate();
         if (gameState !== 'PLAYING') return;
+
+        // Manejo del respiro de 1 segundo (60 frames) sin mostrar ningún aviso
+        if (waveTransitionTimer > 0) {
+            waveTransitionTimer--;
+            if (waveTransitionTimer === 0) {
+                startWave(currentWave + 1);
+            }
+            return; // Pausa breve de acción durante el respiro limpio
+        }
+
         if (hitCooldown) hitCooldown--;
 
         if (missileCooldownTimer > 0) {
@@ -406,6 +419,7 @@
         gameState = 'PLAYING';
         previousState = 'PLAYING';
         gameRound = 4;
+        waveTransitionTimer = 0;
         
         upgrades.armor = 0;
         upgrades.dmgBoost = 0;
