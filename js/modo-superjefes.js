@@ -1,4 +1,4 @@
-/* Coordina el modo seleccionable de Superjefes con 2 Superjefes Lechuga y 3 Jefes Lechuga en la Fase 2, reaparición infinita y protección de súbditos al revivir. */
+/* Coordina el modo seleccionable de Superjefes con vida reducida en los maíces acompañantes y 2 Superjefes/3 Jefes Lechuga en Fase 2. */
 (() => {
     let active = false;
     let hitCooldown = 0;
@@ -58,9 +58,10 @@
         if (phase !== 1 || bosses.length === 0) return;
         const side = Math.floor(Math.random() * 4);
         let x = 0, y = 0;
+        // Vida reducida para los acompañantes de maíz que reaparecen
         const types = [
-            { width: 60, height: 60, maxHp: 400, hp: 400, type: 'maiz_jefe', pts: 1200, coin: 40 },
-            { width: 48, height: 48, maxHp: 220, hp: 220, type: 'corn_strong', pts: 1500, coin: 50 }
+            { width: 60, height: 60, maxHp: 180, hp: 180, type: 'maiz_jefe', pts: 1200, coin: 40 },
+            { width: 48, height: 48, maxHp: 100, hp: 100, type: 'corn_strong', pts: 1500, coin: 50 }
         ];
         const cfg = types[Math.floor(Math.random() * types.length)];
 
@@ -94,10 +95,11 @@
         bosses.push(SuperJefeMaiz.create(0, 'corn'));
         bosses.push(SuperJefeMaiz.create(1, 'corn'));
 
+        // Vida reducida para los maíces iniciales que acompañan al superjefe de maíz
         const initialCorns = [
-            { width: 60, height: 60, maxHp: 400, hp: 400, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
-            { width: 48, height: 48, maxHp: 220, hp: 220, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.2, y: 70, speed: 1.1 },
-            { width: 48, height: 48, maxHp: 220, hp: 220, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.75, y: 70, speed: 1.0 }
+            { width: 60, height: 60, maxHp: 180, hp: 180, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9 },
+            { width: 48, height: 48, maxHp: 100, hp: 100, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.2, y: 70, speed: 1.1 },
+            { width: 48, height: 48, maxHp: 100, hp: 100, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.75, y: 70, speed: 1.0 }
         ];
 
         initialCorns.forEach(cfg => enemies.push(cfg));
@@ -368,7 +370,7 @@
     window.startSuperBossMode = function () {
         window.startGame();
         active = true;
-        window.isSuperBossModeActive = true; // Bandera para proteger a los súbditos al revivir
+        window.isSuperBossModeActive = true;
         gameState = 'PLAYING';
         previousState = 'PLAYING';
         gameRound = 4;
