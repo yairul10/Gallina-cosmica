@@ -288,6 +288,12 @@ function draw() {
         }
         
         ctx.fillStyle = innerColor; 
+        ctx.save();
+        if (Number.isFinite(b.angle)) {
+            ctx.translate(b.x + b.width / 2, b.y + b.height / 2);
+            ctx.rotate(b.angle);
+            ctx.translate(-b.x - b.width / 2, -b.y - b.height / 2);
+        }
         ctx.shadowColor = outerColor; 
         ctx.shadowBlur = 8; 
         ctx.fillRect(b.x, b.y, b.width, b.height); 
@@ -295,6 +301,7 @@ function draw() {
         ctx.lineWidth = 1.5; 
         ctx.strokeRect(b.x, b.y, b.width, b.height); 
         ctx.shadowBlur = 0; 
+        ctx.restore();
     }
 
     for (let m of homingMissiles) { ctx.save(); ctx.translate(m.x + m.width/2, m.y + m.height/2); let angle = Math.atan2(m.vy, m.vx) + Math.PI/2; ctx.rotate(angle); let imgNormal, imgPro; if (m.type === 'milk') { imgNormal = assets.balaLeche; imgPro = assets.balaLechePro; } else if (m.type === 'horseshoe') { imgNormal = assets.balaHerradura; imgPro = assets.balaHerraduraPro; } else if (m.type === 'wool') { imgNormal = assets.balaLana; imgPro = assets.balaLanaPro; } else { imgNormal = assets.balaPollito; imgPro = assets.balaPollitoPro; } let imgToDraw = (m.isPro && imgPro.complete && imgPro.naturalWidth > 0) ? imgPro : imgNormal; if (imgToDraw.complete && imgToDraw.naturalWidth > 0) { ctx.drawImage(imgToDraw, -m.width/2, -m.height/2, m.width, m.height); } else { ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let icon = '🐥'; if (m.type === 'wool') icon = '🧶'; if (m.type === 'horseshoe') icon = '🧲'; if (m.type === 'milk') icon = '🥛'; ctx.fillText(icon, 0, 0); } ctx.restore(); }

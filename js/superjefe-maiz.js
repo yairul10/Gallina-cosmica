@@ -45,16 +45,19 @@
         });
     }
 
-    function create(index) {
+    function create(index, type = 'corn') {
+        const isLettuce = type === 'lechuga';
         const boss = {
             x: 0,
             y: 0,
-            width: 118,
-            height: 96,
-            maxHp: 2600,
-            hp: 2600,
-            speed: 1.28 + index * 0.12,
-            type: 'corn',
+            // Más pequeños para conservar espacio de maniobra en el duelo.
+            width: isLettuce ? 100 : 92,
+            height: isLettuce ? 80 : 74,
+            maxHp: isLettuce ? 3600 : 2600,
+            hp: isLettuce ? 3600 : 2600,
+            // Más lentos que los jefes de las rondas normales.
+            speed: isLettuce ? 0.74 : 0.88 + index * 0.08,
+            type,
             isSuperBoss: true,
             shootCooldown: 35 + index * 40,
             teleportCooldown: index * 150
