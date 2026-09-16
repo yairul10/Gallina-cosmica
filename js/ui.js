@@ -224,9 +224,59 @@ window.updateUpgradesHUD = function() {
     const btnLifeEvolve = document.getElementById('hud-life-evolve'); if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) { btnLifeEvolve.querySelector('.hud-emoji').textContent = '🌟'; btnLifeEvolve.querySelector('.hud-lvl').textContent = 'F.'+(evolutionStage+2); btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; btnLifeEvolve.style.borderColor = '#fbbf24'; btnLifeEvolve.classList.toggle('can-upgrade', true); } else { btnLifeEvolve.querySelector('.hud-emoji').textContent = '❤️'; if (lives >= 10) { btnLifeEvolve.querySelector('.hud-lvl').textContent = 'MÁX'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'none'; } else { btnLifeEvolve.querySelector('.hud-lvl').textContent = '+1'; btnLifeEvolve.querySelector('.hud-cost').style.display = 'block'; } btnLifeEvolve.style.borderColor = 'rgba(56, 189, 248, 0.5)'; btnLifeEvolve.classList.toggle('can-upgrade', lives < 10 && coins >= 150); }
     document.getElementById('pauseBulletsLvl').textContent = upgrades.bullets >= maxUpgradeLimit ? 'MÁX' : `🪙100`; document.getElementById('pauseSpeedLvl').textContent = upgrades.speed >= maxUpgradeLimit ? 'MÁX' : `🪙100`;
     const pauseEv = document.getElementById('pauseEvolveBtn'); if (evolutionStage >= 3) pauseEv.style.display = 'none'; else pauseEv.style.display = 'flex';
-    const armorBtn = document.getElementById('hud-armor'); const damageBtn = document.getElementById('hud-damage'); const superDmgBtn = document.getElementById('hud-super-damage'); const pauseSuperDmg = document.getElementById('pauseSuperDmgBtn');
-    if (gameRound >= 2) { armorBtn.style.display = 'flex'; damageBtn.style.display = 'flex'; if (upgrades.armor > 0) { armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; armorBtn.querySelector('.hud-cost').style.display = 'none'; } if (upgrades.dmgBoost > 0) { damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; damageBtn.querySelector('.hud-cost').style.display = 'none'; } armorBtn.classList.toggle('can-upgrade', upgrades.armor === 0 && coins >= 3000); damageBtn.classList.toggle('can-upgrade', upgrades.dmgBoost === 0 && coins >= 2000); } else { armorBtn.style.display = 'none'; damageBtn.style.display = 'none'; }
-    if (gameRound === 3 || goingToRound === 3) { superDmgBtn.style.display = 'flex'; pauseSuperDmg.style.display = 'flex'; if (upgrades.superDmgBoost > 0) { superDmgBtn.querySelector('.hud-lvl').textContent = 'MÁX'; superDmgBtn.querySelector('.hud-cost').style.display = 'none'; document.getElementById('pauseSuperDmgLvl').textContent = 'MÁX'; } superDmgBtn.classList.toggle('can-upgrade', upgrades.superDmgBoost === 0 && coins >= 10000); } else { superDmgBtn.style.display = 'none'; pauseSuperDmg.style.display = 'none'; }
+    
+    const armorBtn = document.getElementById('hud-armor'); 
+    const damageBtn = document.getElementById('hud-damage'); 
+    const superDmgBtn = document.getElementById('hud-super-damage'); 
+    const pauseSuperDmg = document.getElementById('pauseSuperDmgBtn');
+
+    // Mostrar y actualizar botones avanzados solo si se desbloquearon por ronda o si el jugador ya los compró
+    if (gameRound >= 2) { 
+        armorBtn.style.display = 'flex'; 
+        damageBtn.style.display = 'flex'; 
+        
+        if (upgrades.armor > 0) { 
+            armorBtn.querySelector('.hud-lvl').textContent = 'MÁX'; 
+            armorBtn.querySelector('.hud-cost').style.display = 'none'; 
+        } else {
+            armorBtn.querySelector('.hud-lvl').textContent = 'DUR.';
+            armorBtn.querySelector('.hud-cost').style.display = 'block';
+        }
+
+        if (upgrades.dmgBoost > 0) { 
+            damageBtn.querySelector('.hud-lvl').textContent = 'MÁX'; 
+            damageBtn.querySelector('.hud-cost').style.display = 'none'; 
+        } else {
+            damageBtn.querySelector('.hud-lvl').textContent = '+50%';
+            damageBtn.querySelector('.hud-cost').style.display = 'block';
+        }
+
+        armorBtn.classList.toggle('can-upgrade', upgrades.armor === 0 && coins >= 3000); 
+        damageBtn.classList.toggle('can-upgrade', upgrades.dmgBoost === 0 && coins >= 2000); 
+    } else { 
+        armorBtn.style.display = 'none'; 
+        damageBtn.style.display = 'none'; 
+    }
+
+    if (gameRound === 3 || goingToRound === 3 || gameRound === 4) { 
+        superDmgBtn.style.display = 'flex'; 
+        pauseSuperDmg.style.display = 'flex'; 
+        
+        if (upgrades.superDmgBoost > 0) { 
+            superDmgBtn.querySelector('.hud-lvl').textContent = 'MÁX'; 
+            superDmgBtn.querySelector('.hud-cost').style.display = 'none'; 
+            document.getElementById('pauseSuperDmgLvl').textContent = 'MÁX'; 
+        } else {
+            superDmgBtn.querySelector('.hud-lvl').textContent = '+50%';
+            superDmgBtn.querySelector('.hud-cost').style.display = 'block';
+            document.getElementById('pauseSuperDmgLvl').textContent = '🪙10000';
+        }
+
+        superDmgBtn.classList.toggle('can-upgrade', upgrades.superDmgBoost === 0 && coins >= 10000); 
+    } else { 
+        superDmgBtn.style.display = 'none'; 
+        pauseSuperDmg.style.display = 'none'; 
+    }
     
     let mBtn = document.getElementById('missileBtn');
     if (mBtn) { 
@@ -259,9 +309,9 @@ window.buyUpgrade = function(type) {
             } 
         } 
     }
-    else if (type === 'armor' && gameRound >= 2 && coins >= 3000 && upgrades.armor === 0) { coins -= 3000; gameStats.savedCoins = coins; saveStats(); upgrades.armor = 1; }
-    else if (type === 'damage' && gameRound >= 2 && coins >= 2000 && upgrades.dmgBoost === 0) { coins -= 2000; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
-    else if (type === 'superDamage' && (gameRound === 3 || goingToRound === 3) && coins >= 10000 && upgrades.superDmgBoost === 0) { coins -= 10000; gameStats.savedCoins = coins; saveStats(); upgrades.superDmgBoost = 1; }
+    else if (type === 'armor' && (gameRound >= 2 || gameRound === 4) && coins >= 3000 && upgrades.armor === 0) { coins -= 3000; gameStats.savedCoins = coins; saveStats(); upgrades.armor = 1; }
+    else if (type === 'damage' && (gameRound >= 2 || gameRound === 4) && coins >= 2000 && upgrades.dmgBoost === 0) { coins -= 2000; gameStats.savedCoins = coins; saveStats(); upgrades.dmgBoost = 1; }
+    else if (type === 'superDamage' && (gameRound === 3 || goingToRound === 3 || gameRound === 4) && coins >= 10000 && upgrades.superDmgBoost === 0) { coins -= 10000; gameStats.savedCoins = coins; saveStats(); upgrades.superDmgBoost = 1; }
     
     updateUpgradesHUD();
     if (!gameStats.tutorialCompleted && gameState !== 'EVOLVING') {
