@@ -2,7 +2,7 @@
  * Modo QA interno. Mantener en false para la versión normal.
  * Cambiar a true solo en una compilación o publicación de pruebas.
  */
-const QA_MODE = false;
+const QA_MODE = true;
 window.QA_MODE = QA_MODE;
 
 if (QA_MODE) {
