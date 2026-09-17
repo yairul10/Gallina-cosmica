@@ -71,8 +71,6 @@ window.startGame = function() {
     if (!gameStats.tutorialCompleted) { 
         tutorialStep = 0.5; 
         activateTutorial("¡Bienvenido Granero Espacial!<br><br>Muévete por la pantalla con tu dedo 👆, o usa las flechas / W,A,S,D ⌨️ en PC.", 'none'); 
-        gameStats.tutorialCompleted = true; 
-        saveStats();
     } else { tutorialStep = 0; }
     
     if (window.gameTimerInterval) clearInterval(window.gameTimerInterval); 

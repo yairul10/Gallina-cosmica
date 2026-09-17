@@ -37,7 +37,9 @@ window.shootBullet = function() {
 
 window.shootMissile = function() {
     if (missileCooldownTimer > 0) return;
-    let bType = ['chick', 'wool', 'horseshoe', 'milk'][gameStats.selectedMissile];
+    const missileIndex = gameStats.selectedShip;
+    const bType = ['chick', 'wool', 'horseshoe', 'milk'][missileIndex];
+    const useProMissile = gameStats.useProShip && gameStats.proMissiles[missileIndex];
     let bulletCount = evolutionStage + 1; if (bulletCount > 4) bulletCount = 4;
     let baseDmg = (upgrades.bullets === 0 ? 1 : upgrades.bullets) * 15; 
     let finalDamage = baseDmg * currentMatchBooster; 
@@ -46,7 +48,7 @@ window.shootMissile = function() {
     
     const patterns = { 1: [{ dx: 0, offX: player.width / 2 - 12, offY: -10 }], 2: [{ dx: -2, offX: 0, offY: -10 }, { dx: 2, offX: player.width - 24, offY: -10 }], 3: [{ dx: -3, offX: -5, offY: -10 }, { dx: 0, offX: player.width / 2 - 12, offY: -14 }, { dx: 3, offX: player.width - 19, offY: -10 }], 4: [{ dx: -4, offX: -10, offY: -8 }, { dx: -1.5, offX: 5, offY: -14 }, { dx: 1.5, offX: player.width - 29, offY: -14 }, { dx: 4, offX: player.width - 14, offY: -8 }] };
     let currentPattern = patterns[bulletCount] || patterns[1];
-    for (let p of currentPattern) { homingMissiles.push({ x: player.x + p.offX, y: player.y + p.offY, width: 24, height: 24, speed: 7.5, vx: p.dx, vy: -5, type: bType, damage: finalDamage, isPro: gameStats.useProMissile }); }
+    for (let p of currentPattern) { homingMissiles.push({ x: player.x + p.offX, y: player.y + p.offY, width: 24, height: 24, speed: 7.5, vx: p.dx, vy: -5, type: bType, damage: finalDamage, isPro: useProMissile }); }
     missileCooldownTimer = MISSILE_COOLDOWN;
 }
 

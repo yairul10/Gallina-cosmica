@@ -47,12 +47,29 @@
         return baseBoss;
     }
 
+    function getShipDamageMultiplier(target, isBoss = false) {
+        const ship = gameStats.selectedShip;
+        let multiplier = 1;
+
+        // Mantiene las mismas especialidades del modo normal.
+        if (isBoss) {
+            if (ship === 1 && target.type === 'corn') multiplier *= 1.2;
+            if (ship === 3 && target.type === 'lechuga') multiplier *= 1.2;
+        } else {
+            if (ship === 0 && (target.type === 'corn' || target.type === 'corn_strong')) multiplier *= 1.2;
+            if (ship === 1 && target.type === 'maiz_jefe') multiplier *= 1.2;
+            if (ship === 2 && (target.type === 'lechuga' || target.type === 'lechuga_fuerte')) multiplier *= 1.2;
+            if (ship === 3 && target.type === 'lechuga_jefe') multiplier *= 1.2;
+        }
+        if (gameStats.useProShip) multiplier *= 1.3;
+
+        return multiplier;
+    }
+
     function damageBoss(index, damage) {
         const boss = bosses[index];
         if (!boss) return;
-        let multiplier = gameStats.selectedShip === 1 ? 1.2 : 1;
-        if (gameStats.useProShip) multiplier *= 1.3;
-        boss.hp -= damage * multiplier;
+        boss.hp -= damage * getShipDamageMultiplier(boss, true);
         if (boss.hp > 0) return;
 
         boss.isDead = true;
@@ -158,9 +175,7 @@
     function damageEnemyInMode(index, damage) {
         const enemy = enemies[index];
         if (!enemy || enemy.isDead) return;
-        let multiplier = gameStats.selectedShip === 1 ? 1.2 : 1;
-        if (gameStats.useProShip) multiplier *= 1.3;
-        enemy.hp -= damage * multiplier;
+        enemy.hp -= damage * getShipDamageMultiplier(enemy);
         if (enemy.hp > 0) return;
 
         enemy.isDead = true;

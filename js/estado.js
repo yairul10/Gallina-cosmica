@@ -34,7 +34,7 @@ const achievData = {
     'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 
     'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida.' }, 
     'a3': { title: 'Cosecha Estelar', desc: 'Destruye 50 maíces malvados.' }, 
-    'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge 300 monedas en total.' }, 
+    'a4': { title: 'Coleccionista de Chatarra', desc: 'Recoge 3,000 monedas en total.' },
     'a5': { title: 'Fase 2 Alcanzada', desc: 'Sube a Fase 2 con cualquier nave.' }, 
     'a6': { title: 'Fase 3 Alcanzada', desc: 'Sube a Fase 3 con cualquier nave.' }, 
     'a7': { title: 'Fase Máxima', desc: 'Sube a Fase 4 (Máximo Poder).' }, 
@@ -51,8 +51,8 @@ const achievData = {
     'a19': { title: 'Leyenda del Vacío', desc: '200,000 puntos en una partida.' }, 
     'a20': { title: 'Dios del Infinito', desc: '500,000 puntos en una partida.' },
     'a21': { title: 'Venciste lo invencible', desc: 'Vence a la dupla Súper Jefe.' },
-    'a22': { title: 'Millonario', desc: 'Consigue 10,000 monedas en total.' },
-    'a23': { title: 'Multimillonario', desc: 'Reúne 10,000 monedas sin gastarlas.' }
+    'a22': { title: 'Millonario', desc: 'Consigue 100,000 monedas en total.' },
+    'a23': { title: 'Multimillonario', desc: 'Reúne 100,000 monedas sin gastarlas.' }
 };
 
 let pAchiev = JSON.parse(localStorage.getItem('farm_space_achievements')) || {};
