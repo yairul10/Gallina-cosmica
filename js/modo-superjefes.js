@@ -129,6 +129,9 @@
 
     function startWave(waveNum) {
         currentWave = waveNum;
+        if (window.QA_MODE && typeof window.qaBotOnSuperBossWaveStart === 'function') {
+            window.qaBotOnSuperBossWaveStart(currentWave + 1);
+        }
         bosses.length = 0;
         enemies.length = 0;
         bossBullets.length = 0;
@@ -236,6 +239,9 @@
     }
 
     function finishMode() {
+        if (window.QA_MODE && typeof window.qaBotOnSuperBossComplete === 'function') {
+            window.qaBotOnSuperBossComplete(currentWave + 1);
+        }
         active = false;
         window.isSuperBossModeActive = false;
         // Termina la partida antes de abrir el menú: evita que el bucle normal
@@ -443,6 +449,10 @@
         }
 
         if (gameState !== 'PLAYING') return;
+
+        if (window.QA_MODE && typeof window.qaBotUpdate === 'function') {
+            window.qaBotUpdate();
+        }
 
         if (waveTransitionTimer > 0) {
             waveTransitionTimer--;

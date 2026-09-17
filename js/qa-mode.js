@@ -11,6 +11,8 @@ if (QA_MODE) {
     let qaPurchaseCooldown = 0;
     let qaSeriesRunning = false;
     let qaSeriesTarget = 1;
+    let qaSelectedMode = 'normal';
+    let qaMatchPlan = [];
     let qaRestartTimer = null;
     let qaCurrentMatch = null;
     const qaResults = [];
@@ -51,6 +53,14 @@ if (QA_MODE) {
         seriesSelect.appendChild(option);
     });
     seriesSelect.style.cssText = 'flex:1;border-radius:6px;border:1px solid #64748b;background:#0f172a;color:#fff;padding:5px;font-weight:700;font-size:11px';
+    const modeSelect = document.createElement('select');
+    [['normal', 'Normal'], ['superboss', 'Superjefes/Hordas'], ['both', 'Ambos']].forEach(([value, label]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        modeSelect.appendChild(option);
+    });
+    modeSelect.style.cssText = 'width:100%;border-radius:6px;border:1px solid #64748b;background:#0f172a;color:#fff;padding:5px;font-weight:700;font-size:11px';
     const startButton = document.createElement('button');
     startButton.type = 'button';
     startButton.textContent = '▶ Iniciar';
@@ -69,11 +79,14 @@ if (QA_MODE) {
     anomalyList.style.cssText = 'margin-top:6px;padding-top:5px;border-top:1px solid #334155;font-size:10px;color:#fca5a5';
     controls.append(seriesSelect, startButton, cancelButton);
     panel.append(title, controls, status, summary, resultList, anomalyList);
+    panel.insertBefore(modeSelect, status);
     document.getElementById('game-container').appendChild(panel);
 
     const renderSummary = () => {
         const completed = qaResults.length;
         const rounds = [1, 2, 3, 4].map((round) => qaResults.filter((result) => result.maxRound >= round).length);
+        const normalMatches = qaResults.filter((result) => result.mode === 'normal').length;
+        const superBossMatches = qaResults.filter((result) => result.mode === 'superboss').length;
         const jsErrors = qaSessionAnomalies.filter((anomaly) => anomaly.type === 'error_javascript').length;
         const affectedMatches = new Set(qaSessionAnomalies.map((anomaly) => anomaly.match)).size;
         const renderAnomalies = () => {
@@ -84,7 +97,7 @@ if (QA_MODE) {
             }
             anomalyList.style.color = '#fca5a5';
             anomalyList.innerHTML = `⚠ Anomalías: <b>${qaSessionAnomalies.length}</b> · errores JS: <b>${jsErrors}</b> · partidas afectadas: <b>${affectedMatches}</b><br>` +
-                qaSessionAnomalies.slice(-5).map((anomaly) => `P${anomaly.match} — ${anomaly.description}`).join('<br>');
+                qaSessionAnomalies.slice(-5).map((anomaly) => `P${anomaly.match} [${anomaly.mode === 'superboss' ? 'Superjefes' : 'Normal'}] — ${anomaly.description}`).join('<br>');
         };
         if (!completed) {
             summary.textContent = 'Aún no hay resultados en esta sesión.';
@@ -94,13 +107,15 @@ if (QA_MODE) {
         }
         const scores = qaResults.map((result) => result.score);
         summary.innerHTML = `Completadas: <b>${completed}/${qaSeriesTarget}</b><br>` +
+            `Modos: Normal <b>${normalMatches}</b> · Superjefes <b>${superBossMatches}</b><br>` +
             `Puntaje: prom. <b>${Math.round(average(scores)).toLocaleString()}</b> · máx. <b>${Math.max(...scores).toLocaleString()}</b> · mín. <b>${Math.min(...scores).toLocaleString()}</b><br>` +
             `Ronda máxima: <b>${Math.max(...qaResults.map((result) => result.maxRound))}</b> · duración prom.: <b>${formatDuration(average(qaResults.map((result) => result.duration)))}</b><br>` +
             `Vidas compradas prom.: <b>${average(qaResults.map((result) => result.livesBought)).toFixed(1)}</b> · evoluciones prom.: <b>${average(qaResults.map((result) => result.evolutions)).toFixed(1)}</b><br>` +
             `Llegaron a rondas: R1 ${rounds[0]} · R2 ${rounds[1]} · R3 ${rounds[2]} · R4 ${rounds[3]}`;
         resultList.innerHTML = qaResults.slice(-5).map((result, index) => {
             const number = completed - Math.min(5, completed) + index + 1;
-            return `#${number}: ${result.score.toLocaleString()} pts · R${result.maxRound} · ${formatDuration(result.duration)} · ❤️${result.livesBought} · 🌟${result.evolutions} · 🎯${result.missiles} · 🪙${result.upgradeSpent.toLocaleString()}${result.survival ? ' · supervivencia' : ''}`;
+            const modeLabel = result.mode === 'superboss' ? `Superjefes W${result.maxWave || 1}` : 'Normal';
+            return `#${number} [${modeLabel}]: ${result.score.toLocaleString()} pts · R${result.maxRound} · ${formatDuration(result.duration)} · ❤️${result.livesBought} · 🌟${result.evolutions} · 🎯${result.missiles} · 🪙${result.upgradeSpent.toLocaleString()}${result.completedSuperBoss ? ' · victoria' : ''}${result.survival ? ' · supervivencia' : ''}`;
         }).join('<br>');
         renderAnomalies();
     };
@@ -114,6 +129,7 @@ if (QA_MODE) {
             score,
             time: gameTime,
             state: gameState,
+            mode: qaCurrentMatch.mode,
             description,
             relevant
         };
@@ -194,23 +210,27 @@ if (QA_MODE) {
         }
     };
 
-    const resetCurrentMatch = () => {
+    const resetCurrentMatch = (mode) => {
         qaBossZeroSince.clear();
         qaOutsideSince.clear();
-        qaCurrentMatch = { upgradeSpent: 0, missiles: 0, anomalies: [], anomalyKeys: new Set(), lastProgress: null, lastProgressAt: Date.now(), stateSince: null, stateSinceAt: Date.now() };
+        qaCurrentMatch = { mode, maxWave: 0, upgradeSpent: 0, missiles: 0, anomalies: [], anomalyKeys: new Set(), lastProgress: null, lastProgressAt: Date.now(), stateSince: null, stateSinceAt: Date.now() };
     };
     const startQaMatch = () => {
         if (!qaSeriesRunning) return;
+        const mode = qaMatchPlan[qaResults.length] || 'normal';
         qaBotActive = true;
         qaFireCooldown = 0;
         qaPurchaseCooldown = 0;
-        resetCurrentMatch();
-        window.startGame();
+        resetCurrentMatch(mode);
+        if (mode === 'superboss') window.startSuperBossMode();
+        else window.startGame();
         const leftovers = { enemies: enemies.length, bullets: bullets.length, missiles: homingMissiles.length, bossBullets: bossBullets.length, bosses: bosses.length };
-        if (gameState !== 'PLAYING' || score !== 0 || gameRound !== 1 || Object.values(leftovers).some((count) => count !== 0)) {
+        const normalRestartInvalid = mode === 'normal' && (gameState !== 'PLAYING' || score !== 0 || gameRound !== 1 || Object.values(leftovers).some((count) => count !== 0));
+        const superRestartInvalid = mode === 'superboss' && (gameState !== 'PLAYING' || score !== 0 || gameRound !== 4 || (enemies.length + bosses.length) === 0);
+        if (normalRestartInvalid || superRestartInvalid) {
             qaRecordAnomaly('reinicio_incorrecto', 'La nueva partida QA no comenzó limpia.', { gameState, score, gameRound, ...leftovers }, 'restart-not-clean');
         }
-        status.textContent = `Jugando ${qaResults.length + 1}/${qaSeriesTarget}…`;
+        status.textContent = `Jugando ${mode === 'superboss' ? 'Superjefes/Hordas' : 'Normal'} ${qaResults.length + 1}/${qaSeriesTarget}…`;
     };
     const cancelSeries = () => {
         qaSeriesRunning = false;
@@ -279,19 +299,20 @@ if (QA_MODE) {
         originalShootMissile();
         if (qaBotActive && qaCurrentMatch && homingMissiles.length > missilesBefore) qaCurrentMatch.missiles++;
     };
-    const originalGameOver = window.gameOver;
-    window.gameOver = function () {
-        originalGameOver();
+    const completeQaMatch = (completedSuperBoss = false) => {
         if (!qaBotActive || !qaSeriesRunning || !qaCurrentMatch) return;
         qaResults.push({
+            mode: qaCurrentMatch.mode,
             score,
             maxRound: Math.max(gameRound, goingToRound),
+            maxWave: qaCurrentMatch.maxWave,
             duration: gameTime,
             livesBought: sessionLivesBought,
             evolutions: evolutionStage,
             upgradeSpent: qaCurrentMatch.upgradeSpent,
             survival: gameRound >= 4 || goingToRound >= 4,
-            missiles: qaCurrentMatch.missiles
+            missiles: qaCurrentMatch.missiles,
+            completedSuperBoss
         });
         qaBotActive = false;
         setHorizontalInput(0);
@@ -306,6 +327,22 @@ if (QA_MODE) {
             qaRestartTimer = null;
             startQaMatch();
         }, 450);
+    };
+    const originalGameOver = window.gameOver;
+    window.gameOver = function () {
+        originalGameOver();
+        completeQaMatch(false);
+    };
+    window.qaBotOnSuperBossWaveStart = function (wave) {
+        if (qaBotActive && qaCurrentMatch && qaCurrentMatch.mode === 'superboss') {
+            qaCurrentMatch.maxWave = Math.max(qaCurrentMatch.maxWave, wave);
+        }
+    };
+    window.qaBotOnSuperBossComplete = function (wave) {
+        if (qaCurrentMatch && qaCurrentMatch.mode === 'superboss') {
+            qaCurrentMatch.maxWave = Math.max(qaCurrentMatch.maxWave, wave);
+        }
+        completeQaMatch(true);
     };
 
     window.addEventListener('error', (event) => {
@@ -323,7 +360,12 @@ if (QA_MODE) {
         if (qaRestartTimer) window.clearTimeout(qaRestartTimer);
         qaResults.length = 0;
         qaSessionAnomalies.length = 0;
-        qaSeriesTarget = Number(seriesSelect.value);
+        qaSelectedMode = modeSelect.value;
+        const gamesPerMode = Number(seriesSelect.value);
+        qaMatchPlan = qaSelectedMode === 'both'
+            ? Array(gamesPerMode).fill('normal').concat(Array(gamesPerMode).fill('superboss'))
+            : Array(gamesPerMode).fill(qaSelectedMode);
+        qaSeriesTarget = qaMatchPlan.length;
         qaSeriesRunning = true;
         renderSummary();
         startQaMatch();
