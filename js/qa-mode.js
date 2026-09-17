@@ -302,44 +302,70 @@ if (QA_MODE) {
         const liveEnemies = enemies.filter((enemy) => !enemy.isDead);
         const waveLeader = liveEnemies.find((enemy) => enemy.waveLeader);
         const distanceToPlayer = (entity) => Math.hypot(centerX(entity) - playerCenter, (entity.y + entity.height / 2) - playerCenterY);
-        const urgentEnemy = nearestBy(liveEnemies.filter((enemy) =>
-            distanceToPlayer(enemy) < 175 || enemy.y > player.y - 105), distanceToPlayer);
         const focusedBoss = nearestBy(liveBosses, distanceToPlayer);
-        // La oleada 1 avanza con su líder. Luego, el objetivo real son todos los
-        // superjefes: los minions secundarios pueden reaparecer mientras sigan vivos.
-        const phaseTarget = waveLeader || focusedBoss || urgentEnemy || nearestBy(liveEnemies, distanceToPlayer);
-        const incomingShot = nearestBy(bossBullets.filter((bullet) => {
-            const vy = bullet.vy || 0;
-            if (Math.abs(vy) < 0.15) return false;
-            const framesToPlayer = (playerCenterY - (bullet.y + bullet.height / 2)) / vy;
-            if (framesToPlayer < 0 || framesToPlayer > 42) return false;
-            const predictedX = centerX(bullet) + (bullet.vx || 0) * framesToPlayer;
-            return Math.abs(predictedX - playerCenter) < 86;
-        }), (bullet) => Math.abs(playerCenterY - (bullet.y + bullet.height / 2)));
-        const closeEnemy = urgentEnemy && distanceToPlayer(urgentEnemy) < 150 ? urgentEnemy : null;
-        let desiredX = phaseTarget ? centerX(phaseTarget) : canvas.width / 2;
-        let desiredY = canvas.height - player.height - 34;
-
-        if (incomingShot) {
-            const impactX = centerX(incomingShot) + (incomingShot.vx || 0) * ((playerCenterY - (incomingShot.y + incomingShot.height / 2)) / incomingShot.vy);
-            desiredX = impactX <= playerCenter ? canvas.width - player.width - 28 : 28;
-        } else if (closeEnemy) {
-            desiredX = centerX(closeEnemy) <= playerCenter ? canvas.width - player.width - 28 : 28;
-            desiredY = closeEnemy.y < player.y ? canvas.height - player.height - 18 : canvas.height * 0.68;
-        } else if (focusedBoss && phaseTarget === focusedBoss && distanceToPlayer(focusedBoss) < 150) {
-            // Mantiene distancia antes del contacto directo sin abandonar la franja inferior.
-            desiredX = centerX(focusedBoss) <= playerCenter ? canvas.width - player.width - 32 : 32;
+        const closeEnemy = nearestBy(liveEnemies.filter((enemy) => distanceToPlayer(enemy) < 165), distanceToPlayer);
+        // La oleada 1 avanza con su líder. Después, el objetivo real son los
+        // superjefes; la supervivencia y el espacio libre siempre tienen prioridad.
+        const phaseTarget = waveLeader || focusedBoss || closeEnemy || nearestBy(liveEnemies, distanceToPlayer);
+        const margin = 46;
+        const minX = margin + player.width / 2;
+        const maxX = canvas.width - margin - player.width / 2;
+        const minY = margin + player.height / 2;
+        const maxY = canvas.height - margin - player.height / 2;
+        const candidateXs = [0.22, 0.5, 0.78].map((ratio) => minX + (maxX - minX) * ratio);
+        const candidateYs = [0.2, 0.5, 0.8].map((ratio) => minY + (maxY - minY) * ratio);
+        const candidates = candidateXs.flatMap((x) => candidateYs.map((y) => ({ x, y })));
+        const edgeDistance = (x, y) => Math.min(x - minX, maxX - x, y - minY, maxY - y);
+        const scoreZone = (zone) => {
+            let score = edgeDistance(zone.x, zone.y) * 4 - Math.hypot(zone.x - canvas.width / 2, zone.y - canvas.height / 2) * 0.22;
+            for (const enemy of liveEnemies) {
+                const distance = Math.max(18, Math.hypot(centerX(enemy) - zone.x, enemy.y + enemy.height / 2 - zone.y));
+                score -= 26000 / distance;
+            }
+            for (const boss of liveBosses) {
+                const distance = Math.max(24, Math.hypot(centerX(boss) - zone.x, boss.y + boss.height / 2 - zone.y));
+                score -= 42000 / distance;
+            }
+            for (const bullet of bossBullets) {
+                const bx = centerX(bullet);
+                const by = bullet.y + bullet.height / 2;
+                const vx = bullet.vx || 0;
+                const vy = bullet.vy || 0;
+                const velocitySq = vx * vx + vy * vy;
+                const future = velocitySq ? Math.max(0, Math.min(42, ((zone.x - bx) * vx + (zone.y - by) * vy) / velocitySq)) : 0;
+                const distance = Math.max(12, Math.hypot(bx + vx * future - zone.x, by + vy * future - zone.y));
+                score -= 36000 / distance;
+            }
+            // Solo una preferencia leve de alineación: no sacrifica una zona segura por disparar.
+            if (phaseTarget) score -= Math.min(75, Math.abs(centerX(phaseTarget) - zone.x) * 0.18);
+            return score;
+        };
+        let safeZone = candidates.reduce((best, zone) => !best || scoreZone(zone) > scoreZone(best) ? zone : best, null);
+        const currentEdgeDistance = edgeDistance(playerCenter, playerCenterY);
+        const nearEdge = currentEdgeDistance < 26;
+        const match = qaCurrentMatch;
+        if (nearEdge) {
+            const anchor = match.superBossEdgeAnchor;
+            if (!anchor || Math.hypot(playerCenter - anchor.x, playerCenterY - anchor.y) > 22) {
+                match.superBossEdgeAnchor = { x: playerCenter, y: playerCenterY, since: qaSimulationElapsedMs };
+            } else if (qaSimulationElapsedMs - anchor.since >= 1200) {
+                // Anti-atasco: tras 1.2 s pegado al mismo borde/corner, fuerza la
+                // ruta hacia la mejor zona interior en vez de seguir al objetivo.
+                safeZone = candidates.filter((zone) => edgeDistance(zone.x, zone.y) > 50)
+                    .reduce((best, zone) => !best || scoreZone(zone) > scoreZone(best) ? zone : best, safeZone);
+            }
+        } else {
+            match.superBossEdgeAnchor = null;
         }
 
-        desiredX = Math.max(30, Math.min(canvas.width - 30, desiredX));
-        desiredY = Math.max(canvas.height * 0.58, Math.min(canvas.height - player.height - 16, desiredY));
-        setHorizontalInput(Math.abs(desiredX - playerCenter) < 10 ? 0 : Math.sign(desiredX - playerCenter));
-        setVerticalInput(Math.abs(desiredY - player.y) < 9 ? 0 : Math.sign(desiredY - player.y));
+        const desiredX = safeZone.x - player.width / 2;
+        const desiredY = safeZone.y - player.height / 2;
+        setHorizontalInput(Math.abs(desiredX - player.x) < 8 ? 0 : Math.sign(desiredX - player.x));
+        setVerticalInput(Math.abs(desiredY - player.y) < 8 ? 0 : Math.sign(desiredY - player.y));
 
-        const imminentThreat = !!incomingShot || !!closeEnemy;
-        qaBuySuperBossUpgrade(imminentThreat, !!urgentEnemy, liveBosses.length);
+        const imminentThreat = !!closeEnemy || bossBullets.some((bullet) => Math.hypot(centerX(bullet) - playerCenter, bullet.y + bullet.height / 2 - playerCenterY) < 145);
+        qaBuySuperBossUpgrade(imminentThreat, !!closeEnemy, liveBosses.length);
         if (qaFireCooldown <= 0) { window.shootBullet(); qaFireCooldown = 8; } else qaFireCooldown--;
-        // Se reserva para una amenaza ya cercana o un objetivo de fase alineado.
         const targetAligned = phaseTarget && Math.abs(centerX(phaseTarget) - playerCenter) < 135 && distanceToPlayer(phaseTarget) < 440;
         if (missileCooldownTimer <= 0 && (closeEnemy || targetAligned)) window.shootMissile();
     };
