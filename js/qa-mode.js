@@ -29,6 +29,12 @@ if (QA_MODE) {
         keys.KeyA = false;
         keys.KeyD = false;
     };
+    const setVerticalInput = (direction) => {
+        keys.ArrowUp = direction < 0;
+        keys.ArrowDown = direction > 0;
+        keys.KeyW = false;
+        keys.KeyS = false;
+    };
     const centerX = (entity) => entity.x + entity.width / 2;
     const nearestBy = (items, scoreFor) => items.reduce((best, item) =>
         !best || scoreFor(item) < scoreFor(best) ? item : best, null);
@@ -251,6 +257,7 @@ if (QA_MODE) {
         qaSeriesRunning = false;
         qaBotActive = false;
         setHorizontalInput(0);
+        setVerticalInput(0);
         if (qaRestartTimer) window.clearTimeout(qaRestartTimer);
         qaRestartTimer = null;
         status.textContent = `Serie cancelada: ${qaResults.length}/${qaSeriesTarget} registradas.`;
@@ -275,9 +282,77 @@ if (QA_MODE) {
         if (upgrades.superDmgBoost === 0 && qaBuy('superDamage')) qaPurchaseCooldown = 24;
     };
 
+    // Reutiliza compras y requisitos del jugador, con prioridades propias de las oleadas.
+    const qaBuySuperBossUpgrade = (imminentThreat, minionPressure, bossCount) => {
+        if (qaPurchaseCooldown > 0) { qaPurchaseCooldown--; return; }
+        const needsLife = lives <= 1 || (lives <= 2 && (imminentThreat || minionPressure)) || (lives <= 3 && bossCount >= 2 && imminentThreat);
+        if (needsLife && qaBuy('life')) { qaPurchaseCooldown = 24; return; }
+        if (upgrades.armor === 0 && evolutionStage >= 1 && bossCount > 0 && qaBuy('armor')) { qaPurchaseCooldown = 24; return; }
+        if (upgrades.dmgBoost === 0 && evolutionStage >= 1 && bossCount > 0 && qaBuy('damage')) { qaPurchaseCooldown = 24; return; }
+        if (upgrades.superDmgBoost === 0 && evolutionStage >= 1 && bossCount >= 2 && qaBuy('superDamage')) { qaPurchaseCooldown = 24; return; }
+        if (upgrades.bullets < maxUpgradeLimit && qaBuy('bullets')) { qaPurchaseCooldown = 18; return; }
+        if (upgrades.speed < maxUpgradeLimit && qaBuy('speed')) { qaPurchaseCooldown = 18; return; }
+        if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3 && qaBuy('evolve')) { qaPurchaseCooldown = 36; return; }
+    };
+
+    const qaBotUpdateSuperBoss = () => {
+        const playerCenter = centerX(player);
+        const playerCenterY = player.y + player.height / 2;
+        const liveBosses = bosses.filter((boss) => !boss.isDead);
+        const liveEnemies = enemies.filter((enemy) => !enemy.isDead);
+        const waveLeader = liveEnemies.find((enemy) => enemy.waveLeader);
+        const distanceToPlayer = (entity) => Math.hypot(centerX(entity) - playerCenter, (entity.y + entity.height / 2) - playerCenterY);
+        const urgentEnemy = nearestBy(liveEnemies.filter((enemy) =>
+            distanceToPlayer(enemy) < 175 || enemy.y > player.y - 105), distanceToPlayer);
+        const focusedBoss = nearestBy(liveBosses, distanceToPlayer);
+        // La oleada 1 avanza con su líder. Luego, el objetivo real son todos los
+        // superjefes: los minions secundarios pueden reaparecer mientras sigan vivos.
+        const phaseTarget = waveLeader || focusedBoss || urgentEnemy || nearestBy(liveEnemies, distanceToPlayer);
+        const incomingShot = nearestBy(bossBullets.filter((bullet) => {
+            const vy = bullet.vy || 0;
+            if (Math.abs(vy) < 0.15) return false;
+            const framesToPlayer = (playerCenterY - (bullet.y + bullet.height / 2)) / vy;
+            if (framesToPlayer < 0 || framesToPlayer > 42) return false;
+            const predictedX = centerX(bullet) + (bullet.vx || 0) * framesToPlayer;
+            return Math.abs(predictedX - playerCenter) < 86;
+        }), (bullet) => Math.abs(playerCenterY - (bullet.y + bullet.height / 2)));
+        const closeEnemy = urgentEnemy && distanceToPlayer(urgentEnemy) < 150 ? urgentEnemy : null;
+        let desiredX = phaseTarget ? centerX(phaseTarget) : canvas.width / 2;
+        let desiredY = canvas.height - player.height - 34;
+
+        if (incomingShot) {
+            const impactX = centerX(incomingShot) + (incomingShot.vx || 0) * ((playerCenterY - (incomingShot.y + incomingShot.height / 2)) / incomingShot.vy);
+            desiredX = impactX <= playerCenter ? canvas.width - player.width - 28 : 28;
+        } else if (closeEnemy) {
+            desiredX = centerX(closeEnemy) <= playerCenter ? canvas.width - player.width - 28 : 28;
+            desiredY = closeEnemy.y < player.y ? canvas.height - player.height - 18 : canvas.height * 0.68;
+        } else if (focusedBoss && phaseTarget === focusedBoss && distanceToPlayer(focusedBoss) < 150) {
+            // Mantiene distancia antes del contacto directo sin abandonar la franja inferior.
+            desiredX = centerX(focusedBoss) <= playerCenter ? canvas.width - player.width - 32 : 32;
+        }
+
+        desiredX = Math.max(30, Math.min(canvas.width - 30, desiredX));
+        desiredY = Math.max(canvas.height * 0.58, Math.min(canvas.height - player.height - 16, desiredY));
+        setHorizontalInput(Math.abs(desiredX - playerCenter) < 10 ? 0 : Math.sign(desiredX - playerCenter));
+        setVerticalInput(Math.abs(desiredY - player.y) < 9 ? 0 : Math.sign(desiredY - player.y));
+
+        const imminentThreat = !!incomingShot || !!closeEnemy;
+        qaBuySuperBossUpgrade(imminentThreat, !!urgentEnemy, liveBosses.length);
+        if (qaFireCooldown <= 0) { window.shootBullet(); qaFireCooldown = 8; } else qaFireCooldown--;
+        // Se reserva para una amenaza ya cercana o un objetivo de fase alineado.
+        const targetAligned = phaseTarget && Math.abs(centerX(phaseTarget) - playerCenter) < 135 && distanceToPlayer(phaseTarget) < 440;
+        if (missileCooldownTimer <= 0 && (closeEnemy || targetAligned)) window.shootMissile();
+    };
+
     window.qaBotUpdate = function () {
         if (!qaBotActive) return;
         if (gameState !== 'PLAYING') { setHorizontalInput(0); return; }
+        if (qaCurrentMatch && qaCurrentMatch.mode === 'superboss') {
+            qaBotUpdateSuperBoss();
+            return;
+        }
+        // La estrategia normal conserva su movimiento exclusivamente horizontal.
+        setVerticalInput(0);
         const playerCenter = centerX(player);
         const approachingEnemies = enemies.filter((enemy) => isNearPlayer(enemy, 285));
         const approachingBullets = bossBullets.filter((bullet) => isNearPlayer(bullet, 240));
@@ -332,6 +407,7 @@ if (QA_MODE) {
         });
         qaBotActive = false;
         setHorizontalInput(0);
+        setVerticalInput(0);
         renderSummary();
         if (qaResults.length >= qaSeriesTarget) {
             qaSeriesRunning = false;
