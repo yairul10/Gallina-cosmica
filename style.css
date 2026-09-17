@@ -38,6 +38,25 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .header-right { display: flex; align-items: center; gap: 8px; }
 #trophiesVal { margin-left: 2px; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 2px; }
 
+/* Marcadores compactos que se leen bien encima del menú espacial y en partida. */
+.header-score {
+    margin: calc(env(safe-area-inset-top, 0px) + 8px) 10px 0;
+    padding: 5px 7px;
+    border-color: rgba(103, 232, 249, 0.52);
+    background: linear-gradient(135deg, rgba(4, 18, 56, 0.88), rgba(11, 28, 78, 0.82));
+    box-shadow: 0 0 13px rgba(34, 211, 238, 0.24), 0 5px 10px rgba(0, 0, 0, 0.35);
+}
+.header-left > div, #livesVal, .header-right .icon-btn {
+    min-height: 23px;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border: 1px solid rgba(186, 241, 255, 0.25);
+    border-radius: 8px;
+    background: rgba(2, 11, 39, 0.52);
+}
+.header-right .icon-btn { color: #dffcff; line-height: 1; }
+
 .draggable-btn { position: absolute; width: 45px; height: 45px; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); border: 2px solid rgba(56, 189, 248, 0.5); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; touch-action: none; z-index: 20; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); transition: transform 0.08s; cursor: pointer; }
 .draggable-btn:active:not(.paused) { transform: scale(0.9); }
 .draggable-btn.paused { border: 2px dashed #fbbf24; background: rgba(15, 23, 42, 0.85); box-shadow: 0 0 15px rgba(251, 191, 36, 0.5); animation: pulsePause 1.5s infinite; }
