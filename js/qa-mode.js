@@ -8,6 +8,7 @@ window.QA_MODE = QA_MODE;
 if (QA_MODE) {
     let qaBotActive = false;
     let qaFireCooldown = 0;
+    let qaPurchaseCooldown = 0;
 
     const setHorizontalInput = (direction) => {
         keys.ArrowLeft = direction < 0;
@@ -20,6 +21,59 @@ if (QA_MODE) {
     const nearestBy = (items, scoreFor) => items.reduce((best, item) =>
         !best || scoreFor(item) < scoreFor(best) ? item : best, null);
 
+    const isNearPlayer = (entity, distance) =>
+        entity.y > player.y - distance && entity.y < player.y + player.height + 45;
+
+    // Cada compra pasa por la misma función del jugador: costos, límites y requisitos no se duplican aquí.
+    const qaBuy = (type) => {
+        const coinsBefore = coins;
+        window.buyUpgrade(type);
+        return coins !== coinsBefore || gameState === 'EVOLVING';
+    };
+
+    const qaBuyNextUpgrade = (imminentThreat, pressure) => {
+        if (qaPurchaseCooldown > 0) {
+            qaPurchaseCooldown--;
+            return;
+        }
+
+        // Sobrevivir tiene prioridad solo cuando realmente hay peligro; así no consume las monedas de mejoras.
+        const needsLife = lives <= 1 ||
+            (lives <= 2 && imminentThreat) ||
+            (lives <= 3 && pressure);
+        if (needsLife && qaBuy('life')) {
+            qaPurchaseCooldown = 24;
+            return;
+        }
+
+        // Primero potencia de láser, después movilidad; al completar ambas, usa la evolución normal.
+        if (upgrades.bullets < maxUpgradeLimit && qaBuy('bullets')) {
+            qaPurchaseCooldown = 18;
+            return;
+        }
+        if (upgrades.speed < maxUpgradeLimit && qaBuy('speed')) {
+            qaPurchaseCooldown = 18;
+            return;
+        }
+        if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3 && qaBuy('evolve')) {
+            qaPurchaseCooldown = 36;
+            return;
+        }
+
+        // Mejoras de ronda: solo se intenta la mejora disponible. buyUpgrade conserva sus requisitos reales.
+        if (upgrades.armor === 0 && (imminentThreat || gameRound >= 2) && qaBuy('armor')) {
+            qaPurchaseCooldown = 24;
+            return;
+        }
+        if (upgrades.dmgBoost === 0 && qaBuy('damage')) {
+            qaPurchaseCooldown = 24;
+            return;
+        }
+        if (upgrades.superDmgBoost === 0 && qaBuy('superDamage')) {
+            qaPurchaseCooldown = 24;
+        }
+    };
+
     window.qaBotUpdate = function () {
         if (!qaBotActive) return;
         if (gameState !== 'PLAYING') {
@@ -29,22 +83,31 @@ if (QA_MODE) {
         }
 
         const playerCenter = centerX(player);
+        const approachingEnemies = enemies.filter((enemy) => isNearPlayer(enemy, 285));
+        const approachingBullets = bossBullets.filter((bullet) => isNearPlayer(bullet, 240));
+        const imminentEnemy = nearestBy(approachingEnemies, (enemy) => player.y - enemy.y);
         const danger = nearestBy(
-            bossBullets.filter((bullet) => bullet.y > player.y - 190 && bullet.y < player.y + player.height + 45)
-                .concat(enemies.filter((enemy) => enemy.y > player.y - 160 && enemy.y < player.y + player.height + 40)),
+            approachingBullets.concat(approachingEnemies),
             (threat) => Math.abs(centerX(threat) - playerCenter) + Math.abs(threat.y - player.y)
         );
-        const target = bosses.find((boss) => !boss.isDead) || nearestBy(enemies, (enemy) =>
+        const activeBoss = bosses.find((boss) => !boss.isDead && boss.y >= -boss.height / 2);
+        // Un enemigo que ya se acerca al borde inferior pasa delante del jefe como objetivo.
+        const target = imminentEnemy || activeBoss || nearestBy(enemies, (enemy) =>
             Math.abs(centerX(enemy) - playerCenter) + Math.abs(enemy.y - player.y)
         );
 
         let desiredX = target ? centerX(target) : canvas.width / 2;
-        if (danger && Math.abs(centerX(danger) - playerCenter) < 90) {
+        const directDanger = danger && Math.abs(centerX(danger) - playerCenter) < 92;
+        if (directDanger) {
             desiredX = centerX(danger) <= playerCenter ? canvas.width - player.width - 38 : 38;
         }
         desiredX = Math.max(30, Math.min(canvas.width - 30, desiredX));
         const difference = desiredX - playerCenter;
         setHorizontalInput(Math.abs(difference) < 10 ? 0 : Math.sign(difference));
+
+        const imminentThreat = !!danger && danger.y > player.y - 145;
+        const pressure = approachingEnemies.length + approachingBullets.length >= 3;
+        qaBuyNextUpgrade(imminentThreat, pressure);
 
         if (qaFireCooldown <= 0) {
             window.shootBullet();
@@ -52,7 +115,9 @@ if (QA_MODE) {
         } else {
             qaFireCooldown--;
         }
-        if (missileCooldownTimer <= 0 && (target || enemies.length || bosses.length)) {
+        // Reserva el misil para un jefe ya visible o una amenaza que se aproxima al borde inferior.
+        const urgentEnemy = imminentEnemy && imminentEnemy.y > player.y - 180;
+        if (missileCooldownTimer <= 0 && (activeBoss || urgentEnemy)) {
             window.shootMissile();
         }
     };
@@ -67,6 +132,7 @@ if (QA_MODE) {
     startButton.addEventListener('click', () => {
         qaBotActive = true;
         qaFireCooldown = 0;
+        qaPurchaseCooldown = 0;
         window.startGame();
         startButton.textContent = '🤖 QA: bot activo';
     });
