@@ -85,7 +85,11 @@ function updateHangarUI() {
                 bPro.disabled = !gameStats.proSkins[i]; if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
                 
                 let isPro = (gameStats.selectedShip === i && gameStats.useProShip);
-                if(img) img.src = isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`;
+                if(img) {
+                    img.src = isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`;
+                    // Respaldo automático si la imagen de la skin falla
+                    img.onerror = function() { this.src = `assets/${animalDirs[i]}_1.png`; };
+                }
                 
                 if(desc) {
                     if (isPro) {
@@ -121,9 +125,17 @@ function updateShopUI() {
     let bCosts = [0, 10000, 20000, 40000]; let pCosts = [30000, 30000, 60000, 100000]; 
     for(let i=0; i<4; i++) { 
         let btnB = document.getElementById('btn-skin-base-'+i); let imgB = document.getElementById('shop-img-base-'+i);
-        if (btnB && imgB) { if (gameStats.skins[i]) { btnB.textContent = 'Comprado'; btnB.style.background = '#475569'; btnB.disabled = true; imgB.style.filter = 'none'; imgB.style.opacity = '1'; } else { btnB.textContent = `🪙 ${bCosts[i].toLocaleString()}`; btnB.style.background = '#10b981'; btnB.disabled = (coins < bCosts[i]); imgB.style.filter = 'grayscale(100%)'; imgB.style.opacity = '0.6'; } }
+        if (btnB && imgB) { 
+            if (gameStats.skins[i]) { btnB.textContent = 'Comprado'; btnB.style.background = '#475569'; btnB.disabled = true; imgB.style.filter = 'none'; imgB.style.opacity = '1'; } 
+            else { btnB.textContent = `🪙 ${bCosts[i].toLocaleString()}`; btnB.style.background = '#10b981'; btnB.disabled = (coins < bCosts[i]); imgB.style.filter = 'grayscale(100%)'; imgB.style.opacity = '0.6'; } 
+            imgB.onerror = function() { this.style.display = 'none'; };
+        }
         let btnP = document.getElementById('btn-skin-pro-'+i); let imgP = document.getElementById('shop-img-pro-'+i);
-        if (btnP && imgP) { if (gameStats.proSkins[i]) { btnP.textContent = 'Comprado'; btnP.style.background = '#475569'; btnP.disabled = true; imgP.style.filter = 'none'; imgP.style.opacity = '1'; } else { btnP.textContent = `🪙 ${pCosts[i].toLocaleString()}`; btnP.style.background = '#10b981'; btnP.disabled = (coins < pCosts[i]); imgP.style.filter = 'grayscale(100%)'; imgP.style.opacity = '0.6'; } }
+        if (btnP && imgP) { 
+            if (gameStats.proSkins[i]) { btnP.textContent = 'Comprado'; btnP.style.background = '#475569'; btnP.disabled = true; imgP.style.filter = 'none'; imgP.style.opacity = '1'; } 
+            else { btnP.textContent = `🪙 ${pCosts[i].toLocaleString()}`; btnP.style.background = '#10b981'; btnP.disabled = (coins < pCosts[i]); imgP.style.filter = 'grayscale(100%)'; imgP.style.opacity = '0.6'; } 
+            imgP.onerror = function() { this.style.display = 'none'; };
+        }
     }
     
     let bAuto = document.getElementById('btn-buy-autolife');
@@ -245,7 +257,7 @@ document.addEventListener('pointermove', (e) => {
         let newX = e.clientX - containerRect.left - dragOffX; 
         let newY = e.clientY - containerRect.top - dragOffY; 
         if (newX < 0) newX = 0; 
-        if (newY < 70) newY = 70; // Restricción para no tapar el botón de pausa superior
+        if (newY < 70) newY = 70;
         if (newX > containerRect.width - dragObj.offsetWidth) newX = containerRect.width - dragObj.offsetWidth; 
         if (newY > containerRect.height - dragObj.offsetHeight) newY = containerRect.height - dragObj.offsetHeight; 
         dragObj.style.left = (newX / containerRect.width) * 100 + '%'; 
@@ -345,7 +357,11 @@ window.updateUpgradesHUD = function() {
             let mSrcBase = ['assets/bala_pollito.png', 'assets/bala_lana.png', 'assets/bala_herradura.png', 'assets/bala_leche.png'];
             let mSrcPro = ['assets/bala_pollito_pro.png', 'assets/bala_lana_pro.png', 'assets/bala_herradura_pro.png', 'assets/bala_leche_pro.png'];
             let imgSrc = isProM ? mSrcPro[mIndex] : mSrcBase[mIndex];
-            if(imgSrc) { emojiDiv.innerHTML = `<img src="${imgSrc}" onerror="this.style.display='none'; this.parentNode.textContent='${mIcons[mIndex]}';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`; } else { emojiDiv.textContent = mIcons[mIndex]; }
+            if(imgSrc) { 
+                emojiDiv.innerHTML = `<img src="${imgSrc}" onerror="this.style.display='none'; this.parentNode.textContent='${mIcons[mIndex]}';" style="width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); vertical-align: middle;">`; 
+            } else { 
+                emojiDiv.textContent = mIcons[mIndex]; 
+            }
         } 
     }
 }
@@ -360,7 +376,14 @@ window.buyUpgrade = function(type) {
         if (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit) { 
             if (evolutionStage < 3) { 
                 gameState = 'EVOLVING'; evolutionTimer = 150; 
-                if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'none'; }
+                // Desbloqueo seguro del tutorial en la evolución
+                if (!gameStats.tutorialCompleted && tutorialStep === 4.5) { 
+                    tutorialStep = 0; 
+                    gameStats.tutorialCompleted = true; 
+                    saveStats(); 
+                }
+                let tutOverlay = document.getElementById('activeTutorialOverlay');
+                if (tutOverlay) { tutOverlay.style.display = 'none'; tutOverlay.style.pointerEvents = 'none'; }
                 if (document.getElementById('pauseScreen').style.display === 'flex') { document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); }
                 return; 
             } 
