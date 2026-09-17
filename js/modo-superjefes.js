@@ -250,7 +250,11 @@
         document.querySelectorAll('.draggable-btn').forEach((button) => {
             button.style.display = 'none';
         });
-        document.querySelector('#startScreen h1').textContent = '🏆 ¡Superjefes derrotados!';
+        const victoryMessage = document.getElementById('superBossVictoryMessage');
+        if (victoryMessage) {
+            victoryMessage.textContent = '🏆 ¡Superjefes derrotados! +200,000 🪙';
+            victoryMessage.classList.add('show');
+        }
         document.getElementById('startScreen').style.display = 'flex';
     }
 
@@ -509,6 +513,11 @@
         shieldActive = partialHit = false;
         player.x = canvas.width / 2 - player.width / 2;
         player.y = canvas.height - player.height - 20;
+        const victoryMessage = document.getElementById('superBossVictoryMessage');
+        if (victoryMessage) {
+            victoryMessage.textContent = '';
+            victoryMessage.classList.remove('show');
+        }
         document.getElementById('activeTutorialOverlay').style.display = 'none';
         
         startWave(0);
@@ -597,10 +606,10 @@
     const button = document.createElement('button');
     button.className = 'btn btn-secondary';
     button.id = 'superBossModeBtn';
-    button.textContent = '🌽⚡ Duelo: Superjefes y Hordas';
+    button.innerHTML = '<span class="menu-btn-icon">🌽</span><span class="menu-btn-label"><b>Duelo:</b><small>Superjefes y Hordas</small></span><span class="menu-btn-arrow">›</span>';
     button.addEventListener('click', () => {
         requestGameFullscreen();
         window.startSuperBossMode();
     });
-    document.getElementById('startScreen').insertBefore(button, document.getElementById('openTutorialBtn'));
+    document.getElementById('superBossSlot').appendChild(button);
 })();

@@ -27,11 +27,33 @@
             <div id="hud-joystick" class="draggable-btn" data-type="joystick" style="display: none; width: 110px; height: 110px; border-radius: 50%; border: 2px solid rgba(56, 189, 248, 0.3); background: rgba(15, 23, 42, 0.4); justify-content: center; align-items: center; z-index: 50;"><div id="joystick-knob" style="width: 45px; height: 45px; border-radius: 50%; background: rgba(56, 189, 248, 0.8); box-shadow: 0 0 10px #38bdf8; pointer-events: none; transition: transform 0.2s ease-out;"></div></div>
         </div>
 
-        <div id="startScreen" class="screen-overlay">
-            <h1>🐔 Granja Espacial Épica</h1><p>Mejora tu nave tocando los íconos de la izquierda.</p>
-            <button class="btn" id="startBtn" style="margin-top: 10px;">🚀 ¡Despegar!</button>
-            <button class="btn btn-secondary" id="openTutorialBtn">📖 Cómo Jugar</button><button class="btn btn-secondary" id="openHangarBtn">🛸 Hangar (Equipo)</button><button class="btn btn-secondary" id="openShopBtn">🛒 Tienda</button>
-            <div style="display: flex; gap: 8px; width: 100%; max-width: 200px;"><button class="btn btn-secondary" id="openRecordsBtn" title="Récords" style="flex: 1; font-size: 1.2rem; padding: 6px;">🥇</button><button class="btn btn-secondary" id="openTrophiesBtn" title="Trofeos" style="flex: 1; font-size: 1.2rem; padding: 6px;">🏆</button><button class="btn btn-secondary" id="openAchievBtn" title="Logros" style="flex: 1; font-size: 1.2rem; padding: 6px;">🏅</button></div>
+        <div id="startScreen" class="screen-overlay main-menu">
+            <div class="main-menu-content">
+                <div class="menu-brand" aria-label="Granja Espacial Épica">
+                    <div class="menu-brand-granja">Granja</div>
+                    <div class="menu-brand-espacial">Espacial Épica</div>
+                </div>
+                <img class="menu-ship" src="assets/gallina_1.png" alt="Nave Gallina">
+                <p class="menu-tagline">Mejora tu nave y conquista la galaxia</p>
+                <p id="superBossVictoryMessage" class="menu-victory-message" aria-live="polite"></p>
+
+                <div class="menu-primary-actions">
+                    <button class="btn menu-btn menu-btn-launch" id="startBtn"><span class="menu-btn-icon">🚀</span><span>¡DESPEGAR!</span><span class="menu-btn-arrow">›</span></button>
+                    <div id="superBossSlot"></div>
+                </div>
+
+                <div class="menu-two-actions">
+                    <button class="btn menu-btn menu-btn-hangar" id="openHangarBtn"><span class="menu-btn-icon">🛸</span><span class="menu-btn-label">Hangar<small>(Equipo)</small></span><span class="menu-btn-arrow">›</span></button>
+                    <button class="btn menu-btn menu-btn-shop" id="openShopBtn"><span class="menu-btn-icon">🛒</span><span>Tienda</span><span class="menu-btn-arrow">›</span></button>
+                </div>
+                <button class="btn menu-btn menu-btn-tutorial" id="openTutorialBtn"><span class="menu-btn-icon">📖</span><span>Cómo Jugar</span><span class="menu-btn-arrow">›</span></button>
+
+                <div class="menu-mini-actions">
+                    <button class="btn menu-mini-btn" id="openRecordsBtn" title="Récords"><span>🥇</span><small>Récords</small></button>
+                    <button class="btn menu-mini-btn" id="openTrophiesBtn" title="Trofeos"><span>🏆</span><small>Trofeos</small></button>
+                    <button class="btn menu-mini-btn" id="openAchievBtn" title="Logros"><span>🏅</span><small>Logros</small></button>
+                </div>
+            </div>
         </div>
         <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;"><h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1><p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p><div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;"></div><button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button></div>
         <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1><div class="tutorial-content"><h3 style="color: #38bdf8;">🕹️ Movimiento</h3><p>• <b>Arrastrar / Joystick:</b> Configúralo en el menú de pausa.<br>• <b>PC:</b> Usa las flechas del teclado.</p><h3 style="color: #ef4444;">🚀 Combate</h3><p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparos múltiples.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯).</p><h3 style="color: #10b981;">⚙️ Mejoras</h3><p>• Los botones de la izquierda <b>brillarán ✨</b> con monedas suficientes.</p></div><button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button></div>
