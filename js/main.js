@@ -261,10 +261,10 @@ function drawEnemy(e) {
     ctx.save();
     ctx.globalAlpha = typeof e.alpha !== 'undefined' ? e.alpha : 1.0;
 
-    let imgE = assets.enemigoMaiz;
-    if (e.type === 'corn_strong') imgE = assets.cornStrong || assets.enemigoMaiz;
-    else if (e.type === 'lechuga') imgE = assets.enemigoLechuga;
-    else if (e.type === 'lechuga_fuerte') imgE = assets.lechugaFuerte || assets.enemigoLechuga;
+    let imgE = assets.maiz;
+    if (e.type === 'corn_strong') imgE = assets.maizFuerte;
+    else if (e.type === 'lechuga') imgE = assets.lechuga;
+    else if (e.type === 'lechuga_fuerte') imgE = assets.lechugaFuerte;
     else if (e.type === 'maiz_jefe') imgE = assets.jefeMaiz;
     else if (e.type === 'lechuga_jefe') imgE = assets.jefeLechuga;
 
