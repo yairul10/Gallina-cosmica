@@ -14,6 +14,9 @@ if (QA_MODE) {
     let qaRestartTimer = null;
     let qaCurrentMatch = null;
     const qaResults = [];
+    const qaSessionAnomalies = [];
+    const qaBossZeroSince = new Map();
+    const qaOutsideSince = new Map();
 
     const setHorizontalInput = (direction) => {
         keys.ArrowLeft = direction < 0;
@@ -62,16 +65,31 @@ if (QA_MODE) {
     summary.style.cssText = 'font-weight:600;color:#cbd5e1';
     const resultList = document.createElement('div');
     resultList.style.cssText = 'margin-top:5px;font-size:10px;color:#94a3b8';
+    const anomalyList = document.createElement('div');
+    anomalyList.style.cssText = 'margin-top:6px;padding-top:5px;border-top:1px solid #334155;font-size:10px;color:#fca5a5';
     controls.append(seriesSelect, startButton, cancelButton);
-    panel.append(title, controls, status, summary, resultList);
+    panel.append(title, controls, status, summary, resultList, anomalyList);
     document.getElementById('game-container').appendChild(panel);
 
     const renderSummary = () => {
         const completed = qaResults.length;
         const rounds = [1, 2, 3, 4].map((round) => qaResults.filter((result) => result.maxRound >= round).length);
+        const jsErrors = qaSessionAnomalies.filter((anomaly) => anomaly.type === 'error_javascript').length;
+        const affectedMatches = new Set(qaSessionAnomalies.map((anomaly) => anomaly.match)).size;
+        const renderAnomalies = () => {
+            if (!qaSessionAnomalies.length) {
+                anomalyList.textContent = '✓ Sin anomalías detectadas en esta serie.';
+                anomalyList.style.color = '#86efac';
+                return;
+            }
+            anomalyList.style.color = '#fca5a5';
+            anomalyList.innerHTML = `⚠ Anomalías: <b>${qaSessionAnomalies.length}</b> · errores JS: <b>${jsErrors}</b> · partidas afectadas: <b>${affectedMatches}</b><br>` +
+                qaSessionAnomalies.slice(-5).map((anomaly) => `P${anomaly.match} — ${anomaly.description}`).join('<br>');
+        };
         if (!completed) {
             summary.textContent = 'Aún no hay resultados en esta sesión.';
             resultList.textContent = '';
+            renderAnomalies();
             return;
         }
         const scores = qaResults.map((result) => result.score);
@@ -84,9 +102,103 @@ if (QA_MODE) {
             const number = completed - Math.min(5, completed) + index + 1;
             return `#${number}: ${result.score.toLocaleString()} pts · R${result.maxRound} · ${formatDuration(result.duration)} · ❤️${result.livesBought} · 🌟${result.evolutions} · 🎯${result.missiles} · 🪙${result.upgradeSpent.toLocaleString()}${result.survival ? ' · supervivencia' : ''}`;
         }).join('<br>');
+        renderAnomalies();
     };
 
-    const resetCurrentMatch = () => { qaCurrentMatch = { upgradeSpent: 0, missiles: 0 }; };
+    const qaRecordAnomaly = (type, description, relevant = {}, key = type) => {
+        if (!qaSeriesRunning || !qaCurrentMatch || qaCurrentMatch.anomalyKeys.has(key)) return;
+        const anomaly = {
+            match: qaResults.length + 1,
+            type,
+            round: gameRound,
+            score,
+            time: gameTime,
+            state: gameState,
+            description,
+            relevant
+        };
+        qaCurrentMatch.anomalyKeys.add(key);
+        qaCurrentMatch.anomalies.push(anomaly);
+        qaSessionAnomalies.push(anomaly);
+        renderSummary();
+    };
+
+    const qaIsFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+    const qaCheckEntity = (entity, collection, index, now) => {
+        const values = ['x', 'y', 'width', 'height'].concat(Object.prototype.hasOwnProperty.call(entity, 'hp') ? ['hp'] : []);
+        if (values.some((key) => !qaIsFiniteNumber(entity[key]))) {
+            qaRecordAnomaly('valor_invalido', `${collection}[${index}] tiene un valor inválido.`, { collection, index, entity }, `invalid-${collection}-${index}`);
+            return;
+        }
+        const outside = entity.x < -220 || entity.x > canvas.width + 220 || entity.y < -220 || entity.y > canvas.height + 220;
+        if (!outside) { qaOutsideSince.delete(entity); return; }
+        const since = qaOutsideSince.get(entity) || now;
+        qaOutsideSince.set(entity, since);
+        if (now - since >= 5000) {
+            qaRecordAnomaly('entidad_fuera_de_area', `${collection}[${index}] permanece fuera del área válida por más de 5 s.`, { collection, index, x: entity.x, y: entity.y }, `outside-${collection}-${index}`);
+        }
+    };
+
+    const qaMonitorTick = () => {
+        if (!qaBotActive || !qaSeriesRunning || !qaCurrentMatch) return;
+        const now = Date.now();
+        const importantValues = { score, coins, lives, gameTime, gameRound, goingToRound, evolutionStage, playerX: player.x, playerY: player.y };
+        if (Object.values(importantValues).some((value) => !qaIsFiniteNumber(value))) {
+            qaRecordAnomaly('valor_invalido', 'Una variable importante es NaN, undefined o Infinity.', importantValues, 'invalid-important');
+        }
+        if (lives < 0 || lives > 10) qaRecordAnomaly('vidas_invalidas', `Vidas fuera del rango permitido: ${lives}.`, { lives }, 'invalid-lives');
+        if (coins < 0) qaRecordAnomaly('monedas_negativas', `Monedas negativas: ${coins}.`, { coins }, 'negative-coins');
+        if (gameRound < 1 || gameRound > 4 || goingToRound < 1 || goingToRound > 4) {
+            qaRecordAnomaly('ronda_invalida', `Ronda inválida (${gameRound}/${goingToRound}).`, { gameRound, goingToRound }, 'invalid-round');
+        }
+
+        bosses.forEach((boss, index) => {
+            qaCheckEntity(boss, 'jefe', index, now);
+            if (!qaIsFiniteNumber(boss.hp)) return;
+            if (boss.hp > 0) { qaBossZeroSince.delete(boss); return; }
+            const since = qaBossZeroSince.get(boss) || now;
+            qaBossZeroSince.set(boss, since);
+            if (now - since >= 5000) qaRecordAnomaly('jefe_hp_invalido', `Jefe activo con HP ${boss.hp} durante más de 5 s.`, { index, hp: boss.hp, maxHp: boss.maxHp }, `boss-hp-${index}`);
+        });
+        enemies.forEach((entity, index) => qaCheckEntity(entity, 'enemigo', index, now));
+        bullets.forEach((entity, index) => qaCheckEntity(entity, 'bala', index, now));
+        homingMissiles.forEach((entity, index) => qaCheckEntity(entity, 'misil', index, now));
+        bossBullets.forEach((entity, index) => qaCheckEntity(entity, 'proyectil_jefe', index, now));
+
+        const allowedStates = ['START', 'PLAYING', 'EVOLVING', 'TRANSITION', 'PAUSED', 'GAMEOVER', 'TUTORIAL'];
+        if (!allowedStates.includes(gameState)) qaRecordAnomaly('estado_invalido', `Estado principal inesperado: ${gameState}.`, { gameState }, 'invalid-state');
+        const stateLimit = gameState === 'TRANSITION' ? 7000 : gameState === 'EVOLVING' ? 6000 : 0;
+        if (stateLimit) {
+            if (qaCurrentMatch.stateSince !== gameState) {
+                qaCurrentMatch.stateSince = gameState;
+                qaCurrentMatch.stateSinceAt = now;
+            } else if (now - qaCurrentMatch.stateSinceAt >= stateLimit) {
+                qaRecordAnomaly('transicion_bloqueada', `${gameState} supera el tiempo esperado.`, { gameState, transitionTimer, evolutionTimer }, `blocked-${gameState}`);
+            }
+        } else {
+            qaCurrentMatch.stateSince = gameState;
+            qaCurrentMatch.stateSinceAt = now;
+        }
+
+        const progress = `${score}|${gameRound}|${enemies.length}|${bosses.length}|${gameState}`;
+        if (gameState === 'PLAYING') {
+            if (qaCurrentMatch.lastProgress !== progress) {
+                qaCurrentMatch.lastProgress = progress;
+                qaCurrentMatch.lastProgressAt = now;
+            } else if (now - qaCurrentMatch.lastProgressAt >= 60000) {
+                qaRecordAnomaly('sin_progreso', `Posible bloqueo: 60 s sin progreso en ronda ${gameRound}.`, { score, enemies: enemies.length, bosses: bosses.length, gameState }, 'no-progress');
+            }
+        } else {
+            qaCurrentMatch.lastProgress = progress;
+            qaCurrentMatch.lastProgressAt = now;
+        }
+    };
+
+    const resetCurrentMatch = () => {
+        qaBossZeroSince.clear();
+        qaOutsideSince.clear();
+        qaCurrentMatch = { upgradeSpent: 0, missiles: 0, anomalies: [], anomalyKeys: new Set(), lastProgress: null, lastProgressAt: Date.now(), stateSince: null, stateSinceAt: Date.now() };
+    };
     const startQaMatch = () => {
         if (!qaSeriesRunning) return;
         qaBotActive = true;
@@ -94,6 +206,10 @@ if (QA_MODE) {
         qaPurchaseCooldown = 0;
         resetCurrentMatch();
         window.startGame();
+        const leftovers = { enemies: enemies.length, bullets: bullets.length, missiles: homingMissiles.length, bossBullets: bossBullets.length, bosses: bosses.length };
+        if (gameState !== 'PLAYING' || score !== 0 || gameRound !== 1 || Object.values(leftovers).some((count) => count !== 0)) {
+            qaRecordAnomaly('reinicio_incorrecto', 'La nueva partida QA no comenzó limpia.', { gameState, score, gameRound, ...leftovers }, 'restart-not-clean');
+        }
         status.textContent = `Jugando ${qaResults.length + 1}/${qaSeriesTarget}…`;
     };
     const cancelSeries = () => {
@@ -192,9 +308,21 @@ if (QA_MODE) {
         }, 450);
     };
 
+    window.addEventListener('error', (event) => {
+        const message = event && event.message ? event.message : 'Error JavaScript sin mensaje.';
+        qaRecordAnomaly('error_javascript', `Error JS: ${message}`, { message, source: event && event.filename, line: event && event.lineno }, `js-error-${message}`);
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+        const reason = event && event.reason;
+        const message = reason && reason.message ? reason.message : String(reason || 'Promesa rechazada sin detalle.');
+        qaRecordAnomaly('error_javascript', `Promesa no controlada: ${message}`, { message }, `promise-error-${message}`);
+    });
+    window.setInterval(qaMonitorTick, 1000);
+
     startButton.addEventListener('click', () => {
         if (qaRestartTimer) window.clearTimeout(qaRestartTimer);
         qaResults.length = 0;
+        qaSessionAnomalies.length = 0;
         qaSeriesTarget = Number(seriesSelect.value);
         qaSeriesRunning = true;
         renderSummary();
