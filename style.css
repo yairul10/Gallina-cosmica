@@ -131,6 +131,9 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
     object-fit: contain;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55));
 }
+@media (min-width: 601px) {
+    .menu-logo { width: 155px; max-height: 78px; }
+}
 .menu-ship {
     width: min(54vw, 235px);
     max-height: clamp(112px, 17vh, 150px);
