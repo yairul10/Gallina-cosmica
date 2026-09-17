@@ -95,7 +95,7 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 /* Menú principal: utiliza el mismo fondo de la ronda 3 sin modificar el juego. */
 .main-menu {
     justify-content: flex-start;
-    padding: calc(env(safe-area-inset-top, 0px) + clamp(82px, 12vh, 118px)) max(14px, env(safe-area-inset-right, 14px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(14px, env(safe-area-inset-left, 14px));
+    padding: calc(env(safe-area-inset-top, 0px) + clamp(76px, 8.5vh, 90px)) max(14px, env(safe-area-inset-right, 14px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(14px, env(safe-area-inset-left, 14px));
     overflow: hidden;
     background:
         linear-gradient(180deg, rgba(2, 7, 30, 0.28) 0%, rgba(2, 8, 28, 0.1) 42%, rgba(2, 5, 21, 0.66) 100%),
@@ -132,21 +132,21 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
     -webkit-text-fill-color: transparent;
 }
 .menu-brand-granja {
-    font-size: clamp(2.55rem, 10.7vw, 4rem);
+    font-size: clamp(2.35rem, 9.3vw, 3.35rem);
     background: linear-gradient(#fff58b 8%, #ffd125 38%, #ff8d12 88%);
     color: #ffbd16;
     text-shadow: 0 3px 0 #a33a05, 0 0 18px rgba(255, 187, 32, 0.8);
 }
 .menu-brand-espacial {
     margin-top: 5px;
-    font-size: clamp(1.92rem, 8.2vw, 3.1rem);
+    font-size: clamp(1.75rem, 7.1vw, 2.55rem);
     background: linear-gradient(#dffcff 5%, #60dcff 40%, #1685f6 90%);
     color: #48cfff;
     text-shadow: 0 3px 0 #0754b2, 0 0 18px rgba(34, 211, 238, 0.86);
 }
 .menu-ship {
-    width: min(62vw, 285px);
-    max-height: clamp(118px, 19vh, 174px);
+    width: min(54vw, 235px);
+    max-height: clamp(112px, 17vh, 150px);
     object-fit: contain;
     filter: drop-shadow(0 0 13px rgba(71, 225, 255, 0.96)) drop-shadow(0 0 26px rgba(39, 149, 255, 0.58)) drop-shadow(0 12px 9px rgba(0, 0, 0, 0.7));
     animation: menuShipFloat 3.2s ease-in-out infinite;
@@ -178,24 +178,24 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 }
 .menu-btn::before, .menu-mini-btn::before { content: ''; position: absolute; inset: 2px; z-index: -1; border-radius: inherit; background: linear-gradient(120deg, rgba(255, 255, 255, 0.2), transparent 35%); }
 #startScreen .menu-btn:active, #startScreen .menu-mini-btn:active { transform: scale(0.97); }
-#startScreen .menu-btn { min-height: clamp(43px, 6.8vh, 58px); padding: 7px 13px; font-size: clamp(0.9rem, 3.8vw, 1.2rem); font-weight: 900; }
+#startScreen .menu-btn { min-height: clamp(42px, 6.2vh, 52px); padding: 7px 13px; font-size: clamp(0.9rem, 3.8vw, 1.2rem); font-weight: 900; }
 .menu-btn-icon { flex: 0 0 auto; font-size: 1.35em; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.55)); }
 .menu-btn-arrow { margin-left: auto; font-size: 2em; font-weight: 400; line-height: 0.55; color: #dffbff; }
 .menu-btn-label { display: flex; flex-direction: column; align-items: flex-start; line-height: 0.9; text-align: left; }
 .menu-btn-label small { margin-top: 3px; color: #e6f8ff; font-size: 0.67em; font-weight: 800; }
-#startScreen .menu-btn-launch { min-height: clamp(56px, 8.5vh, 72px); border-color: #ffe871; background: linear-gradient(135deg, #ffba12, #f36d12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), 0 0 17px rgba(255, 162, 23, 0.75), 0 7px 10px rgba(0,0,0,0.5); font-size: clamp(1.22rem, 5.5vw, 1.65rem); }
+#startScreen .menu-btn-launch { min-height: clamp(54px, 7.6vh, 64px); border-color: #ffe871; background: linear-gradient(135deg, #ffba12, #f36d12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), 0 0 17px rgba(255, 162, 23, 0.75), 0 7px 10px rgba(0,0,0,0.5); font-size: clamp(1.22rem, 5.5vw, 1.65rem); }
 .menu-btn-launch .menu-btn-icon { font-size: 1.25em; }
-#superBossModeBtn { min-height: clamp(47px, 7.2vh, 61px); justify-content: flex-start; border-color: #d9aeff; background: linear-gradient(135deg, rgba(66, 42, 128, 0.98), rgba(23, 24, 76, 0.98)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.32), 0 0 13px rgba(190, 129, 255, 0.65), 0 6px 9px rgba(0,0,0,0.46); }
+#superBossModeBtn { min-height: clamp(46px, 6.5vh, 52px); justify-content: flex-start; border-color: #d9aeff; background: linear-gradient(135deg, rgba(66, 42, 128, 0.98), rgba(23, 24, 76, 0.98)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.32), 0 0 13px rgba(190, 129, 255, 0.65), 0 6px 9px rgba(0,0,0,0.46); }
 #superBossModeBtn .menu-btn-label b { color: #ffe75f; font-size: 0.82em; }
 #startScreen .menu-btn-hangar { border-color: #38e8ff; background: linear-gradient(135deg, #075db3, #0d2a73); }
 #startScreen .menu-btn-shop { border-color: #48f0b8; background: linear-gradient(135deg, #098d73, #075148); }
-#startScreen .menu-btn-tutorial { min-height: clamp(42px, 6.2vh, 54px); }
+#startScreen .menu-btn-tutorial { min-height: clamp(42px, 5.8vh, 48px); }
 .menu-mini-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-#startScreen .menu-mini-btn { min-height: clamp(52px, 8.6vh, 70px); flex-direction: column; gap: 2px; padding: 6px 3px; border-radius: 15px; font-size: clamp(1.35rem, 5vw, 1.8rem); }
+#startScreen .menu-mini-btn { min-height: clamp(52px, 7.4vh, 60px); flex-direction: column; gap: 2px; padding: 6px 3px; border-radius: 15px; font-size: clamp(1.35rem, 5vw, 1.8rem); }
 .menu-mini-btn small { color: #e9fbff; font-size: clamp(0.56rem, 2.25vw, 0.72rem); font-weight: 800; }
 
 @media (max-height: 700px) {
-    .main-menu { padding-top: calc(env(safe-area-inset-top, 0px) + 78px); }
+    .main-menu { padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
     .menu-brand-granja { font-size: clamp(2.25rem, 9.3vw, 3rem); }
     .menu-brand-espacial { font-size: clamp(1.65rem, 7vw, 2.25rem); }
     .menu-ship { max-height: 110px; width: min(46vw, 195px); }
