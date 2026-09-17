@@ -140,7 +140,7 @@ jobs:
           p.write_text(text)
           PY2
 
-      - name: Compilar y mostrar reporte de firma
+      - name: Compilar AAB y APK Release y mostrar reporte de firma
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -148,7 +148,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew signingReport bundleRelease
+          ./gradlew signingReport bundleRelease assembleRelease
 
       - name: Verificar que el AAB esté firmado
         run: |
@@ -174,6 +174,15 @@ jobs:
           fi
 
           echo "OK: AAB firmado correctamente."
+
+      - name: Verificar que el APK esté generado
+        run: |
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          test -f "$APK" || {
+            echo "ERROR: No se generó el APK Release."
+            exit 1
+          }
+          echo "OK: APK Release generado correctamente."
 
       - name: Guardar AAB
         uses: actions/upload-artifact@v4
