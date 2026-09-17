@@ -219,7 +219,15 @@ function update() {
                 else { bossBullets.push({ x: boss.x + boss.width / 2 - 30, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -2.5, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 - 12, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: -0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 0.8, isLechugaBala: isLB }); bossBullets.push({ x: boss.x + boss.width / 2 + 18, y: boss.y + boss.height, width: 12, height: 12, speed: 5.5, dx: 2.5, isLechugaBala: isLB }); } 
             } 
         }
-        for (let j = bullets.length - 1; j >= 0; j--) { if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) { let dmg = bullets[j].damage; bullets.splice(j, 1); damageBoss(bIndex, dmg); } }
+        for (let j = bullets.length - 1; j >= 0; j--) {
+            if (bullets[j] && bullets[j].x < boss.x + boss.width && bullets[j].x + bullets[j].width > boss.x && bullets[j].y < boss.y + boss.height && bullets[j].y + bullets[j].height > boss.y) {
+                const dmg = bullets[j].damage;
+                bullets.splice(j, 1);
+                // damageBoss elimina al jefe al llegar a 0 HP. No se debe reutilizar
+                // bIndex con las balas restantes de este mismo substep.
+                if (damageBoss(bIndex, dmg)) break;
+            }
+        }
     }
     for (let i = enemies.length - 1; i >= 0; i--) {
         enemies[i].y += enemies[i].speed; enemies[i].wobble += 0.06; enemies[i].x += Math.sin(enemies[i].wobble) * 2.2; 
