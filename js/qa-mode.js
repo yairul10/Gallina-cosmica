@@ -71,7 +71,7 @@ if (QA_MODE) {
     });
     modeSelect.style.cssText = 'width:100%;border-radius:6px;border:1px solid #64748b;background:#0f172a;color:#fff;padding:5px;font-weight:700;font-size:11px';
     const speedSelect = document.createElement('select');
-    [[1, 'Velocidad x1'], [2, 'Velocidad x2'], [4, 'Velocidad x4']].forEach(([value, label]) => {
+    [[1, 'Velocidad x1'], [2, 'Velocidad x2'], [4, 'Velocidad x4'], [8, 'Velocidad x8 (experimental)']].forEach(([value, label]) => {
         const option = document.createElement('option');
         option.value = value;
         option.textContent = label;
@@ -175,7 +175,7 @@ if (QA_MODE) {
 
     const qaMonitorTick = () => {
         if (!qaBotActive || !qaSeriesRunning || !qaCurrentMatch) return;
-        // Los umbrales del detector se basan en tiempo simulado, también en x2/x4.
+        // Los umbrales del detector se basan en tiempo simulado, también en x2/x4/x8.
         const now = qaSimulationElapsedMs;
         const importantValues = { score, coins, lives, gameTime, gameRound, goingToRound, evolutionStage, playerX: player.x, playerY: player.y };
         if (Object.values(importantValues).some((value) => !qaIsFiniteNumber(value))) {
