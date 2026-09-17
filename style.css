@@ -41,21 +41,31 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 /* Marcadores compactos que se leen bien encima del menú espacial y en partida. */
 .header-score {
     margin: calc(env(safe-area-inset-top, 0px) + 8px) 10px 0;
-    padding: 5px 7px;
+    min-height: 58px;
+    padding: 7px 10px;
     border-color: rgba(103, 232, 249, 0.52);
     background: linear-gradient(135deg, rgba(4, 18, 56, 0.88), rgba(11, 28, 78, 0.82));
     box-shadow: 0 0 13px rgba(34, 211, 238, 0.24), 0 5px 10px rgba(0, 0, 0, 0.35);
 }
-.header-left > div, #livesVal, .header-right .icon-btn {
-    min-height: 23px;
+.header-left { gap: 4px; }
+.header-left > div {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    font-size: 0.96rem;
+}
+#livesVal, .header-right .icon-btn {
+    min-height: 40px;
     display: inline-flex;
     align-items: center;
-    padding: 2px 7px;
+    padding: 4px 10px;
     border: 1px solid rgba(186, 241, 255, 0.25);
-    border-radius: 8px;
+    border-radius: 12px;
     background: rgba(2, 11, 39, 0.52);
 }
-.header-right .icon-btn { color: #dffcff; line-height: 1; }
+.header-right .icon-btn { color: #dffcff; line-height: 1; font-size: 1.45rem; }
 
 .draggable-btn { position: absolute; width: 45px; height: 45px; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); border: 2px solid rgba(56, 189, 248, 0.5); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; touch-action: none; z-index: 20; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); transition: transform 0.08s; cursor: pointer; }
 .draggable-btn:active:not(.paused) { transform: scale(0.9); }
@@ -85,7 +95,7 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 /* Menú principal: utiliza el mismo fondo de la ronda 3 sin modificar el juego. */
 .main-menu {
     justify-content: flex-start;
-    padding: calc(env(safe-area-inset-top, 0px) + 52px) max(14px, env(safe-area-inset-right, 14px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(14px, env(safe-area-inset-left, 14px));
+    padding: calc(env(safe-area-inset-top, 0px) + clamp(82px, 12vh, 118px)) max(14px, env(safe-area-inset-right, 14px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(14px, env(safe-area-inset-left, 14px));
     overflow: hidden;
     background:
         linear-gradient(180deg, rgba(2, 7, 30, 0.28) 0%, rgba(2, 8, 28, 0.1) 42%, rgba(2, 5, 21, 0.66) 100%),
@@ -110,34 +120,35 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
     justify-content: space-between;
     gap: clamp(4px, 0.8vh, 9px);
 }
-.menu-brand { text-align: center; line-height: 0.78; filter: drop-shadow(0 5px 4px rgba(0, 0, 0, 0.82)); }
+.menu-brand { position: relative; z-index: 2; text-align: center; line-height: 0.78; filter: drop-shadow(0 5px 4px rgba(0, 0, 0, 0.82)); }
 .menu-brand-granja, .menu-brand-espacial {
     font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
     font-weight: 900;
     letter-spacing: 0.02em;
-    -webkit-text-stroke: 2px #071a48;
+    -webkit-text-stroke: 2px #061333;
     paint-order: stroke fill;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 .menu-brand-granja {
-    font-size: clamp(2.25rem, 8.8vw, 3.25rem);
+    font-size: clamp(2.55rem, 10.7vw, 4rem);
     background: linear-gradient(#fff58b 8%, #ffd125 38%, #ff8d12 88%);
-    -webkit-background-clip: text;
-    color: transparent;
-    text-shadow: 0 3px 0 #a33a05, 0 0 15px rgba(255, 187, 32, 0.58);
+    color: #ffbd16;
+    text-shadow: 0 3px 0 #a33a05, 0 0 18px rgba(255, 187, 32, 0.8);
 }
 .menu-brand-espacial {
     margin-top: 5px;
-    font-size: clamp(1.7rem, 6.8vw, 2.45rem);
+    font-size: clamp(1.92rem, 8.2vw, 3.1rem);
     background: linear-gradient(#dffcff 5%, #60dcff 40%, #1685f6 90%);
-    -webkit-background-clip: text;
-    color: transparent;
-    text-shadow: 0 3px 0 #0754b2, 0 0 14px rgba(34, 211, 238, 0.65);
+    color: #48cfff;
+    text-shadow: 0 3px 0 #0754b2, 0 0 18px rgba(34, 211, 238, 0.86);
 }
 .menu-ship {
-    width: min(45vw, 192px);
-    max-height: clamp(92px, 16vh, 140px);
+    width: min(62vw, 285px);
+    max-height: clamp(118px, 19vh, 174px);
     object-fit: contain;
-    filter: drop-shadow(0 0 7px rgba(103, 232, 249, 0.75)) drop-shadow(0 12px 9px rgba(0, 0, 0, 0.7));
+    filter: drop-shadow(0 0 13px rgba(71, 225, 255, 0.96)) drop-shadow(0 0 26px rgba(39, 149, 255, 0.58)) drop-shadow(0 12px 9px rgba(0, 0, 0, 0.7));
     animation: menuShipFloat 3.2s ease-in-out infinite;
 }
 @keyframes menuShipFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.025); } }
@@ -146,7 +157,7 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .menu-victory-message.show { display: block; }
 .menu-primary-actions, #superBossSlot, .menu-two-actions, .menu-mini-actions { width: 100%; }
 .menu-primary-actions { display: grid; gap: clamp(5px, 0.8vh, 9px); }
-.menu-two-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.menu-two-actions { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px, 2.2vw, 12px); }
 #startScreen .menu-btn, #startScreen .menu-mini-btn {
     position: relative;
     isolation: isolate;
@@ -174,7 +185,7 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .menu-btn-label small { margin-top: 3px; color: #e6f8ff; font-size: 0.67em; font-weight: 800; }
 #startScreen .menu-btn-launch { min-height: clamp(56px, 8.5vh, 72px); border-color: #ffe871; background: linear-gradient(135deg, #ffba12, #f36d12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), 0 0 17px rgba(255, 162, 23, 0.75), 0 7px 10px rgba(0,0,0,0.5); font-size: clamp(1.22rem, 5.5vw, 1.65rem); }
 .menu-btn-launch .menu-btn-icon { font-size: 1.25em; }
-#superBossModeBtn { min-height: clamp(47px, 7.2vh, 61px); border-color: #d9aeff; background: linear-gradient(135deg, rgba(66, 42, 128, 0.98), rgba(23, 24, 76, 0.98)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.32), 0 0 13px rgba(190, 129, 255, 0.65), 0 6px 9px rgba(0,0,0,0.46); }
+#superBossModeBtn { min-height: clamp(47px, 7.2vh, 61px); justify-content: flex-start; border-color: #d9aeff; background: linear-gradient(135deg, rgba(66, 42, 128, 0.98), rgba(23, 24, 76, 0.98)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.32), 0 0 13px rgba(190, 129, 255, 0.65), 0 6px 9px rgba(0,0,0,0.46); }
 #superBossModeBtn .menu-btn-label b { color: #ffe75f; font-size: 0.82em; }
 #startScreen .menu-btn-hangar { border-color: #38e8ff; background: linear-gradient(135deg, #075db3, #0d2a73); }
 #startScreen .menu-btn-shop { border-color: #48f0b8; background: linear-gradient(135deg, #098d73, #075148); }
@@ -184,10 +195,10 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .menu-mini-btn small { color: #e9fbff; font-size: clamp(0.56rem, 2.25vw, 0.72rem); font-weight: 800; }
 
 @media (max-height: 700px) {
-    .main-menu { padding-top: calc(env(safe-area-inset-top, 0px) + 43px); }
-    .menu-brand-granja { font-size: clamp(2rem, 8.3vw, 2.7rem); }
-    .menu-brand-espacial { font-size: clamp(1.45rem, 6.2vw, 2rem); }
-    .menu-ship { max-height: 98px; width: min(39vw, 166px); }
+    .main-menu { padding-top: calc(env(safe-area-inset-top, 0px) + 78px); }
+    .menu-brand-granja { font-size: clamp(2.25rem, 9.3vw, 3rem); }
+    .menu-brand-espacial { font-size: clamp(1.65rem, 7vw, 2.25rem); }
+    .menu-ship { max-height: 110px; width: min(46vw, 195px); }
     .menu-tagline { display: none; }
     .menu-victory-message { font-size: 0.66rem !important; }
     #startScreen .menu-btn { min-height: 39px; border-radius: 14px; }
