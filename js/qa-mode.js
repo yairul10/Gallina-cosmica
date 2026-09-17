@@ -12,6 +12,9 @@ if (QA_MODE) {
     let qaSeriesRunning = false;
     let qaSeriesTarget = 1;
     let qaSelectedMode = 'normal';
+    let qaSpeedMultiplier = 1;
+    let qaSimulationElapsedMs = 0;
+    let qaGameTimeFrames = 0;
     let qaMatchPlan = [];
     let qaRestartTimer = null;
     let qaCurrentMatch = null;
@@ -61,6 +64,14 @@ if (QA_MODE) {
         modeSelect.appendChild(option);
     });
     modeSelect.style.cssText = 'width:100%;border-radius:6px;border:1px solid #64748b;background:#0f172a;color:#fff;padding:5px;font-weight:700;font-size:11px';
+    const speedSelect = document.createElement('select');
+    [[1, 'Velocidad x1'], [2, 'Velocidad x2'], [4, 'Velocidad x4']].forEach(([value, label]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        speedSelect.appendChild(option);
+    });
+    speedSelect.style.cssText = 'width:100%;margin-top:4px;border-radius:6px;border:1px solid #64748b;background:#0f172a;color:#fff;padding:5px;font-weight:700;font-size:11px';
     const startButton = document.createElement('button');
     startButton.type = 'button';
     startButton.textContent = '▶ Iniciar';
@@ -80,6 +91,7 @@ if (QA_MODE) {
     controls.append(seriesSelect, startButton, cancelButton);
     panel.append(title, controls, status, summary, resultList, anomalyList);
     panel.insertBefore(modeSelect, status);
+    panel.insertBefore(speedSelect, status);
     document.getElementById('game-container').appendChild(panel);
 
     const renderSummary = () => {
@@ -115,7 +127,7 @@ if (QA_MODE) {
         resultList.innerHTML = qaResults.slice(-5).map((result, index) => {
             const number = completed - Math.min(5, completed) + index + 1;
             const modeLabel = result.mode === 'superboss' ? `Superjefes W${result.maxWave || 1}` : 'Normal';
-            return `#${number} [${modeLabel}]: ${result.score.toLocaleString()} pts · R${result.maxRound} · ${formatDuration(result.duration)} · ❤️${result.livesBought} · 🌟${result.evolutions} · 🎯${result.missiles} · 🪙${result.upgradeSpent.toLocaleString()}${result.completedSuperBoss ? ' · victoria' : ''}${result.survival ? ' · supervivencia' : ''}`;
+            return `#${number} [${modeLabel} · x${result.speed}]: ${result.score.toLocaleString()} pts · R${result.maxRound} · ${formatDuration(result.duration)} · ❤️${result.livesBought} · 🌟${result.evolutions} · 🎯${result.missiles} · 🪙${result.upgradeSpent.toLocaleString()}${result.completedSuperBoss ? ' · victoria' : ''}${result.survival ? ' · supervivencia' : ''}`;
         }).join('<br>');
         renderAnomalies();
     };
@@ -157,7 +169,8 @@ if (QA_MODE) {
 
     const qaMonitorTick = () => {
         if (!qaBotActive || !qaSeriesRunning || !qaCurrentMatch) return;
-        const now = Date.now();
+        // Los umbrales del detector se basan en tiempo simulado, también en x2/x4.
+        const now = qaSimulationElapsedMs;
         const importantValues = { score, coins, lives, gameTime, gameRound, goingToRound, evolutionStage, playerX: player.x, playerY: player.y };
         if (Object.values(importantValues).some((value) => !qaIsFiniteNumber(value))) {
             qaRecordAnomaly('valor_invalido', 'Una variable importante es NaN, undefined o Infinity.', importantValues, 'invalid-important');
@@ -213,7 +226,9 @@ if (QA_MODE) {
     const resetCurrentMatch = (mode) => {
         qaBossZeroSince.clear();
         qaOutsideSince.clear();
-        qaCurrentMatch = { mode, maxWave: 0, upgradeSpent: 0, missiles: 0, anomalies: [], anomalyKeys: new Set(), lastProgress: null, lastProgressAt: Date.now(), stateSince: null, stateSinceAt: Date.now() };
+        qaSimulationElapsedMs = 0;
+        qaGameTimeFrames = 0;
+        qaCurrentMatch = { mode, maxWave: 0, speed: qaSpeedMultiplier, upgradeSpent: 0, missiles: 0, anomalies: [], anomalyKeys: new Set(), lastProgress: null, lastProgressAt: 0, stateSince: null, stateSinceAt: 0 };
     };
     const startQaMatch = () => {
         if (!qaSeriesRunning) return;
@@ -230,7 +245,7 @@ if (QA_MODE) {
         if (normalRestartInvalid || superRestartInvalid) {
             qaRecordAnomaly('reinicio_incorrecto', 'La nueva partida QA no comenzó limpia.', { gameState, score, gameRound, ...leftovers }, 'restart-not-clean');
         }
-        status.textContent = `Jugando ${mode === 'superboss' ? 'Superjefes/Hordas' : 'Normal'} ${qaResults.length + 1}/${qaSeriesTarget}…`;
+        status.textContent = `Jugando ${mode === 'superboss' ? 'Superjefes/Hordas' : 'Normal'} x${qaSpeedMultiplier} ${qaResults.length + 1}/${qaSeriesTarget}…`;
     };
     const cancelSeries = () => {
         qaSeriesRunning = false;
@@ -303,6 +318,7 @@ if (QA_MODE) {
         if (!qaBotActive || !qaSeriesRunning || !qaCurrentMatch) return;
         qaResults.push({
             mode: qaCurrentMatch.mode,
+            speed: qaCurrentMatch.speed,
             score,
             maxRound: Math.max(gameRound, goingToRound),
             maxWave: qaCurrentMatch.maxWave,
@@ -354,13 +370,35 @@ if (QA_MODE) {
         const message = reason && reason.message ? reason.message : String(reason || 'Promesa rechazada sin detalle.');
         qaRecordAnomaly('error_javascript', `Promesa no controlada: ${message}`, { message }, `promise-error-${message}`);
     });
-    window.setInterval(qaMonitorTick, 1000);
+    // Interfaces públicas consumidas por el bucle central. No existen cuando QA_MODE es false.
+    window.qaIsSimulationClockActive = () => qaBotActive && qaSeriesRunning;
+    window.qaGetSimulationSteps = () => qaBotActive && qaSeriesRunning ? qaSpeedMultiplier : 1;
+    window.qaOnSimulationStep = () => {
+        if (!qaBotActive || !qaSeriesRunning) return;
+        // El reloj de anomalías también avanza durante transición/evolución; así conserva sus límites reales.
+        if (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'EVOLVING') qaSimulationElapsedMs += 1000 / 60;
+        // El tiempo de partida se comporta igual que antes: solo avanza mientras se juega.
+        if (gameState !== 'PLAYING') return;
+        qaGameTimeFrames++;
+        if (qaGameTimeFrames >= 60) {
+            const seconds = Math.floor(qaGameTimeFrames / 60);
+            qaGameTimeFrames -= seconds * 60;
+            for (let second = 0; second < seconds; second++) {
+                gameTime++;
+                sessionTimeNoHit++;
+                if (sessionTimeNoHit >= 100) unlockAchievement('a13');
+                if (gameTime >= 300) unlockAchievement('a14');
+            }
+        }
+    };
+    window.setInterval(qaMonitorTick, 250);
 
     startButton.addEventListener('click', () => {
         if (qaRestartTimer) window.clearTimeout(qaRestartTimer);
         qaResults.length = 0;
         qaSessionAnomalies.length = 0;
         qaSelectedMode = modeSelect.value;
+        qaSpeedMultiplier = Number(speedSelect.value);
         const gamesPerMode = Number(seriesSelect.value);
         qaMatchPlan = qaSelectedMode === 'both'
             ? Array(gamesPerMode).fill('normal').concat(Array(gamesPerMode).fill('superboss'))
