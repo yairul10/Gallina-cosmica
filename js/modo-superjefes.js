@@ -238,7 +238,21 @@
     function finishMode() {
         active = false;
         window.isSuperBossModeActive = false;
+        // Termina la partida antes de abrir el menú: evita que el bucle normal
+        // siga creando enemigos o aplicando daño detrás del mensaje de premio.
+        gameState = 'START';
+        previousState = 'START';
+        enemies.length = 0;
+        bullets.length = 0;
+        homingMissiles.length = 0;
         bossBullets.length = 0;
+        bosses.length = 0;
+        joystick.active = false;
+        joystick.dx = 0;
+        joystick.dy = 0;
+        isDraggingShip = false;
+        dragPointerId = null;
+        if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
         
         // Premio actualizado a 200,000 monedas
         coins += 200000;
