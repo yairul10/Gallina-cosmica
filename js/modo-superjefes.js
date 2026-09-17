@@ -1,8 +1,8 @@
-/* Coordina el modo de Superjefes con 4 rondas progresivas, respiro limpio, reaparición, desvanecimiento suave y 200k monedas de recompensa al finalizar. */
+/* Coordina el modo de Superjefes con 5 rondas progresivas, respiro limpio, reaparición, desvanecimiento suave y 200k monedas de recompensa al finalizar. */
 (() => {
     let active = false;
     let hitCooldown = 0;
-    let currentWave = 1;
+    let currentWave = 0;
     let waveTransitionTimer = 0;
     const normalUpdate = update;
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -78,12 +78,19 @@
     }
 
     function spawnMinionForCurrentWave() {
-        if (bosses.length === 0) return;
+        const waveLeaderAlive = bosses.some((boss) => !boss.isDead) ||
+            enemies.some((enemy) => enemy.waveLeader && !enemy.isDead);
+        if (!waveLeaderAlive) return;
         const side = Math.floor(Math.random() * 4);
         let x = 0, y = 0;
         let types = [];
 
-        if (currentWave === 1) {
+        if (currentWave === 0) {
+            types = [
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20 }
+            ];
+        } else if (currentWave === 1) {
             types = [
                 { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40 },
                 { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50 },
@@ -126,7 +133,15 @@
         enemies.length = 0;
         bossBullets.length = 0;
 
-        if (waveNum === 1) {
+        if (waveNum === 0) {
+            enemies.push(
+                { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 55, speed: 0.9, alpha: 0, waveLeader: true },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.2, y: 95, speed: 1.1, alpha: 0 },
+                { width: 48, height: 48, maxHp: 150, hp: 150, type: 'corn_strong', pts: 1500, coin: 50, x: canvas.width * 0.8 - 48, y: 95, speed: 1.1, alpha: 0 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.3, y: 135, speed: 1.2, alpha: 0 },
+                { width: 40, height: 40, maxHp: 60, hp: 60, type: 'corn', pts: 150, coin: 20, x: canvas.width * 0.7 - 40, y: 135, speed: 1.2, alpha: 0 }
+            );
+        } else if (waveNum === 1) {
             bosses.push(createCustomSuperBoss(0, 'corn'));
             enemies.push(
                 { width: 60, height: 60, maxHp: 350, hp: 350, type: 'maiz_jefe', pts: 1200, coin: 40, x: canvas.width / 2 - 30, y: 40, speed: 0.9, alpha: 0 },
@@ -198,7 +213,9 @@
                 enemy.alpha = Math.max(0, enemy.deathTimer / 25);
                 if (enemy.deathTimer <= 0) {
                     enemies.splice(i, 1);
-                    if (bosses.length > 0) {
+                    if (enemy.waveLeader) {
+                        waveTransitionTimer = 60;
+                    } else {
                         spawnMinionForCurrentWave();
                     }
                 }
@@ -494,7 +511,7 @@
         player.y = canvas.height - player.height - 20;
         document.getElementById('activeTutorialOverlay').style.display = 'none';
         
-        startWave(1);
+        startWave(0);
         updateScore();
         updateUpgradesHUD();
     };
@@ -539,16 +556,14 @@
     function installMobileFullscreenLayout() {
         const style = document.createElement('style');
         style.textContent = `
-            #game-container {
-                width: min(100vw, 65.625dvh);
-                height: min(100dvh, 152.38095vw);
-                max-width: none;
-                max-height: none;
-                aspect-ratio: 420 / 640;
-            }
             @media (max-width: 600px) {
                 body { width: 100vw; min-height: 100dvh; height: 100dvh; padding: 0; }
                 #game-container {
+                    width: 100vw;
+                    height: 100dvh;
+                    max-width: none;
+                    max-height: none;
+                    aspect-ratio: auto;
                     border: 0; border-radius: 0; box-shadow: none;
                 }
             }

@@ -1,6 +1,13 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-canvas.width = 420; canvas.height = 640;
+canvas.width = 420;
+// En móviles altos ampliamos el área lógica vertical en vez de estirar el
+// lienzo de 420x640. Así el fondo y los controles ocupan toda la pantalla sin
+// deformar naves, enemigos ni sus colisiones.
+const mobileViewportRatio = window.innerHeight / Math.max(1, window.innerWidth);
+canvas.height = window.innerWidth <= 600
+    ? Math.max(640, Math.round(canvas.width * mobileViewportRatio))
+    : 640;
 
 let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || {};
 
