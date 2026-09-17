@@ -604,7 +604,7 @@
     installMobileFullscreenLayout();
 
     const button = document.createElement('button');
-    button.className = 'btn btn-secondary';
+    button.className = 'btn btn-secondary menu-btn';
     button.id = 'superBossModeBtn';
     button.innerHTML = '<span class="menu-btn-icon">🌽</span><span class="menu-btn-label"><b>Duelo:</b><small>Superjefes y Hordas</small></span><span class="menu-btn-arrow">›</span>';
     button.addEventListener('click', () => {
