@@ -138,7 +138,7 @@ if not plugin.exists():
         '        }\n'
         '    }\n'
         '\n'
-    private String appConfigurationDetail() {\n'
+        '    private String appConfigurationDetail() {\n'
         '        String packageName = getActivity().getPackageName();\n'
         '        try {\n'
         '            android.content.pm.PackageManager pm = getActivity().getPackageManager();\n'
