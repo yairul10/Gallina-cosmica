@@ -75,7 +75,7 @@ if not plugin.exists():
         'import com.getcapacitor.Plugin;\n'
         'import com.getcapacitor.PluginCall;\n'
         'import com.getcapacitor.annotation.CapacitorPlugin;\n'
-        'import com.getcapacitor.annotation.PluginMethod;\n'
+        'import com.getcapacitor.PluginMethod;\n'
         'import com.google.android.gms.games.PlayGames;\n\n'
         '@CapacitorPlugin(name = "PlayGames")\n'
         'public class PlayGamesPlugin extends Plugin {\n'
