@@ -104,8 +104,12 @@
         button.title = 'Conectando con Google Play Games…';
         try {
             const signedIn = await playGames.signIn();
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            const status = await refreshStatus();
+            let status = null;
+            for (let attempt = 0; attempt < 4; attempt += 1) {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+                status = await refreshStatus();
+                if (status?.authenticated) break;
+            }
             if (status?.authenticated) {
                 showNotice('Google Play Games conectado ✓', true);
             } else {
