@@ -68,7 +68,7 @@
 
     function damageBoss(index, damage) {
         const boss = bosses[index];
-        if (!boss) return;
+        if (!boss || boss.isDead) return;
         boss.hp -= damage * getShipDamageMultiplier(boss, true);
         if (boss.hp > 0) return;
 
