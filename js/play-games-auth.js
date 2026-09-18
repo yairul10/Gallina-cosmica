@@ -28,7 +28,12 @@
             fontWeight: '700',
             background: success ? 'rgba(5, 110, 74, 0.96)' : 'rgba(127, 29, 29, 0.96)',
             border: success ? '1px solid #86efac' : '1px solid #fca5a5',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.45)'
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.45)',
+            whiteSpace: 'pre-wrap',
+            maxHeight: '68vh',
+            overflowY: 'auto',
+            fontSize: '0.67rem',
+            lineHeight: '1.28'
         });
         notice.style.display = 'block';
         clearTimeout(noticeTimer);
@@ -113,14 +118,17 @@
             if (status?.authenticated) {
                 showNotice('Google Play Games conectado ✓', true);
             } else {
-                let detail = status?.detail || signedIn?.detail || 'Google no confirmó la sesión';
+                const details = [
+                    'signIn:\n' + (signedIn?.diagnostic || signedIn?.detail || 'Sin resultado'),
+                    'isAuthenticated:\n' + (status?.diagnostic || status?.detail || 'Sin resultado')
+                ];
                 try {
                     const playerStatus = await playGames.getPlayerStatus();
-                    if (playerStatus?.detail) detail = playerStatus.detail;
+                    details.push('getCurrentPlayer:\n' + (playerStatus?.diagnostic || playerStatus?.detail || 'Sin resultado'));
                 } catch (playerError) {
-                    detail = playerError?.message || detail;
+                    details.push('getCurrentPlayer:\n' + (playerError?.message || String(playerError)));
                 }
-                showNotice('Play Games: ' + detail);
+                showNotice('Diagnóstico Play Games\n\n' + details.join('\n\n'));
             }
         } catch (error) {
             const detail = error?.message || 'No se pudo iniciar sesión';
