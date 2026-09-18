@@ -8,18 +8,18 @@
         button.style.display = 'inline-flex';
         button.style.color = authenticated ? '#86efac' : '#dffcff';
     };
-    const isNativeAndroid = () => {
-        if (!capacitor) return false;
-        const platform = typeof capacitor.getPlatform === 'function'
+    const isAndroidApp = () => {
+        const platform = capacitor && typeof capacitor.getPlatform === 'function'
             ? capacitor.getPlatform()
             : '';
-        return platform === 'android'
-            || (typeof capacitor.isNativePlatform === 'function'
-                && capacitor.isNativePlatform() && /Android/i.test(navigator.userAgent));
+        // Capacitor puede tardar en exponer sus helpers dentro del WebView.
+        // El user agent de Android sirve como respaldo para no ocultar el botón.
+        return platform === 'android' || /Android/i.test(navigator.userAgent);
     };
 
-    if (!button || !isNativeAndroid()) return;
-    // El icono debe quedar disponible aunque la consulta de estado falle.
+    if (!button || !isAndroidApp()) return;
+    // En Android el icono siempre debe quedar visible, incluso si el plugin
+    // tarda en inicializarse o la consulta de autenticación falla.
     setStatus(false);
     // Capacitor puede exponer los plugins nativos por Plugins o por registerPlugin.
     const playGames = capacitor.Plugins?.PlayGames
