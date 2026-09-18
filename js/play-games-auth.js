@@ -109,7 +109,14 @@
             if (status?.authenticated) {
                 showNotice('Google Play Games conectado ✓', true);
             } else {
-                showNotice('Play Games: ' + (status?.detail || signedIn?.detail || 'Google no confirmó la sesión'));
+                let detail = status?.detail || signedIn?.detail || 'Google no confirmó la sesión';
+                try {
+                    const playerStatus = await playGames.getPlayerStatus();
+                    if (playerStatus?.detail) detail = playerStatus.detail;
+                } catch (playerError) {
+                    detail = playerError?.message || detail;
+                }
+                showNotice('Play Games: ' + detail);
             }
         } catch (error) {
             const detail = error?.message || 'No se pudo iniciar sesión';
