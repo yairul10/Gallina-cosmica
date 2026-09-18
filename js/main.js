@@ -69,6 +69,10 @@ window.startGame = function() {
     if (gameStats.controlMode === 'drag') { document.getElementById('hud-joystick').style.display = 'none'; }
     updateUpgradesHUD(); 
     gameState = 'PLAYING'; previousState = 'PLAYING';
+    // Logro oficial de Google Play Games: First launch / primera partida.
+    if (typeof window.unlockPlayGamesAchievement === 'function') {
+        window.unlockPlayGamesAchievement('Cgklu-ylnsoTEAIQAg');
+    }
     
     if (!gameStats.tutorialCompleted) { 
         tutorialStep = 0.5; 
