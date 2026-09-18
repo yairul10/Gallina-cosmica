@@ -30,7 +30,7 @@
         button.title = 'Google Play Games no está disponible';
         return;
     }
-    const refreshStatus = async () => {
+    // Puente reutilizable para logros oficiales de Google Play Games.\n    window.unlockPlayGamesAchievement = async (achievementId) => {\n        if (!achievementId) return false;\n        try {\n            const status = await playGames.getAuthStatus();\n            if (!status.authenticated) return false;\n            await playGames.unlockAchievement({ achievementId });\n            return true;\n        } catch (error) {\n            console.warn('No se pudo desbloquear el logro de Play Games:', error);\n            return false;\n        }\n    };\n\n    const refreshStatus = async () => {
         try {
             const result = await playGames.getAuthStatus();
             setStatus(!!result.authenticated);
