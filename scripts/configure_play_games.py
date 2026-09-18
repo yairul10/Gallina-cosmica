@@ -80,7 +80,7 @@ if not plugin.exists():
         'import com.google.android.gms.common.api.ApiException;\n\n'
         '@CapacitorPlugin(name = "PlayGames")\n'
         'public class PlayGamesPlugin extends Plugin {\n'
-        '        '    private String sha1ForSignature(android.content.pm.Signature signature) {\n'
+        '    private String sha1ForSignature(android.content.pm.Signature signature) {\n'
         '        try {\n'
         '            byte[] digest = java.security.MessageDigest.getInstance("SHA-1")\n'
         '                .digest(signature.toByteArray());\n'
