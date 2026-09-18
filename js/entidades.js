@@ -179,7 +179,7 @@ window.damageEnemy = function(eIndex, dmg) {
         document.getElementById('scoreVal').textContent = score; updateUpgradesHUD(); enemies.splice(eIndex, 1); gameStats.totalKills++; saveStats(); sessionKillsNoHit++;
         // Logro oficial de Google Play Games: Primer enemigo derrotado.
         if (typeof window.unlockPlayGamesAchievement === 'function') {
-            window.unlockPlayGamesAchievement('Cgklu-ylnsoTEAIQAw');
+            window.unlockPlayGamesAchievement('CgkIu-yInsoTEAIQAw');
         }
         if (gameStats.totalKills >= 50) unlockAchievement('a3'); if (sessionKillsNoHit >= 30) unlockAchievement('a11'); return true; 
     } return false;
