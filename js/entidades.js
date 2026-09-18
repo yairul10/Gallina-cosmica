@@ -138,6 +138,18 @@ window.damageBoss = function(bIndex, dmg) {
     boss.hp -= (dmg * passiveMult * proMult);
 
     if (boss.hp <= 0) { 
+        // Logros oficiales de Google Play Games relacionados con jefes.
+        if (typeof window.unlockPlayGamesAchievement === 'function') {
+            if (!boss.isSuperBoss) {
+                window.unlockPlayGamesAchievement('CgkIu-yInsoTEAIQBA'); // Destructor de jefes
+            }
+            if (boss.isSuperBoss) {
+                window.unlockPlayGamesAchievement('CgkIu-yInsoTEAIQBQ'); // Más allá de la jefatura
+                if (boss.type === 'lechuga') {
+                    window.unlockPlayGamesAchievement('CgkIu-yInsoTEAIQBg'); // Imponiendo respeto
+                }
+            }
+        }
         score += boss.isSuperBoss ? 4500 : 2250; 
         
         let bCoin = boss.type === 'lechuga' ? 60 : 30;
