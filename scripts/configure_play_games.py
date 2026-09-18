@@ -9,6 +9,7 @@ gradle = root / "build.gradle"
 manifest = root / "src/main/AndroidManifest.xml"
 main_activity = root / "src/main/java/com/gallinacosmica/app/MainActivity.java"
 application = root / "src/main/java/com/gallinacosmica/app/PlayGamesApplication.java"
+plugin = root / "src/main/java/com/gallinacosmica/app/PlayGamesPlugin.java"
 game_id = root / "src/main/res/values/play_games.xml"
 
 for path in (gradle, manifest, main_activity):
@@ -67,13 +68,54 @@ if not application.exists():
         '}\n'
     )
 
+if not plugin.exists():
+    plugin.write_text(
+        'package com.gallinacosmica.app;\n\n'
+        'import com.getcapacitor.JSObject;\n'
+        'import com.getcapacitor.Plugin;\n'
+        'import com.getcapacitor.PluginCall;\n'
+        'import com.getcapacitor.annotation.CapacitorPlugin;\n'
+        'import com.getcapacitor.annotation.PluginMethod;\n'
+        'import com.google.android.gms.games.PlayGames;\n\n'
+        '@CapacitorPlugin(name = "PlayGames")\n'
+        'public class PlayGamesPlugin extends Plugin {\n'
+        '    private void resolveAuthentication(PluginCall call) {\n'
+        '        PlayGames.getGamesSignInClient(getActivity()).isAuthenticated()\n'
+        '            .addOnCompleteListener(task -> {\n'
+        '                JSObject result = new JSObject();\n'
+        '                boolean authenticated = task.isSuccessful()\n'
+        '                    && task.getResult().isAuthenticated();\n'
+        '                result.put("authenticated", authenticated);\n'
+        '                call.resolve(result);\n'
+        '            });\n'
+        '    }\n\n'
+        '    @PluginMethod\n'
+        '    public void getAuthStatus(PluginCall call) {\n'
+        '        resolveAuthentication(call);\n'
+        '    }\n\n'
+        '    @PluginMethod\n'
+        '    public void signIn(PluginCall call) {\n'
+        '        PlayGames.getGamesSignInClient(getActivity()).signIn()\n'
+        '            .addOnCompleteListener(task -> {\n'
+        '                if (!task.isSuccessful()) {\n'
+        '                    call.reject("No se pudo iniciar sesión en Google Play Games.");\n'
+        '                    return;\n'
+        '                }\n'
+        '                JSObject result = new JSObject();\n'
+        '                result.put("authenticated", task.getResult().isAuthenticated());\n'
+        '                call.resolve(result);\n'
+        '            });\n'
+        '}\n'
+    )
+
 text = main_activity.read_text()
-if "getGamesSignInClient" not in text:
+if "PlayGamesPlugin.class" not in text:
     text, count = re.subn(
         r"public class MainActivity extends BridgeActivity\s*\{",
         'public class MainActivity extends BridgeActivity {\n'
         '    @Override\n'
         '    public void onCreate(android.os.Bundle savedInstanceState) {\n'
+        '        registerPlugin(PlayGamesPlugin.class);\n'
         '        super.onCreate(savedInstanceState);\n'
         '        com.google.android.gms.games.GamesSignInClient gamesSignInClient =\n'
         '            com.google.android.gms.games.PlayGames.getGamesSignInClient(this);\n'
