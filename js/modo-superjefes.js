@@ -72,6 +72,14 @@
         boss.hp -= damage * getShipDamageMultiplier(boss, true);
         if (boss.hp > 0) return;
 
+        // Logros oficiales de Google Play Games del modo Superjefes.
+        if (typeof window.unlockPlayGamesAchievement === 'function') {
+            window.unlockPlayGamesAchievement('CgkIu-yInsoTEAIQBQ'); // Más allá de la jefatura
+            if (boss.type === 'lechuga') {
+                window.unlockPlayGamesAchievement('CgkIu-yInsoTEAIQBg'); // Imponiendo respeto
+            }
+        }
+
         boss.isDead = true;
         boss.alpha = 1;
         boss.deathTimer = 35;
@@ -239,6 +247,11 @@
     }
 
     function finishMode() {
+        // Logro oficial de Google Play Games: completar el modo Superjefes.
+        if (typeof window.unlockPlayGamesAchievement === 'function') {
+            window.unlockPlayGamesAchievement('CgkIu-yInsoTEAIQBw'); // Conquistador de mundos
+        }
+
         if (window.QA_MODE && typeof window.qaBotOnSuperBossComplete === 'function') {
             window.qaBotOnSuperBossComplete(currentWave + 1);
         }
