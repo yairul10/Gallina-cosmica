@@ -44,10 +44,14 @@
         button.textContent = '…';
         button.title = 'Conectando con Google Play Games…';
         try {
-            const result = await playGames.signIn();
-            setStatus(!!result.authenticated, result.authenticated
+            // El resultado de signIn puede llegar antes de que el SDK actualice
+            // su estado interno; se consulta de nuevo antes de mostrarlo.
+            await playGames.signIn();
+            await new Promise((resolve) => setTimeout(resolve, 700));
+            const status = await playGames.getAuthStatus();
+            setStatus(!!status.authenticated, status.authenticated
                 ? 'Google Play Games conectado'
-                : 'No se pudo conectar a Google Play Games');
+                : 'Google Play Games no confirmó la sesión');
         } catch (_) {
             setStatus(false, 'No se pudo conectar a Google Play Games');
         } finally {
