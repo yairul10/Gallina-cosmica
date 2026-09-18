@@ -21,12 +21,15 @@
     if (!button || !isNativeAndroid()) return;
     // El icono debe quedar disponible aunque la consulta de estado falle.
     setStatus(false);
-    if (typeof capacitor.registerPlugin !== 'function') {
+    // Capacitor puede exponer los plugins nativos por Plugins o por registerPlugin.
+    const playGames = capacitor.Plugins?.PlayGames
+        || (typeof capacitor.registerPlugin === 'function'
+            ? capacitor.registerPlugin('PlayGames')
+            : null);
+    if (!playGames) {
         button.title = 'Google Play Games no está disponible';
         return;
     }
-
-    const playGames = capacitor.registerPlugin('PlayGames');
     const refreshStatus = async () => {
         try {
             const result = await playGames.getAuthStatus();
