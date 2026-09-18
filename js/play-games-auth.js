@@ -1,38 +1,41 @@
-/* Botón de acceso visible solo en Android mediante Capacitor. */
+/* Acceso a Google Play Games: visible en Android y seguro ante cargas tardías de Capacitor. */
 (() => {
     const button = document.getElementById('playGamesBtn');
-    const capacitor = window.Capacitor;
+    if (!button) return;
+
     const setStatus = (authenticated, message) => {
         button.textContent = authenticated ? '🎮✓' : '🎮';
-        button.title = message || (authenticated ? 'Google Play Games conectado' : 'Conectar con Google Play Games');
+        button.title = message || (authenticated
+            ? 'Google Play Games conectado'
+            : 'Conectar con Google Play Games');
         button.style.display = 'inline-flex';
         button.style.color = authenticated ? '#86efac' : '#dffcff';
     };
+
     const isAndroidApp = () => {
+        const capacitor = window.Capacitor;
         const platform = capacitor && typeof capacitor.getPlatform === 'function'
             ? capacitor.getPlatform()
             : '';
-        // Capacitor puede tardar en exponer sus helpers dentro del WebView.
-        // El user agent de Android sirve como respaldo para no ocultar el botón.
         return platform === 'android' || /Android/i.test(navigator.userAgent);
     };
 
-    if (!button || !isAndroidApp()) return;
-    // En Android el icono siempre debe quedar visible, incluso si el plugin
-    // tarda en inicializarse o la consulta de autenticación falla.
+    const getPlayGames = () => {
+        const capacitor = window.Capacitor;
+        if (!capacitor) return null;
+        return capacitor.Plugins?.PlayGames
+            || (typeof capacitor.registerPlugin === 'function'
+                ? capacitor.registerPlugin('PlayGames')
+                : null);
+    };
+
+    if (!isAndroidApp()) return;
+    // Debe verse incluso mientras el puente nativo termina de inicializar.
     setStatus(false);
-    // Capacitor puede exponer los plugins nativos por Plugins o por registerPlugin.
-    const playGames = capacitor.Plugins?.PlayGames
-        || (typeof capacitor.registerPlugin === 'function'
-            ? capacitor.registerPlugin('PlayGames')
-            : null);
-    if (!playGames) {
-        button.title = 'Google Play Games no está disponible';
-        return;
-    }
-    // Puente reutilizable para logros oficiales de Google Play Games.
+
     window.unlockPlayGamesAchievement = async (achievementId) => {
-        if (!achievementId) return false;
+        const playGames = getPlayGames();
+        if (!playGames || !achievementId) return false;
         try {
             const status = await playGames.getAuthStatus();
             if (!status.authenticated) return false;
@@ -45,6 +48,8 @@
     };
 
     const refreshStatus = async () => {
+        const playGames = getPlayGames();
+        if (!playGames) return;
         try {
             const result = await playGames.getAuthStatus();
             setStatus(!!result.authenticated);
@@ -54,23 +59,29 @@
     };
 
     button.addEventListener('click', async () => {
+        const playGames = getPlayGames();
+        if (!playGames) {
+            setStatus(false, 'Google Play Games se está inicializando');
+            return;
+        }
+
         button.disabled = true;
         button.textContent = '…';
         button.title = 'Conectando con Google Play Games…';
         try {
-            // El resultado de signIn puede llegar antes de que el SDK actualice
-            // su estado interno; se consulta de nuevo antes de mostrarlo.
             await playGames.signIn();
+            // El SDK puede tardar un instante en publicar el estado de sesión.
             await new Promise((resolve) => setTimeout(resolve, 700));
-            const status = await playGames.getAuthStatus();
-            setStatus(!!status.authenticated, status.authenticated
-                ? 'Google Play Games conectado'
-                : 'Google Play Games no confirmó la sesión');
+            await refreshStatus();
         } catch (_) {
             setStatus(false, 'No se pudo conectar a Google Play Games');
         } finally {
             button.disabled = false;
         }
     });
+
     refreshStatus();
+    // Reintento breve: evita que una carga lenta del WebView oculte el botón.
+    setTimeout(refreshStatus, 500);
+    setTimeout(refreshStatus, 1500);
 })();
