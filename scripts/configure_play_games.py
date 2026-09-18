@@ -105,6 +105,7 @@ if not plugin.exists():
         '                result.put("authenticated", task.getResult().isAuthenticated());\n'
         '                call.resolve(result);\n'
         '            });\n'
+        '    }\n'
         '}\n'
     )
 
