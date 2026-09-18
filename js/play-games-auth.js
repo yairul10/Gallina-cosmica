@@ -2,15 +2,31 @@
 (() => {
     const button = document.getElementById('playGamesBtn');
     const capacitor = window.Capacitor;
-    if (!button || !capacitor || capacitor.getPlatform?.() !== 'android' || !capacitor.registerPlugin) return;
-
-    const playGames = capacitor.registerPlugin('PlayGames');
     const setStatus = (authenticated, message) => {
         button.textContent = authenticated ? '🎮✓' : '🎮';
         button.title = message || (authenticated ? 'Google Play Games conectado' : 'Conectar con Google Play Games');
         button.style.display = 'inline-flex';
         button.style.color = authenticated ? '#86efac' : '#dffcff';
     };
+    const isNativeAndroid = () => {
+        if (!capacitor) return false;
+        const platform = typeof capacitor.getPlatform === 'function'
+            ? capacitor.getPlatform()
+            : '';
+        return platform === 'android'
+            || (typeof capacitor.isNativePlatform === 'function'
+                && capacitor.isNativePlatform() && /Android/i.test(navigator.userAgent));
+    };
+
+    if (!button || !isNativeAndroid()) return;
+    // El icono debe quedar disponible aunque la consulta de estado falle.
+    setStatus(false);
+    if (typeof capacitor.registerPlugin !== 'function') {
+        button.title = 'Google Play Games no está disponible';
+        return;
+    }
+
+    const playGames = capacitor.registerPlugin('PlayGames');
     const refreshStatus = async () => {
         try {
             const result = await playGames.getAuthStatus();
