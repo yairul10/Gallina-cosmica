@@ -2,6 +2,9 @@ name: Crear AAB de Gallina Cosmica
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - codex-build-aab-2
 
 permissions:
   contents: read
