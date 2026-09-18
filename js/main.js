@@ -71,7 +71,7 @@ window.startGame = function() {
     gameState = 'PLAYING'; previousState = 'PLAYING';
     // Logro oficial de Google Play Games: First launch / primera partida.
     if (typeof window.unlockPlayGamesAchievement === 'function') {
-        window.unlockPlayGamesAchievement('Cgklu-ylnsoTEAIQAg');
+        window.unlockPlayGamesAchievement('CgkIu-yInsoTEAIQAg');
     }
     
     if (!gameStats.tutorialCompleted) { 
