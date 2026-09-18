@@ -77,9 +77,7 @@
         try {
             const status = await playGames.getAuthStatus();
             if (!status.authenticated) return false;
-            const result = await playGames.unlockAchievement({ achievementId });
-            const detail = result?.detail || 'Google Play Games aceptó la solicitud del logro.';
-            showNotice('Logro Play Games: ' + detail, true);
+            await playGames.unlockAchievement({ achievementId });
             return true;
         } catch (error) {
             const detail = error?.message || String(error);
