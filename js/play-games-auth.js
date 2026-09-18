@@ -30,6 +30,8 @@
             border: success ? '1px solid #86efac' : '1px solid #fca5a5',
             boxShadow: '0 4px 14px rgba(0, 0, 0, 0.45)',
             whiteSpace: 'pre-wrap',
+            overflowWrap: 'anywhere',
+            wordBreak: 'break-word',
             maxHeight: '68vh',
             overflowY: 'auto',
             fontSize: '0.67rem',
