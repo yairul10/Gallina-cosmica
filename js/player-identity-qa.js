@@ -41,6 +41,8 @@
     // Torneo QA conectado a Cloudflare D1.
     const TOURNAMENT_API = 'https://gallina-cosmica-api.jairog940.workers.dev/api/tournaments/active';
     const TOURNAMENT_BASE = 'https://gallina-cosmica-api.jairog940.workers.dev/api/tournaments';
+    const REWARDS_BASE = 'https://gallina-cosmica-api.jairog940.workers.dev/api/rewards';
+    let cloudRewardsBusy = false;
     let cloudTournament = null;
     let cloudParticipants = [];
     let cloudTournamentError = false;
@@ -138,6 +140,65 @@
             cloudCompleteBusy = false;
             render();
         }
+    }
+
+    async function claimCloudReward(rewardId) {
+        const response = await fetch(REWARDS_BASE + '/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                reward_id: rewardId,
+                player_id: current.id
+            })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || ('HTTP ' + response.status));
+        }
+        return data;
+    }
+
+    async function processPendingCloudRewards() {
+        if (cloudRewardsBusy || typeof window.gallinaApplyCloudCoinReward !== 'function') return;
+        cloudRewardsBusy = true;
+        let coinsDelivered = 0;
+        let shouldReload = false;
+
+        try {
+            const response = await fetch(
+                REWARDS_BASE + '/pending?player_id=' + encodeURIComponent(current.id),
+                { cache: 'no-store' }
+            );
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.error || ('HTTP ' + response.status));
+
+            const rewards = Array.isArray(data.rewards) ? data.rewards : [];
+            for (const reward of rewards) {
+                // Los ITEM se dejan pendientes hasta que exista su asset/lógica.
+                if (reward.reward_type !== 'COINS') continue;
+
+                const applied = window.gallinaApplyCloudCoinReward(reward.id, reward.reward_value);
+                if (!applied?.success) continue;
+
+                // Si hubo un fallo después de guardar las monedas pero antes del
+                // ACK, cloudRewardIds impide sumarlas otra vez y solo reintenta el ACK.
+                await claimCloudReward(reward.id);
+                if (applied.applied) {
+                    coinsDelivered += Number(reward.reward_value) || 0;
+                    shouldReload = true;
+                }
+            }
+
+            if (coinsDelivered > 0) {
+                alert('🏆 Premio del torneo recibido: +' + formatCoins(coinsDelivered) + ' monedas');
+            }
+        } catch (error) {
+            console.warn('[Premios] No se pudieron sincronizar los premios pendientes.', error);
+        } finally {
+            cloudRewardsBusy = false;
+        }
+
+        if (shouldReload) window.location.reload();
     }
 
     const formatCoins = (value) => Number(value || 0).toLocaleString('es-CL');
@@ -341,4 +402,10 @@
 
     // Torneo QA: datos, participantes y ganador se leen/escriben en D1.
     loadCloudTournament();
+
+    // estado.js se carga después de este archivo. Al terminar de cargar la
+    // página ya existe la función que aplica monedas al perfil correcto.
+    window.addEventListener('load', () => {
+        processPendingCloudRewards();
+    }, { once: true });
 })();
