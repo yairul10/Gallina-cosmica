@@ -90,7 +90,11 @@ window.startGame = function() {
 };
 
 window.gameOver = function() { 
-    gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++; saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
+    gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++;
+    // El récord personal debe guardarse al terminar la partida, aunque el
+    // jugador no entre al Top 5 local o no pulse el botón de guardar iniciales.
+    gameStats.bestScore = Math.max(Number(gameStats.bestScore || 0), Number(score || 0));
+    saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
     document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
     const reviveBtn = document.getElementById('reviveBtn'); if (coins >= 5000) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
     let isTop5 = false; if (leaderboard.length < 5) { isTop5 = true; } else { isTop5 = score > leaderboard[leaderboard.length - 1].score; }
