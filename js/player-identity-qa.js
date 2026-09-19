@@ -4,6 +4,9 @@
     const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() !== 'web');
     if (isNativeApp) return;
 
+    // Este archivo se usa solo en GitHub Pages. Si una versión antigua del
+    // perfil quedó guardada, el premio se reconcilia en cada carga para QA.
+
     const KEY = 'gallina_qa_player_identity';
     const PLAYERS = [
         { id: 'QA-PLAYER-001', name: 'Jugador 1' },
@@ -38,15 +41,17 @@
     // Premio QA de prueba: solo Jugador 1 recibe Gallina Pro, una vez.
     // Esto prueba que un premio puede pertenecer a una identidad concreta.
     const TEST_REWARD_PLAYER = 'QA-PLAYER-001';
-    const rewardFlagKey = 'gallina_qa_reward_gallina_pro__' + current.id;
-    if (current.id === TEST_REWARD_PLAYER && localStorage.getItem(rewardFlagKey) !== '1') {
+    if (current.id === TEST_REWARD_PLAYER) {
         const statsKey = window.gallinaPlayerStorageKey('farm_space_stats');
         let stats = {};
         try { stats = JSON.parse(localStorage.getItem(statsKey)) || {}; } catch (_) {}
         if (!Array.isArray(stats.proSkins)) stats.proSkins = [false, false, false, false];
-        stats.proSkins[0] = true; // Gallina Pro
-        localStorage.setItem(statsKey, JSON.stringify(stats));
-        localStorage.setItem(rewardFlagKey, '1');
+        // Reconciliar el premio en cada carga evita que un flag antiguo marque
+        // "entregado" aunque el perfil no tenga realmente la nave.
+        if (stats.proSkins[0] !== true) {
+            stats.proSkins[0] = true; // Gallina Pro
+            localStorage.setItem(statsKey, JSON.stringify(stats));
+        }
     }
 
     window.GallinaPlayerIdentity = {
