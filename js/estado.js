@@ -304,6 +304,11 @@ async function loadCloudProgress() {
 }
 
 window.addEventListener('load', loadCloudProgress, { once: true });
+// En Android la identidad de Play Games llega de forma asíncrona. Si el load
+// ocurrió antes, este evento inicia la carga cloud apenas Google entrega el perfil.
+window.addEventListener('gallina-player-identity-ready', () => {
+    loadCloudProgress();
+});
 
 let score = 0; let coins = gameStats.savedCoins || 0;
 let lives = 3; let gameTime = 0; let gameState = 'START'; let previousState = 'PLAYING';
