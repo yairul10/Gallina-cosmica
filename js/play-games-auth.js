@@ -69,11 +69,24 @@
     };
 
     const PLAY_GAMES_IDENTITY_KEY = 'gallina_play_games_identity';
+    const PROFILE_KEYS = new Set([
+        'farm_space_stats',
+        'farm_space_achievements',
+        'farm_space_leaderboard',
+        'farm_space_trophies',
+        'farm_space_cloud_pending'
+    ]);
     let playGamesIdentity = null;
 
-    // Recuperar el último perfil confirmado permite que el progreso y el ranking
-    // conozcan al jugador desde el arranque, incluso mientras PGS termina su
-    // autenticación automática. Luego getCurrentPlayer lo vuelve a validar.
+    const installIdentityStorage = () => {
+        window.gallinaPlayerStorageKey = (baseKey) =>
+            PROFILE_KEYS.has(baseKey) && playGamesIdentity?.id
+                ? baseKey + '__' + playGamesIdentity.id
+                : baseKey;
+    };
+
+    // Solo usamos la identidad cacheada para elegir las claves locales del perfil.
+    // No la enviamos a la nube hasta que Play Games confirme quién está conectado.
     try {
         const cached = JSON.parse(localStorage.getItem(PLAY_GAMES_IDENTITY_KEY) || 'null');
         if (cached?.id) {
@@ -81,6 +94,7 @@
                 id: String(cached.id),
                 name: String(cached.name || 'Jugador').slice(0, 50)
             };
+            installIdentityStorage();
             window.GallinaPlayerIdentity = {
                 getCurrent: () => playGamesIdentity ? { ...playGamesIdentity } : null,
                 getId: () => playGamesIdentity?.id || null,
@@ -97,7 +111,9 @@
             id: String(playerStatus.playerId),
             name: String(playerStatus.displayName || 'Jugador').slice(0, 50)
         };
+        const previousId = playGamesIdentity?.id || null;
         playGamesIdentity = identity;
+        installIdentityStorage();
         try { localStorage.setItem(PLAY_GAMES_IDENTITY_KEY, JSON.stringify(identity)); } catch (_) {}
 
         window.GallinaPlayerIdentity = {
@@ -107,6 +123,19 @@
             isQA: false,
             source: 'play-games'
         };
+
+        // estado.js ya cargó las variables del perfil que estaba activo al abrir
+        // la WebView. Si Play Games confirma otra cuenta, recargamos una sola vez
+        // para que TODO el estado se lea desde las claves del nuevo Player ID.
+        if (previousId && previousId !== identity.id) {
+            const reloadKey = 'gallina_pgs_reload_for_' + identity.id;
+            if (sessionStorage.getItem(reloadKey) !== '1') {
+                sessionStorage.setItem(reloadKey, '1');
+                window.location.reload();
+                return identity;
+            }
+        }
+
         window.dispatchEvent(new CustomEvent('gallina-player-identity-ready', {
             detail: { ...identity, source: 'play-games' }
         }));
