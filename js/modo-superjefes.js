@@ -247,6 +247,22 @@
     }
 
     function finishMode() {
+        // Torneo QA web: el primer perfil que termina las 5 rondas gana.
+        let qaTournamentResult = null;
+        if (window.GallinaQATournament && typeof window.GallinaQATournament.completeSuperBoss === 'function') {
+            qaTournamentResult = window.GallinaQATournament.completeSuperBoss();
+            if (qaTournamentResult.rewarded) {
+                // El premio se guardó en el perfil; sincronizamos el estado en memoria.
+                const statsKey = window.gallinaPlayerStorageKey('farm_space_stats');
+                try {
+                    const rewardedStats = JSON.parse(localStorage.getItem(statsKey)) || {};
+                    coins = Number(rewardedStats.savedCoins || coins);
+                    gameStats.savedCoins = coins;
+                    gameStats.totalCoins = Number(rewardedStats.totalCoins || gameStats.totalCoins);
+                } catch (_) {}
+            }
+        }
+
         // Logro oficial de Google Play Games: completar el modo Superjefes.
         if (typeof window.unlockPlayGamesAchievement === 'function') {
             window.unlockPlayGamesAchievement('CgkIu-yInsoTEAIQBw'); // Conquistador de mundos
@@ -285,7 +301,10 @@
         });
         const victoryMessage = document.getElementById('superBossVictoryMessage');
         if (victoryMessage) {
-            victoryMessage.textContent = '🏆 ¡Superjefes derrotados! +200,000 🪙';
+            const tournamentText = qaTournamentResult?.won
+                ? (qaTournamentResult.rewarded ? ' · 🏆 ¡Primer lugar QA! +500,000 🪙' : ' · 🏆 Ganador del torneo QA')
+                : (qaTournamentResult?.winnerName ? ' · Torneo QA ganado por ' + qaTournamentResult.winnerName : '');
+            victoryMessage.textContent = '🏆 ¡Superjefes derrotados! +200,000 🪙' + tournamentText;
             victoryMessage.classList.add('show');
         }
         document.getElementById('startScreen').style.display = 'flex';
