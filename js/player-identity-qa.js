@@ -1,0 +1,87 @@
+/* Identidad simulada para probar torneos desde GitHub Pages.
+   No se activa dentro de la app Android. */
+(() => {
+    const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() !== 'web');
+    if (isNativeApp) return;
+
+    const KEY = 'gallina_qa_player_identity';
+    const PLAYERS = [
+        { id: 'QA-PLAYER-001', name: 'Jugador 1' },
+        { id: 'QA-PLAYER-002', name: 'Jugador 2' },
+        { id: 'QA-PLAYER-003', name: 'Jugador 3' }
+    ];
+
+    const read = () => {
+        try {
+            const saved = JSON.parse(localStorage.getItem(KEY));
+            return PLAYERS.find(p => p.id === saved?.id) || PLAYERS[0];
+        } catch (_) {
+            return PLAYERS[0];
+        }
+    };
+    const save = (player) => localStorage.setItem(KEY, JSON.stringify(player));
+
+    let current = read();
+    save(current);
+
+    window.GallinaPlayerIdentity = {
+        getCurrent: () => ({ ...current }),
+        getId: () => current.id,
+        getName: () => current.name,
+        isQA: true,
+        setPlayer: (id) => {
+            const found = PLAYERS.find(p => p.id === id);
+            if (!found) return false;
+            current = found;
+            save(current);
+            render();
+            window.dispatchEvent(new CustomEvent('gallina-player-changed', { detail: { ...current } }));
+            return true;
+        }
+    };
+
+    function render() {
+        let panel = document.getElementById('qaIdentityPanel');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'qaIdentityPanel';
+            Object.assign(panel.style, {
+                position: 'fixed', left: '8px', bottom: '8px', zIndex: '1000',
+                background: 'rgba(2, 6, 23, .94)', color: '#fff',
+                border: '1px solid #38bdf8', borderRadius: '10px',
+                padding: '7px', fontSize: '11px', maxWidth: '175px',
+                boxShadow: '0 3px 12px rgba(0,0,0,.45)'
+            });
+            document.body.appendChild(panel);
+        }
+
+        panel.innerHTML = '';
+        const title = document.createElement('div');
+        title.textContent = '🧪 IDENTIDAD QA';
+        title.style.fontWeight = '800';
+        title.style.color = '#67e8f9';
+        panel.appendChild(title);
+
+        const status = document.createElement('div');
+        status.textContent = current.name + ' · ' + current.id;
+        status.style.margin = '4px 0';
+        panel.appendChild(status);
+
+        const select = document.createElement('select');
+        select.setAttribute('aria-label', 'Jugador QA');
+        select.style.width = '100%';
+        select.style.fontSize = '12px';
+        PLAYERS.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = p.name;
+            option.selected = p.id === current.id;
+            select.appendChild(option);
+        });
+        select.addEventListener('change', () => window.GallinaPlayerIdentity.setPlayer(select.value));
+        panel.appendChild(select);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
+    else render();
+})();
