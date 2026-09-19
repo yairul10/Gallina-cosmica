@@ -431,7 +431,32 @@ function draw() {
 document.getElementById('startBtn').addEventListener('click', window.startGame); 
 document.getElementById('restartBtn').addEventListener('click', window.startGame);
 
-let lastFrameTime = 0; const fpsInterval = 1000 / 60; 
+let lastFrameTime = 0; const fpsInterval = 1000 / 60;
+
+// Diagnóstico temporal del bucle principal. Si update() o draw() fallan,
+// mostramos el error en pantalla sin depender de la consola del navegador.
+let gameDebugUpdateCount = 0;
+let gameDebugLastError = '';
+
+function updateGameDebugOverlay() {
+    let box = document.getElementById('gameDebugOverlay');
+    if (!box) {
+        box = document.createElement('div');
+        box.id = 'gameDebugOverlay';
+        box.style.cssText = 'position:fixed;left:6px;bottom:6px;right:6px;z-index:999999;background:rgba(0,0,0,.88);color:#7CFF7C;border:1px solid #7CFF7C;padding:6px;font:11px/1.25 monospace;white-space:pre-wrap;word-break:break-word;pointer-events:none;max-height:32vh;overflow:hidden';
+        document.body.appendChild(box);
+    }
+    const cloudReady = typeof cloudProgressReady !== 'undefined' ? cloudProgressReady : 'n/a';
+    box.textContent =
+        'DEBUG juego | estado=' + gameState +
+        ' | updates=' + gameDebugUpdateCount +
+        ' | enemigos=' + enemies.length +
+        ' | spawn=' + enemySpawnInterval +
+        ' | tutorial=' + gameStats.tutorialCompleted + '/' + tutorialStep +
+        ' | cloud=' + cloudReady +
+        (gameDebugLastError ? '\nERROR: ' + gameDebugLastError : '\nERROR: ninguno');
+}
+
 function loop(timestamp) {
     requestAnimationFrame(loop);
     if (!lastFrameTime) lastFrameTime = timestamp;
@@ -439,14 +464,24 @@ function loop(timestamp) {
     if (elapsed > 200) { lastFrameTime = timestamp; elapsed = 0; }
     if (elapsed >= fpsInterval) {
         lastFrameTime = timestamp - (elapsed % fpsInterval);
-        // El QA puede ejecutar varios pasos completos de lógica y dibujar solo el último.
-        // Fuera de una serie QA siempre se mantiene exactamente un paso por fotograma.
         const steps = typeof window.qaGetSimulationSteps === 'function' ? window.qaGetSimulationSteps() : 1;
-        for (let step = 0; step < steps; step++) {
-            if (typeof window.qaOnSimulationStep === 'function') window.qaOnSimulationStep();
-            update();
+        try {
+            for (let step = 0; step < steps; step++) {
+                if (typeof window.qaOnSimulationStep === 'function') window.qaOnSimulationStep();
+                gameDebugUpdateCount++;
+                update();
+            }
+        } catch (error) {
+            gameDebugLastError = 'UPDATE: ' + (error && (error.stack || error.message) ? (error.stack || error.message) : String(error));
+            console.error('[GallinaCosmica update]', error);
         }
-        draw();
+        try {
+            draw();
+        } catch (error) {
+            gameDebugLastError = 'DRAW: ' + (error && (error.stack || error.message) ? (error.stack || error.message) : String(error));
+            console.error('[GallinaCosmica draw]', error);
+        }
+        updateGameDebugOverlay();
     }
 }
 
