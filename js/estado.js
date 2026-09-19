@@ -169,39 +169,94 @@ function localBestScore() {
     return Math.max(Number(gameStats.bestScore || 0), 0);
 }
 
-async function saveCloudProgressNow() {
+const CLOUD_PENDING_KEY_BASE = 'farm_space_cloud_pending';
+
+function cloudPendingKey() {
+    return typeof window.gallinaPlayerStorageKey === 'function'
+        ? window.gallinaPlayerStorageKey(CLOUD_PENDING_KEY_BASE)
+        : CLOUD_PENDING_KEY_BASE;
+}
+
+function markCloudProgressPending() {
+    localStorage.setItem(cloudPendingKey(), '1');
+}
+
+function clearCloudProgressPending() {
+    localStorage.removeItem(cloudPendingKey());
+}
+
+function hasCloudProgressPending() {
+    return localStorage.getItem(cloudPendingKey()) === '1';
+}
+
+function buildCloudProgressPayload() {
     const identity = window.GallinaPlayerIdentity?.getCurrent?.();
-    if (!cloudProgressReady || !identity?.id || cloudProgressSaving) return;
+    if (!identity?.id) return null;
+    return {
+        player_id: identity.id,
+        player_name: identity.name,
+        coins: Number(gameStats.savedCoins || 0),
+        high_score: localBestScore(),
+        owned_ships: getOwnedShipIds(),
+        equipped_ship: getEquippedShipId(),
+        owned_extras: getOwnedExtraIds(),
+        equipped_extra: gameStats.extraModule && gameStats.equipExtraModule ? 'auto_life' : null,
+        login_streak: Number(gameStats.loginStreak || 0),
+        last_login_date: gameStats.lastLoginDate ? String(gameStats.lastLoginDate) : null
+    };
+}
+
+async function saveCloudProgressNow() {
+    const payload = buildCloudProgressPayload();
+    if (!payload) return false;
+
+    // Todo cambio local queda marcado como pendiente hasta que D1 confirme.
+    markCloudProgressPending();
+    if (!cloudProgressReady || cloudProgressSaving || navigator.onLine === false) return false;
+
     cloudProgressSaving = true;
     try {
-        await fetch(CLOUD_PROGRESS_API, {
+        const response = await fetch(CLOUD_PROGRESS_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                player_id: identity.id,
-                player_name: identity.name,
-                coins: Number(gameStats.savedCoins || 0),
-                high_score: localBestScore(),
-                owned_ships: getOwnedShipIds(),
-                equipped_ship: getEquippedShipId(),
-                owned_extras: getOwnedExtraIds(),
-                equipped_extra: gameStats.extraModule && gameStats.equipExtraModule ? 'auto_life' : null,
-                login_streak: Number(gameStats.loginStreak || 0),
-                last_login_date: gameStats.lastLoginDate ? String(gameStats.lastLoginDate) : null
-            })
+            body: JSON.stringify(payload)
         });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data?.success) throw new Error(data?.error || ('HTTP ' + response.status));
+        clearCloudProgressPending();
+        return true;
     } catch (error) {
-        console.warn('[Progreso] No se pudo guardar en D1.', error);
+        markCloudProgressPending();
+        console.warn('[Progreso] Guardado local; sincronización cloud pendiente.', error);
+        return false;
     } finally {
         cloudProgressSaving = false;
     }
 }
 
 function scheduleCloudProgressSave() {
+    // El guardado local ya ocurrió en saveStats(). Esta marca garantiza que
+    // cerrar el juego o quedarse sin Internet no pierda la sincronización.
+    markCloudProgressPending();
     if (!cloudProgressReady) return;
     clearTimeout(cloudProgressTimer);
     cloudProgressTimer = setTimeout(saveCloudProgressNow, 700);
 }
+
+async function syncPendingCloudProgress() {
+    if (!hasCloudProgressPending()) return true;
+    return saveCloudProgressNow();
+}
+
+window.addEventListener('online', () => {
+    syncPendingCloudProgress();
+});
+
+// Cuando la app vuelve al frente, reintentamos cualquier guardado que haya
+// quedado pendiente mientras estuvo cerrada o sin conexión.
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) syncPendingCloudProgress();
+});
 
 async function loadCloudProgress() {
     const identity = window.GallinaPlayerIdentity?.getCurrent?.();
