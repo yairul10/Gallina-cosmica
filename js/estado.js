@@ -9,7 +9,7 @@ canvas.height = window.innerWidth <= 600
     ? Math.max(640, Math.round(canvas.width * mobileViewportRatio))
     : 640;
 
-let gameStats = JSON.parse(localStorage.getItem('farm_space_stats')) || {};
+let gameStats = JSON.parse(localStorage.getItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'))) || {};
 
 if (gameStats.totalGames === undefined) gameStats.totalGames = 0;
 if (gameStats.totalKills === undefined) gameStats.totalKills = 0;
@@ -35,7 +35,7 @@ if (gameStats.useProShip === undefined) gameStats.useProShip = false;
 
 if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
 
-function saveStats() { localStorage.setItem('farm_space_stats', JSON.stringify(gameStats)); }
+function saveStats() { localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats)); }
 
 const achievData = { 
     'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 
@@ -62,10 +62,10 @@ const achievData = {
     'a23': { title: 'Multimillonario', desc: 'Reúne 100,000 monedas sin gastarlas.' }
 };
 
-let pAchiev = JSON.parse(localStorage.getItem('farm_space_achievements')) || {};
-let leaderboard = JSON.parse(localStorage.getItem('farm_space_leaderboard')) || [{ name: 'PRO', score: 200000 }, { name: 'ANA', score: 100000 }, { name: 'BOB', score: 50000 }];
+let pAchiev = JSON.parse(localStorage.getItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_achievements') : 'farm_space_achievements'))) || {};
+let leaderboard = JSON.parse(localStorage.getItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_leaderboard') : 'farm_space_leaderboard'))) || [{ name: 'PRO', score: 200000 }, { name: 'ANA', score: 100000 }, { name: 'BOB', score: 50000 }];
 
-function saveLeaderboard() { localStorage.setItem('farm_space_leaderboard', JSON.stringify(leaderboard)); }
+function saveLeaderboard() { localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_leaderboard') : 'farm_space_leaderboard'), JSON.stringify(leaderboard)); }
 
 let score = 0; let coins = gameStats.savedCoins || 0;
 let lives = 3; let gameTime = 0; let gameState = 'START'; let previousState = 'PLAYING';
