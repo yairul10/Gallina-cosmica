@@ -485,5 +485,9 @@ function loop(timestamp) {
     }
 }
 
-renderLeaderboard('startLeaderboardList'); 
+// La pantalla inicial ya no contiene una lista local de récords.
+// Evita que un cambio de interfaz detenga todo el motor antes del primer frame.
+if (document.getElementById('startLeaderboardList')) {
+    renderLeaderboard('startLeaderboardList');
+}
 requestAnimationFrame(loop);
