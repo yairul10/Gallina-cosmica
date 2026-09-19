@@ -102,7 +102,15 @@ function updateHangarUI() {
         }
     }
     
-    let btnExtra = document.getElementById('btn-equip-autolife');
+    const chileCard = document.getElementById('hangar-ship-card-chile');
+    const chileBtn = document.getElementById('btn-hs-chile');
+    if (chileCard) chileCard.style.display = gameStats.gallinaChile ? 'flex' : 'none';
+    if (chileBtn) {
+        chileBtn.textContent = gameStats.useGallinaChile ? 'Equipada' : 'Equipar';
+        chileBtn.style.background = gameStats.useGallinaChile ? '#f59e0b' : '#334155';
+    }
+
+        let btnExtra = document.getElementById('btn-equip-autolife');
     if (btnExtra) {
         if (!gameStats.extraModule) { btnExtra.textContent = 'Bloqueado'; btnExtra.style.background = '#1e293b'; btnExtra.disabled = true; }
         else if (gameStats.equipExtraModule) { btnExtra.textContent = 'Equipado'; btnExtra.style.background = '#f59e0b'; btnExtra.disabled = false; }
@@ -110,7 +118,8 @@ function updateHangarUI() {
     }
 }
 
-window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; saveStats(); updateHangarUI(); } }
+window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; gameStats.useGallinaChile = false; saveStats(); updateHangarUI(); } }
+window.equipGallinaChile = function() { if (gameStats.gallinaChile) { gameStats.selectedShip = 0; gameStats.useProShip = false; gameStats.useGallinaChile = true; saveStats(); updateHangarUI(); } }
 window.equipExtra = function() { if (gameStats.extraModule) { gameStats.equipExtraModule = !gameStats.equipExtraModule; saveStats(); updateHangarUI(); } }
 
 window.switchShopTab = function(tab) {
