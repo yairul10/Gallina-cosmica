@@ -16,7 +16,9 @@ window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = fal
 document.getElementById('saveScoreBtn').addEventListener('click', () => { 
     let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); 
     if (!initials) initials = 'ABC'; 
-    leaderboard.push({ name: initials, score: score }); 
+    leaderboard.push({ name: initials, score: score });
+    gameStats.bestScore = Math.max(Number(gameStats.bestScore || 0), Number(score || 0));
+    saveStats();
     leaderboard.sort((a, b) => b.score - a.score); 
     if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); 
     saveLeaderboard(); 
