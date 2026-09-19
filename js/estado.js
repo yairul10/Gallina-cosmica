@@ -293,10 +293,13 @@ async function loadCloudProgress() {
         localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats));
         cloudProgressReady = true;
         window.dispatchEvent(new CustomEvent('gallina-cloud-progress-loaded'));
+        // Tras mezclar nube + local, enviamos el estado final. Esto también
+        // vacía cualquier sincronización que hubiese quedado pendiente offline.
         await saveCloudProgressNow();
     } catch (error) {
-        console.warn('[Progreso] No se pudo cargar desde D1.', error);
+        console.warn('[Progreso] No se pudo cargar desde D1; se mantiene el progreso local.', error);
         cloudProgressReady = true;
+        markCloudProgressPending();
     }
 }
 
