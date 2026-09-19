@@ -35,17 +35,16 @@
     window.gallinaPlayerStorageKey = (baseKey) =>
         PROFILE_KEYS.has(baseKey) ? baseKey + '__' + current.id : baseKey;
 
-    // Premio QA de prueba: solo el Jugador 1 recibe 500.000 monedas, una vez.
-    // Se aplica antes de cargar estado.js para que el juego lea el saldo actualizado.
+    // Premio QA de prueba: solo Jugador 1 recibe Gallina Pro, una vez.
+    // Esto prueba que un premio puede pertenecer a una identidad concreta.
     const TEST_REWARD_PLAYER = 'QA-PLAYER-001';
-    const TEST_REWARD_AMOUNT = 500000;
-    const rewardFlagKey = 'gallina_qa_reward_500k__' + current.id;
+    const rewardFlagKey = 'gallina_qa_reward_gallina_pro__' + current.id;
     if (current.id === TEST_REWARD_PLAYER && localStorage.getItem(rewardFlagKey) !== '1') {
         const statsKey = window.gallinaPlayerStorageKey('farm_space_stats');
         let stats = {};
         try { stats = JSON.parse(localStorage.getItem(statsKey)) || {}; } catch (_) {}
-        stats.savedCoins = Number(stats.savedCoins || 0) + TEST_REWARD_AMOUNT;
-        stats.totalCoins = Number(stats.totalCoins || 0) + TEST_REWARD_AMOUNT;
+        if (!Array.isArray(stats.proSkins)) stats.proSkins = [false, false, false, false];
+        stats.proSkins[0] = true; // Gallina Pro
         localStorage.setItem(statsKey, JSON.stringify(stats));
         localStorage.setItem(rewardFlagKey, '1');
     }
