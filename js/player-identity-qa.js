@@ -42,6 +42,25 @@
     // El primer Player ID que complete Superjefes queda registrado como ganador.
     const TOURNAMENT_KEY = 'gallina_qa_tournament_superboss_v1';
     const TOURNAMENT_REWARD = 500000;
+    const TOURNAMENT_API = 'https://gallina-cosmica-api.jairog940.workers.dev/api/tournaments/active';
+    let cloudTournament = null;
+    let cloudTournamentError = false;
+
+    async function loadCloudTournament() {
+        try {
+            const response = await fetch(TOURNAMENT_API, { cache: 'no-store' });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            cloudTournament = data && data.success ? data.tournament : null;
+            cloudTournamentError = false;
+        } catch (error) {
+            console.warn('[Torneo] No se pudo leer Cloudflare; se mantiene QA local.', error);
+            cloudTournamentError = true;
+        }
+        render();
+    }
+
+    const formatCoins = (value) => Number(value || 0).toLocaleString('es-CL');
 
     const readTournament = () => {
         try { return JSON.parse(localStorage.getItem(TOURNAMENT_KEY)) || {}; }
@@ -220,19 +239,30 @@
 
         tournamentPanel.innerHTML = '';
         const heading = document.createElement('div');
-        heading.textContent = '🏆 TORNEO QA';
+        heading.textContent = cloudTournament?.name ? '🏆 ' + cloudTournament.name : '🏆 TORNEO QA';
         heading.style.cssText = 'font-size:16px;font-weight:900;color:#fbbf24;text-align:center;margin-bottom:8px;';
         tournamentPanel.appendChild(heading);
 
         const challenge = document.createElement('div');
-        challenge.innerHTML = '<b>🎯 Desafío</b><br>Ser el primero en destruir un enemigo en Superjefes.';
+        challenge.innerHTML = '<b>🎯 Desafío</b><br>' + (cloudTournament?.description || 'Ser el primero en destruir un enemigo en Superjefes.');
         challenge.style.marginBottom = '8px';
         tournamentPanel.appendChild(challenge);
 
         const prize = document.createElement('div');
-        prize.innerHTML = '<b>🎁 Premio</b><br>🪙 500.000 monedas';
+        const cloudPrize = cloudTournament
+            ? '🪙 ' + formatCoins(cloudTournament.reward_coins) + ' monedas' +
+              (cloudTournament.reward_item ? '<br>🚀 Premio exclusivo: ' + cloudTournament.reward_item : '')
+            : '🪙 500.000 monedas';
+        prize.innerHTML = '<b>🎁 Premio</b><br>' + cloudPrize;
         prize.style.marginBottom = '9px';
         tournamentPanel.appendChild(prize);
+
+        if (cloudTournamentError) {
+            const cloudStatus = document.createElement('div');
+            cloudStatus.textContent = '⚠️ Sin conexión al torneo en la nube · modo QA local';
+            cloudStatus.style.cssText = 'margin-bottom:8px;font-size:10px;opacity:.75;';
+            tournamentPanel.appendChild(cloudStatus);
+        }
 
         const joinBtn = document.createElement('button');
         joinBtn.textContent = tournament.winnerId ? '🏁 Torneo finalizado' : (joined ? '✅ Participando' : '🏆 Participar');
@@ -274,4 +304,8 @@
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchMenu);
     else watchMenu();
+
+    // Solo lectura por ahora: los datos visibles del torneo vienen de D1.
+    // Participación, ganador y premios siguen en el simulador QA hasta validar esta etapa.
+    loadCloudTournament();
 })();
