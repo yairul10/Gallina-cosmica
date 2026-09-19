@@ -38,21 +38,53 @@
     window.gallinaPlayerStorageKey = (baseKey) =>
         PROFILE_KEYS.has(baseKey) ? baseKey + '__' + current.id : baseKey;
 
-    // Premio QA de prueba: solo Jugador 1 recibe Gallina Pro, una vez.
-    // Esto prueba que un premio puede pertenecer a una identidad concreta.
-    const TEST_REWARD_PLAYER = 'QA-PLAYER-001';
-    if (current.id === TEST_REWARD_PLAYER) {
+    // Torneo QA compartido entre los tres perfiles de este navegador.
+    // El primer Player ID que complete Superjefes queda registrado como ganador.
+    const TOURNAMENT_KEY = 'gallina_qa_tournament_superboss_v1';
+    const TOURNAMENT_REWARD = 500000;
+
+    const readTournament = () => {
+        try { return JSON.parse(localStorage.getItem(TOURNAMENT_KEY)) || {}; }
+        catch (_) { return {}; }
+    };
+    const saveTournament = (data) => localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(data));
+
+    function applyTournamentRewardIfWinner() {
+        const tournament = readTournament();
+        if (tournament.winnerId !== current.id || tournament.rewardClaimedBy === current.id) return false;
         const statsKey = window.gallinaPlayerStorageKey('farm_space_stats');
         let stats = {};
         try { stats = JSON.parse(localStorage.getItem(statsKey)) || {}; } catch (_) {}
-        if (!Array.isArray(stats.proSkins)) stats.proSkins = [false, false, false, false];
-        // Reconciliar el premio en cada carga evita que un flag antiguo marque
-        // "entregado" aunque el perfil no tenga realmente la nave.
-        if (stats.proSkins[0] !== true) {
-            stats.proSkins[0] = true; // Gallina Pro
-            localStorage.setItem(statsKey, JSON.stringify(stats));
-        }
+        stats.savedCoins = Number(stats.savedCoins || 0) + TOURNAMENT_REWARD;
+        stats.totalCoins = Number(stats.totalCoins || 0) + TOURNAMENT_REWARD;
+        localStorage.setItem(statsKey, JSON.stringify(stats));
+        tournament.rewardClaimedBy = current.id;
+        saveTournament(tournament);
+        return true;
     }
+
+    window.GallinaQATournament = {
+        getStatus: () => ({ ...readTournament() }),
+        completeSuperBoss: () => {
+            const tournament = readTournament();
+            if (!tournament.winnerId) {
+                tournament.winnerId = current.id;
+                tournament.winnerName = current.name;
+                tournament.completedAt = new Date().toISOString();
+                saveTournament(tournament);
+            }
+            const won = tournament.winnerId === current.id;
+            const rewarded = won ? applyTournamentRewardIfWinner() : false;
+            return { won, rewarded, winnerId: readTournament().winnerId, winnerName: readTournament().winnerName };
+        },
+        reset: () => {
+            localStorage.removeItem(TOURNAMENT_KEY);
+            return true;
+        }
+    };
+
+    // Si el ganador vuelve a cargar antes de cobrar, reconciliamos el premio.
+    applyTournamentRewardIfWinner();
 
     window.GallinaPlayerIdentity = {
         getCurrent: () => ({ ...current }),
