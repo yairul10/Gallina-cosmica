@@ -85,8 +85,9 @@ function updateHangarUI() {
                 bPro.style.background = (gameStats.selectedShip === i && gameStats.useProShip && !gameStats.useGallinaChile) ? '#f59e0b' : '#334155';
                 bPro.disabled = !gameStats.proSkins[i]; if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
                 if (bChile) {
+                    bChile.style.display = gameStats.gallinaChile ? '' : 'none';
                     bChile.disabled = !gameStats.gallinaChile;
-                    bChile.style.background = gameStats.useGallinaChile ? '#f59e0b' : (gameStats.gallinaChile ? '#334155' : '#1e293b');
+                    bChile.style.background = gameStats.useGallinaChile ? '#f59e0b' : '#334155';
                 }
                 
                 let isPro = (gameStats.selectedShip === i && gameStats.useProShip && !gameStats.useGallinaChile);
@@ -119,8 +120,25 @@ function updateHangarUI() {
     }
 }
 
-window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; gameStats.useGallinaChile = false; saveStats(); updateHangarUI(); } }
-window.equipGallinaChile = function() { if (gameStats.gallinaChile) { gameStats.selectedShip = 0; gameStats.useProShip = false; gameStats.useGallinaChile = true; saveStats(); updateHangarUI(); } }
+window.updateMenuShip = function() {
+    const img = document.querySelector('.menu-ship');
+    if (!img) return;
+    const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    const dir = dirs[gameStats.selectedShip] || 'gallina';
+    img.src = gameStats.useGallinaChile
+        ? 'assets/gallina_chile.png'
+        : `assets/${dir}${gameStats.useProShip ? '_pro' : ''}_1.png`;
+    img.alt = 'Nave seleccionada';
+};
+window.refreshGallinaEquipmentUI = function() {
+    updateHangarUI();
+    updateShopUI();
+    window.updateMenuShip();
+};
+window.addEventListener('gallina-cloud-progress-loaded', window.refreshGallinaEquipmentUI);
+
+window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; gameStats.useGallinaChile = false; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
+window.equipGallinaChile = function() { if (gameStats.gallinaChile) { gameStats.selectedShip = 0; gameStats.useProShip = false; gameStats.useGallinaChile = true; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
 window.equipExtra = function() { if (gameStats.extraModule) { gameStats.equipExtraModule = !gameStats.equipExtraModule; saveStats(); updateHangarUI(); } }
 
 window.switchShopTab = function(tab) {
@@ -424,3 +442,6 @@ function showDailyRewardScreen() {
     for (let i = 0; i < 7; i++) { let dayNum = i + 1; let reward = dailyRewards[i]; let isToday = (dayNum === gameStats.loginStreak); let isClaimed = (dayNum < gameStats.loginStreak); let boxColor = isToday ? '#f59e0b' : (isClaimed ? '#10b981' : '#1e293b'); let textColor = isToday ? '#000' : '#fff'; let opacity = isClaimed ? '0.6' : '1'; let icon = isClaimed ? '✅' : '🪙'; if (dayNum === 7 && !isClaimed) icon = '💎'; let extraStyle = (dayNum === 7) ? 'grid-column: span 3; font-size: 1.1rem; padding: 12px;' : 'padding: 8px;'; grid.innerHTML += `<div style="background: ${boxColor}; color: ${textColor}; ${extraStyle} border-radius: 8px; text-align: center; opacity: ${opacity}; box-shadow: ${isToday ? '0 0 12px #fbbf24' : 'none'}; border: 2px solid ${isToday ? '#fff' : 'transparent'};"><div style="font-size: 0.75rem; font-weight: bold; opacity: 0.9;">DÍA ${dayNum}</div><div style="font-size: ${dayNum===7 ? '1.8rem' : '1.3rem'}; margin: 2px 0;">${icon}</div><div style="font-size: 0.9rem; font-weight: 900;">+${reward.toLocaleString()}</div></div>`; }
 }
 document.getElementById('claimRewardBtn').addEventListener('click', () => { let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); let rewardIndex = gameStats.loginStreak - 1; let earned = dailyRewards[rewardIndex]; coins += earned; gameStats.savedCoins = coins; gameStats.totalCoins += earned; gameStats.lastLoginDate = today; saveStats(); document.getElementById('coinVal').textContent = coins; document.getElementById('dailyRewardScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; showTrophyToast("🎁", null, `¡+${earned.toLocaleString()} Monedas!`); }); setTimeout(checkDailyReward, 300);
+
+// Mantener la nave decorativa del menú alineada con el Hangar.
+window.updateMenuShip?.();
