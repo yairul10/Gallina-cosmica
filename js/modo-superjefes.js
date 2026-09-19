@@ -207,9 +207,12 @@
         // Torneo QA cloud: reporta la primera baja a D1.
         // El Worker decide de forma autoritativa qué Player ID llegó primero.
         if (window.GallinaQATournament && typeof window.GallinaQATournament.completeSuperBoss === 'function') {
-            Promise.resolve(window.GallinaQATournament.completeSuperBoss()).catch((error) => {
-                console.warn('[Torneo] No se pudo reportar la baja.', error);
-            });
+            const tournamentStatus = window.GallinaQATournament.getStatus?.();
+            if (!tournamentStatus?.tournament?.winner_player_id) {
+                Promise.resolve(window.GallinaQATournament.completeSuperBoss()).catch((error) => {
+                    console.warn('[Torneo] No se pudo reportar la baja.', error);
+                });
+            }
         }
 
         enemy.isDead = true;
