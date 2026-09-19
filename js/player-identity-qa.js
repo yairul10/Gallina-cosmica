@@ -122,12 +122,14 @@
         }
     };
 
+    let tournamentExpanded = false;
+
     function render() {
-        let panel = document.getElementById('qaIdentityPanel');
-        if (!panel) {
-            panel = document.createElement('div');
-            panel.id = 'qaIdentityPanel';
-            Object.assign(panel.style, {
+        let identityPanel = document.getElementById('qaIdentityPanel');
+        if (!identityPanel) {
+            identityPanel = document.createElement('div');
+            identityPanel.id = 'qaIdentityPanel';
+            Object.assign(identityPanel.style, {
                 position: 'absolute', left: '12px', top: '78px', zIndex: '105',
                 background: 'rgba(2, 6, 23, .94)', color: '#fff',
                 border: '1px solid #38bdf8', borderRadius: '10px',
@@ -135,25 +137,68 @@
                 boxShadow: '0 3px 12px rgba(0,0,0,.45)'
             });
             const container = document.getElementById('game-container');
-            (container || document.body).appendChild(panel);
+            (container || document.body).appendChild(identityPanel);
         }
 
         const startScreen = document.getElementById('startScreen');
         const menuVisible = startScreen && getComputedStyle(startScreen).display !== 'none';
-        panel.style.display = menuVisible ? 'block' : 'none';
+        identityPanel.style.display = menuVisible ? 'block' : 'none';
+
+        let tournamentIcon = document.getElementById('qaTournamentIcon');
+        if (!tournamentIcon) {
+            tournamentIcon = document.createElement('button');
+            tournamentIcon.id = 'qaTournamentIcon';
+            tournamentIcon.type = 'button';
+            tournamentIcon.textContent = '🏆';
+            tournamentIcon.setAttribute('aria-label', 'Abrir torneo');
+            Object.assign(tournamentIcon.style, {
+                position: 'absolute', right: '12px', top: '78px', zIndex: '107',
+                width: '42px', height: '42px', borderRadius: '50%',
+                border: '2px solid #fbbf24', background: 'rgba(15,23,42,.96)',
+                fontSize: '21px', boxShadow: '0 3px 12px rgba(0,0,0,.45)',
+                cursor: 'pointer'
+            });
+            tournamentIcon.addEventListener('click', (event) => {
+                event.stopPropagation();
+                tournamentExpanded = !tournamentExpanded;
+                render();
+            });
+            const container = document.getElementById('game-container');
+            (container || document.body).appendChild(tournamentIcon);
+        }
+        tournamentIcon.style.display = menuVisible ? 'block' : 'none';
+
+        let tournamentPanel = document.getElementById('qaTournamentPanel');
+        if (!tournamentPanel) {
+            tournamentPanel = document.createElement('div');
+            tournamentPanel.id = 'qaTournamentPanel';
+            Object.assign(tournamentPanel.style, {
+                position: 'absolute', right: '12px', top: '126px', zIndex: '106',
+                width: '230px', maxWidth: 'calc(100% - 24px)',
+                background: 'rgba(2, 6, 23, .97)', color: '#fff',
+                border: '1px solid #fbbf24', borderRadius: '12px',
+                padding: '11px', fontSize: '12px',
+                boxShadow: '0 6px 20px rgba(0,0,0,.55)'
+            });
+            tournamentPanel.addEventListener('click', event => event.stopPropagation());
+            const container = document.getElementById('game-container');
+            (container || document.body).appendChild(tournamentPanel);
+        }
+        tournamentPanel.style.display = menuVisible && tournamentExpanded ? 'block' : 'none';
+
         if (!menuVisible) return;
 
-        panel.innerHTML = '';
+        identityPanel.innerHTML = '';
         const title = document.createElement('div');
         title.textContent = '🧪 IDENTIDAD QA';
         title.style.fontWeight = '800';
         title.style.color = '#67e8f9';
-        panel.appendChild(title);
+        identityPanel.appendChild(title);
 
         const status = document.createElement('div');
         status.textContent = current.name + ' · ' + current.id;
         status.style.margin = '4px 0';
-        panel.appendChild(status);
+        identityPanel.appendChild(status);
 
         const select = document.createElement('select');
         select.setAttribute('aria-label', 'Jugador QA');
@@ -167,38 +212,60 @@
             select.appendChild(option);
         });
         select.addEventListener('change', () => window.GallinaPlayerIdentity.setPlayer(select.value));
-        panel.appendChild(select);
+        identityPanel.appendChild(select);
 
         const tournament = readTournament();
-        const joined = Array.isArray(tournament.participants) && tournament.participants.some(p => p.id === current.id);
+        const participants = Array.isArray(tournament.participants) ? tournament.participants : [];
+        const joined = participants.some(p => p.id === current.id);
+
+        tournamentPanel.innerHTML = '';
+        const heading = document.createElement('div');
+        heading.textContent = '🏆 TORNEO QA';
+        heading.style.cssText = 'font-size:16px;font-weight:900;color:#fbbf24;text-align:center;margin-bottom:8px;';
+        tournamentPanel.appendChild(heading);
+
+        const challenge = document.createElement('div');
+        challenge.innerHTML = '<b>🎯 Desafío</b><br>Ser el primero en destruir un enemigo en Superjefes.';
+        challenge.style.marginBottom = '8px';
+        tournamentPanel.appendChild(challenge);
+
+        const prize = document.createElement('div');
+        prize.innerHTML = '<b>🎁 Premio</b><br>🪙 500.000 monedas';
+        prize.style.marginBottom = '9px';
+        tournamentPanel.appendChild(prize);
+
         const joinBtn = document.createElement('button');
         joinBtn.textContent = tournament.winnerId ? '🏁 Torneo finalizado' : (joined ? '✅ Participando' : '🏆 Participar');
         joinBtn.disabled = !!tournament.winnerId || joined;
         Object.assign(joinBtn.style, {
-            width: '100%', marginTop: '6px', padding: '5px', borderRadius: '7px',
-            border: '0', fontWeight: '700', cursor: joinBtn.disabled ? 'default' : 'pointer'
+            width: '100%', padding: '8px', borderRadius: '8px',
+            border: '0', fontWeight: '800', cursor: joinBtn.disabled ? 'default' : 'pointer',
+            marginBottom: '9px'
         });
         joinBtn.addEventListener('click', () => window.GallinaQATournament.join());
-        panel.appendChild(joinBtn);
+        tournamentPanel.appendChild(joinBtn);
 
-        const participants = Array.isArray(tournament.participants) ? tournament.participants : [];
-        if (participants.length) {
-            const list = document.createElement('div');
-            list.style.marginTop = '6px';
-            list.innerHTML = '<b>Participantes (' + participants.length + ')</b><br>' +
-                participants.map(p => '🟢 ' + p.name).join('<br>');
-            panel.appendChild(list);
-        }
+        const list = document.createElement('div');
+        list.innerHTML = '<b>👥 Participantes (' + participants.length + ')</b>' +
+            (participants.length ? '<br>' + participants.map(p => '🟢 ' + p.name).join('<br>') : '<br><span style="opacity:.7">Aún no hay participantes.</span>');
+        tournamentPanel.appendChild(list);
 
         if (tournament.winnerName) {
             const winner = document.createElement('div');
-            winner.style.marginTop = '6px';
-            winner.style.color = '#fbbf24';
-            winner.style.fontWeight = '800';
-            winner.textContent = '🥇 ' + tournament.winnerName;
-            panel.appendChild(winner);
+            winner.style.cssText = 'margin-top:9px;color:#fbbf24;font-weight:900;';
+            winner.textContent = '🥇 Ganador: ' + tournament.winnerName;
+            tournamentPanel.appendChild(winner);
         }
     }
+
+    document.addEventListener('click', (event) => {
+        if (!tournamentExpanded) return;
+        const panel = document.getElementById('qaTournamentPanel');
+        const icon = document.getElementById('qaTournamentIcon');
+        if ((panel && panel.contains(event.target)) || (icon && icon.contains(event.target))) return;
+        tournamentExpanded = false;
+        render();
+    });
 
     const watchMenu = () => {
         render();
