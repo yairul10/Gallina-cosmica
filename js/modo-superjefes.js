@@ -204,6 +204,23 @@
         enemy.hp -= damage * getShipDamageMultiplier(enemy);
         if (enemy.hp > 0) return;
 
+        // Torneo QA rápido: el primer perfil que derrota un enemigo gana.
+        // Así podemos validar ganador + premio sin completar las 5 rondas.
+        if (window.GallinaQATournament && typeof window.GallinaQATournament.completeSuperBoss === 'function') {
+            const qaResult = window.GallinaQATournament.completeSuperBoss();
+            if (qaResult.rewarded) {
+                const statsKey = window.gallinaPlayerStorageKey('farm_space_stats');
+                try {
+                    const rewardedStats = JSON.parse(localStorage.getItem(statsKey)) || {};
+                    coins = Number(rewardedStats.savedCoins || coins);
+                    gameStats.savedCoins = coins;
+                    gameStats.totalCoins = Number(rewardedStats.totalCoins || gameStats.totalCoins);
+                    showTrophyToast('🏆', null, '¡Primer lugar QA! +500,000 🪙');
+                    updateUpgradesHUD();
+                } catch (_) {}
+            }
+        }
+
         enemy.isDead = true;
         enemy.deathTimer = 25;
         score += enemy.pts;
