@@ -77,22 +77,31 @@ function updateHangarUI() {
         if(card) {
             if (gameStats.skins[i]) {
                 card.style.display = 'flex'; 
-                let bNorm = document.getElementById('btn-hs-'+i+'-norm'); let bPro = document.getElementById('btn-hs-'+i+'-pro'); 
+                let bNorm = document.getElementById('btn-hs-'+i+'-norm'); let bPro = document.getElementById('btn-hs-'+i+'-pro');
+                let bChile = i === 0 ? document.getElementById('btn-hs-0-chile') : null;
                 let img = document.getElementById('img-hs-'+i); let desc = document.getElementById('desc-hs-'+i);
                 
-                bNorm.style.background = (gameStats.selectedShip === i && !gameStats.useProShip) ? '#f59e0b' : '#334155';
-                bPro.style.background = (gameStats.selectedShip === i && gameStats.useProShip) ? '#f59e0b' : '#334155';
+                bNorm.style.background = (gameStats.selectedShip === i && !gameStats.useProShip && !gameStats.useGallinaChile) ? '#f59e0b' : '#334155';
+                bPro.style.background = (gameStats.selectedShip === i && gameStats.useProShip && !gameStats.useGallinaChile) ? '#f59e0b' : '#334155';
                 bPro.disabled = !gameStats.proSkins[i]; if(!gameStats.proSkins[i]) bPro.style.background = '#1e293b';
+                if (bChile) {
+                    bChile.disabled = !gameStats.gallinaChile;
+                    bChile.style.background = gameStats.useGallinaChile ? '#f59e0b' : (gameStats.gallinaChile ? '#334155' : '#1e293b');
+                }
                 
-                let isPro = (gameStats.selectedShip === i && gameStats.useProShip);
+                let isPro = (gameStats.selectedShip === i && gameStats.useProShip && !gameStats.useGallinaChile);
                 if(img) {
-                    img.src = isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`;
+                    img.src = (i === 0 && gameStats.useGallinaChile)
+                        ? 'assets/gallina_chile.png'
+                        : (isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`);
                     // Respaldo automático si la imagen de la skin falla
                     img.onerror = function() { this.src = `assets/${animalDirs[i]}_1.png`; };
                 }
                 
                 if(desc) {
-                    if (isPro) {
+                    if (i === 0 && gameStats.useGallinaChile) {
+                        desc.innerHTML = '<span style="color:#fbbf24; font-weight:bold;">🏆 Exclusiva de torneo</span><span>+20% a Maíz</span>';
+                    } else if (isPro) {
                         desc.innerHTML = `<span style="color:#fbbf24; font-weight:bold;">+30% Daño Extra</span><span>${passives[i]}</span>`;
                     } else {
                         desc.innerHTML = `<span>${passives[i]}</span>`;
@@ -102,14 +111,6 @@ function updateHangarUI() {
         }
     }
     
-    const chileCard = document.getElementById('hangar-ship-card-chile');
-    const chileBtn = document.getElementById('btn-hs-chile');
-    if (chileCard) chileCard.style.display = gameStats.gallinaChile ? 'flex' : 'none';
-    if (chileBtn) {
-        chileBtn.textContent = gameStats.useGallinaChile ? 'Equipada' : 'Equipar';
-        chileBtn.style.background = gameStats.useGallinaChile ? '#f59e0b' : '#334155';
-    }
-
         let btnExtra = document.getElementById('btn-equip-autolife');
     if (btnExtra) {
         if (!gameStats.extraModule) { btnExtra.textContent = 'Bloqueado'; btnExtra.style.background = '#1e293b'; btnExtra.disabled = true; }
