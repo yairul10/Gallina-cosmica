@@ -32,6 +32,8 @@ if (!gameStats.skins) gameStats.skins = [true, false, false, false];
 if (!gameStats.proSkins) gameStats.proSkins = [false, false, false, false]; 
 if (gameStats.selectedShip === undefined) gameStats.selectedShip = 0; 
 if (gameStats.useProShip === undefined) gameStats.useProShip = false;
+if (gameStats.gallinaChile === undefined) gameStats.gallinaChile = false;
+if (gameStats.useGallinaChile === undefined) gameStats.useGallinaChile = false;
 
 if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
 
@@ -57,6 +59,16 @@ window.gallinaApplyCloudCoinReward = (rewardId, amount) => {
     gameStats.cloudRewardIds.push(id);
     saveStats();
     return { success: true, applied: true, amount: coins };
+};
+
+window.gallinaApplyCloudItemReward = (rewardId, itemId) => {
+    const id = String(rewardId);
+    if (!id || itemId !== 'gallina_chile') return { success: false, invalid: true };
+    if (gameStats.cloudRewardIds.includes(id)) return { success: true, alreadyApplied: true, itemId };
+    gameStats.gallinaChile = true;
+    gameStats.cloudRewardIds.push(id);
+    saveStats();
+    return { success: true, applied: true, itemId };
 };
 
 const achievData = { 
