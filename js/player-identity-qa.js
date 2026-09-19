@@ -24,6 +24,17 @@
     let current = read();
     save(current);
 
+    // Las claves de progreso QA se separan por Player ID. Las claves visuales
+    // (por ejemplo, posición del HUD) pueden seguir siendo comunes.
+    const PROFILE_KEYS = new Set([
+        'farm_space_stats',
+        'farm_space_achievements',
+        'farm_space_leaderboard',
+        'farm_space_trophies'
+    ]);
+    window.gallinaPlayerStorageKey = (baseKey) =>
+        PROFILE_KEYS.has(baseKey) ? baseKey + '__' + current.id : baseKey;
+
     window.GallinaPlayerIdentity = {
         getCurrent: () => ({ ...current }),
         getId: () => current.id,
@@ -36,6 +47,9 @@
             save(current);
             render();
             window.dispatchEvent(new CustomEvent('gallina-player-changed', { detail: { ...current } }));
+            // El juego mantiene parte del perfil en variables globales. Recargar
+            // al cambiar de jugador evita mezclar datos entre dos identidades.
+            window.location.reload();
             return true;
         }
     };
