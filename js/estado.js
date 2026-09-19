@@ -37,7 +37,10 @@ if (gameStats.useGallinaChile === undefined) gameStats.useGallinaChile = false;
 
 if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
 
-function saveStats() { localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats)); }
+function saveStats() {
+    localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats));
+    scheduleCloudProgressSave();
+}
 
 // Premios de torneo confirmados por el servidor.
 // Guardamos también el ID del premio aplicado para que una recarga o un fallo
@@ -99,7 +102,139 @@ const achievData = {
 let pAchiev = JSON.parse(localStorage.getItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_achievements') : 'farm_space_achievements'))) || {};
 let leaderboard = JSON.parse(localStorage.getItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_leaderboard') : 'farm_space_leaderboard'))) || [{ name: 'PRO', score: 200000 }, { name: 'ANA', score: 100000 }, { name: 'BOB', score: 50000 }];
 
+
 function saveLeaderboard() { localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_leaderboard') : 'farm_space_leaderboard'), JSON.stringify(leaderboard)); }
+
+const CLOUD_PROGRESS_API = 'https://gallina-cosmica-api.jairog940.workers.dev/api/progress';
+let cloudProgressReady = false;
+let cloudProgressTimer = null;
+let cloudProgressSaving = false;
+
+function getOwnedShipIds() {
+    const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    const owned = [];
+    dirs.forEach((dir, i) => {
+        if (gameStats.skins[i]) owned.push(dir + '_normal');
+        if (gameStats.proSkins[i]) owned.push(dir + '_pro');
+    });
+    if (gameStats.gallinaChile) owned.push('gallina_chile');
+    return [...new Set(owned)];
+}
+
+function getEquippedShipId() {
+    const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    if (gameStats.useGallinaChile) return 'gallina_chile';
+    const dir = dirs[gameStats.selectedShip] || 'gallina';
+    return dir + (gameStats.useProShip ? '_pro' : '_normal');
+}
+
+function getOwnedExtraIds() {
+    return gameStats.extraModule ? ['auto_life'] : [];
+}
+
+function applyCloudShipId(id) {
+    const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    if (id === 'gallina_chile') {
+        gameStats.gallinaChile = true;
+        return;
+    }
+    const match = /^(gallina|oveja|caballo|vaca)_(normal|pro)$/.exec(String(id || ''));
+    if (!match) return;
+    const index = dirs.indexOf(match[1]);
+    if (index < 0) return;
+    if (match[2] === 'pro') gameStats.proSkins[index] = true;
+    else gameStats.skins[index] = true;
+}
+
+function applyEquippedShipId(id) {
+    const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    if (id === 'gallina_chile' && gameStats.gallinaChile) {
+        gameStats.selectedShip = 0;
+        gameStats.useProShip = false;
+        gameStats.useGallinaChile = true;
+        return;
+    }
+    const match = /^(gallina|oveja|caballo|vaca)_(normal|pro)$/.exec(String(id || ''));
+    if (!match) return;
+    const index = dirs.indexOf(match[1]);
+    if (index < 0) return;
+    const isPro = match[2] === 'pro';
+    if ((isPro && !gameStats.proSkins[index]) || (!isPro && !gameStats.skins[index])) return;
+    gameStats.selectedShip = index;
+    gameStats.useProShip = isPro;
+    gameStats.useGallinaChile = false;
+}
+
+function localBestScore() {
+    return Math.max(Number(gameStats.bestScore || 0), 0);
+}
+
+async function saveCloudProgressNow() {
+    const identity = window.GallinaPlayerIdentity?.getCurrent?.();
+    if (!cloudProgressReady || !identity?.id || cloudProgressSaving) return;
+    cloudProgressSaving = true;
+    try {
+        await fetch(CLOUD_PROGRESS_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                player_id: identity.id,
+                player_name: identity.name,
+                coins: Number(gameStats.savedCoins || 0),
+                high_score: localBestScore(),
+                owned_ships: getOwnedShipIds(),
+                equipped_ship: getEquippedShipId(),
+                owned_extras: getOwnedExtraIds(),
+                equipped_extra: gameStats.extraModule && gameStats.equipExtraModule ? 'auto_life' : null
+            })
+        });
+    } catch (error) {
+        console.warn('[Progreso] No se pudo guardar en D1.', error);
+    } finally {
+        cloudProgressSaving = false;
+    }
+}
+
+function scheduleCloudProgressSave() {
+    if (!cloudProgressReady) return;
+    clearTimeout(cloudProgressTimer);
+    cloudProgressTimer = setTimeout(saveCloudProgressNow, 700);
+}
+
+async function loadCloudProgress() {
+    const identity = window.GallinaPlayerIdentity?.getCurrent?.();
+    if (!identity?.id) return;
+    try {
+        const response = await fetch(CLOUD_PROGRESS_API + '?player_id=' + encodeURIComponent(identity.id), { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || ('HTTP ' + response.status));
+        const progress = data.progress || {};
+
+        // Durante la migración QA conservamos el mayor saldo para no borrar
+        // monedas locales antiguas antes de que D1 haya sido inicializado.
+        gameStats.savedCoins = Math.max(Number(gameStats.savedCoins || 0), Number(progress.coins || 0));
+        coins = gameStats.savedCoins;
+        gameStats.bestScore = Math.max(Number(gameStats.bestScore || 0), Number(progress.high_score || 0));
+
+        (Array.isArray(progress.owned_ships) ? progress.owned_ships : []).forEach(applyCloudShipId);
+        (Array.isArray(progress.owned_extras) ? progress.owned_extras : []).forEach(id => {
+            if (id === 'auto_life') gameStats.extraModule = true;
+        });
+
+        if (progress.equipped_ship) applyEquippedShipId(progress.equipped_ship);
+        if (progress.equipped_extra === 'auto_life' && gameStats.extraModule) gameStats.equipExtraModule = true;
+
+        localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats));
+        cloudProgressReady = true;
+        window.dispatchEvent(new CustomEvent('gallina-cloud-progress-loaded'));
+        await saveCloudProgressNow();
+    } catch (error) {
+        console.warn('[Progreso] No se pudo cargar desde D1.', error);
+        cloudProgressReady = true;
+    }
+}
+
+window.addEventListener('load', loadCloudProgress, { once: true });
 
 let score = 0; let coins = gameStats.savedCoins || 0;
 let lives = 3; let gameTime = 0; let gameState = 'START'; let previousState = 'PLAYING';
