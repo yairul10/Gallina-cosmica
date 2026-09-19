@@ -116,6 +116,17 @@
         const joined = cloudParticipants.some(p => p.player_id === current.id);
         if (!joined) return { success: false, notJoined: true };
 
+        // Si D1 ya tiene ganador, el torneo terminó: no volvemos a reportar
+        // bajas ni mostramos de nuevo el mensaje de primer lugar.
+        if (cloudTournament.winner_player_id) {
+            return {
+                success: true,
+                won: cloudTournament.winner_player_id === current.id,
+                alreadyFinished: true,
+                winner_player_id: cloudTournament.winner_player_id
+            };
+        }
+
         cloudCompleteBusy = true;
         try {
             const response = await fetch(TOURNAMENT_BASE + '/complete', {
