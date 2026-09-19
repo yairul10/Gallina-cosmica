@@ -185,7 +185,9 @@ async function saveCloudProgressNow() {
                 owned_ships: getOwnedShipIds(),
                 equipped_ship: getEquippedShipId(),
                 owned_extras: getOwnedExtraIds(),
-                equipped_extra: gameStats.extraModule && gameStats.equipExtraModule ? 'auto_life' : null
+                equipped_extra: gameStats.extraModule && gameStats.equipExtraModule ? 'auto_life' : null,
+                login_streak: Number(gameStats.loginStreak || 0),
+                last_login_date: gameStats.lastLoginDate ? String(gameStats.lastLoginDate) : null
             })
         });
     } catch (error) {
@@ -223,6 +225,14 @@ async function loadCloudProgress() {
 
         if (progress.equipped_ship) applyEquippedShipId(progress.equipped_ship);
         if (progress.equipped_extra === 'auto_life' && gameStats.extraModule) gameStats.equipExtraModule = true;
+
+        // La recompensa diaria pertenece al perfil cloud, no al navegador.
+        // Si D1 ya tiene progreso, su racha y fecha son la fuente de verdad.
+        if (data.exists) {
+            gameStats.loginStreak = Math.max(0, Number(progress.login_streak || 0));
+            const cloudLastLogin = Number(progress.last_login_date);
+            gameStats.lastLoginDate = Number.isFinite(cloudLastLogin) && cloudLastLogin > 0 ? cloudLastLogin : 0;
+        }
 
         localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats));
         cloudProgressReady = true;
