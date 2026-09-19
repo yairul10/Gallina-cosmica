@@ -13,18 +13,7 @@ window.addEventListener('keydown', (e) => {
 
 window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = false; });
 
-document.getElementById('saveScoreBtn').addEventListener('click', () => { 
-    let initials = document.getElementById('playerInitials').value.toUpperCase().slice(0, 3); 
-    if (!initials) initials = 'ABC'; 
-    leaderboard.push({ name: initials, score: score });
-    gameStats.bestScore = Math.max(Number(gameStats.bestScore || 0), Number(score || 0));
-    saveStats();
-    leaderboard.sort((a, b) => b.score - a.score); 
-    if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5); 
-    saveLeaderboard(); 
-    document.getElementById('saveScoreSection').style.display = 'none'; 
-    renderLeaderboard('endLeaderboardList'); 
-});
+// El récord ahora se guarda automáticamente al terminar o abandonar la partida.
 
 document.getElementById('reviveBtn').addEventListener('click', () => {
     if (coins >= 5000) {
@@ -89,17 +78,43 @@ window.startGame = function() {
     }, 1000);
 };
 
+window.saveCurrentMatchRecord = function() {
+    const currentScore = Math.max(0, Number(score || 0));
+    gameStats.bestScore = Math.max(Number(gameStats.bestScore || 0), currentScore);
+    gameStats.savedCoins = Math.max(0, Number(coins || 0));
+    saveStats();
+
+    // Conservamos también el historial local sin pedir iniciales.
+    if (currentScore > 0) {
+        const identity = window.GallinaPlayerIdentity?.getCurrent?.();
+        const playerName = identity?.name || 'Jugador';
+        const existing = leaderboard.find(item => item.name === playerName);
+        if (existing) existing.score = Math.max(Number(existing.score || 0), currentScore);
+        else leaderboard.push({ name: playerName, score: currentScore });
+        leaderboard.sort((a, b) => b.score - a.score);
+        if (leaderboard.length > 5) leaderboard = leaderboard.slice(0, 5);
+        saveLeaderboard();
+    }
+
+    // No esperamos el temporizador normal: al salir de una partida enviamos
+    // el progreso al servidor inmediatamente.
+    if (typeof saveCloudProgressNow === 'function') {
+        saveCloudProgressNow();
+    }
+};
+
 window.gameOver = function() { 
     gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++;
-    // El récord personal debe guardarse al terminar la partida, aunque el
-    // jugador no entre al Top 5 local o no pulse el botón de guardar iniciales.
-    gameStats.bestScore = Math.max(Number(gameStats.bestScore || 0), Number(score || 0));
-    saveStats(); if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
-    document.getElementById('finalScore').textContent = score; renderLeaderboard('endLeaderboardList'); document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
-    const reviveBtn = document.getElementById('reviveBtn'); if (coins >= 5000) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; } else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
-    let isTop5 = false; if (leaderboard.length < 5) { isTop5 = true; } else { isTop5 = score > leaderboard[leaderboard.length - 1].score; }
-    if (isTop5 && score > 0) { document.getElementById('saveScoreSection').style.display = 'block'; } else { document.getElementById('saveScoreSection').style.display = 'none'; }
-    document.getElementById('gameOverScreen').style.display = 'flex'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
+    window.saveCurrentMatchRecord();
+    if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
+    document.getElementById('finalScore').textContent = score;
+    renderLeaderboard('endLeaderboardList');
+    document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
+    const reviveBtn = document.getElementById('reviveBtn');
+    if (coins >= 5000) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; }
+    else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
+    document.getElementById('gameOverScreen').style.display = 'flex';
+    document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
 };
 
 let enemySpawnInterval = 0;
