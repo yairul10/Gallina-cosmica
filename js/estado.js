@@ -37,6 +37,28 @@ if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false]
 
 function saveStats() { localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats)); }
 
+// Premios de torneo confirmados por el servidor.
+// Guardamos también el ID del premio aplicado para que una recarga o un fallo
+// de red entre la entrega local y el ACK del servidor no duplique monedas.
+if (!Array.isArray(gameStats.cloudRewardIds)) gameStats.cloudRewardIds = [];
+
+window.gallinaApplyCloudCoinReward = (rewardId, amount) => {
+    const id = String(rewardId);
+    const coins = Number(amount);
+    if (!id || !Number.isFinite(coins) || coins <= 0) {
+        return { success: false, invalid: true };
+    }
+    if (gameStats.cloudRewardIds.includes(id)) {
+        return { success: true, alreadyApplied: true, amount: coins };
+    }
+
+    gameStats.savedCoins += coins;
+    gameStats.totalCoins += coins;
+    gameStats.cloudRewardIds.push(id);
+    saveStats();
+    return { success: true, applied: true, amount: coins };
+};
+
 const achievData = { 
     'a1': { title: 'Acrobacia Táctil', desc: 'Personaliza la interfaz moviendo los botones.' }, 
     'a2': { title: 'Primer Despegue', desc: 'Completa tu primera partida.' }, 
