@@ -46,14 +46,20 @@
             panel = document.createElement('div');
             panel.id = 'qaIdentityPanel';
             Object.assign(panel.style, {
-                position: 'fixed', left: '8px', bottom: '8px', zIndex: '1000',
+                position: 'absolute', left: '12px', top: '78px', zIndex: '105',
                 background: 'rgba(2, 6, 23, .94)', color: '#fff',
                 border: '1px solid #38bdf8', borderRadius: '10px',
                 padding: '7px', fontSize: '11px', maxWidth: '175px',
                 boxShadow: '0 3px 12px rgba(0,0,0,.45)'
             });
-            document.body.appendChild(panel);
+            const container = document.getElementById('game-container');
+            (container || document.body).appendChild(panel);
         }
+
+        const startScreen = document.getElementById('startScreen');
+        const menuVisible = startScreen && getComputedStyle(startScreen).display !== 'none';
+        panel.style.display = menuVisible ? 'block' : 'none';
+        if (!menuVisible) return;
 
         panel.innerHTML = '';
         const title = document.createElement('div');
@@ -82,6 +88,11 @@
         panel.appendChild(select);
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
-    else render();
+    const watchMenu = () => {
+        render();
+        const startScreen = document.getElementById('startScreen');
+        if (startScreen) new MutationObserver(render).observe(startScreen, { attributes: true, attributeFilter: ['style', 'class'] });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchMenu);
+    else watchMenu();
 })();
