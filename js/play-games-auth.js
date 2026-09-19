@@ -68,6 +68,45 @@
                 : null);
     };
 
+    const PLAY_GAMES_IDENTITY_KEY = 'gallina_play_games_identity';
+    let playGamesIdentity = null;
+
+    const publishPlayGamesIdentity = (playerStatus) => {
+        if (!playerStatus?.playerAvailable || !playerStatus.playerId) return null;
+        const identity = {
+            id: String(playerStatus.playerId),
+            name: String(playerStatus.displayName || 'Jugador').slice(0, 50)
+        };
+        playGamesIdentity = identity;
+        try { localStorage.setItem(PLAY_GAMES_IDENTITY_KEY, JSON.stringify(identity)); } catch (_) {}
+
+        window.GallinaPlayerIdentity = {
+            getCurrent: () => playGamesIdentity ? { ...playGamesIdentity } : null,
+            getId: () => playGamesIdentity?.id || null,
+            getName: () => playGamesIdentity?.name || null,
+            isQA: false,
+            source: 'play-games'
+        };
+        window.dispatchEvent(new CustomEvent('gallina-player-identity-ready', {
+            detail: { ...identity, source: 'play-games' }
+        }));
+        return identity;
+    };
+
+    const refreshPlayerIdentity = async () => {
+        const playGames = getPlayGames();
+        if (!playGames) return null;
+        try {
+            const status = await playGames.getAuthStatus();
+            if (!status?.authenticated) return null;
+            const playerStatus = await playGames.getPlayerStatus();
+            return publishPlayGamesIdentity(playerStatus);
+        } catch (error) {
+            console.warn('No se pudo obtener la identidad de Play Games:', error);
+            return null;
+        }
+    };
+
     if (!isAndroidApp()) return;
     setStatus(false);
 
@@ -120,7 +159,10 @@
                 if (status?.authenticated) break;
             }
             if (status?.authenticated) {
-                showNotice('Google Play Games conectado ✓', true);
+                const identity = await refreshPlayerIdentity();
+                showNotice(identity
+                    ? 'Google Play Games conectado ✓\n' + identity.name
+                    : 'Google Play Games conectado ✓', true);
             } else {
                 const details = [
                     'signIn:\n' + (signedIn?.diagnostic || signedIn?.detail || 'Sin resultado'),
@@ -143,7 +185,13 @@
         }
     });
 
-    refreshStatus();
-    setTimeout(refreshStatus, 500);
-    setTimeout(refreshStatus, 1500);
+    refreshStatus().then((status) => {
+        if (status?.authenticated) refreshPlayerIdentity();
+    });
+    setTimeout(() => refreshStatus().then((status) => {
+        if (status?.authenticated) refreshPlayerIdentity();
+    }), 500);
+    setTimeout(() => refreshStatus().then((status) => {
+        if (status?.authenticated) refreshPlayerIdentity();
+    }), 1500);
 })();
