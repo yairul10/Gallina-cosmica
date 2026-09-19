@@ -163,6 +163,7 @@
         cloudRewardsBusy = true;
         let coinsDelivered = 0;
         let shouldReload = false;
+        let itemDelivered = false;
 
         try {
             const response = await fetch(
@@ -174,23 +175,31 @@
 
             const rewards = Array.isArray(data.rewards) ? data.rewards : [];
             for (const reward of rewards) {
-                // Los ITEM se dejan pendientes hasta que exista su asset/lógica.
-                if (reward.reward_type !== 'COINS') continue;
-
-                const applied = window.gallinaApplyCloudCoinReward(reward.id, reward.reward_value);
+                let applied = null;
+                if (reward.reward_type === 'COINS') {
+                    applied = window.gallinaApplyCloudCoinReward?.(reward.id, reward.reward_value);
+                } else if (reward.reward_type === 'ITEM' && reward.reward_value === 'gallina_chile') {
+                    applied = window.gallinaApplyCloudItemReward?.(reward.id, reward.reward_value);
+                } else {
+                    continue;
+                }
                 if (!applied?.success) continue;
 
-                // Si hubo un fallo después de guardar las monedas pero antes del
-                // ACK, cloudRewardIds impide sumarlas otra vez y solo reintenta el ACK.
+                // El ID queda persistido localmente antes del ACK para evitar
+                // duplicar la entrega si la conexión falla entre ambos pasos.
                 await claimCloudReward(reward.id);
                 if (applied.applied) {
-                    coinsDelivered += Number(reward.reward_value) || 0;
+                    if (reward.reward_type === 'COINS') coinsDelivered += Number(reward.reward_value) || 0;
+                    if (reward.reward_type === 'ITEM') itemDelivered = true;
                     shouldReload = true;
                 }
             }
 
-            if (coinsDelivered > 0) {
-                alert('🏆 Premio del torneo recibido: +' + formatCoins(coinsDelivered) + ' monedas');
+            if (coinsDelivered > 0 || itemDelivered) {
+                const parts = [];
+                if (coinsDelivered > 0) parts.push('+' + formatCoins(coinsDelivered) + ' monedas');
+                if (itemDelivered) parts.push('🇨🇱 Gallina Chile');
+                alert('🏆 Premio del torneo recibido: ' + parts.join(' + '));
             }
         } catch (error) {
             console.warn('[Premios] No se pudieron sincronizar los premios pendientes.', error);
