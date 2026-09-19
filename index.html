@@ -64,12 +64,6 @@
                 <button class="shop-tab" id="tabHangarExtras" onclick="switchHangarTab('extras')">Módulos</button>
             </div>
             <div id="hangarSkins" class="shop-grid" style="margin-top: 10px;">
-                <div id="hangar-ship-card-chile" class="shop-item" style="display:none; border-color:#fbbf24;">
-                    <h4>🇨🇱 Gallina Chile</h4>
-                    <img src="assets/gallina_chile.png" class="shop-img" style="height: 58px; object-fit: contain;">
-                    <p style="font-size:0.75rem; color:#fbbf24;">🏆 Exclusiva de torneo</p>
-                    <button class="shop-btn" id="btn-hs-chile" onclick="equipGallinaChile()">Equipar</button>
-                </div>
                 <div id="hangar-ship-card-0" class="shop-item">
                     <h4>Gallina</h4>
                     <img id="img-hs-0" src="assets/gallina_1.png" class="shop-img" style="height: 50px; object-fit: contain;">
@@ -77,6 +71,7 @@
                     <div style="display:flex; gap:4px;">
                         <button class="shop-btn" id="btn-hs-0-norm" onclick="equipShip(0, false)">Normal</button>
                         <button class="shop-btn" id="btn-hs-0-pro" onclick="equipShip(0, true)">Pro</button>
+                        <button class="shop-btn" id="btn-hs-0-chile" onclick="equipGallinaChile()">Chile</button>
                     </div>
                 </div>
                 <div id="hangar-ship-card-1" class="shop-item">
@@ -168,7 +163,7 @@
     <script src="js/player-identity-qa.js?v=12"></script>
     <script src="js/estado.js?v=cloud-rewards-2"></script>
     <script src="js/assets.js?v=gallina-chile-1"></script>
-    <script src="js/ui.js?v=gallina-chile-1"></script>
+    <script src="js/ui.js?v=gallina-chile-2"></script>
     <script src="js/entidades.js?v=gallina-chile-1"></script>
     <script src="js/main.js?v=qa-speed-2"></script>
     <script src="js/superjefe-maiz.js"></script>
