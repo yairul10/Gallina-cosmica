@@ -5,9 +5,10 @@ const assets = {
     maiz: new Image(), maizFuerte: new Image(), jefeMaiz: new Image(), superJefeMaiz: new Image(),
     lechuga: new Image(), lechugaFuerte: new Image(), jefeLechuga: new Image(), superJefeLechuga: new Image(), balaJefe: new Image(), balaLechuga: new Image(),
     trofeoPollito: new Image(), trofeoLana: new Image(), trofeoHerradura: new Image(), trofeoLeche: new Image(), trofeoDiamante: new Image(),
-    ships: []
+    ships: [], gallinaChile: new Image()
 };
 
+assets.gallinaChile.src = 'assets/gallina_chile.png';
 assets.fondoGalaxia.src = 'assets/fondo_galaxia.png'; 
 assets.fondoRonda2.src = 'assets/fondo_ronda2.png'; 
 assets.fondoRonda3.src = 'assets/fondo_ronda3.png';
