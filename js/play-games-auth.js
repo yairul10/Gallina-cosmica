@@ -71,6 +71,26 @@
     const PLAY_GAMES_IDENTITY_KEY = 'gallina_play_games_identity';
     let playGamesIdentity = null;
 
+    // Recuperar el último perfil confirmado permite que el progreso y el ranking
+    // conozcan al jugador desde el arranque, incluso mientras PGS termina su
+    // autenticación automática. Luego getCurrentPlayer lo vuelve a validar.
+    try {
+        const cached = JSON.parse(localStorage.getItem(PLAY_GAMES_IDENTITY_KEY) || 'null');
+        if (cached?.id) {
+            playGamesIdentity = {
+                id: String(cached.id),
+                name: String(cached.name || 'Jugador').slice(0, 50)
+            };
+            window.GallinaPlayerIdentity = {
+                getCurrent: () => playGamesIdentity ? { ...playGamesIdentity } : null,
+                getId: () => playGamesIdentity?.id || null,
+                getName: () => playGamesIdentity?.name || null,
+                isQA: false,
+                source: 'play-games'
+            };
+        }
+    } catch (_) {}
+
     const publishPlayGamesIdentity = (playerStatus) => {
         if (!playerStatus?.playerAvailable || !playerStatus.playerId) return null;
         const identity = {
