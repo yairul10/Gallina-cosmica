@@ -53,7 +53,9 @@ window.startGame = function() {
     
     joystick.active = false; joystick.dx = 0; joystick.dy = 0;
     
-    document.getElementById('scoreVal').textContent = score; document.getElementById('saveScoreSection').style.display = 'none'; document.getElementById('playerInitials').value = 'AAA';
+    document.getElementById('scoreVal').textContent = score;
+    // El guardado de récord ahora es automático; los controles manuales antiguos
+    // ya no existen en el HTML, por lo que no debemos intentar acceder a ellos.
     updateLivesUI(); updateUpgradesHUD(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none';
     
     document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); 
