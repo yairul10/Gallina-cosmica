@@ -232,6 +232,7 @@ async function loadCloudProgress() {
             gameStats.loginStreak = Math.max(0, Number(progress.login_streak || 0));
             const cloudLastLogin = Number(progress.last_login_date);
             gameStats.lastLoginDate = Number.isFinite(cloudLastLogin) && cloudLastLogin > 0 ? cloudLastLogin : 0;
+            gameStats.tutorialCompleted = true; // Perfil cloud existente: no repetir tutorial local.
         }
 
         localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats));
