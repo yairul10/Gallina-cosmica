@@ -64,6 +64,12 @@
                 <button class="shop-tab" id="tabHangarExtras" onclick="switchHangarTab('extras')">Módulos</button>
             </div>
             <div id="hangarSkins" class="shop-grid" style="margin-top: 10px;">
+                <div id="hangar-ship-card-chile" class="shop-item" style="display:none; border-color:#fbbf24;">
+                    <h4>🇨🇱 Gallina Chile</h4>
+                    <img src="assets/gallina_chile.png" class="shop-img" style="height: 58px; object-fit: contain;">
+                    <p style="font-size:0.75rem; color:#fbbf24;">🏆 Exclusiva de torneo</p>
+                    <button class="shop-btn" id="btn-hs-chile" onclick="equipGallinaChile()">Equipar</button>
+                </div>
                 <div id="hangar-ship-card-0" class="shop-item">
                     <h4>Gallina</h4>
                     <img id="img-hs-0" src="assets/gallina_1.png" class="shop-img" style="height: 50px; object-fit: contain;">
@@ -159,11 +165,11 @@
         <div id="gameOverScreen" class="screen-overlay" style="display: none;"><h1 style="margin-bottom: 4px;">¡Nave Destruida!</h1><p style="margin-bottom: 15px;">Puntuación final: <strong id="finalScore" style="font-size:1.2rem; color:#38bdf8;">0</strong></p><p id="coinsStatus" style="color: #fbbf24; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Tienes: 🪙 0</p><button class="btn" id="reviveBtn" style="background-color: #f59e0b; color: #fff; margin-bottom: 15px; border: 2px solid #fbbf24;">❤️ Revivir (5,000 🪙)</button><div id="saveScoreSection"><p style="font-size:0.8rem; margin-bottom:4px;">¡Nuevo Récord! Ingresa tus 3 iniciales:</p><div class="initials-input-container"><input type="text" id="playerInitials" maxlength="3" value="AAA"><button class="btn" id="saveScoreBtn" style="padding: 8px 14px; font-size: 0.85rem; margin-bottom: 0;">Guardar</button></div></div><div class="leaderboard-box" style="margin-bottom: 10px;"><h3>🏆 Top Puntajes</h3><div id="endLeaderboardList"></div></div><button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button><button class="btn btn-secondary" id="mainMenuBtn">Menú Principal</button></div>
     </div>
 
-    <script src="js/player-identity-qa.js?v=11"></script>
-    <script src="js/estado.js?v=cloud-rewards-1"></script>
-    <script src="js/assets.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/entidades.js"></script>
+    <script src="js/player-identity-qa.js?v=12"></script>
+    <script src="js/estado.js?v=cloud-rewards-2"></script>
+    <script src="js/assets.js?v=gallina-chile-1"></script>
+    <script src="js/ui.js?v=gallina-chile-1"></script>
+    <script src="js/entidades.js?v=gallina-chile-1"></script>
     <script src="js/main.js?v=qa-speed-2"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=superboss-cloud-winner-1"></script>
