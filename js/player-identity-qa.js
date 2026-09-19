@@ -44,7 +44,9 @@
     const TOURNAMENT_REWARD = 500000;
     const TOURNAMENT_API = 'https://gallina-cosmica-api.jairog940.workers.dev/api/tournaments/active';
     let cloudTournament = null;
+    let cloudParticipants = [];
     let cloudTournamentError = false;
+    let cloudJoinBusy = false;
 
     async function loadCloudTournament() {
         try {
@@ -53,11 +55,64 @@
             const data = await response.json();
             cloudTournament = data && data.success ? data.tournament : null;
             cloudTournamentError = false;
+            await loadCloudParticipants();
         } catch (error) {
             console.warn('[Torneo] No se pudo leer Cloudflare; se mantiene QA local.', error);
             cloudTournamentError = true;
         }
         render();
+    }
+
+    async function loadCloudParticipants() {
+        if (!cloudTournament?.id) {
+            cloudParticipants = [];
+            return;
+        }
+        try {
+            const response = await fetch(
+                'https://gallina-cosmica-api.jairog940.workers.dev/api/tournaments/participants?tournament_id=' +
+                encodeURIComponent(cloudTournament.id),
+                { cache: 'no-store' }
+            );
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            cloudParticipants = data && data.success && Array.isArray(data.participants)
+                ? data.participants : [];
+        } catch (error) {
+            console.warn('[Torneo] No se pudieron leer participantes de D1.', error);
+            cloudParticipants = [];
+            cloudTournamentError = true;
+        }
+    }
+
+    async function joinCloudTournament() {
+        if (!cloudTournament?.id || cloudJoinBusy) return;
+        cloudJoinBusy = true;
+        render();
+        try {
+            const response = await fetch(
+                'https://gallina-cosmica-api.jairog940.workers.dev/api/tournaments/join',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tournament_id: cloudTournament.id,
+                        player_id: current.id,
+                        player_name: current.name
+                    })
+                }
+            );
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.error || ('HTTP ' + response.status));
+            await loadCloudParticipants();
+            cloudTournamentError = false;
+        } catch (error) {
+            console.warn('[Torneo] No se pudo registrar la participación en D1.', error);
+            alert('No se pudo registrar la participación. Inténtalo nuevamente.');
+        } finally {
+            cloudJoinBusy = false;
+            render();
+        }
     }
 
     const formatCoins = (value) => Number(value || 0).toLocaleString('es-CL');
@@ -234,7 +289,9 @@
         identityPanel.appendChild(select);
 
         const tournament = readTournament();
-        const participants = Array.isArray(tournament.participants) ? tournament.participants : [];
+        const participants = cloudTournament
+            ? cloudParticipants.map(p => ({ id: p.player_id, name: p.player_name || p.player_id }))
+            : (Array.isArray(tournament.participants) ? tournament.participants : []);
         const joined = participants.some(p => p.id === current.id);
 
         tournamentPanel.innerHTML = '';
@@ -265,14 +322,20 @@
         }
 
         const joinBtn = document.createElement('button');
-        joinBtn.textContent = tournament.winnerId ? '🏁 Torneo finalizado' : (joined ? '✅ Participando' : '🏆 Participar');
-        joinBtn.disabled = !!tournament.winnerId || joined;
+        const cloudFinished = !!cloudTournament?.winner_player_id;
+        joinBtn.textContent = cloudFinished || tournament.winnerId
+            ? '🏁 Torneo finalizado'
+            : (joined ? '✅ Participando' : (cloudJoinBusy ? '⏳ Registrando...' : '🏆 Participar'));
+        joinBtn.disabled = cloudFinished || !!tournament.winnerId || joined || cloudJoinBusy;
         Object.assign(joinBtn.style, {
             width: '100%', padding: '8px', borderRadius: '8px',
             border: '0', fontWeight: '800', cursor: joinBtn.disabled ? 'default' : 'pointer',
             marginBottom: '9px'
         });
-        joinBtn.addEventListener('click', () => window.GallinaQATournament.join());
+        joinBtn.addEventListener('click', () => {
+            if (cloudTournament) joinCloudTournament();
+            else window.GallinaQATournament.join();
+        });
         tournamentPanel.appendChild(joinBtn);
 
         const list = document.createElement('div');
