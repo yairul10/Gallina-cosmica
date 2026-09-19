@@ -65,8 +65,25 @@
 
     window.GallinaQATournament = {
         getStatus: () => ({ ...readTournament() }),
+        join: () => {
+            const tournament = readTournament();
+            if (tournament.winnerId) return { joined: false, finished: true, tournament };
+            if (!Array.isArray(tournament.participants)) tournament.participants = [];
+            if (!tournament.participants.some(p => p.id === current.id)) {
+                tournament.participants.push({ id: current.id, name: current.name });
+                saveTournament(tournament);
+            }
+            render();
+            return { joined: true, tournament };
+        },
+        isJoined: () => {
+            const tournament = readTournament();
+            return Array.isArray(tournament.participants) && tournament.participants.some(p => p.id === current.id);
+        },
         completeSuperBoss: () => {
             const tournament = readTournament();
+            const joined = Array.isArray(tournament.participants) && tournament.participants.some(p => p.id === current.id);
+            if (!joined) return { won: false, rewarded: false, notJoined: true, winnerId: tournament.winnerId, winnerName: tournament.winnerName };
             if (!tournament.winnerId) {
                 tournament.winnerId = current.id;
                 tournament.winnerName = current.name;
@@ -151,6 +168,36 @@
         });
         select.addEventListener('change', () => window.GallinaPlayerIdentity.setPlayer(select.value));
         panel.appendChild(select);
+
+        const tournament = readTournament();
+        const joined = Array.isArray(tournament.participants) && tournament.participants.some(p => p.id === current.id);
+        const joinBtn = document.createElement('button');
+        joinBtn.textContent = tournament.winnerId ? '🏁 Torneo finalizado' : (joined ? '✅ Participando' : '🏆 Participar');
+        joinBtn.disabled = !!tournament.winnerId || joined;
+        Object.assign(joinBtn.style, {
+            width: '100%', marginTop: '6px', padding: '5px', borderRadius: '7px',
+            border: '0', fontWeight: '700', cursor: joinBtn.disabled ? 'default' : 'pointer'
+        });
+        joinBtn.addEventListener('click', () => window.GallinaQATournament.join());
+        panel.appendChild(joinBtn);
+
+        const participants = Array.isArray(tournament.participants) ? tournament.participants : [];
+        if (participants.length) {
+            const list = document.createElement('div');
+            list.style.marginTop = '6px';
+            list.innerHTML = '<b>Participantes (' + participants.length + ')</b><br>' +
+                participants.map(p => '🟢 ' + p.name).join('<br>');
+            panel.appendChild(list);
+        }
+
+        if (tournament.winnerName) {
+            const winner = document.createElement('div');
+            winner.style.marginTop = '6px';
+            winner.style.color = '#fbbf24';
+            winner.style.fontWeight = '800';
+            winner.textContent = '🥇 ' + tournament.winnerName;
+            panel.appendChild(winner);
+        }
     }
 
     const watchMenu = () => {
