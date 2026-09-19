@@ -33,7 +33,8 @@
         'farm_space_stats',
         'farm_space_achievements',
         'farm_space_leaderboard',
-        'farm_space_trophies'
+        'farm_space_trophies',
+        'farm_space_cloud_pending'
     ]);
     window.gallinaPlayerStorageKey = (baseKey) =>
         PROFILE_KEYS.has(baseKey) ? baseKey + '__' + current.id : baseKey;
