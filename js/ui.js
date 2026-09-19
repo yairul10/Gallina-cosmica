@@ -43,7 +43,12 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) pause
 document.getElementById('resumeBtn').addEventListener('click', (e) => { e.stopPropagation(); if (gameState === 'PAUSED') { gameState = previousState; if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); document.getElementById('pauseScreen').style.display = 'none'; document.querySelectorAll('.draggable-btn').forEach(b => b.classList.remove('paused')); } });
 
 document.getElementById('quitMatchBtn').addEventListener('click', (e) => { 
-    e.stopPropagation(); 
+    e.stopPropagation();
+    // Abandonar también cierra la partida y conserva automáticamente
+    // el mejor récord y las monedas obtenidas hasta ese momento.
+    if (typeof window.saveCurrentMatchRecord === 'function') {
+        window.saveCurrentMatchRecord();
+    }
     if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
     bgMusic.pause(); bgMusic.currentTime = 0;
     document.getElementById('pauseScreen').style.display = 'none'; 
