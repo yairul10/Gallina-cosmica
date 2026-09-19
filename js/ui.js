@@ -56,7 +56,11 @@ function closeScreen(id) { document.getElementById(id).style.display = 'none'; d
 document.getElementById('openTutorialBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('tutorialScreen').style.display = 'flex'; });
 document.getElementById('openHangarBtn').addEventListener('click', () => { updateHangarUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('hangarScreen').style.display = 'flex'; });
 document.getElementById('openShopBtn').addEventListener('click', () => { updateShopUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('shopScreen').style.display = 'flex'; });
-document.getElementById('openRecordsBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('recordsScreen').style.display = 'flex'; });
+document.getElementById('openRecordsBtn').addEventListener('click', () => {
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('recordsScreen').style.display = 'flex';
+    renderWorldLeaderboard();
+});
 document.getElementById('openTrophiesBtn').addEventListener('click', () => { updateTrophyMenu(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'flex'; });
 document.getElementById('openAchievBtn').addEventListener('click', () => { renderAchievementsList(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('achievScreen').style.display = 'flex'; });
 document.getElementById('mainMenuBtn').addEventListener('click', () => { document.getElementById('gameOverScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; gameState = 'START'; previousState = 'START'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); });
@@ -202,6 +206,73 @@ function getTrophyHTML(imgObj, emoji) { return (imgObj.complete && imgObj.natura
 function updateTrophiesHUD() { let html = ""; if (gotTrophy20k) html += getTrophyHTML(assets.trofeoPollito, "🥉🐥"); if (gotTrophy50k) html += getTrophyHTML(assets.trofeoLana, "🥈🧶"); if (gotTrophy100k) html += getTrophyHTML(assets.trofeoHerradura, "🏅🧲"); if (gotTrophy200k) html += getTrophyHTML(assets.trofeoLeche, "🏆🥛"); if (gotTrophy300k) html += getTrophyHTML(assets.trofeoDiamante, "💎🐔"); document.getElementById('trophiesVal').innerHTML = html; }
 
 function renderLeaderboard(elementId) { const container = document.getElementById(elementId); container.innerHTML = ''; if (leaderboard.length === 0) { container.innerHTML = '<div class="lb-row"><span>Sin récords</span><span></span></div>'; return; } leaderboard.forEach((item, index) => { const row = document.createElement('div'); row.className = 'lb-row'; row.innerHTML = `#${index + 1} ${item.name} <span>${item.score} pts</span>`; container.appendChild(row); }); }
+
+const CLOUD_LEADERBOARD_API = 'https://gallina-cosmica-api.jairog940.workers.dev/api/leaderboard';
+
+function formatWorldScore(value) {
+    return Math.max(0, Number(value || 0)).toLocaleString('es-CL');
+}
+
+async function renderWorldLeaderboard() {
+    const container = document.getElementById('recordsLeaderboardList');
+    const positionBox = document.getElementById('recordsPlayerPosition');
+    if (!container) return;
+
+    container.innerHTML = '<div class="lb-row"><span>🌎 Cargando Top Mundial...</span><span></span></div>';
+    if (positionBox) positionBox.innerHTML = '';
+
+    const identity = window.GallinaPlayerIdentity?.getCurrent?.();
+    const query = identity?.id ? '?player_id=' + encodeURIComponent(identity.id) : '';
+
+    try {
+        const response = await fetch(CLOUD_LEADERBOARD_API + query, { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || ('HTTP ' + response.status));
+
+        const top = Array.isArray(data.top) ? data.top : [];
+        container.innerHTML = '';
+
+        if (!top.length) {
+            container.innerHTML = '<div class="lb-row"><span>Aún no hay récords mundiales</span><span></span></div>';
+        } else {
+            top.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'lb-row';
+                const left = document.createElement('span');
+                const right = document.createElement('span');
+                left.textContent = '#' + Number(item.rank || 0) + ' ' + (item.player_name || 'Jugador');
+                right.textContent = formatWorldScore(item.high_score) + ' pts';
+                row.append(left, right);
+                container.appendChild(row);
+            });
+        }
+
+        if (positionBox && data.me) {
+            const myRank = Number(data.me.rank || 0);
+            const inTopTen = top.some(item => Number(item.rank) === myRank);
+            positionBox.innerHTML = '';
+            if (!inTopTen) {
+                const row = document.createElement('div');
+                row.className = 'lb-row';
+                const left = document.createElement('span');
+                const right = document.createElement('span');
+                left.textContent = 'Tu posición: #' + myRank + ' — ' + (data.me.player_name || 'Jugador');
+                right.textContent = formatWorldScore(data.me.high_score) + ' pts';
+                row.append(left, right);
+                positionBox.appendChild(row);
+            } else {
+                const note = document.createElement('div');
+                note.style.cssText = 'font-size:0.8rem;color:#fbbf24;text-align:center;margin-top:8px;';
+                note.textContent = '🏆 Estás en el Top 10 mundial · #' + myRank;
+                positionBox.appendChild(note);
+            }
+        }
+    } catch (error) {
+        console.warn('[Récords] No se pudo cargar el Top Mundial.', error);
+        container.innerHTML = '<div class="lb-row"><span>⚠️ No se pudo cargar el Top Mundial</span><span></span></div>';
+        if (positionBox) positionBox.innerHTML = '<div style="font-size:0.75rem;color:#94a3b8;text-align:center;margin-top:8px;">Comprueba tu conexión e inténtalo nuevamente.</div>';
+    }
+}
 
 function activateTutorial(text, targetBtnId) {
     gameState = 'TUTORIAL'; let overlay = document.getElementById('activeTutorialOverlay'); overlay.style.display = 'flex'; document.getElementById('activeTutorialText').innerHTML = text;
