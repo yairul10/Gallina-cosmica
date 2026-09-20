@@ -201,7 +201,9 @@
     }
   }
   const imageCache=new Map();
-  function imageFor(label){const src=shipSrc(label);if(!imageCache.has(src)){const im=new Image();im.src=src;imageCache.set(src,im);}return imageCache.get(src);}
+  function cachedImage(src){if(!imageCache.has(src)){const im=new Image();im.src=src;imageCache.set(src,im);}return imageCache.get(src);}
+  function imageFor(label){return cachedImage(shipSrc(label));}
+  function projectileFor(label){return cachedImage(projectileSrc(label));}
   function drawShip(state,label){
     const im=imageFor(label);arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);
     if(im.complete&&im.naturalWidth)arenaCtx.drawImage(im,-26,-26,52,52);else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
@@ -215,7 +217,13 @@
     const mine=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
     const rival=players.find(p=>Number(p.slot)!==mySlot)||{ship:'Gallina'};
     drawShip(peerState,rival.ship);drawShip(meState,mine.ship);
-    for(const b of bullets){arenaCtx.fillStyle=b.own?'#fde047':'#fb7185';arenaCtx.beginPath();arenaCtx.arc(b.x,b.y,4,0,Math.PI*2);arenaCtx.fill();}
+    for(const b of bullets){
+      const im=projectileFor(b.ship||'Gallina');
+      arenaCtx.save();arenaCtx.translate(b.x,b.y);arenaCtx.rotate((Number.isFinite(b.angle)?b.angle:Math.atan2(b.vy,b.vx))+Math.PI/2);
+      if(im.complete&&im.naturalWidth)arenaCtx.drawImage(im,-7,-12,14,24);
+      else{arenaCtx.fillStyle=b.own?'#fde047':'#fb7185';arenaCtx.beginPath();arenaCtx.arc(0,0,4,0,Math.PI*2);arenaCtx.fill();}
+      arenaCtx.restore();
+    }
   }
 
   function stickSetup(el,stick,fire){
