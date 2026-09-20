@@ -238,12 +238,17 @@
 
   function resetArena(){
     const h=arenaCanvas.height,w=arenaCanvas.width;
-    // Cada dispositivo juega desde abajo. El slot 2 se transforma al enviar/recibir.
-    meState.x=w/2; meState.y=h-90; meState.lives=10; meState.angle=-Math.PI/2; meState.visualAngle=-Math.PI/2;
     peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
-    const starts=[[w*.28,90],[w*.72,90],[w*.28,h-90],[w*.72,h-90]];
-    for(const [slot,state] of peerStates){const pos=starts[(slot-1)%4];state.x=pos[0];state.y=pos[1];state.lives=10;state.angle=slot<=2?Math.PI/2:-Math.PI/2;state.visualAngle=state.angle;}
+    const starts=[[w*.28,h-90],[w*.72,h-90],[w*.28,90],[w*.72,90]];
+    if(pvpMode==='1v1'){
+      meState.x=w/2;meState.y=h-90;meState.angle=-Math.PI/2;meState.visualAngle=-Math.PI/2;
+    }else{
+      const pos=starts[(mySlot-1+4)%4];meState.x=pos[0];meState.y=pos[1];
+      meState.angle=myTeam===2?Math.PI/2:-Math.PI/2;meState.visualAngle=meState.angle;
+    }
+    meState.lives=10;
+    for(const [slot,state] of peerStates){const pos=starts[(slot-1)%4];state.x=pos[0];state.y=pos[1];state.lives=10;const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.angle;}
     bullets=[]; missiles=[]; eliminated.clear(); meEliminated=false; matchFinished=false; lastMissile=-Infinity; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
@@ -303,9 +308,9 @@
     if(pvpMode==='2v2' && fromTeam && fromTeam===myTeam && (p.type==='shot'||p.type==='missile')) return; // fuego amigo: ni daño ni efecto visual
     // El servidor reenvía las coordenadas en el sistema local del emisor.
     // El jugador 2 ve la arena rotada 180°, así ambos juegan desde abajo.
-    const mirrorX = x => mySlot === 2 ? arenaCanvas.width - x : x;
-    const mirrorY = y => mySlot === 2 ? arenaCanvas.height - y : y;
-    const mirrorAngle = a => mySlot === 2 ? a + Math.PI : a;
+    const mirrorX = x => pvpMode==='1v1' && mySlot === 2 ? arenaCanvas.width - x : x;
+    const mirrorY = y => pvpMode==='1v1' && mySlot === 2 ? arenaCanvas.height - y : y;
+    const mirrorAngle = a => pvpMode==='1v1' && mySlot === 2 ? a + Math.PI : a;
     if(p.type==='state'){
       const px=Number(p.x), py=Number(p.y), pa=Number(p.angle);
       if(Number.isFinite(px)) remote.x=mirrorX(px);
@@ -330,9 +335,9 @@
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     // Mismo láser del juego normal: 4x20 y velocidad equivalente a 14 px/frame a 60 FPS.
     [-1,1].forEach(s=>bullets.push({x:meState.x+sideX*s,y:meState.y+sideY*s,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,life:1.5}));
-    const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
-    const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
-    const sa=mySlot===2?a+Math.PI:a;
+    const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
+    const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
+    const sa=pvpMode==='1v1'&&mySlot===2?a+Math.PI:a;
     send({type:'shot',x:sx,y:sy,angle:sa,ship:myShip});
   }
   function spawnRemoteShot(x,y,a,ship,ownerSlot=0,ownerTeam=0){
@@ -355,8 +360,8 @@
     const targetPlayer=enemies.map(p=>({p,state:peerFor(p.slot)})).sort((a,b)=>Math.hypot(a.state.x-meState.x,a.state.y-meState.y)-Math.hypot(b.state.x-meState.x,b.state.y-meState.y))[0];
     const targetSlot=Number(targetPlayer?.p?.slot||0);
     missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ownerSlot:mySlot,ownerTeam:myTeam,targetSlot,ship:myShip,missileType:info.missileType,isPro:usePro,life:6,vx:Math.cos(a)*initialSpeed,vy:Math.sin(a)*initialSpeed,speed});
-    const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
-    const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
+    const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
+    const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
     send({type:'missile',x:sx,y:sy,ship:myShip,missileType:info.missileType,isPro:usePro,targetSlot});
   }
   function spawnRemoteMissile(x,y,ship,missileType,isPro,ownerSlot=0,ownerTeam=0,targetSlot=0){
@@ -475,10 +480,10 @@
     missiles=missiles.filter(m=>m.life>0&&m.x>-40&&m.x<arenaCanvas.width+40&&m.y>-40&&m.y<arenaCanvas.height+40);
     if(now-lastStateSend>50){
       lastStateSend=now;
-      const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
-      const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
-      const sa=mySlot===2?meState.angle+Math.PI:meState.angle;
-      const sva=mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
+      const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
+      const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
+      const sa=pvpMode==='1v1'&&mySlot===2?meState.angle+Math.PI:meState.angle;
+      const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
       send({type:'state',x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives});
     }
   }
