@@ -70,6 +70,21 @@
             <p id="pvpLobbyStatus" style="min-height:42px; margin:12px 18px 4px; font-size:.8rem; color:#cbd5e1; text-align:center;"></p>
             <button class="btn btn-secondary" id="pvpCloseBtn">🔙 Volver</button>
         </div>
+        <div id="pvpArenaScreen" class="screen-overlay" style="display:none; padding:0; background:#020617; z-index:220; overflow:hidden;">
+            <canvas id="pvpCanvas" width="420" height="640" style="position:absolute; inset:0; width:100%; height:100%; object-fit:fill;"></canvas>
+            <div style="position:absolute; top:max(10px,env(safe-area-inset-top)); left:10px; right:10px; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; text-shadow:0 2px 4px #000;">
+                <div><b>TÚ</b><div id="pvpMyLives">❤️❤️❤️</div></div>
+                <div id="pvpRoomHud" style="font-size:.78rem; color:#c4b5fd;">Sala</div>
+                <div style="text-align:right;"><b>RIVAL</b><div id="pvpRivalLives">❤️❤️❤️</div></div>
+            </div>
+            <button id="pvpLeaveArenaBtn" class="btn btn-secondary" style="position:absolute; top:48px; right:8px; z-index:3; width:auto; padding:5px 9px; font-size:.7rem;">Salir</button>
+            <div id="pvpMoveStick" class="pvp-stick" style="position:absolute; left:22px; bottom:max(24px,env(safe-area-inset-bottom));"><div class="pvp-stick-knob"></div><small>MOVER</small></div>
+            <div id="pvpAimStick" class="pvp-stick pvp-stick-fire" style="position:absolute; right:22px; bottom:max(24px,env(safe-area-inset-bottom));"><div class="pvp-stick-knob"></div><small>APUNTAR + DISPARAR</small></div>
+            <div id="pvpResult" style="display:none; position:absolute; inset:0; z-index:5; background:rgba(2,6,23,.88); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
+                <h1 id="pvpResultText" style="color:#fff; text-align:center;">Resultado</h1>
+                <button id="pvpResultBackBtn" class="btn" style="margin-top:18px;">Volver al menú</button>
+            </div>
+        </div>
         <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;"><h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1><p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p><div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;"></div><button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button></div>
         <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1><div class="tutorial-content"><h3 style="color: #38bdf8;">🕹️ Movimiento</h3><p>• <b>Arrastrar / Joystick:</b> Configúralo en el menú de pausa.<br>• <b>PC:</b> Usa las flechas del teclado.</p><h3 style="color: #ef4444;">🚀 Combate</h3><p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparos múltiples.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯).</p><h3 style="color: #10b981;">⚙️ Mejoras</h3><p>• Los botones de la izquierda <b>brillarán ✨</b> con monedas suficientes.</p></div><button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button></div>
 
@@ -187,7 +202,7 @@
     <script src="js/main.js?v=auto-record-fix-2"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=superboss-cloud-winner-2"></script>
-    <script src="js/pvp.js?v=pvp-lobby-1"></script>
+    <script src="js/pvp.js?v=pvp-arena-1"></script>
     <script src="js/qa-mode.js?v=qa-bot-9"></script>
     <script src="js/qa-panel-toggle.js?v=1"></script>
 </body>
