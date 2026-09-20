@@ -44,6 +44,7 @@
                     <button class="btn menu-btn menu-btn-shop" id="openShopBtn"><span class="menu-btn-icon">🛒</span><span>Tienda</span><span class="menu-btn-arrow">›</span></button>
                 </div>
                 <button class="btn menu-btn menu-btn-tutorial" id="openTutorialBtn"><span class="menu-btn-icon">📖</span><span>Cómo Jugar</span><span class="menu-btn-arrow">›</span></button>
+                <button class="btn menu-btn" id="openPvpBtn" style="border:2px solid #a78bfa; background:linear-gradient(135deg,#4c1d95,#7c3aed);"><span class="menu-btn-icon">⚔️</span><span>PvP Experimental</span><span class="menu-btn-arrow">›</span></button>
 
                 <div class="menu-mini-actions">
                     <button class="btn menu-mini-btn" id="openRecordsBtn" title="Récords"><span>🥇</span><small>Récords</small></button>
@@ -51,6 +52,23 @@
                     <button class="btn menu-mini-btn" id="openAchievBtn" title="Logros"><span>🏅</span><small>Logros</small></button>
                 </div>
             </div>
+        </div>
+
+        <div id="pvpLobbyScreen" class="screen-overlay" style="display:none; background:rgba(9,13,22,.98); z-index:210;">
+            <h1 style="color:#c4b5fd; margin-bottom:6px;">⚔️ Arena PvP</h1>
+            <p style="font-size:.82rem; color:#94a3b8; margin-bottom:14px;">Prueba experimental · 1 vs 1</p>
+            <div class="leaderboard-box" style="width:min(88%,340px); text-align:left;">
+                <p><b>Jugador:</b> <span id="pvpPlayerName">Jugador</span></p>
+                <p><b>Nave:</b> <span id="pvpShipName">Gallina</span></p>
+                <p style="font-size:.78rem; color:#cbd5e1;">⚖️ Estadísticas normalizadas · ❤️ 3 vidas · 🔫 2 balas por ráfaga</p>
+            </div>
+            <button class="btn" id="pvpCreateRoomBtn" style="margin-top:16px; background:#7c3aed;">➕ Crear sala</button>
+            <div style="display:flex; gap:8px; width:min(88%,340px); margin-top:10px;">
+                <input id="pvpRoomCode" inputmode="numeric" maxlength="6" placeholder="Código de 6 dígitos" style="min-width:0; flex:1; padding:11px; border-radius:9px; border:1px solid #64748b; background:#0f172a; color:#fff; text-align:center; font-size:1rem;">
+                <button class="btn" id="pvpJoinRoomBtn" style="width:auto; margin:0; padding:10px 14px; background:#2563eb;">Unirse</button>
+            </div>
+            <p id="pvpLobbyStatus" style="min-height:42px; margin:12px 18px 4px; font-size:.8rem; color:#cbd5e1; text-align:center;"></p>
+            <button class="btn btn-secondary" id="pvpCloseBtn">🔙 Volver</button>
         </div>
         <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;"><h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1><p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p><div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;"></div><button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button></div>
         <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1><div class="tutorial-content"><h3 style="color: #38bdf8;">🕹️ Movimiento</h3><p>• <b>Arrastrar / Joystick:</b> Configúralo en el menú de pausa.<br>• <b>PC:</b> Usa las flechas del teclado.</p><h3 style="color: #ef4444;">🚀 Combate</h3><p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparos múltiples.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯).</p><h3 style="color: #10b981;">⚙️ Mejoras</h3><p>• Los botones de la izquierda <b>brillarán ✨</b> con monedas suficientes.</p></div><button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button></div>
@@ -169,6 +187,7 @@
     <script src="js/main.js?v=auto-record-fix-2"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=superboss-cloud-winner-2"></script>
+    <script src="js/pvp.js?v=pvp-lobby-1"></script>
     <script src="js/qa-mode.js?v=qa-bot-9"></script>
     <script src="js/qa-panel-toggle.js?v=1"></script>
 </body>
