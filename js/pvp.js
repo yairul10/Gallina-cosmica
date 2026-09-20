@@ -193,8 +193,8 @@
     stopArena(); $('pvpResultText').textContent=text; $('pvpResult').style.display='flex';
   }
   function updateLives(){
-    $('pvpMyLives').textContent='❤️'.repeat(Math.max(0,meState.lives));
-    $('pvpRivalLives').textContent='❤️'.repeat(Math.max(0,peerState.lives));
+    $('pvpMyLives').textContent='❤️ x'+Math.max(0,meState.lives);
+    $('pvpRivalLives').textContent='❤️ x'+Math.max(0,peerState.lives);
   }
   function handlePeer(p){
     // El servidor reenvía las coordenadas en el sistema local del emisor.
