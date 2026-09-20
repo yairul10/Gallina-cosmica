@@ -34,6 +34,17 @@
     const base=label.replace(/ Pro$/,'').toLowerCase();
     return 'assets/'+base+(pro?'_pro':'')+'_1.png';
   }
+  function projectileSrc(label){
+    const pro=/ Pro$/.test(label), base=label.replace(/ Pro$/,'');
+    const files={
+      'Gallina':['assets/bala_pollito.png','assets/bala_pollito_pro.png'],
+      'Gallina Chile':['assets/bala_pollito.png','assets/bala_pollito.png'],
+      'Oveja':['assets/bala_lana.png','assets/bala_lana_pro.png'],
+      'Caballo':['assets/bala_herradura.png','assets/bala_herradura_pro.png'],
+      'Vaca':['assets/bala_leche.png','assets/bala_leche_pro.png']
+    };
+    const pair=files[base]||files.Gallina; return pair[pro?1:0];
+  }
   function showStatus(text,ok=false){ if(status){status.textContent=text;status.style.color=ok?'#86efac':'#cbd5e1';} }
   function randomCode(){ return String(Math.floor(100000+Math.random()*900000)); }
   function playerId(){
@@ -137,7 +148,7 @@
       if(Number.isFinite(pva)) peerState.visualAngle=mirrorAngle(pva);
       peerState.lives=Number.isFinite(Number(p.lives))?Number(p.lives):peerState.lives;updateLives();
     } else if(p.type==='shot'){
-      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)));
+      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship);
     } else if(p.type==='defeat') {
       endArena('🏆 ¡Victoria! Destruiste la nave rival.');
     }
@@ -146,16 +157,17 @@
   function shoot(){
     const now=performance.now();if(!running||now-lastShot<330)return;lastShot=now;
     const a=meState.angle,sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
-    [-1,1].forEach(s=>bullets.push({x:meState.x+sideX*s,y:meState.y+sideY*s,vx:Math.cos(a)*330,vy:Math.sin(a)*330,own:true,life:1.5}));
+    const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
+    [-1,1].forEach(s=>bullets.push({x:meState.x+sideX*s,y:meState.y+sideY*s,vx:Math.cos(a)*330,vy:Math.sin(a)*330,angle:a,ship:myShip,own:true,life:1.5}));
     const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
     const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
     const sa=mySlot===2?a+Math.PI:a;
-    send({type:'shot',x:sx,y:sy,angle:sa});
+    send({type:'shot',x:sx,y:sy,angle:sa,ship:myShip});
   }
-  function spawnRemoteShot(x,y,a){
+  function spawnRemoteShot(x,y,a,ship){
     if(!Number.isFinite(x+y+a))return;
     const sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
-    [-1,1].forEach(s=>bullets.push({x:x+sideX*s,y:y+sideY*s,vx:Math.cos(a)*330,vy:Math.sin(a)*330,own:false,life:1.5}));
+    [-1,1].forEach(s=>bullets.push({x:x+sideX*s,y:y+sideY*s,vx:Math.cos(a)*330,vy:Math.sin(a)*330,angle:a,ship:ship||'Gallina',own:false,life:1.5}));
   }
   function loop(now){
     if(!running)return; const dt=Math.min(.04,(now-lastFrame)/1000);lastFrame=now; update(dt,now);draw();raf=requestAnimationFrame(loop);
