@@ -55,6 +55,7 @@
   const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
   const peerState = { x: 210, y: 80, lives: 10, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
   const peerStates = new Map();
+  let eliminated = new Set(), meEliminated = false, matchFinished = false;
   function peerFor(slot){
     slot=Number(slot||0);
     if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,lives:10,angle:Math.PI/2,visualAngle:Math.PI/2,slot});
@@ -217,8 +218,9 @@
         showStatus(pvpMode==='2v2'?'🤝 ¡2v2 listo! Compañero: '+(mates[0]?.name||'Jugador'):'⚔️ ¡Sala lista!',true);
         setTimeout(()=>startArena(),450);
       } else if(m.type==='player-left') {
-        players=players.filter(p=>Number(p.slot)!==Number(m.slot)); peerStates.delete(Number(m.slot));
-        if(running) endArena('Un jugador salió de la partida.');
+        if(running&&pvpMode==='2v2'){ markEliminated(Number(m.slot)); }
+        else { players=players.filter(p=>Number(p.slot)!==Number(m.slot)); peerStates.delete(Number(m.slot)); }
+        if(running&&pvpMode!=='2v2') endArena('Un jugador salió de la partida.');
         else showStatus('Un jugador salió. Esperando otro jugador…');
       } else if(m.type==='peer-message') {
         handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
@@ -236,7 +238,7 @@
     peerStates.clear(); syncPeerPlayers();
     const starts=[[w*.28,90],[w*.72,90],[w*.28,h-90],[w*.72,h-90]];
     for(const [slot,state] of peerStates){const pos=starts[(slot-1)%4];state.x=pos[0];state.y=pos[1];state.lives=10;state.angle=slot<=2?Math.PI/2:-Math.PI/2;state.visualAngle=state.angle;}
-    bullets=[]; missiles=[]; lastMissile=-Infinity; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
+    bullets=[]; missiles=[]; eliminated.clear(); meEliminated=false; matchFinished=false; lastMissile=-Infinity; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
   }
@@ -262,7 +264,25 @@
     if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;aimStick.active=false;
   }
   function endArena(text){
+    if(matchFinished)return; matchFinished=true;
     stopArena(); $('pvpResultText').textContent=text; $('pvpResult').style.display='flex';
+  }
+  function markEliminated(slot){
+    slot=Number(slot||0); if(!slot)return;
+    eliminated.add(slot);
+    if(slot===mySlot)meEliminated=true;
+    const s=peerStates.get(slot);if(s)s.lives=0;
+    updateLives(); checkTeamResult();
+  }
+  function checkTeamResult(){
+    if(matchFinished||pvpMode!=='2v2'||!myTeam)return;
+    const teams=[1,2];
+    const dead=team=>players.filter(p=>Number(p.team)===team).length>=2 &&
+      players.filter(p=>Number(p.team)===team).every(p=>eliminated.has(Number(p.slot)));
+    const myDead=dead(myTeam), enemyTeam=teams.find(t=>t!==myTeam), enemyDead=dead(enemyTeam);
+    if(enemyDead)return endArena('🏆 ¡Victoria de tu equipo!');
+    if(myDead)return endArena('💥 Tu equipo fue eliminado.');
+    if(meEliminated)showStatus('👀 Nave eliminada · tu compañero sigue luchando.',true);
   }
   function updateLives(){
     $('pvpMyLives').textContent='❤️ x'+Math.max(0,meState.lives);
@@ -293,12 +313,13 @@
     } else if(p.type==='missile'){
       spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam,Number(p.targetSlot||0));
     } else if(p.type==='defeat') {
-      endArena('🏆 ¡Victoria! Destruiste la nave rival.');
+      if(pvpMode==='2v2') markEliminated(fromSlot);
+      else endArena('🏆 ¡Victoria! Destruiste la nave rival.');
     }
   }
 
   function shoot(){
-    const now=performance.now();if(!running||now-lastShot<330)return;lastShot=now;
+    const now=performance.now();if(!running||meEliminated||now-lastShot<330)return;lastShot=now;
     const a=meState.angle,sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     // Mismo láser del juego normal: 4x20 y velocidad equivalente a 14 px/frame a 60 FPS.
@@ -315,7 +336,7 @@
   }
   function fireMissile(){
     const now=performance.now();
-    if(!running)return;
+    if(!running||meEliminated)return;
     // La misma constante controla tanto el HUD como el disparo para que LISTO siempre signifique que puede disparar.
     if(now-lastMissile<PVP_MISSILE_COOLDOWN)return;
     lastMissile=now;
@@ -348,15 +369,15 @@
     if(!running)return; const dt=Math.min(.04,(now-lastFrame)/1000);lastFrame=now; update(dt,now);draw();raf=requestAnimationFrame(loop);
   }
   function update(dt,now){
-    let mx=moveStick.x,my=moveStick.y;
+    let mx=meEliminated?0:moveStick.x,my=meEliminated?0:moveStick.y;
     if(keys.has('ArrowLeft')||keys.has('a'))mx-=1;if(keys.has('ArrowRight')||keys.has('d'))mx+=1;
     if(keys.has('ArrowUp')||keys.has('w'))my-=1;if(keys.has('ArrowDown')||keys.has('s'))my+=1;
     const len=Math.hypot(mx,my);if(len>1){mx/=len;my/=len;}
     if(Math.hypot(mx,my)>.12) meState.visualAngle=Math.atan2(my,mx);
     meState.x=Math.max(30,Math.min(arenaCanvas.width-30,meState.x+mx*190*dt));
     meState.y=Math.max(55,Math.min(arenaCanvas.height-55,meState.y+my*190*dt));
-    if(aimStick.active&&Math.hypot(aimStick.x,aimStick.y)>.25){meState.angle=Math.atan2(aimStick.y,aimStick.x);shoot();}
-    if(keys.has(' '))shoot();
+    if(!meEliminated&&aimStick.active&&Math.hypot(aimStick.x,aimStick.y)>.25){meState.angle=Math.atan2(aimStick.y,aimStick.x);shoot();}
+    if(!meEliminated&&keys.has(' '))shoot();
 
     for(const b of bullets){b.prevX=b.x;b.prevY=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;}
     for(const m of missiles){
@@ -426,7 +447,7 @@
         if(now-lastHitAt>180){
           lastHitAt=now;
           meState.lives=Math.max(0,meState.lives-1);updateLives();
-          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});endArena(pvpMode==='2v2'?'💥 Tu nave fue destruida. Esperando resultado del equipo…':'💥 Tu nave fue destruida.');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});if(pvpMode==='2v2'){markEliminated(mySlot);}else endArena('💥 Tu nave fue destruida.');return;}
         }
       }
     }
@@ -440,7 +461,7 @@
         if(!m.own && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
           lastHitAt=now;meState.lives=Math.max(0,meState.lives-1);updateLives();
           hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
-          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});endArena(pvpMode==='2v2'?'💥 Tu nave fue destruida. Esperando resultado del equipo…':'💥 Tu nave fue destruida.');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});if(pvpMode==='2v2'){markEliminated(mySlot);}else endArena('💥 Tu nave fue destruida.');return;}
         }
       }
     }
