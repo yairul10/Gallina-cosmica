@@ -12,7 +12,8 @@
   const status = $('pvpLobbyStatus');
   const roomInput = $('pvpRoomCode');
 
-  let socket = null, queueSocket = null, currentRoom = '', mySlot = 0, players = [];
+  let socket = null, queueSocket = null, currentRoom = '', mySlot = 0, myTeam = 0, players = [];
+  let pvpMode = '2v2';
   let queueStartedAt = 0, queueTimer = 0;
   const PVP_MISSILE_COOLDOWN = 8000;
   const pvpBackground = new Image();
@@ -120,7 +121,7 @@
     if(!queueSocket||!queueStartedAt)return;
     const sec=Math.max(0,Math.floor((Date.now()-queueStartedAt)/1000));
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
-    showStatus('🔎 Buscando rival… '+mm+':'+ss,true);
+    showStatus('🔎 Buscando '+(pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena'?'jugadores para Arena':'rival')+'… '+mm+':'+ss,true);
   }
   function cancelMatch(){
     if(!queueSocket)return;
@@ -140,7 +141,7 @@
     if(queueSocket){const q=queueSocket;queueSocket=null;try{q.close(1000,'leaving');}catch{}}
     stopQueueTimer();
     if(socket){const old=socket;socket=null;try{old.close(1000,'leaving');}catch{}}
-    currentRoom='';mySlot=0;players=[];
+    currentRoom='';mySlot=0;myTeam=0;players=[];
     if(!silent)showStatus('Desconectado de la sala.');
   }
 
@@ -148,7 +149,7 @@
     if(queueSocket){cancelMatch();return;}
     disconnect(true);
     const me=identity();
-    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel()});
+    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
     const ws=new WebSocket(`${PVP_WS_BASE}/matchmake?${params}`);
     queueSocket=ws;
     queueStartedAt=Date.now();
@@ -164,7 +165,7 @@
         queueSocket=null;
         stopQueueTimer();
         try{ws.close(1000,'matched');}catch{}
-        showStatus('⚔️ ¡Rival encontrado! Entrando a la partida…',true);
+        showStatus('⚔️ ¡Partida encontrada! Entrando…',true);
         setTimeout(()=>connect(code,false),120);
       }
     });
@@ -193,20 +194,21 @@
       let m;try{m=JSON.parse(event.data);}catch{return;}
       if(m.type==='joined'){
         players=m.players||[]; const mine=players.find(p=>String(p.playerId)===playerId());
-        mySlot=Number(mine?.slot||0);
-        showStatus('Sala '+code+' · Jugador '+(mySlot||'?')+(players.length<2?' · esperando rival…':''),true);
+        mySlot=Number(mine?.slot||0); myTeam=Number(mine?.team||m.team||0);
+        const needed=pvpMode==='1v1'?2:4;
+        showStatus('Sala '+code+' · Jugador '+(mySlot||'?')+(pvpMode==='2v2'?' · Equipo '+(myTeam||'?'):'')+(players.length<needed?' · esperando '+(needed-players.length)+' jugador(es)…':''),true);
       } else if(m.type==='player-joined') {
-        showStatus('¡Rival conectado! Preparando partida…',true);
+        showStatus('Jugador conectado. Esperando que se complete la partida…',true);
       } else if(m.type==='ready') {
         players=m.players||players;
-        const rival=players.find(p=>Number(p.slot)!==mySlot);
-        showStatus('⚔️ ¡Sala lista! Rival: '+(rival?.name||'Jugador')+' · '+(rival?.ship||'Nave'),true);
+        const mates=players.filter(p=>Number(p.slot)!==mySlot && Number(p.team)===myTeam);
+        showStatus(pvpMode==='2v2'?'🤝 ¡2v2 listo! Compañero: '+(mates[0]?.name||'Jugador'):'⚔️ ¡Sala lista!',true);
         setTimeout(()=>startArena(),450);
       } else if(m.type==='player-left') {
-        if(running) endArena('El rival salió de la partida.');
-        else showStatus('El rival salió. Esperando otro jugador…');
+        if(running) endArena('Un jugador salió de la partida.');
+        else showStatus('Un jugador salió. Esperando otro jugador…');
       } else if(m.type==='peer-message') {
-        handlePeer(m.payload||{});
+        handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
       }
     });
     ws.addEventListener('close',e=>{if(socket===ws){socket=null;if(e.code!==1000){if(running)endArena('Se perdió la conexión.');else showStatus('Se perdió la conexión con la sala.');}}});
@@ -250,7 +252,8 @@
     $('pvpMyLives').textContent='❤️ x'+Math.max(0,meState.lives);
     $('pvpRivalLives').textContent='❤️ x'+Math.max(0,peerState.lives);
   }
-  function handlePeer(p){
+  function handlePeer(p,fromSlot=0,fromTeam=0){
+    if(pvpMode==='2v2' && fromTeam && fromTeam===myTeam && (p.type==='shot'||p.type==='missile')) return;
     // El servidor reenvía las coordenadas en el sistema local del emisor.
     // El jugador 2 ve la arena rotada 180°, así ambos juegan desde abajo.
     const mirrorX = x => mySlot === 2 ? arenaCanvas.width - x : x;
@@ -486,8 +489,15 @@
 
   $('openPvpBtn')?.addEventListener('click',()=>{
     document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';
-    const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();showStatus('Listo para crear o unirse a una sala.');
+    const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
   });
+  document.querySelectorAll('.pvp-mode-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    pvpMode=btn.dataset.mode||'1v1';
+    document.querySelectorAll('.pvp-mode-btn').forEach(b=>b.style.background=b===btn?'#7c3aed':'#475569');
+    const find=$('pvpFindMatchBtn');
+    if(find) find.textContent=pvpMode==='2v2'?'🤝 Buscar equipo 2v2':pvpMode==='arena'?'🌌 Buscar Arena':'⚔️ Buscar rival';
+    showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':pvpMode==='arena'?'Modo Arena · 4 jugadores, todos contra todos.':'Modo 1v1.');
+  }));
   $('pvpFindMatchBtn')?.addEventListener('click',()=>{unlockPvpMusic();findMatch();});
   $('pvpCreateRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();const c=randomCode();roomInput.value=c;connect(c,true);});
   $('pvpJoinRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();connect(roomInput.value,false);});
