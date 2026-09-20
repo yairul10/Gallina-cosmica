@@ -26,6 +26,7 @@ export class PvpRoom {
     this.ctx = ctx;
     this.env = env;
     this.players = new Map();
+    this.forfeitedPlayers = new Set();
   }
 
   async fetch(request) {
@@ -52,20 +53,30 @@ export class PvpRoom {
     server.addEventListener("message", event => {
       let message; try { message = JSON.parse(event.data); } catch { return; }
       if (!message || typeof message !== "object") return;
+      if (message.type === "defeat" && message.reason === "forfeit") {
+        this.forfeitedPlayers.add(playerId);
+        message.rewardEligible = false;
+      }
       this.broadcast({ type: "peer-message", from: slot, team, payload: message }, server);
     });
 
     const remove = () => {
       if (!this.players.has(server)) return;
       this.players.delete(server);
-      this.broadcast({ type: "player-left", slot });
+      // Toda desconexión durante una sala iniciada queda registrada como abandono
+      // para que una futura capa de recompensas nunca premie a ese jugador.
+      if (this.started) this.forfeitedPlayers.add(playerId);
+      this.broadcast({ type: "player-left", slot, team, playerId, forfeited: this.started, rewardEligible: !this.started });
     };
     server.addEventListener("close", remove);
     server.addEventListener("error", remove);
 
     server.send(JSON.stringify({ type: "joined", slot, team, mode: this.mode, capacity, players: this.playerList() }));
     this.broadcast({ type: "player-joined", player: { playerId, name, ship, slot, team } }, server);
-    if (this.players.size === capacity) this.broadcast({ type: "ready", mode: this.mode, players: this.playerList() });
+    if (this.players.size === capacity) {
+      this.started = true;
+      this.broadcast({ type: "ready", mode: this.mode, players: this.playerList() });
+    }
     return new Response(null, { status: 101, webSocket: client });
   }
 
