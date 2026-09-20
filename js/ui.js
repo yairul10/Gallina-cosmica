@@ -170,6 +170,7 @@ function updateShopUI() {
         let btnP = document.getElementById('btn-skin-pro-'+i); let imgP = document.getElementById('shop-img-pro-'+i);
         if (btnP && imgP) { 
             if (gameStats.proSkins[i]) { btnP.textContent = 'Comprado'; btnP.style.background = '#475569'; btnP.disabled = true; imgP.style.filter = 'none'; imgP.style.opacity = '1'; } 
+            else if (!gameStats.skins[i]) { btnP.textContent = '🔒 Compra Normal'; btnP.style.background = '#1e293b'; btnP.disabled = true; imgP.style.filter = 'grayscale(100%)'; imgP.style.opacity = '0.6'; }
             else { btnP.textContent = `🪙 ${pCosts[i].toLocaleString()}`; btnP.style.background = '#10b981'; btnP.disabled = (coins < pCosts[i]); imgP.style.filter = 'grayscale(100%)'; imgP.style.opacity = '0.6'; } 
             imgP.onerror = function() { this.style.display = 'none'; };
         }
@@ -198,7 +199,7 @@ function updateShopUI() {
     }
 }
 
-window.buyShip = function(index, isPro, cost) { if (isPro) { if (!gameStats.proSkins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.proSkins[index] = true; saveStats(); updateShopUI(); } } else { if (!gameStats.skins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; saveStats(); updateShopUI(); } } }
+window.buyShip = function(index, isPro, cost) { if (isPro) { if (gameStats.skins[index] && !gameStats.proSkins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.proSkins[index] = true; saveStats(); updateShopUI(); } } else { if (!gameStats.skins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; saveStats(); updateShopUI(); } } }
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
 window.buyAutoLife = function() { if (!gameStats.extraModule && coins >= 50000) { coins -= 50000; gameStats.savedCoins = coins; gameStats.extraModule = true; gameStats.equipExtraModule = true; saveStats(); updateShopUI(); } }
 
