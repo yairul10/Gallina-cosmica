@@ -1,7 +1,7 @@
 /* PvP experimental 0.3: lobby + arena 1v1 sincronizada por WebSocket. */
 (() => {
   const PVP_TEST_MODE = true;
-  const PVP_WS_BASE = 'wss://gallina-cosmica-pvp.jairog940.workers.dev';
+  const PVP_WS_BASE = 'wss://gallina-cosmica-pvp-test.jairog940.workers.dev';
   if (!PVP_TEST_MODE) return;
 
   const $ = id => document.getElementById(id);
