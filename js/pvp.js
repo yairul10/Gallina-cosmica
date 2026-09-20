@@ -13,11 +13,13 @@
   const roomInput = $('pvpRoomCode');
 
   let socket = null, queueSocket = null, currentRoom = '', mySlot = 0, players = [];
-  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0;
+  let queueStartedAt = 0, queueTimer = 0;
+  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity;
   const keys = new Set();
-  const meState = { x: 210, y: 560, lives: 3, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
-  const peerState = { x: 210, y: 80, lives: 3, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
+  const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
+  const peerState = { x: 210, y: 80, lives: 10, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
   let bullets = [];
+  let missiles = [];
   let impactFx = [];
   let hitFlashUntil = 0;
   let hitShakeUntil = 0;
@@ -55,6 +57,22 @@
     const pair=files[base]||files.Gallina; return pair[pro?1:0];
   }
   function showStatus(text,ok=false){ if(status){status.textContent=text;status.style.color=ok?'#86efac':'#cbd5e1';} }
+  function stopQueueTimer(){
+    if(queueTimer){clearInterval(queueTimer);queueTimer=0;}
+    queueStartedAt=0;
+    const btn=$('pvpFindMatchBtn'); if(btn)btn.textContent='⚔️ Buscar rival';
+  }
+  function updateQueueStatus(){
+    if(!queueSocket||!queueStartedAt)return;
+    const sec=Math.max(0,Math.floor((Date.now()-queueStartedAt)/1000));
+    const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
+    showStatus('🔎 Buscando rival… '+mm+':'+ss,true);
+  }
+  function cancelMatch(){
+    if(!queueSocket)return;
+    const q=queueSocket;queueSocket=null;try{q.close(1000,'cancelled');}catch{}
+    stopQueueTimer();showStatus('Búsqueda cancelada.');
+  }
   function randomCode(){ return String(Math.floor(100000+Math.random()*900000)); }
   function playerId(){
     const me=identity(); if(me.id) return String(me.id);
@@ -66,26 +84,31 @@
   function disconnect(silent=false){
     stopArena();
     if(queueSocket){const q=queueSocket;queueSocket=null;try{q.close(1000,'leaving');}catch{}}
+    stopQueueTimer();
     if(socket){const old=socket;socket=null;try{old.close(1000,'leaving');}catch{}}
     currentRoom='';mySlot=0;players=[];
     if(!silent)showStatus('Desconectado de la sala.');
   }
 
   function findMatch(){
+    if(queueSocket){cancelMatch();return;}
     disconnect(true);
     const me=identity();
     const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel()});
     const ws=new WebSocket(`${PVP_WS_BASE}/matchmake?${params}`);
     queueSocket=ws;
-    showStatus('🔎 Buscando rival…',true);
+    queueStartedAt=Date.now();
+    const findBtn=$('pvpFindMatchBtn'); if(findBtn)findBtn.textContent='✖️ Cancelar búsqueda';
+    updateQueueStatus(); queueTimer=setInterval(updateQueueStatus,1000);
     ws.addEventListener('message',event=>{
       if(queueSocket!==ws)return;
       let m;try{m=JSON.parse(event.data);}catch{return;}
       if(m.type==='queue-waiting'){
-        showStatus('🔎 Buscando rival… Esperando otro jugador.',true);
+        updateQueueStatus();
       } else if(m.type==='match-found' && /^\d{6}$/.test(String(m.roomCode||''))){
         const code=String(m.roomCode);
         queueSocket=null;
+        stopQueueTimer();
         try{ws.close(1000,'matched');}catch{}
         showStatus('⚔️ ¡Rival encontrado! Entrando a la partida…',true);
         setTimeout(()=>connect(code,false),120);
@@ -94,6 +117,7 @@
     ws.addEventListener('close',e=>{
       if(queueSocket===ws){
         queueSocket=null;
+        stopQueueTimer();
         if(e.code!==1000)showStatus('La búsqueda se interrumpió. Intenta nuevamente.');
       }
     });
@@ -138,9 +162,9 @@
   function resetArena(){
     const h=arenaCanvas.height,w=arenaCanvas.width;
     // Cada dispositivo juega desde abajo. El slot 2 se transforma al enviar/recibir.
-    meState.x=w/2; meState.y=h-90; meState.lives=3; meState.angle=-Math.PI/2; meState.visualAngle=-Math.PI/2;
-    peerState.x=w/2;peerState.y=90;peerState.lives=3;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
-    bullets=[]; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
+    meState.x=w/2; meState.y=h-90; meState.lives=10; meState.angle=-Math.PI/2; meState.visualAngle=-Math.PI/2;
+    peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
+    bullets=[]; missiles=[]; lastMissile=-Infinity; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
   }
@@ -188,6 +212,8 @@
       peerState.lives=Number.isFinite(Number(p.lives))?Number(p.lives):peerState.lives;updateLives();
     } else if(p.type==='shot'){
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship);
+    } else if(p.type==='missile'){
+      spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship);
     } else if(p.type==='defeat') {
       endArena('🏆 ¡Victoria! Destruiste la nave rival.');
     }
@@ -208,6 +234,25 @@
     const sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
     [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*330,vy:Math.sin(a)*330,angle:a,ship:ship||'Gallina',own:false,life:1.5});});
   }
+  function fireMissile(){
+    const now=performance.now(); if(!running||now-lastMissile<8000)return;
+    lastMissile=now;
+    const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
+    missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ship:myShip,life:6,angle:meState.angle});
+    const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
+    const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
+    send({type:'missile',x:sx,y:sy,ship:myShip});
+  }
+  function spawnRemoteMissile(x,y,ship){
+    if(!Number.isFinite(x+y))return;
+    missiles.push({x,y,prevX:x,prevY:y,own:false,ship:ship||'Gallina',life:6,angle:Math.PI/2});
+  }
+  function updateMissileButton(now=performance.now()){
+    const btn=$('pvpMissileBtn'), label=$('pvpMissileCooldown'); if(!btn||!label)return;
+    const left=Math.max(0,8000-(now-lastMissile));
+    label.textContent=left>0?(Math.ceil(left/1000)+'s'):'LISTO';
+    btn.style.opacity=left>0?'.55':'1';
+  }
   function loop(now){
     if(!running)return; const dt=Math.min(.04,(now-lastFrame)/1000);lastFrame=now; update(dt,now);draw();raf=requestAnimationFrame(loop);
   }
@@ -223,6 +268,15 @@
     if(keys.has(' '))shoot();
 
     for(const b of bullets){b.prevX=b.x;b.prevY=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;}
+    for(const m of missiles){
+      m.prevX=m.x;m.prevY=m.y;
+      const target=m.own?peerState:meState;
+      const desired=Math.atan2(target.y-m.y,target.x-m.x);
+      let diff=((desired-m.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
+      m.angle+=Math.max(-2.8*dt,Math.min(2.8*dt,diff));
+      m.x+=Math.cos(m.angle)*235*dt;m.y+=Math.sin(m.angle)*235*dt;m.life-=dt;
+    }
+    updateMissileButton(now);
     for(const fx of impactFx)fx.life-=dt;
     impactFx=impactFx.filter(fx=>fx.life>0);
     // Impacto del disparo propio contra la nave rival. Antes el cliente sólo
@@ -262,7 +316,20 @@
         }
       }
     }
+    for(const m of missiles){
+      if(m.life<=0)continue;
+      const target=m.own?peerState:meState;
+      if(Math.hypot(m.x-target.x,m.y-target.y)<31){
+        m.life=0; impactFx.push({x:m.x,y:m.y,life:.4,maxLife:.4});
+        if(!m.own&&now-lastHitAt>180){
+          lastHitAt=now;meState.lives=Math.max(0,meState.lives-1);updateLives();
+          hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
+          if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');return;}
+        }
+      }
+    }
     bullets=bullets.filter(b=>b.life>0&&b.x>-20&&b.x<arenaCanvas.width+20&&b.y>-20&&b.y<arenaCanvas.height+20);
+    missiles=missiles.filter(m=>m.life>0&&m.x>-40&&m.x<arenaCanvas.width+40&&m.y>-40&&m.y<arenaCanvas.height+40);
     if(now-lastStateSend>50){
       lastStateSend=now;
       const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
@@ -300,6 +367,10 @@
       else{arenaCtx.fillStyle=b.own?'#fde047':'#fb7185';arenaCtx.beginPath();arenaCtx.arc(0,0,4,0,Math.PI*2);arenaCtx.fill();}
       arenaCtx.restore();
     }
+    for(const m of missiles){
+      arenaCtx.save();arenaCtx.translate(m.x,m.y);arenaCtx.rotate(m.angle+Math.PI/2);
+      arenaCtx.font='24px sans-serif';arenaCtx.textAlign='center';arenaCtx.textBaseline='middle';arenaCtx.fillText('🚀',0,0);arenaCtx.restore();
+    }
     for(const fx of impactFx){
       const t=Math.max(0,fx.life/fx.maxLife),r=7+(1-t)*30;
       arenaCtx.save();arenaCtx.globalAlpha=Math.min(1,t*1.7);
@@ -320,6 +391,7 @@
     el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
   }
   stickSetup($('pvpMoveStick'),moveStick,false);stickSetup($('pvpAimStick'),aimStick,true);
+  $('pvpMissileBtn')?.addEventListener('click',fireMissile);
   window.addEventListener('keydown',e=>{keys.add(e.key);if(e.key===' ')e.preventDefault();});
   window.addEventListener('keyup',e=>keys.delete(e.key));
 
