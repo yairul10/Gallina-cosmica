@@ -12,7 +12,7 @@
   const status = $('pvpLobbyStatus');
   const roomInput = $('pvpRoomCode');
 
-  let socket = null, currentRoom = '', mySlot = 0, players = [];
+  let socket = null, queueSocket = null, currentRoom = '', mySlot = 0, players = [];
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0;
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 3, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
@@ -65,9 +65,39 @@
   function send(payload){ if(socket?.readyState!==WebSocket.OPEN)return false; socket.send(JSON.stringify(payload)); return true; }
   function disconnect(silent=false){
     stopArena();
+    if(queueSocket){const q=queueSocket;queueSocket=null;try{q.close(1000,'leaving');}catch{}}
     if(socket){const old=socket;socket=null;try{old.close(1000,'leaving');}catch{}}
     currentRoom='';mySlot=0;players=[];
     if(!silent)showStatus('Desconectado de la sala.');
+  }
+
+  function findMatch(){
+    disconnect(true);
+    const me=identity();
+    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel()});
+    const ws=new WebSocket(`${PVP_WS_BASE}/matchmake?${params}`);
+    queueSocket=ws;
+    showStatus('🔎 Buscando rival…',true);
+    ws.addEventListener('message',event=>{
+      if(queueSocket!==ws)return;
+      let m;try{m=JSON.parse(event.data);}catch{return;}
+      if(m.type==='queue-waiting'){
+        showStatus('🔎 Buscando rival… Esperando otro jugador.',true);
+      } else if(m.type==='match-found' && /^\d{6}$/.test(String(m.roomCode||''))){
+        const code=String(m.roomCode);
+        queueSocket=null;
+        try{ws.close(1000,'matched');}catch{}
+        showStatus('⚔️ ¡Rival encontrado! Entrando a la partida…',true);
+        setTimeout(()=>connect(code,false),120);
+      }
+    });
+    ws.addEventListener('close',e=>{
+      if(queueSocket===ws){
+        queueSocket=null;
+        if(e.code!==1000)showStatus('La búsqueda se interrumpió. Intenta nuevamente.');
+      }
+    });
+    ws.addEventListener('error',()=>{if(queueSocket===ws)showStatus('No se pudo conectar a la cola PvP.');});
   }
 
   function connect(code,creating=false){
@@ -297,6 +327,7 @@
     document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';
     const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();showStatus('Listo para crear o unirse a una sala.');
   });
+  $('pvpFindMatchBtn')?.addEventListener('click',findMatch);
   $('pvpCreateRoomBtn')?.addEventListener('click',()=>{const c=randomCode();roomInput.value=c;connect(c,true);});
   $('pvpJoinRoomBtn')?.addEventListener('click',()=>connect(roomInput.value,false));
   roomInput?.addEventListener('input',()=>roomInput.value=String(roomInput.value||'').replace(/\D/g,'').slice(0,6));
