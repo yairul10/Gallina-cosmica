@@ -20,6 +20,7 @@
   let bullets = [];
   let impactFx = [];
   let hitFlashUntil = 0;
+  let hitShakeUntil = 0;
   const moveStick = { active:false, id:null, x:0, y:0 };
   const aimStick = { active:false, id:null, x:0, y:0 };
 
@@ -109,7 +110,7 @@
     // Cada dispositivo juega desde abajo. El slot 2 se transforma al enviar/recibir.
     meState.x=w/2; meState.y=h-90; meState.lives=3; meState.angle=-Math.PI/2; meState.visualAngle=-Math.PI/2;
     peerState.x=w/2;peerState.y=90;peerState.lives=3;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
-    bullets=[]; impactFx=[]; hitFlashUntil=0; $('pvpResult').style.display='none';
+    bullets=[]; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
   }
@@ -197,8 +198,9 @@
     for(const b of bullets){
       if(!b.own&&b.life>0&&Math.hypot(b.x-meState.x,b.y-meState.y)<24){
         b.life=0;
-        impactFx.push({x:b.x,y:b.y,life:.18,maxLife:.18});
-        hitFlashUntil=performance.now()+140;
+        impactFx.push({x:b.x,y:b.y,life:.32,maxLife:.32});
+        hitFlashUntil=performance.now()+220;
+        hitShakeUntil=performance.now()+150;
         meState.lives=Math.max(0,meState.lives-1);updateLives();
         if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');return;}
       }
@@ -225,6 +227,8 @@
   function draw(){
     const w=arenaCanvas.width,h=arenaCanvas.height;
     arenaCtx.clearRect(0,0,w,h);
+    arenaCtx.save();
+    if(performance.now()<hitShakeUntil) arenaCtx.translate((Math.random()-.5)*7,(Math.random()-.5)*7);
     const bg=window.assets?.fondoRonda3;if(bg?.complete&&bg.naturalWidth)arenaCtx.drawImage(bg,0,0,w,h);else{arenaCtx.fillStyle='#020617';arenaCtx.fillRect(0,0,w,h);}
     arenaCtx.strokeStyle='rgba(167,139,250,.35)';arenaCtx.setLineDash([8,10]);arenaCtx.beginPath();arenaCtx.moveTo(0,h/2);arenaCtx.lineTo(w,h/2);arenaCtx.stroke();arenaCtx.setLineDash([]);
     const mine=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
@@ -240,12 +244,14 @@
       arenaCtx.restore();
     }
     for(const fx of impactFx){
-      const t=Math.max(0,fx.life/fx.maxLife),r=8+(1-t)*20;
-      arenaCtx.save();arenaCtx.globalAlpha=t;
-      arenaCtx.strokeStyle='#fff';arenaCtx.lineWidth=3;
-      arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,r,0,Math.PI*2);arenaCtx.stroke();
+      const t=Math.max(0,fx.life/fx.maxLife),r=7+(1-t)*30;
+      arenaCtx.save();arenaCtx.globalAlpha=Math.min(1,t*1.7);
+      arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,7*t+3,0,Math.PI*2);arenaCtx.fill();
+      arenaCtx.strokeStyle='#fff';arenaCtx.lineWidth=4;arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,r,0,Math.PI*2);arenaCtx.stroke();
+      for(let i=0;i<8;i++){const a=i*Math.PI/4,len=10+(1-t)*24;arenaCtx.beginPath();arenaCtx.moveTo(fx.x+Math.cos(a)*8,fx.y+Math.sin(a)*8);arenaCtx.lineTo(fx.x+Math.cos(a)*len,fx.y+Math.sin(a)*len);arenaCtx.stroke();}
       arenaCtx.restore();
     }
+    arenaCtx.restore();
   }
 
   function stickSetup(el,stick,fire){
