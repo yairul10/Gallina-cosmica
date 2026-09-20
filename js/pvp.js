@@ -121,9 +121,6 @@
       peerState.lives=Number.isFinite(Number(p.lives))?Number(p.lives):peerState.lives;updateLives();
     } else if(p.type==='shot'){
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)));
-    } else if(p.type==='hit'){
-      meState.lives=Math.max(0,meState.lives-1);updateLives();
-      if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');}
     } else if(p.type==='defeat') {
       endArena('🏆 ¡Victoria! Destruiste la nave rival.');
     }
@@ -159,7 +156,7 @@
     for(const b of bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;}
     for(const b of bullets){
       if(!b.own&&b.life>0&&Math.hypot(b.x-meState.x,b.y-meState.y)<24){
-        b.life=0; meState.lives=Math.max(0,meState.lives-1);updateLives();send({type:'hit'});
+        b.life=0; meState.lives=Math.max(0,meState.lives-1);updateLives();
         if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');return;}
       }
     }
