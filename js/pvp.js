@@ -45,16 +45,35 @@
     const base=label.replace(/ Pro$/,'').toLowerCase();
     return 'assets/'+base+(pro?'_pro':'')+'_1.png';
   }
-  function projectileSrc(label){
-    const pro=/ Pro$/.test(label), base=label.replace(/ Pro$/,'');
-    const files={
-      'Gallina':['assets/bala_pollito.png','assets/bala_pollito_pro.png'],
-      'Gallina Chile':['assets/bala_pollito.png','assets/bala_pollito.png'],
-      'Oveja':['assets/bala_lana.png','assets/bala_lana_pro.png'],
-      'Caballo':['assets/bala_herradura.png','assets/bala_herradura_pro.png'],
-      'Vaca':['assets/bala_leche.png','assets/bala_leche_pro.png']
+  function shipCombatInfo(label){
+    const base=String(label||'Gallina').replace(/ Pro$/,'');
+    const index={Gallina:0,'Gallina Chile':0,Oveja:1,Caballo:2,Vaca:3}[base] ?? 0;
+    const missileType=['chick','wool','horseshoe','milk'][index];
+    return {index, missileType, isPro:/ Pro$/.test(String(label||''))};
+  }
+  function missileImage(type,isPro){
+    const names={
+      chick:['balaPollito','balaPollitoPro'],
+      wool:['balaLana','balaLanaPro'],
+      horseshoe:['balaHerradura','balaHerraduraPro'],
+      milk:['balaLeche','balaLechePro']
     };
-    const pair=files[base]||files.Gallina; return pair[pro?1:0];
+    const pair=names[type]||names.chick;
+    const normal=typeof assets!=='undefined'?assets[pair[0]]:null;
+    const pro=typeof assets!=='undefined'?assets[pair[1]]:null;
+    return isPro&&pro?.complete&&pro.naturalWidth?pro:normal;
+  }
+  function laserColors(label){
+    const info=shipCombatInfo(label);
+    let outer='#38bdf8', inner='#ffffff';
+    if(info.isPro){
+      if(info.index===0) outer='#a855f7';
+      else if(info.index===1) outer='#fbbf24';
+      else { inner='#fbbf24'; outer='#a855f7'; }
+    }else{
+      outer=['#ef4444','#a855f7','#fbbf24','#3b82f6'][info.index]||'#38bdf8';
+    }
+    return {outer,inner};
   }
   function showStatus(text,ok=false){ if(status){status.textContent=text;status.style.color=ok?'#86efac':'#cbd5e1';} }
   function stopQueueTimer(){
@@ -213,7 +232,7 @@
     } else if(p.type==='shot'){
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship);
     } else if(p.type==='missile'){
-      spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship);
+      spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro);
     } else if(p.type==='defeat') {
       endArena('🏆 ¡Victoria! Destruiste la nave rival.');
     }
@@ -223,7 +242,8 @@
     const now=performance.now();if(!running||now-lastShot<330)return;lastShot=now;
     const a=meState.angle,sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
-    [-1,1].forEach(s=>bullets.push({x:meState.x+sideX*s,y:meState.y+sideY*s,vx:Math.cos(a)*330,vy:Math.sin(a)*330,angle:a,ship:myShip,own:true,life:1.5}));
+    // Mismo láser del juego normal: 4x20 y velocidad equivalente a 14 px/frame a 60 FPS.
+    [-1,1].forEach(s=>bullets.push({x:meState.x+sideX*s,y:meState.y+sideY*s,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,life:1.5}));
     const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
     const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
     const sa=mySlot===2?a+Math.PI:a;
@@ -232,20 +252,26 @@
   function spawnRemoteShot(x,y,a,ship){
     if(!Number.isFinite(x+y+a))return;
     const sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
-    [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*330,vy:Math.sin(a)*330,angle:a,ship:ship||'Gallina',own:false,life:1.5});});
+    [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,life:1.5});});
   }
   function fireMissile(){
     const now=performance.now(); if(!running||now-lastMissile<8000)return;
     lastMissile=now;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
-    missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ship:myShip,life:6,angle:meState.angle});
+    const info=shipCombatInfo(myShip), stats=currentGameStats();
+    // Igual que el modo normal: el misil Pro sólo se usa si la nave es Pro y ese misil fue desbloqueado.
+    const usePro=info.isPro && !!stats.proMissiles?.[info.index];
+    const speed=450, initialSpeed=300, a=meState.angle;
+    missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ship:myShip,missileType:info.missileType,isPro:usePro,life:6,vx:Math.cos(a)*initialSpeed,vy:Math.sin(a)*initialSpeed,speed});
     const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
     const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
-    send({type:'missile',x:sx,y:sy,ship:myShip});
+    send({type:'missile',x:sx,y:sy,ship:myShip,missileType:info.missileType,isPro:usePro});
   }
-  function spawnRemoteMissile(x,y,ship){
+  function spawnRemoteMissile(x,y,ship,missileType,isPro){
     if(!Number.isFinite(x+y))return;
-    missiles.push({x,y,prevX:x,prevY:y,own:false,ship:ship||'Gallina',life:6,angle:Math.PI/2});
+    const info=shipCombatInfo(ship||'Gallina');
+    // En la vista remota el rival parte apuntando hacia abajo.
+    missiles.push({x,y,prevX:x,prevY:y,own:false,ship:ship||'Gallina',missileType:missileType||info.missileType,isPro:!!isPro,life:6,vx:0,vy:300,speed:450});
   }
   function updateMissileButton(now=performance.now()){
     const btn=$('pvpMissileBtn'), label=$('pvpMissileCooldown'); if(!btn||!label)return;
@@ -271,10 +297,12 @@
     for(const m of missiles){
       m.prevX=m.x;m.prevY=m.y;
       const target=m.own?peerState:meState;
-      const desired=Math.atan2(target.y-m.y,target.x-m.x);
-      let diff=((desired-m.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
-      m.angle+=Math.max(-2.8*dt,Math.min(2.8*dt,diff));
-      m.x+=Math.cos(m.angle)*235*dt;m.y+=Math.sin(m.angle)*235*dt;m.life-=dt;
+      // Misma persecución del modo normal: la velocidad se interpola 8% por frame hacia el objetivo.
+      const angle=Math.atan2(target.y-m.y,target.x-m.x);
+      const follow=1-Math.pow(0.92,dt*60);
+      m.vx+=(Math.cos(angle)*m.speed-m.vx)*follow;
+      m.vy+=(Math.sin(angle)*m.speed-m.vy)*follow;
+      m.x+=m.vx*dt;m.y+=m.vy*dt;m.life-=dt;
     }
     updateMissileButton(now);
     for(const fx of impactFx)fx.life-=dt;
@@ -342,7 +370,6 @@
   const imageCache=new Map();
   function cachedImage(src){if(!imageCache.has(src)){const im=new Image();im.src=src;imageCache.set(src,im);}return imageCache.get(src);}
   function imageFor(label){return cachedImage(shipSrc(label));}
-  function projectileFor(label){return cachedImage(projectileSrc(label));}
   function drawShip(state,label){
     const im=imageFor(label);arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);
     if(im.complete&&im.naturalWidth)arenaCtx.drawImage(im,-26,-26,52,52);else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
@@ -361,15 +388,24 @@
     if(performance.now()<hitFlashUntil){arenaCtx.save();arenaCtx.globalAlpha=.42;arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
     drawShip(meState,mine.ship);
     for(const b of bullets){
-      const im=projectileFor(b.ship||'Gallina');
+      // Dibujo del láser copiado del modo normal, adaptado a cualquier ángulo del PvP.
+      const colors=laserColors(b.ship||'Gallina'), bw=4, bh=20;
       arenaCtx.save();arenaCtx.translate(b.x,b.y);arenaCtx.rotate((Number.isFinite(b.angle)?b.angle:Math.atan2(b.vy,b.vx))+Math.PI/2);
-      if(im.complete&&im.naturalWidth)arenaCtx.drawImage(im,-7,-12,14,24);
-      else{arenaCtx.fillStyle=b.own?'#fde047':'#fb7185';arenaCtx.beginPath();arenaCtx.arc(0,0,4,0,Math.PI*2);arenaCtx.fill();}
-      arenaCtx.restore();
+      arenaCtx.fillStyle=colors.inner;arenaCtx.shadowColor=colors.outer;arenaCtx.shadowBlur=8;
+      arenaCtx.fillRect(-bw/2,-bh/2,bw,bh);
+      arenaCtx.strokeStyle=colors.outer;arenaCtx.lineWidth=1.5;arenaCtx.strokeRect(-bw/2,-bh/2,bw,bh);
+      arenaCtx.shadowBlur=0;arenaCtx.restore();
     }
     for(const m of missiles){
-      arenaCtx.save();arenaCtx.translate(m.x,m.y);arenaCtx.rotate(m.angle+Math.PI/2);
-      arenaCtx.font='24px sans-serif';arenaCtx.textAlign='center';arenaCtx.textBaseline='middle';arenaCtx.fillText('🚀',0,0);arenaCtx.restore();
+      arenaCtx.save();arenaCtx.translate(m.x,m.y);
+      const angle=Math.atan2(m.vy,m.vx)+Math.PI/2;arenaCtx.rotate(angle);
+      const im=missileImage(m.missileType,m.isPro);
+      if(im?.complete&&im.naturalWidth) arenaCtx.drawImage(im,-12,-12,24,24);
+      else{
+        const icon={chick:'🐥',wool:'🧶',horseshoe:'🧲',milk:'🥛'}[m.missileType]||'🐥';
+        arenaCtx.font='22px sans-serif';arenaCtx.textAlign='center';arenaCtx.textBaseline='middle';arenaCtx.fillText(icon,0,0);
+      }
+      arenaCtx.restore();
     }
     for(const fx of impactFx){
       const t=Math.max(0,fx.life/fx.maxLife),r=7+(1-t)*30;
