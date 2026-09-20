@@ -289,9 +289,9 @@
       if(Number.isFinite(pva)) remote.visualAngle=mirrorAngle(pva);
       remote.lives=Number.isFinite(Number(p.lives))?Number(p.lives):remote.lives;updateLives();
     } else if(p.type==='shot'){
-      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship);
+      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam);
     } else if(p.type==='missile'){
-      spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro);
+      spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam);
     } else if(p.type==='defeat') {
       endArena('🏆 ¡Victoria! Destruiste la nave rival.');
     }
@@ -308,10 +308,10 @@
     const sa=mySlot===2?a+Math.PI:a;
     send({type:'shot',x:sx,y:sy,angle:sa,ship:myShip});
   }
-  function spawnRemoteShot(x,y,a,ship){
+  function spawnRemoteShot(x,y,a,ship,ownerSlot=0,ownerTeam=0){
     if(!Number.isFinite(x+y+a))return;
     const sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
-    [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,life:1.5});});
+    [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,ownerSlot,ownerTeam,life:1.5});});
   }
   function fireMissile(){
     const now=performance.now();
@@ -329,11 +329,11 @@
     const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
     send({type:'missile',x:sx,y:sy,ship:myShip,missileType:info.missileType,isPro:usePro});
   }
-  function spawnRemoteMissile(x,y,ship,missileType,isPro){
+  function spawnRemoteMissile(x,y,ship,missileType,isPro,ownerSlot=0,ownerTeam=0){
     if(!Number.isFinite(x+y))return;
     const info=shipCombatInfo(ship||'Gallina');
     // En la vista remota el rival parte apuntando hacia abajo.
-    missiles.push({x,y,prevX:x,prevY:y,own:false,ship:ship||'Gallina',missileType:missileType||info.missileType,isPro:!!isPro,life:6,vx:0,vy:300,speed:450});
+    missiles.push({x,y,prevX:x,prevY:y,own:false,ship:ship||'Gallina',missileType:missileType||info.missileType,isPro:!!isPro,ownerSlot,ownerTeam,life:6,vx:0,vy:300,speed:450});
   }
   function updateMissileButton(now=performance.now()){
     const btn=$('pvpMissileBtn'), label=$('pvpMissileCooldown'); if(!btn||!label)return;
@@ -389,6 +389,7 @@
     // La comprobación continua evita que una bala recibida salte la nave entre frames.
     for(const b of bullets){
       if(b.own||b.life<=0)continue;
+      if(pvpMode==='2v2' && b.ownerTeam && b.ownerTeam===myTeam)continue;
       const ax=Number.isFinite(b.prevX)?b.prevX:b.x, ay=Number.isFinite(b.prevY)?b.prevY:b.y;
       const dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
       const t=den>0?Math.max(0,Math.min(1,((meState.x-ax)*dx+(meState.y-ay)*dy)/den)):0;
@@ -402,7 +403,7 @@
         if(now-lastHitAt>180){
           lastHitAt=now;
           meState.lives=Math.max(0,meState.lives-1);updateLives();
-          if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});endArena(pvpMode==='2v2'?'💥 Tu nave fue destruida. Esperando resultado del equipo…':'💥 Tu nave fue destruida.');return;}
         }
       }
     }
@@ -411,10 +412,10 @@
       const target=m.own?peerState:meState;
       if(Math.hypot(m.x-target.x,m.y-target.y)<31){
         m.life=0; impactFx.push({x:m.x,y:m.y,life:.4,maxLife:.4});
-        if(!m.own&&now-lastHitAt>180){
+        if(!m.own && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
           lastHitAt=now;meState.lives=Math.max(0,meState.lives-1);updateLives();
           hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
-          if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});endArena(pvpMode==='2v2'?'💥 Tu nave fue destruida. Esperando resultado del equipo…':'💥 Tu nave fue destruida.');return;}
         }
       }
     }
