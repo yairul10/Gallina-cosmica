@@ -15,8 +15,8 @@
   let socket = null, currentRoom = '', mySlot = 0, players = [];
   let running = false, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0;
   const keys = new Set();
-  const meState = { x: 210, y: 560, lives: 3, angle: -Math.PI / 2 };
-  const peerState = { x: 210, y: 80, lives: 3, angle: Math.PI / 2 };
+  const meState = { x: 210, y: 560, lives: 3, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
+  const peerState = { x: 210, y: 80, lives: 3, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
   let bullets = [];
   const moveStick = { active:false, id:null, x:0, y:0 };
   const aimStick = { active:false, id:null, x:0, y:0 };
@@ -88,8 +88,8 @@
   function resetArena(){
     const h=arenaCanvas.height,w=arenaCanvas.width;
     // Cada dispositivo juega desde abajo. El slot 2 se transforma al enviar/recibir.
-    meState.x=w/2; meState.y=h-90; meState.lives=3; meState.angle=-Math.PI/2;
-    peerState.x=w/2;peerState.y=90;peerState.lives=3;peerState.angle=Math.PI/2;
+    meState.x=w/2; meState.y=h-90; meState.lives=3; meState.angle=-Math.PI/2; meState.visualAngle=-Math.PI/2;
+    peerState.x=w/2;peerState.y=90;peerState.lives=3;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     bullets=[]; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
@@ -118,6 +118,8 @@
       if(Number.isFinite(px)) peerState.x=mirrorX(px);
       if(Number.isFinite(py)) peerState.y=mirrorY(py);
       if(Number.isFinite(pa)) peerState.angle=mirrorAngle(pa);
+      const pva=Number(p.visualAngle);
+      if(Number.isFinite(pva)) peerState.visualAngle=mirrorAngle(pva);
       peerState.lives=Number.isFinite(Number(p.lives))?Number(p.lives):peerState.lives;updateLives();
     } else if(p.type==='shot'){
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)));
@@ -148,6 +150,7 @@
     if(keys.has('ArrowLeft')||keys.has('a'))mx-=1;if(keys.has('ArrowRight')||keys.has('d'))mx+=1;
     if(keys.has('ArrowUp')||keys.has('w'))my-=1;if(keys.has('ArrowDown')||keys.has('s'))my+=1;
     const len=Math.hypot(mx,my);if(len>1){mx/=len;my/=len;}
+    if(Math.hypot(mx,my)>.12) meState.visualAngle=Math.atan2(my,mx);
     meState.x=Math.max(30,Math.min(arenaCanvas.width-30,meState.x+mx*190*dt));
     meState.y=Math.max(55,Math.min(arenaCanvas.height-55,meState.y+my*190*dt));
     if(aimStick.active&&Math.hypot(aimStick.x,aimStick.y)>.25){meState.angle=Math.atan2(aimStick.y,aimStick.x);shoot();}
@@ -166,13 +169,14 @@
       const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
       const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
       const sa=mySlot===2?meState.angle+Math.PI:meState.angle;
-      send({type:'state',x:Math.round(sx),y:Math.round(sy),angle:sa,lives:meState.lives});
+      const sva=mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
+      send({type:'state',x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives});
     }
   }
   const imageCache=new Map();
   function imageFor(label){const src=shipSrc(label);if(!imageCache.has(src)){const im=new Image();im.src=src;imageCache.set(src,im);}return imageCache.get(src);}
   function drawShip(state,label){
-    const im=imageFor(label);arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate(state.angle+Math.PI/2);
+    const im=imageFor(label);arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);
     if(im.complete&&im.naturalWidth)arenaCtx.drawImage(im,-26,-26,52,52);else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
     arenaCtx.restore();
   }
