@@ -22,11 +22,17 @@
   const aimStick = { active:false, id:null, x:0, y:0 };
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
+  function currentGameStats(){
+    // gameStats se declara con let en estado.js y no es propiedad de window.
+    // Acceder directamente permite que PvP use la nave realmente equipada.
+    try { return gameStats || {}; } catch { return {}; }
+  }
   function shipLabel(){
     const names=['Gallina','Oveja','Caballo','Vaca'];
-    const i=Number(window.gameStats?.selectedShip ?? 0);
-    if(window.gameStats?.useGallinaChile) return 'Gallina Chile';
-    return (names[i]||'Gallina')+(window.gameStats?.useProShip?' Pro':'');
+    const stats=currentGameStats();
+    const i=Number(stats.selectedShip ?? 0);
+    if(stats.useGallinaChile) return 'Gallina Chile';
+    return (names[i]||'Gallina')+(stats.useProShip?' Pro':'');
   }
   function shipSrc(label){
     if(label==='Gallina Chile') return 'assets/gallina_chile.png';
