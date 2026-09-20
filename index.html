@@ -62,11 +62,15 @@
                 <p><b>Nave:</b> <span id="pvpShipName">Gallina</span></p>
                 <p style="font-size:.78rem; color:#cbd5e1;">⚖️ Estadísticas normalizadas · ❤️ 3 vidas · 🔫 2 balas por ráfaga</p>
             </div>
-            <button class="btn" id="pvpCreateRoomBtn" style="margin-top:16px; background:#7c3aed;">➕ Crear sala</button>
-            <div style="display:flex; gap:8px; width:min(88%,340px); margin-top:10px;">
-                <input id="pvpRoomCode" inputmode="numeric" maxlength="6" placeholder="Código de 6 dígitos" style="min-width:0; flex:1; padding:11px; border-radius:9px; border:1px solid #64748b; background:#0f172a; color:#fff; text-align:center; font-size:1rem;">
-                <button class="btn" id="pvpJoinRoomBtn" style="width:auto; margin:0; padding:10px 14px; background:#2563eb;">Unirse</button>
-            </div>
+            <button class="btn" id="pvpFindMatchBtn" style="margin-top:16px; background:#7c3aed;">⚔️ Buscar rival</button>
+            <details style="width:min(88%,340px); margin-top:8px; color:#94a3b8; font-size:.75rem;">
+                <summary style="cursor:pointer; padding:6px;">🔧 Sala privada / QA</summary>
+                <button class="btn" id="pvpCreateRoomBtn" style="margin-top:8px; background:#475569;">➕ Crear sala privada</button>
+                <div style="display:flex; gap:8px; width:100%; margin-top:6px;">
+                    <input id="pvpRoomCode" inputmode="numeric" maxlength="6" placeholder="Código de 6 dígitos" style="min-width:0; flex:1; padding:11px; border-radius:9px; border:1px solid #64748b; background:#0f172a; color:#fff; text-align:center; font-size:1rem;">
+                    <button class="btn" id="pvpJoinRoomBtn" style="width:auto; margin:0; padding:10px 14px; background:#2563eb;">Unirse</button>
+                </div>
+            </details>
             <p id="pvpLobbyStatus" style="min-height:42px; margin:12px 18px 4px; font-size:.8rem; color:#cbd5e1; text-align:center;"></p>
             <button class="btn btn-secondary" id="pvpCloseBtn">🔙 Volver</button>
         </div>
@@ -202,7 +206,7 @@
     <script src="js/main.js?v=auto-record-fix-2"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=superboss-cloud-winner-2"></script>
-    <script src="js/pvp.js?v=pvp-arena-11"></script>
+    <script src="js/pvp.js?v=pvp-matchmaking-1"></script>
     <script src="js/qa-mode.js?v=qa-bot-9"></script>
     <script src="js/qa-panel-toggle.js?v=1"></script>
 </body>
