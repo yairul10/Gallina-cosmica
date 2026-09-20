@@ -402,9 +402,11 @@
           target=nearest||peerState;
         }
       }else{
-        // Sólo perseguimos este dispositivo si el misil fue dirigido a nuestro slot.
-        if(m.targetSlot && Number(m.targetSlot)!==mySlot){m.life=0;continue;}
-        target=meState;
+        // Todos los clientes dibujan el misil hacia su objetivo real. El daño
+        // sigue siendo autoritativo sólo en el dispositivo del jugador objetivo.
+        const targetSlot=Number(m.targetSlot||0);
+        target=targetSlot===mySlot?meState:(targetSlot?peerStates.get(targetSlot):meState);
+        if(!target){m.life=0;continue;}
       }
       // Misma persecución del modo normal: la velocidad se interpola 8% por frame hacia el objetivo.
       const angle=Math.atan2(target.y-m.y,target.x-m.x);
@@ -464,12 +466,12 @@
     }
     for(const m of missiles){
       if(m.life<=0)continue;
-      let target=m.own?(m.targetSlot?peerStates.get(Number(m.targetSlot)):null):meState;
+      const targetSlot=Number(m.targetSlot||0);
+      let target=m.own?(targetSlot?peerStates.get(targetSlot):null):(targetSlot===mySlot?meState:(targetSlot?peerStates.get(targetSlot):meState));
       if(!target)continue;
-      if(!m.own&&m.targetSlot&&Number(m.targetSlot)!==mySlot)continue;
       if(Math.hypot(m.x-target.x,m.y-target.y)<31){
         m.life=0; impactFx.push({x:m.x,y:m.y,life:.4,maxLife:.4});
-        if(!m.own && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
+        if(!m.own && (!targetSlot||targetSlot===mySlot) && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
           lastHitAt=now;meState.lives=Math.max(0,meState.lives-1);updateLives();
           hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
           if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});if(pvpMode==='2v2'){markEliminated(mySlot);}else endArena('💥 Tu nave fue destruida.');return;}
