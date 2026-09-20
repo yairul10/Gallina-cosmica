@@ -274,7 +274,7 @@
   function handlePeer(p,fromSlot=0,fromTeam=0){
     if(!fromSlot || fromSlot===mySlot)return;
     const remote=peerFor(fromSlot);
-    if(pvpMode==='2v2' && fromTeam && fromTeam===myTeam && (p.type==='shot'||p.type==='missile')) return;
+    if(pvpMode==='2v2' && fromTeam && fromTeam===myTeam && (p.type==='shot'||p.type==='missile')) return; // fuego amigo: ni daño ni efecto visual
     // El servidor reenvía las coordenadas en el sistema local del emisor.
     // El jugador 2 ve la arena rotada 180°, así ambos juegan desde abajo.
     const mirrorX = x => mySlot === 2 ? arenaCanvas.width - x : x;
@@ -392,11 +392,19 @@
       if(!b.own||b.life<=0)continue;
       const ax=Number.isFinite(b.prevX)?b.prevX:b.x, ay=Number.isFinite(b.prevY)?b.prevY:b.y;
       const dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
-      const t=den>0?Math.max(0,Math.min(1,((peerState.x-ax)*dx+(peerState.y-ay)*dy)/den)):0;
-      const hitX=ax+dx*t,hitY=ay+dy*t;
-      if(Math.hypot(hitX-peerState.x,hitY-peerState.y)<30){
-        b.life=0;b.x=hitX;b.y=hitY;
-        impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});
+      // El disparo propio atraviesa al compañero y sólo se corta visualmente
+      // cuando alcanza una nave enemiga.
+      const targets=players.filter(p=>Number(p.slot)!==mySlot && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
+      let best=null;
+      for(const p of targets){
+        const target=peerFor(p.slot);
+        const t=den>0?Math.max(0,Math.min(1,((target.x-ax)*dx+(target.y-ay)*dy)/den)):0;
+        const hitX=ax+dx*t,hitY=ay+dy*t;
+        if(Math.hypot(hitX-target.x,hitY-target.y)<30 && (!best||t<best.t))best={t,hitX,hitY};
+      }
+      if(best){
+        b.life=0;b.x=best.hitX;b.y=best.hitY;
+        impactFx.push({x:best.hitX,y:best.hitY,life:.32,maxLife:.32});
       }
     }
 
