@@ -80,7 +80,7 @@
             <button id="pvpLeaveArenaBtn" class="btn btn-secondary" style="position:absolute; top:48px; right:8px; z-index:3; width:auto; padding:5px 9px; font-size:.7rem;">Salir</button>
             <div id="pvpMoveStick" class="pvp-stick" style="position:absolute; left:22px; bottom:max(24px,env(safe-area-inset-bottom));"><div class="pvp-stick-knob"></div><small>MOVER</small></div>
             <div id="pvpAimStick" class="pvp-stick pvp-stick-fire" style="position:absolute; right:22px; bottom:max(24px,env(safe-area-inset-bottom));"><div class="pvp-stick-knob"></div><small>APUNTAR + DISPARAR</small></div>
-            <div id="pvpResult" style="display:none; position:absolute; inset:0; z-index:5; background:rgba(2,6,23,.88); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
+            <div id="pvpCountdown" style="display:none; position:absolute; inset:0; z-index:4; background:rgba(2,6,23,.42); align-items:center; justify-content:center; pointer-events:none;"><div id="pvpCountdownText" style="font-size:5rem; font-weight:900; color:#fff; text-shadow:0 0 22px #7c3aed,0 4px 8px #000;">3</div></div>\n            <div id="pvpResult" style="display:none; position:absolute; inset:0; z-index:5; background:rgba(2,6,23,.88); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
                 <h1 id="pvpResultText" style="color:#fff; text-align:center;">Resultado</h1>
                 <button id="pvpResultBackBtn" class="btn" style="margin-top:18px;">Volver al menú</button>
             </div>
@@ -202,7 +202,7 @@
     <script src="js/main.js?v=auto-record-fix-2"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=superboss-cloud-winner-2"></script>
-    <script src="js/pvp.js?v=pvp-arena-4"></script>
+    <script src="js/pvp.js?v=pvp-arena-5"></script>
     <script src="js/qa-mode.js?v=qa-bot-9"></script>
     <script src="js/qa-panel-toggle.js?v=1"></script>
 </body>
