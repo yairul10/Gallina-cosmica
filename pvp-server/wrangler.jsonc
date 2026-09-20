@@ -11,6 +11,12 @@
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["PvpRoom"] },
-    { "tag": "v2", "new_sqlite_classes": ["PvpMatchmaker"] }
+    { "tag": "v2", "new_sqlite_classes": ["Matchmaker"] },
+    {
+      "tag": "v3",
+      "renamed_classes": [
+        { "from": "Matchmaker", "to": "PvpMatchmaker" }
+      ]
+    }
   ]
 }
