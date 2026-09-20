@@ -271,6 +271,12 @@ async function loadCloudProgress() {
         // monedas locales antiguas antes de que D1 haya sido inicializado.
         gameStats.savedCoins = Math.max(Number(gameStats.savedCoins || 0), Number(progress.coins || 0));
         coins = gameStats.savedCoins;
+        // Refrescar el HUD inmediatamente: al arrancar la app el HTML comienza
+        // mostrando 0 y antes solo se actualizaba al iniciar la primera partida.
+        const coinHud = document.getElementById('coinVal');
+        if (coinHud) coinHud.textContent = coins;
+        const shopCoinHud = document.getElementById('shopCoinsVal');
+        if (shopCoinHud) shopCoinHud.textContent = coins;
         gameStats.bestScore = Math.max(Number(gameStats.bestScore || 0), Number(progress.high_score || 0));
 
         (Array.isArray(progress.owned_ships) ? progress.owned_ships : []).forEach(applyCloudShipId);
