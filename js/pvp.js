@@ -20,13 +20,26 @@
   const pvpMusic = new Audio('assets/musica_4.mp3');
   pvpMusic.loop = true;
   pvpMusic.volume = 0.4;
-  let resumeBgMusicAfterPvp = false;
+  let resumeBgMusicAfterPvp = false, pvpMusicUnlocked = false;
+  function unlockPvpMusic(){
+    if(pvpMusicUnlocked)return;
+    pvpMusicUnlocked=true;
+    // Android/WebView exige que el primer play ocurra dentro de un gesto del usuario.
+    const oldVolume=pvpMusic.volume;
+    pvpMusic.volume=0;
+    pvpMusic.play().then(()=>{
+      pvpMusic.pause(); pvpMusic.currentTime=0; pvpMusic.volume=oldVolume;
+    }).catch(()=>{pvpMusic.volume=oldVolume;});
+  }
   function startPvpMusic(){
     try{
       resumeBgMusicAfterPvp = typeof bgMusic !== 'undefined' && !bgMusic.paused;
       if(typeof bgMusic !== 'undefined') bgMusic.pause();
       pvpMusic.currentTime = 0;
-      pvpMusic.play().catch(()=>{});
+      pvpMusic.play().catch(()=>{
+        // Si el navegador todavía bloquea autoplay, el siguiente toque del jugador lo reintenta.
+        pvpMusicUnlocked=false;
+      });
     }catch{}
   }
   function stopPvpMusic(){
@@ -475,9 +488,9 @@
     document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';
     const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();showStatus('Listo para crear o unirse a una sala.');
   });
-  $('pvpFindMatchBtn')?.addEventListener('click',findMatch);
-  $('pvpCreateRoomBtn')?.addEventListener('click',()=>{const c=randomCode();roomInput.value=c;connect(c,true);});
-  $('pvpJoinRoomBtn')?.addEventListener('click',()=>connect(roomInput.value,false));
+  $('pvpFindMatchBtn')?.addEventListener('click',()=>{unlockPvpMusic();findMatch();});
+  $('pvpCreateRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();const c=randomCode();roomInput.value=c;connect(c,true);});
+  $('pvpJoinRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();connect(roomInput.value,false);});
   roomInput?.addEventListener('input',()=>roomInput.value=String(roomInput.value||'').replace(/\D/g,'').slice(0,6));
   $('pvpCloseBtn')?.addEventListener('click',()=>{disconnect(true);lobby.style.display='none';$('startScreen').style.display='flex';});
   $('pvpLeaveArenaBtn')?.addEventListener('click',()=>{
