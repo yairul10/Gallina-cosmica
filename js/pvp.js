@@ -13,7 +13,7 @@
   const roomInput = $('pvpRoomCode');
 
   let socket = null, currentRoom = '', mySlot = 0, players = [];
-  let running = false, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0;
+  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0;
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 3, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
   const peerState = { x: 210, y: 80, lives: 3, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
@@ -95,11 +95,26 @@
     updateLives();
   }
   function startArena(){
-    if(!arenaCanvas||!arenaCtx||running)return;
-    lobby.style.display='none'; arena.style.display='flex'; resetArena(); running=true; lastFrame=performance.now();
-    raf=requestAnimationFrame(loop);
+    if(!arenaCanvas||!arenaCtx||running||countdownActive)return;
+    lobby.style.display='none'; arena.style.display='flex'; resetArena();
+    const overlay=$('pvpCountdown'), label=$('pvpCountdownText');
+    countdownActive=true; let count=3;
+    overlay.style.display='flex'; label.textContent=count;
+    clearInterval(countdownTimer);
+    countdownTimer=setInterval(()=>{
+      count--;
+      if(count>0){ label.textContent=count; return; }
+      if(count===0){ label.textContent='¡YA!'; return; }
+      clearInterval(countdownTimer); countdownTimer=0; overlay.style.display='none'; countdownActive=false;
+      running=true; lastFrame=performance.now(); raf=requestAnimationFrame(loop);
+    },1000);
   }
-  function stopArena(){running=false;if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;aimStick.active=false;}
+  function stopArena(){
+    running=false;countdownActive=false;
+    if(countdownTimer){clearInterval(countdownTimer);countdownTimer=0;}
+    const overlay=$('pvpCountdown');if(overlay)overlay.style.display='none';
+    if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;aimStick.active=false;
+  }
   function endArena(text){
     stopArena(); $('pvpResultText').textContent=text; $('pvpResult').style.display='flex';
   }
