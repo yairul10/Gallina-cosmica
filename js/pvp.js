@@ -13,7 +13,7 @@
   const roomInput = $('pvpRoomCode');
 
   let socket = null, currentRoom = '', mySlot = 0, players = [];
-  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0;
+  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0;
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 3, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
   const peerState = { x: 210, y: 80, lives: 3, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
@@ -110,7 +110,7 @@
     // Cada dispositivo juega desde abajo. El slot 2 se transforma al enviar/recibir.
     meState.x=w/2; meState.y=h-90; meState.lives=3; meState.angle=-Math.PI/2; meState.visualAngle=-Math.PI/2;
     peerState.x=w/2;peerState.y=90;peerState.lives=3;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
-    bullets=[]; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; $('pvpResult').style.display='none';
+    bullets=[]; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
   }
@@ -195,8 +195,24 @@
     for(const b of bullets){b.prevX=b.x;b.prevY=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;}
     for(const fx of impactFx)fx.life-=dt;
     impactFx=impactFx.filter(fx=>fx.life>0);
-    // Colisión continua: comprobamos todo el segmento recorrido por el proyectil
-    // en este frame. Así no puede "saltar" de un lado de la nave al otro.
+    // Impacto del disparo propio contra la nave rival. Antes el cliente sólo
+    // comprobaba los proyectiles recibidos contra SU propia nave; por eso en
+    // la pantalla del tirador la bala podía dibujarse atravesando al rival.
+    // Ahora el proyectil propio se corta visualmente al cruzar la nave rival.
+    for(const b of bullets){
+      if(!b.own||b.life<=0)continue;
+      const ax=Number.isFinite(b.prevX)?b.prevX:b.x, ay=Number.isFinite(b.prevY)?b.prevY:b.y;
+      const dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
+      const t=den>0?Math.max(0,Math.min(1,((peerState.x-ax)*dx+(peerState.y-ay)*dy)/den)):0;
+      const hitX=ax+dx*t,hitY=ay+dy*t;
+      if(Math.hypot(hitX-peerState.x,hitY-peerState.y)<30){
+        b.life=0;b.x=hitX;b.y=hitY;
+        impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});
+      }
+    }
+
+    // Daño real: cada dispositivo sigue siendo autoridad de sus propias vidas.
+    // La comprobación continua evita que una bala recibida salte la nave entre frames.
     for(const b of bullets){
       if(b.own||b.life<=0)continue;
       const ax=Number.isFinite(b.prevX)?b.prevX:b.x, ay=Number.isFinite(b.prevY)?b.prevY:b.y;
@@ -208,8 +224,12 @@
         impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});
         hitFlashUntil=performance.now()+220;
         hitShakeUntil=performance.now()+150;
-        meState.lives=Math.max(0,meState.lives-1);updateLives();
-        if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');return;}
+        // Las dos balas de una misma ráfaga cuentan como un solo impacto.
+        if(now-lastHitAt>180){
+          lastHitAt=now;
+          meState.lives=Math.max(0,meState.lives-1);updateLives();
+          if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');return;}
+        }
       }
     }
     bullets=bullets.filter(b=>b.life>0&&b.x>-20&&b.x<arenaCanvas.width+20&&b.y>-20&&b.y<arenaCanvas.height+20);
