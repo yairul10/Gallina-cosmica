@@ -15,6 +15,27 @@
   let socket = null, queueSocket = null, currentRoom = '', mySlot = 0, players = [];
   let queueStartedAt = 0, queueTimer = 0;
   const PVP_MISSILE_COOLDOWN = 8000;
+  const pvpBackground = new Image();
+  pvpBackground.src = 'assets/fondo_pvp.png';
+  const pvpMusic = new Audio('assets/musica_4.mp3');
+  pvpMusic.loop = true;
+  pvpMusic.volume = 0.4;
+  let resumeBgMusicAfterPvp = false;
+  function startPvpMusic(){
+    try{
+      resumeBgMusicAfterPvp = typeof bgMusic !== 'undefined' && !bgMusic.paused;
+      if(typeof bgMusic !== 'undefined') bgMusic.pause();
+      pvpMusic.currentTime = 0;
+      pvpMusic.play().catch(()=>{});
+    }catch{}
+  }
+  function stopPvpMusic(){
+    try{
+      pvpMusic.pause(); pvpMusic.currentTime = 0;
+      if(resumeBgMusicAfterPvp && typeof bgMusic !== 'undefined') bgMusic.play().catch(()=>{});
+    }catch{}
+    resumeBgMusicAfterPvp = false;
+  }
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
@@ -190,7 +211,7 @@
   }
   function startArena(){
     if(!arenaCanvas||!arenaCtx||running||countdownActive)return;
-    lobby.style.display='none'; arena.style.display='flex'; resetArena();
+    lobby.style.display='none'; arena.style.display='flex'; resetArena(); startPvpMusic();
     const overlay=$('pvpCountdown'), label=$('pvpCountdownText');
     countdownActive=true; let count=3;
     overlay.style.display='flex'; label.textContent=count;
@@ -204,7 +225,7 @@
     },1000);
   }
   function stopArena(){
-    running=false;countdownActive=false;
+    running=false;countdownActive=false; stopPvpMusic();
     if(countdownTimer){clearInterval(countdownTimer);countdownTimer=0;}
     const overlay=$('pvpCountdown');if(overlay)overlay.style.display='none';
     if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;aimStick.active=false;
@@ -384,7 +405,7 @@
     arenaCtx.clearRect(0,0,w,h);
     arenaCtx.save();
     if(performance.now()<hitShakeUntil) arenaCtx.translate((Math.random()-.5)*7,(Math.random()-.5)*7);
-    const bg=window.assets?.fondoRonda3;if(bg?.complete&&bg.naturalWidth)arenaCtx.drawImage(bg,0,0,w,h);else{arenaCtx.fillStyle='#020617';arenaCtx.fillRect(0,0,w,h);}
+    if(pvpBackground.complete&&pvpBackground.naturalWidth)arenaCtx.drawImage(pvpBackground,0,0,w,h);else{arenaCtx.fillStyle='#020617';arenaCtx.fillRect(0,0,w,h);}
     arenaCtx.strokeStyle='rgba(167,139,250,.35)';arenaCtx.setLineDash([8,10]);arenaCtx.beginPath();arenaCtx.moveTo(0,h/2);arenaCtx.lineTo(w,h/2);arenaCtx.stroke();arenaCtx.setLineDash([]);
     const mine=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
     const rival=players.find(p=>Number(p.slot)!==mySlot)||{ship:'Gallina'};
