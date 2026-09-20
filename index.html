@@ -60,7 +60,7 @@
             <div class="leaderboard-box" style="width:min(88%,340px); text-align:left;">
                 <p><b>Jugador:</b> <span id="pvpPlayerName">Jugador</span></p>
                 <p><b>Nave:</b> <span id="pvpShipName">Gallina</span></p>
-                <p style="font-size:.78rem; color:#cbd5e1;">⚖️ Estadísticas normalizadas · ❤️ 3 vidas · 🔫 2 balas por ráfaga</p>
+                <p style="font-size:.78rem; color:#cbd5e1;">⚖️ Estadísticas normalizadas · ❤️ 10 vidas · 🔫 2 balas por ráfaga · 🚀 misil rastreador (8 s)</p>
             </div>
             <button class="btn" id="pvpFindMatchBtn" style="margin-top:16px; background:#7c3aed;">⚔️ Buscar rival</button>
             <details style="width:min(88%,340px); margin-top:8px; color:#94a3b8; font-size:.75rem;">
@@ -77,13 +77,14 @@
         <div id="pvpArenaScreen" class="screen-overlay" style="display:none; padding:0; background:#020617; z-index:220; overflow:hidden;">
             <canvas id="pvpCanvas" width="420" height="640" style="position:absolute; inset:0; width:100%; height:100%; object-fit:fill;"></canvas>
             <div style="position:absolute; top:max(10px,env(safe-area-inset-top)); left:10px; right:10px; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; text-shadow:0 2px 4px #000;">
-                <div><b>TÚ</b><div id="pvpMyLives">❤️❤️❤️</div></div>
+                <div><b>TÚ</b><div id="pvpMyLives">❤️ x10</div></div>
                 <div id="pvpRoomHud" style="font-size:.78rem; color:#c4b5fd;">Sala</div>
-                <div style="text-align:right;"><b>RIVAL</b><div id="pvpRivalLives">❤️❤️❤️</div></div>
+                <div style="text-align:right;"><b>RIVAL</b><div id="pvpRivalLives">❤️ x10</div></div>
             </div>
             <button id="pvpLeaveArenaBtn" class="btn btn-secondary" style="position:absolute; top:48px; right:8px; z-index:3; width:auto; padding:5px 9px; font-size:.7rem;">Salir</button>
             <div id="pvpMoveStick" class="pvp-stick" style="position:absolute; left:22px; bottom:max(24px,env(safe-area-inset-bottom));"><div class="pvp-stick-knob"></div><small>MOVER</small></div>
             <div id="pvpAimStick" class="pvp-stick pvp-stick-fire" style="position:absolute; right:22px; bottom:max(24px,env(safe-area-inset-bottom));"><div class="pvp-stick-knob"></div><small>APUNTAR + DISPARAR</small></div>
+            <button id="pvpMissileBtn" class="btn" aria-label="Disparar misil rastreador" style="position:absolute; right:28px; bottom:max(145px,calc(env(safe-area-inset-bottom) + 145px)); z-index:3; width:72px; height:72px; border-radius:50%; padding:4px; background:rgba(180,83,9,.92); border:2px solid #fbbf24; font-size:1.6rem;">🎯<small id="pvpMissileCooldown" style="display:block; font-size:.58rem; color:#fff;">LISTO</small></button>
             <div id="pvpCountdown" style="display:none; position:absolute; inset:0; z-index:4; background:rgba(2,6,23,.42); align-items:center; justify-content:center; pointer-events:none;"><div id="pvpCountdownText" style="font-size:5rem; font-weight:900; color:#fff; text-shadow:0 0 22px #7c3aed,0 4px 8px #000;">3</div></div>\n            <div id="pvpResult" style="display:none; position:absolute; inset:0; z-index:5; background:rgba(2,6,23,.88); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
                 <h1 id="pvpResultText" style="color:#fff; text-align:center;">Resultado</h1>
                 <button id="pvpResultBackBtn" class="btn" style="margin-top:18px;">Volver al menú</button>
