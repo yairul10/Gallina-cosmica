@@ -54,6 +54,16 @@
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
   const peerState = { x: 210, y: 80, lives: 10, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
+  const peerStates = new Map();
+  function peerFor(slot){
+    slot=Number(slot||0);
+    if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,lives:10,angle:Math.PI/2,visualAngle:Math.PI/2,slot});
+    return peerStates.get(slot);
+  }
+  function syncPeerPlayers(){
+    for(const p of players) if(Number(p.slot)!==mySlot) peerFor(p.slot);
+    for(const slot of [...peerStates.keys()]) if(!players.some(p=>Number(p.slot)===slot)) peerStates.delete(slot);
+  }
   let bullets = [];
   let missiles = [];
   let impactFx = [];
@@ -194,17 +204,20 @@
       let m;try{m=JSON.parse(event.data);}catch{return;}
       if(m.type==='joined'){
         players=m.players||[]; const mine=players.find(p=>String(p.playerId)===playerId());
-        mySlot=Number(mine?.slot||0); myTeam=Number(mine?.team||m.team||0);
+        mySlot=Number(mine?.slot||0); myTeam=Number(mine?.team||m.team||0); syncPeerPlayers();
         const needed=pvpMode==='1v1'?2:4;
         showStatus('Sala '+code+' · Jugador '+(mySlot||'?')+(pvpMode==='2v2'?' · Equipo '+(myTeam||'?'):'')+(players.length<needed?' · esperando '+(needed-players.length)+' jugador(es)…':''),true);
       } else if(m.type==='player-joined') {
+        if(m.player && !players.some(p=>Number(p.slot)===Number(m.player.slot))) players.push(m.player);
+        syncPeerPlayers();
         showStatus('Jugador conectado. Esperando que se complete la partida…',true);
       } else if(m.type==='ready') {
-        players=m.players||players;
+        players=m.players||players; syncPeerPlayers();
         const mates=players.filter(p=>Number(p.slot)!==mySlot && Number(p.team)===myTeam);
         showStatus(pvpMode==='2v2'?'🤝 ¡2v2 listo! Compañero: '+(mates[0]?.name||'Jugador'):'⚔️ ¡Sala lista!',true);
         setTimeout(()=>startArena(),450);
       } else if(m.type==='player-left') {
+        players=players.filter(p=>Number(p.slot)!==Number(m.slot)); peerStates.delete(Number(m.slot));
         if(running) endArena('Un jugador salió de la partida.');
         else showStatus('Un jugador salió. Esperando otro jugador…');
       } else if(m.type==='peer-message') {
@@ -220,6 +233,9 @@
     // Cada dispositivo juega desde abajo. El slot 2 se transforma al enviar/recibir.
     meState.x=w/2; meState.y=h-90; meState.lives=10; meState.angle=-Math.PI/2; meState.visualAngle=-Math.PI/2;
     peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
+    peerStates.clear(); syncPeerPlayers();
+    const starts=[[w*.28,90],[w*.72,90],[w*.28,h-90],[w*.72,h-90]];
+    for(const [slot,state] of peerStates){const pos=starts[(slot-1)%4];state.x=pos[0];state.y=pos[1];state.lives=10;state.angle=slot<=2?Math.PI/2:-Math.PI/2;state.visualAngle=state.angle;}
     bullets=[]; missiles=[]; lastMissile=-Infinity; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
@@ -250,9 +266,14 @@
   }
   function updateLives(){
     $('pvpMyLives').textContent='❤️ x'+Math.max(0,meState.lives);
-    $('pvpRivalLives').textContent='❤️ x'+Math.max(0,peerState.lives);
+    const enemies=players.filter(p=>Number(p.slot)!==mySlot && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    const enemyLives=enemies.map(p=>'❤️ x'+Math.max(0,peerFor(p.slot).lives)).join(' · ');
+    $('pvpRivalLives').textContent=enemyLives||'Esperando…';
+    const label=$('pvpRivalLabel');if(label)label.textContent=pvpMode==='2v2'?'RIVALES':'RIVAL';
   }
   function handlePeer(p,fromSlot=0,fromTeam=0){
+    if(!fromSlot || fromSlot===mySlot)return;
+    const remote=peerFor(fromSlot);
     if(pvpMode==='2v2' && fromTeam && fromTeam===myTeam && (p.type==='shot'||p.type==='missile')) return;
     // El servidor reenvía las coordenadas en el sistema local del emisor.
     // El jugador 2 ve la arena rotada 180°, así ambos juegan desde abajo.
@@ -261,12 +282,12 @@
     const mirrorAngle = a => mySlot === 2 ? a + Math.PI : a;
     if(p.type==='state'){
       const px=Number(p.x), py=Number(p.y), pa=Number(p.angle);
-      if(Number.isFinite(px)) peerState.x=mirrorX(px);
-      if(Number.isFinite(py)) peerState.y=mirrorY(py);
-      if(Number.isFinite(pa)) peerState.angle=mirrorAngle(pa);
+      if(Number.isFinite(px)) remote.x=mirrorX(px);
+      if(Number.isFinite(py)) remote.y=mirrorY(py);
+      if(Number.isFinite(pa)) remote.angle=mirrorAngle(pa);
       const pva=Number(p.visualAngle);
-      if(Number.isFinite(pva)) peerState.visualAngle=mirrorAngle(pva);
-      peerState.lives=Number.isFinite(Number(p.lives))?Number(p.lives):peerState.lives;updateLives();
+      if(Number.isFinite(pva)) remote.visualAngle=mirrorAngle(pva);
+      remote.lives=Number.isFinite(Number(p.lives))?Number(p.lives):remote.lives;updateLives();
     } else if(p.type==='shot'){
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship);
     } else if(p.type==='missile'){
@@ -424,8 +445,14 @@
     if(pvpBackground.complete&&pvpBackground.naturalWidth)arenaCtx.drawImage(pvpBackground,0,0,w,h);else{arenaCtx.fillStyle='#020617';arenaCtx.fillRect(0,0,w,h);}
     arenaCtx.strokeStyle='rgba(167,139,250,.35)';arenaCtx.setLineDash([8,10]);arenaCtx.beginPath();arenaCtx.moveTo(0,h/2);arenaCtx.lineTo(w,h/2);arenaCtx.stroke();arenaCtx.setLineDash([]);
     const mine=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
-    const rival=players.find(p=>Number(p.slot)!==mySlot)||{ship:'Gallina'};
-    drawShip(peerState,rival.ship);
+    for(const p of players){
+      if(Number(p.slot)===mySlot)continue;
+      const state=peerFor(p.slot);
+      drawShip(state,p.ship||'Gallina');
+      arenaCtx.save();arenaCtx.font='bold 10px sans-serif';arenaCtx.textAlign='center';
+      arenaCtx.fillStyle=pvpMode==='2v2'&&Number(p.team)===myTeam?'#86efac':'#fca5a5';
+      arenaCtx.fillText((pvpMode==='2v2'&&Number(p.team)===myTeam?'🤝 ':'⚔️ ')+(p.name||('J'+p.slot)),state.x,state.y-34);arenaCtx.restore();
+    }
     if(performance.now()<hitFlashUntil){arenaCtx.save();arenaCtx.globalAlpha=.42;arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
     drawShip(meState,mine.ship);
     for(const b of bullets){
