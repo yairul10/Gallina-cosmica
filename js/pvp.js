@@ -195,7 +195,7 @@
     if(code.length!==6)return showStatus('Escribe un código de sala de 6 dígitos.');
     disconnect(true);
     const me=identity();
-    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel()});
+    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;
     showStatus((creating?'Creando':'Entrando a')+' sala '+code+'…');
@@ -218,10 +218,16 @@
         showStatus(pvpMode==='2v2'?'🤝 ¡2v2 listo! Compañero: '+(mates[0]?.name||'Jugador'):'⚔️ ¡Sala lista!',true);
         setTimeout(()=>startArena(),450);
       } else if(m.type==='player-left') {
-        if(running&&pvpMode==='2v2'){ markEliminated(Number(m.slot)); }
-        else { players=players.filter(p=>Number(p.slot)!==Number(m.slot)); peerStates.delete(Number(m.slot)); }
-        if(running&&pvpMode!=='2v2') endArena('Un jugador salió de la partida.');
-        else showStatus('Un jugador salió. Esperando otro jugador…');
+        const leftSlot=Number(m.slot);
+        if((running||countdownActive)&&pvpMode==='2v2'){
+          markEliminated(leftSlot);
+          const leftPlayer=players.find(p=>Number(p.slot)===leftSlot);
+          showStatus('⚠️ '+(leftPlayer?.name||'Un jugador')+' abandonó y cuenta como eliminado.');
+        } else {
+          players=players.filter(p=>Number(p.slot)!==leftSlot); peerStates.delete(leftSlot);
+          if(running||countdownActive) endArena('Un jugador salió de la partida.');
+          else showStatus('Un jugador salió. Esperando otro jugador…');
+        }
       } else if(m.type==='peer-message') {
         handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
       }
@@ -579,7 +585,7 @@
   $('pvpCloseBtn')?.addEventListener('click',()=>{disconnect(true);lobby.style.display='none';$('startScreen').style.display='flex';});
   $('pvpLeaveArenaBtn')?.addEventListener('click',()=>{
     // Abandonar una batalla cuenta como derrota: avisamos al rival antes de cerrar el WebSocket.
-    if(socket?.readyState===WebSocket.OPEN && (running||countdownActive)) send({type:'defeat',reason:'forfeit'});
+    if(socket?.readyState===WebSocket.OPEN && (running||countdownActive)) send({type:'defeat',reason:'forfeit',slot:mySlot,team:myTeam});
     disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';
   });
   $('pvpResultBackBtn')?.addEventListener('click',()=>{disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';});
