@@ -266,3 +266,16 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .tutorial-content::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 4px; }
 .tutorial-content h3 { font-size: 1.05rem; margin-top: 12px; margin-bottom: 4px; }
 .tutorial-content p { color: #94a3b8; font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px; }
+
+
+/* Arena PvP experimental */
+.pvp-stick {
+    width: 112px; height: 112px; border-radius: 50%;
+    border: 2px solid rgba(56,189,248,.65); background: rgba(15,23,42,.58);
+    box-shadow: inset 0 0 24px rgba(56,189,248,.14), 0 0 14px rgba(0,0,0,.5);
+    z-index: 3; touch-action: none; user-select: none; display:flex; align-items:center; justify-content:center;
+}
+.pvp-stick-fire { border-color: rgba(244,63,94,.75); }
+.pvp-stick-knob { width:48px; height:48px; border-radius:50%; background:rgba(56,189,248,.9); box-shadow:0 0 12px #38bdf8; pointer-events:none; }
+.pvp-stick-fire .pvp-stick-knob { background:rgba(244,63,94,.9); box-shadow:0 0 12px #fb7185; }
+.pvp-stick small { position:absolute; bottom:-18px; width:150px; color:#e2e8f0; font-size:.55rem; font-weight:800; text-align:center; pointer-events:none; text-shadow:0 2px 3px #000; }
