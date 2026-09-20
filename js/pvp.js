@@ -404,7 +404,11 @@
   $('pvpJoinRoomBtn')?.addEventListener('click',()=>connect(roomInput.value,false));
   roomInput?.addEventListener('input',()=>roomInput.value=String(roomInput.value||'').replace(/\D/g,'').slice(0,6));
   $('pvpCloseBtn')?.addEventListener('click',()=>{disconnect(true);lobby.style.display='none';$('startScreen').style.display='flex';});
-  $('pvpLeaveArenaBtn')?.addEventListener('click',()=>{disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';});
+  $('pvpLeaveArenaBtn')?.addEventListener('click',()=>{
+    // Abandonar una batalla cuenta como derrota: avisamos al rival antes de cerrar el WebSocket.
+    if(socket?.readyState===WebSocket.OPEN && (running||countdownActive)) send({type:'defeat',reason:'forfeit'});
+    disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';
+  });
   $('pvpResultBackBtn')?.addEventListener('click',()=>{disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';});
 
   window.GallinaPvp={get connected(){return socket?.readyState===WebSocket.OPEN;},get roomCode(){return currentRoom;},get slot(){return mySlot;},send,disconnect};
