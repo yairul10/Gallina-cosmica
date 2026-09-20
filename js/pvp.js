@@ -14,7 +14,8 @@
 
   let socket = null, queueSocket = null, currentRoom = '', mySlot = 0, players = [];
   let queueStartedAt = 0, queueTimer = 0;
-  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity;
+  const PVP_MISSILE_COOLDOWN = 8000;
+  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
   const peerState = { x: 210, y: 80, lives: 10, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
@@ -255,7 +256,10 @@
     [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,life:1.5});});
   }
   function fireMissile(){
-    const now=performance.now(); if(!running||now-lastMissile<8000)return;
+    const now=performance.now();
+    if(!running)return;
+    // La misma constante controla tanto el HUD como el disparo para que LISTO siempre signifique que puede disparar.
+    if(now-lastMissile<PVP_MISSILE_COOLDOWN)return;
     lastMissile=now;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     const info=shipCombatInfo(myShip), stats=currentGameStats();
@@ -275,7 +279,7 @@
   }
   function updateMissileButton(now=performance.now()){
     const btn=$('pvpMissileBtn'), label=$('pvpMissileCooldown'); if(!btn||!label)return;
-    const left=Math.max(0,8000-(now-lastMissile));
+    const left=Math.max(0,PVP_MISSILE_COOLDOWN-(now-lastMissile));
     label.textContent=left>0?(Math.ceil(left/1000)+'s'):'LISTO';
     btn.style.opacity=left>0?'.55':'1';
   }
@@ -427,7 +431,22 @@
     el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
   }
   stickSetup($('pvpMoveStick'),moveStick,false);stickSetup($('pvpAimStick'),aimStick,true);
-  $('pvpMissileBtn')?.addEventListener('click',fireMissile);
+  const missileBtn=$('pvpMissileBtn');
+  if(missileBtn){
+    // En móvil pointerdown responde inmediatamente y evita que un pequeño arrastre cancele el click.
+    missileBtn.style.touchAction='none';
+    missileBtn.addEventListener('pointerdown',e=>{
+      if(missilePointerLock)return;
+      missilePointerLock=true;
+      e.preventDefault();
+      try{missileBtn.setPointerCapture?.(e.pointerId);}catch{}
+      fireMissile();
+    });
+    const releaseMissilePointer=()=>{missilePointerLock=false;};
+    missileBtn.addEventListener('pointerup',releaseMissilePointer);
+    missileBtn.addEventListener('pointercancel',releaseMissilePointer);
+    missileBtn.addEventListener('lostpointercapture',releaseMissilePointer);
+  }
   window.addEventListener('keydown',e=>{keys.add(e.key);if(e.key===' ')e.preventDefault();});
   window.addEventListener('keyup',e=>keys.delete(e.key));
 
