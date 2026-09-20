@@ -18,6 +18,8 @@
   const meState = { x: 210, y: 560, lives: 3, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
   const peerState = { x: 210, y: 80, lives: 3, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
   let bullets = [];
+  let impactFx = [];
+  let hitFlashUntil = 0;
   const moveStick = { active:false, id:null, x:0, y:0 };
   const aimStick = { active:false, id:null, x:0, y:0 };
 
@@ -107,7 +109,7 @@
     // Cada dispositivo juega desde abajo. El slot 2 se transforma al enviar/recibir.
     meState.x=w/2; meState.y=h-90; meState.lives=3; meState.angle=-Math.PI/2; meState.visualAngle=-Math.PI/2;
     peerState.x=w/2;peerState.y=90;peerState.lives=3;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
-    bullets=[]; $('pvpResult').style.display='none';
+    bullets=[]; impactFx=[]; hitFlashUntil=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
   }
@@ -190,9 +192,14 @@
     if(keys.has(' '))shoot();
 
     for(const b of bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;}
+    for(const fx of impactFx)fx.life-=dt;
+    impactFx=impactFx.filter(fx=>fx.life>0);
     for(const b of bullets){
       if(!b.own&&b.life>0&&Math.hypot(b.x-meState.x,b.y-meState.y)<24){
-        b.life=0; meState.lives=Math.max(0,meState.lives-1);updateLives();
+        b.life=0;
+        impactFx.push({x:b.x,y:b.y,life:.18,maxLife:.18});
+        hitFlashUntil=performance.now()+140;
+        meState.lives=Math.max(0,meState.lives-1);updateLives();
         if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');return;}
       }
     }
@@ -222,12 +229,21 @@
     arenaCtx.strokeStyle='rgba(167,139,250,.35)';arenaCtx.setLineDash([8,10]);arenaCtx.beginPath();arenaCtx.moveTo(0,h/2);arenaCtx.lineTo(w,h/2);arenaCtx.stroke();arenaCtx.setLineDash([]);
     const mine=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
     const rival=players.find(p=>Number(p.slot)!==mySlot)||{ship:'Gallina'};
-    drawShip(peerState,rival.ship);drawShip(meState,mine.ship);
+    drawShip(peerState,rival.ship);
+    if(performance.now()<hitFlashUntil){arenaCtx.save();arenaCtx.globalAlpha=.42;arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
+    drawShip(meState,mine.ship);
     for(const b of bullets){
       const im=projectileFor(b.ship||'Gallina');
       arenaCtx.save();arenaCtx.translate(b.x,b.y);arenaCtx.rotate((Number.isFinite(b.angle)?b.angle:Math.atan2(b.vy,b.vx))+Math.PI/2);
       if(im.complete&&im.naturalWidth)arenaCtx.drawImage(im,-7,-12,14,24);
       else{arenaCtx.fillStyle=b.own?'#fde047':'#fb7185';arenaCtx.beginPath();arenaCtx.arc(0,0,4,0,Math.PI*2);arenaCtx.fill();}
+      arenaCtx.restore();
+    }
+    for(const fx of impactFx){
+      const t=Math.max(0,fx.life/fx.maxLife),r=8+(1-t)*20;
+      arenaCtx.save();arenaCtx.globalAlpha=t;
+      arenaCtx.strokeStyle='#fff';arenaCtx.lineWidth=3;
+      arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,r,0,Math.PI*2);arenaCtx.stroke();
       arenaCtx.restore();
     }
   }
