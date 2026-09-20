@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "gallina-cosmica-pvp",
+  "name": "gallina-cosmica-pvp-test",
   "main": "src/index.js",
   "compatibility_date": "2026-09-20",
   "durable_objects": {
