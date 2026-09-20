@@ -11,7 +11,8 @@
     const PLAYERS = [
         { id: 'QA-PLAYER-001', name: 'Jugador 1' },
         { id: 'QA-PLAYER-002', name: 'Jugador 2' },
-        { id: 'QA-PLAYER-003', name: 'Jugador 3' }
+        { id: 'QA-PLAYER-003', name: 'Jugador 3' },
+        { id: 'QA-PLAYER-004', name: 'Jugador 4' }
     ];
 
     const read = () => {
