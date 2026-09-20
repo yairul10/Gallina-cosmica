@@ -176,7 +176,7 @@
   function spawnRemoteShot(x,y,a,ship){
     if(!Number.isFinite(x+y+a))return;
     const sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
-    [-1,1].forEach(s=>bullets.push({x:x+sideX*s,y:y+sideY*s,vx:Math.cos(a)*330,vy:Math.sin(a)*330,angle:a,ship:ship||'Gallina',own:false,life:1.5}));
+    [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*330,vy:Math.sin(a)*330,angle:a,ship:ship||'Gallina',own:false,life:1.5});});
   }
   function loop(now){
     if(!running)return; const dt=Math.min(.04,(now-lastFrame)/1000);lastFrame=now; update(dt,now);draw();raf=requestAnimationFrame(loop);
@@ -192,13 +192,20 @@
     if(aimStick.active&&Math.hypot(aimStick.x,aimStick.y)>.25){meState.angle=Math.atan2(aimStick.y,aimStick.x);shoot();}
     if(keys.has(' '))shoot();
 
-    for(const b of bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;}
+    for(const b of bullets){b.prevX=b.x;b.prevY=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;}
     for(const fx of impactFx)fx.life-=dt;
     impactFx=impactFx.filter(fx=>fx.life>0);
+    // Colisión continua: comprobamos todo el segmento recorrido por el proyectil
+    // en este frame. Así no puede "saltar" de un lado de la nave al otro.
     for(const b of bullets){
-      if(!b.own&&b.life>0&&Math.hypot(b.x-meState.x,b.y-meState.y)<24){
-        b.life=0;
-        impactFx.push({x:b.x,y:b.y,life:.32,maxLife:.32});
+      if(b.own||b.life<=0)continue;
+      const ax=Number.isFinite(b.prevX)?b.prevX:b.x, ay=Number.isFinite(b.prevY)?b.prevY:b.y;
+      const dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
+      const t=den>0?Math.max(0,Math.min(1,((meState.x-ax)*dx+(meState.y-ay)*dy)/den)):0;
+      const hitX=ax+dx*t,hitY=ay+dy*t;
+      if(Math.hypot(hitX-meState.x,hitY-meState.y)<30){
+        b.life=0;b.x=hitX;b.y=hitY;
+        impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});
         hitFlashUntil=performance.now()+220;
         hitShakeUntil=performance.now()+150;
         meState.lives=Math.max(0,meState.lives-1);updateLives();
