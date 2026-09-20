@@ -291,7 +291,7 @@
     } else if(p.type==='shot'){
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam);
     } else if(p.type==='missile'){
-      spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam);
+      spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam,Number(p.targetSlot||0));
     } else if(p.type==='defeat') {
       endArena('🏆 ¡Victoria! Destruiste la nave rival.');
     }
@@ -324,16 +324,19 @@
     // Igual que el modo normal: el misil Pro sólo se usa si la nave es Pro y ese misil fue desbloqueado.
     const usePro=info.isPro && !!stats.proMissiles?.[info.index];
     const speed=450, initialSpeed=300, a=meState.angle;
-    missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ship:myShip,missileType:info.missileType,isPro:usePro,life:6,vx:Math.cos(a)*initialSpeed,vy:Math.sin(a)*initialSpeed,speed});
+    const enemies=players.filter(p=>Number(p.slot)!==mySlot && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    const targetPlayer=enemies.map(p=>({p,state:peerFor(p.slot)})).sort((a,b)=>Math.hypot(a.state.x-meState.x,a.state.y-meState.y)-Math.hypot(b.state.x-meState.x,b.state.y-meState.y))[0];
+    const targetSlot=Number(targetPlayer?.p?.slot||0);
+    missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ownerSlot:mySlot,ownerTeam:myTeam,targetSlot,ship:myShip,missileType:info.missileType,isPro:usePro,life:6,vx:Math.cos(a)*initialSpeed,vy:Math.sin(a)*initialSpeed,speed});
     const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
     const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
-    send({type:'missile',x:sx,y:sy,ship:myShip,missileType:info.missileType,isPro:usePro});
+    send({type:'missile',x:sx,y:sy,ship:myShip,missileType:info.missileType,isPro:usePro,targetSlot});
   }
-  function spawnRemoteMissile(x,y,ship,missileType,isPro,ownerSlot=0,ownerTeam=0){
+  function spawnRemoteMissile(x,y,ship,missileType,isPro,ownerSlot=0,ownerTeam=0,targetSlot=0){
     if(!Number.isFinite(x+y))return;
     const info=shipCombatInfo(ship||'Gallina');
     // En la vista remota el rival parte apuntando hacia abajo.
-    missiles.push({x,y,prevX:x,prevY:y,own:false,ship:ship||'Gallina',missileType:missileType||info.missileType,isPro:!!isPro,ownerSlot,ownerTeam,life:6,vx:0,vy:300,speed:450});
+    missiles.push({x,y,prevX:x,prevY:y,own:false,ship:ship||'Gallina',missileType:missileType||info.missileType,isPro:!!isPro,ownerSlot,ownerTeam,targetSlot,life:6,vx:0,vy:300,speed:450});
   }
   function updateMissileButton(now=performance.now()){
     const btn=$('pvpMissileBtn'), label=$('pvpMissileCooldown'); if(!btn||!label)return;
@@ -358,7 +361,19 @@
     for(const b of bullets){b.prevX=b.x;b.prevY=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;}
     for(const m of missiles){
       m.prevX=m.x;m.prevY=m.y;
-      const target=m.own?peerState:meState;
+      let target;
+      if(m.own){
+        target=m.targetSlot?peerStates.get(Number(m.targetSlot)):null;
+        if(!target){
+          const candidates=players.filter(p=>Number(p.slot)!==mySlot&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+          const nearest=candidates.map(p=>peerFor(p.slot)).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];
+          target=nearest||peerState;
+        }
+      }else{
+        // Sólo perseguimos este dispositivo si el misil fue dirigido a nuestro slot.
+        if(m.targetSlot && Number(m.targetSlot)!==mySlot){m.life=0;continue;}
+        target=meState;
+      }
       // Misma persecución del modo normal: la velocidad se interpola 8% por frame hacia el objetivo.
       const angle=Math.atan2(target.y-m.y,target.x-m.x);
       const follow=1-Math.pow(0.92,dt*60);
@@ -409,7 +424,9 @@
     }
     for(const m of missiles){
       if(m.life<=0)continue;
-      const target=m.own?peerState:meState;
+      let target=m.own?(m.targetSlot?peerStates.get(Number(m.targetSlot)):null):meState;
+      if(!target)continue;
+      if(!m.own&&m.targetSlot&&Number(m.targetSlot)!==mySlot)continue;
       if(Math.hypot(m.x-target.x,m.y-target.y)<31){
         m.life=0; impactFx.push({x:m.x,y:m.y,life:.4,maxLife:.4});
         if(!m.own && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
