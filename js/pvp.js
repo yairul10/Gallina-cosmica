@@ -87,8 +87,9 @@
 
   function resetArena(){
     const h=arenaCanvas.height,w=arenaCanvas.width;
-    meState.x=w/2; meState.y=mySlot===1?h-90:90; meState.lives=3; meState.angle=mySlot===1?-Math.PI/2:Math.PI/2;
-    peerState.x=w/2;peerState.y=mySlot===1?90:h-90;peerState.lives=3;peerState.angle=mySlot===1?Math.PI/2:-Math.PI/2;
+    // Cada dispositivo juega desde abajo. El slot 2 se transforma al enviar/recibir.
+    meState.x=w/2; meState.y=h-90; meState.lives=3; meState.angle=-Math.PI/2;
+    peerState.x=w/2;peerState.y=90;peerState.lives=3;peerState.angle=Math.PI/2;
     bullets=[]; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
@@ -107,12 +108,19 @@
     $('pvpRivalLives').textContent='❤️'.repeat(Math.max(0,peerState.lives));
   }
   function handlePeer(p){
+    // El servidor reenvía las coordenadas en el sistema local del emisor.
+    // El jugador 2 ve la arena rotada 180°, así ambos juegan desde abajo.
+    const mirrorX = x => mySlot === 2 ? arenaCanvas.width - x : x;
+    const mirrorY = y => mySlot === 2 ? arenaCanvas.height - y : y;
+    const mirrorAngle = a => mySlot === 2 ? a + Math.PI : a;
     if(p.type==='state'){
-      peerState.x=Number(p.x)||peerState.x;peerState.y=Number(p.y)||peerState.y;
-      peerState.angle=Number.isFinite(Number(p.angle))?Number(p.angle):peerState.angle;
+      const px=Number(p.x), py=Number(p.y), pa=Number(p.angle);
+      if(Number.isFinite(px)) peerState.x=mirrorX(px);
+      if(Number.isFinite(py)) peerState.y=mirrorY(py);
+      if(Number.isFinite(pa)) peerState.angle=mirrorAngle(pa);
       peerState.lives=Number.isFinite(Number(p.lives))?Number(p.lives):peerState.lives;updateLives();
     } else if(p.type==='shot'){
-      spawnRemoteShot(Number(p.x),Number(p.y),Number(p.angle));
+      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)));
     } else if(p.type==='hit'){
       meState.lives=Math.max(0,meState.lives-1);updateLives();
       if(meState.lives<=0){send({type:'defeat'});endArena('💥 Tu nave fue destruida.');}
@@ -125,7 +133,10 @@
     const now=performance.now();if(!running||now-lastShot<330)return;lastShot=now;
     const a=meState.angle,sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
     [-1,1].forEach(s=>bullets.push({x:meState.x+sideX*s,y:meState.y+sideY*s,vx:Math.cos(a)*330,vy:Math.sin(a)*330,own:true,life:1.5}));
-    send({type:'shot',x:meState.x,y:meState.y,angle:a});
+    const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
+    const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
+    const sa=mySlot===2?a+Math.PI:a;
+    send({type:'shot',x:sx,y:sy,angle:sa});
   }
   function spawnRemoteShot(x,y,a){
     if(!Number.isFinite(x+y+a))return;
@@ -153,7 +164,13 @@
       }
     }
     bullets=bullets.filter(b=>b.life>0&&b.x>-20&&b.x<arenaCanvas.width+20&&b.y>-20&&b.y<arenaCanvas.height+20);
-    if(now-lastStateSend>50){lastStateSend=now;send({type:'state',x:Math.round(meState.x),y:Math.round(meState.y),angle:meState.angle,lives:meState.lives});}
+    if(now-lastStateSend>50){
+      lastStateSend=now;
+      const sx=mySlot===2?arenaCanvas.width-meState.x:meState.x;
+      const sy=mySlot===2?arenaCanvas.height-meState.y:meState.y;
+      const sa=mySlot===2?meState.angle+Math.PI:meState.angle;
+      send({type:'state',x:Math.round(sx),y:Math.round(sy),angle:sa,lives:meState.lives});
+    }
   }
   const imageCache=new Map();
   function imageFor(label){const src=shipSrc(label);if(!imageCache.has(src)){const im=new Image();im.src=src;imageCache.set(src,im);}return imageCache.get(src);}
