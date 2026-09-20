@@ -585,7 +585,7 @@
   $('pvpCloseBtn')?.addEventListener('click',()=>{disconnect(true);lobby.style.display='none';$('startScreen').style.display='flex';});
   $('pvpLeaveArenaBtn')?.addEventListener('click',()=>{
     // Abandonar una batalla cuenta como derrota: avisamos al rival antes de cerrar el WebSocket.
-    if(socket?.readyState===WebSocket.OPEN && (running||countdownActive)) send({type:'defeat',reason:'forfeit',slot:mySlot,team:myTeam});
+    if(socket?.readyState===WebSocket.OPEN && (running||countdownActive)) send({type:'defeat',reason:'forfeit',slot:mySlot,team:myTeam,rewardEligible:false});
     disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';
   });
   $('pvpResultBackBtn')?.addEventListener('click',()=>{disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';});
