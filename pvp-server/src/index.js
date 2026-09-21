@@ -177,6 +177,37 @@ export class PvpRoom {
   }
 }
 
+export class PvpRanking {
+  constructor(ctx, env) { this.ctx=ctx; this.env=env; }
+  async fetch(request) {
+    const url=new URL(request.url);
+    if(request.method==='GET'){
+      const list=(await this.ctx.storage.get('players'))||{};
+      const ranking=Object.values(list).sort((a,b)=>b.cups-a.cups||b.wins-a.wins||b.kills-a.kills).slice(0,100);
+      return json({ok:true,ranking});
+    }
+    if(request.method!=='POST') return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
+    let body; try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
+    const playerId=safeText(body.playerId,'',128); if(!playerId)return json({ok:false,error:'PLAYER_ID_REQUIRED'},400);
+    const name=safeText(body.name,'Jugador',40);
+    const kills=Math.max(0,Math.min(3,Math.floor(Number(body.kills)||0)));
+    const result=body.result==='win'?'win':body.result==='loss'?'loss':null;
+    if(!result)return json({ok:false,error:'BAD_RESULT'},400);
+    const matchId=safeText(body.matchId,'',80); if(!matchId)return json({ok:false,error:'MATCH_ID_REQUIRED'},400);
+    const seen=(await this.ctx.storage.get('seen'))||{};
+    const dedupe=playerId+'|'+matchId;
+    const players=(await this.ctx.storage.get('players'))||{};
+    if(seen[dedupe]) return json({ok:true,duplicate:true,record:players[playerId]||null});
+    const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0};
+    const delta=kills*3+(result==='win'?20:0);
+    const record={...prev,name,cups:Math.max(0,Number(prev.cups||0)+delta),kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result==='loss'?1:0),matches:Number(prev.matches||0)+1};
+    players[playerId]=record; seen[dedupe]=Date.now();
+    const keys=Object.keys(seen); if(keys.length>1000) keys.sort((a,b)=>seen[a]-seen[b]).slice(0,keys.length-1000).forEach(k=>delete seen[k]);
+    await this.ctx.storage.put({players,seen});
+    return json({ok:true,delta,record});
+  }
+}
+
 export class PvpMatchmaker {
   constructor(ctx, env) {
     this.ctx = ctx;
@@ -236,6 +267,10 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/" || url.pathname === "/health") {
       return json({ ok: true, service: "gallina-cosmica-pvp", version: 3, matchmaking: true, modes: ["1v1", "2v2", "arena"] });
+    }
+    if (url.pathname === "/ranking") {
+      const id = env.PVP_RANKING.idFromName("global");
+      return env.PVP_RANKING.get(id).fetch(request);
     }
     if (url.pathname === "/matchmake") {
       const mode = gameMode(url);
