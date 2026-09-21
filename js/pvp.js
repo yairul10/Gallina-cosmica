@@ -81,7 +81,7 @@
   let hitFlashUntil = 0;
   let hitShakeUntil = 0;
   const moveStick = { active:false, id:null, x:0, y:0 };
-  const aimStick = { active:false, id:null, x:0, y:0 };
+  let selectedTargetSlot=0;
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
   const PVP_CUPS_KEY='gallina_pvp_cups_v1';
@@ -320,7 +320,7 @@
     if(pvpMode==='1v1'){
       for(const [slot,state] of peerStates){state.x=state.targetX=w/2;state.y=state.targetY=90;state.angle=state.targetAngle=Math.PI/2;state.visualAngle=state.targetVisualAngle=Math.PI/2;}
     }
-    bullets=[]; missiles=[]; eliminated.clear(); meEliminated=false; matchFinished=false; lastMissile=-Infinity; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
+    bullets=[]; missiles=[]; selectedTargetSlot=0; eliminated.clear(); meEliminated=false; matchFinished=false; lastMissile=-Infinity; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
   }
@@ -480,8 +480,11 @@
   }
 
   function shoot(){
-    const now=performance.now();if(!running||meEliminated||now-lastShot<330)return;lastShot=now;
-    const a=meState.angle,sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
+    const now=performance.now();if(!running||meEliminated||now-lastShot<330)return;
+    const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    if(!targetPlayer){showStatus('🎯 Toca una nave enemiga para seleccionarla.');return;}
+    const target=peerFor(targetPlayer.slot);
+    const a=Math.atan2(target.y-meState.y,target.x-meState.x);meState.angle=a;lastShot=now,sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     // Mismo láser del juego normal: 4x20 y velocidad equivalente a 14 px/frame a 60 FPS.
     [-1,1].forEach(s=>{const bx=meState.x+sideX*s,by=meState.y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,ownerSlot:mySlot,ownerTeam:myTeam,life:1.5});});
@@ -505,10 +508,12 @@
     const info=shipCombatInfo(myShip), stats=currentGameStats();
     // Igual que el modo normal: el misil Pro sólo se usa si la nave es Pro y ese misil fue desbloqueado.
     const usePro=info.isPro && !!stats.proMissiles?.[info.index];
-    const speed=450, initialSpeed=300, a=meState.angle;
-    const enemies=players.filter(p=>Number(p.slot)!==mySlot && !eliminated.has(Number(p.slot)) && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
-    const targetPlayer=enemies.map(p=>({p,state:peerFor(p.slot)})).sort((a,b)=>Math.hypot(a.state.x-meState.x,a.state.y-meState.y)-Math.hypot(b.state.x-meState.x,b.state.y-meState.y))[0];
-    const targetSlot=Number(targetPlayer?.p?.slot||0);
+    const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    if(!targetPlayer){showStatus('🎯 Selecciona un enemigo antes de lanzar el misil.');return;}
+    const targetState=peerFor(targetPlayer.slot), a=Math.atan2(targetState.y-meState.y,targetState.x-meState.x);
+    meState.angle=a;
+    const speed=450, initialSpeed=300;
+    const targetSlot=Number(targetPlayer.slot);
     missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ownerSlot:mySlot,ownerTeam:myTeam,targetSlot,ship:myShip,missileType:info.missileType,isPro:usePro,life:6,vx:Math.cos(a)*initialSpeed,vy:Math.sin(a)*initialSpeed,speed});
     const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
     const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
@@ -567,7 +572,9 @@
     if(Math.hypot(mx,my)>.12) meState.visualAngle=Math.atan2(my,mx);
     meState.x=Math.max(30,Math.min(arenaCanvas.width-30,meState.x+mx*190*dt));
     meState.y=Math.max(55,Math.min(arenaCanvas.height-55,meState.y+my*190*dt));
-    if(!meEliminated&&aimStick.active&&Math.hypot(aimStick.x,aimStick.y)>.25){meState.angle=Math.atan2(aimStick.y,aimStick.x);shoot();}
+    const selectedPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    if(!selectedPlayer)selectedTargetSlot=0;
+    else {const target=peerFor(selectedTargetSlot);meState.angle=Math.atan2(target.y-meState.y,target.x-meState.x);}
     if(!meEliminated&&keys.has(' '))shoot();
 
     // IA básica de bots. En 2v2 esta primera prueba mueve y hace disparar
@@ -831,6 +838,9 @@
       if(Number(p.slot)===mySlot)continue;
       const state=peerFor(p.slot);
       if(eliminated.has(Number(p.slot))) continue;
+      if(Number(p.slot)===selectedTargetSlot){
+        arenaCtx.save();arenaCtx.strokeStyle='#ef4444';arenaCtx.lineWidth=3;arenaCtx.setLineDash([7,5]);arenaCtx.beginPath();arenaCtx.arc(state.x,state.y,36,0,Math.PI*2);arenaCtx.stroke();arenaCtx.setLineDash([]);arenaCtx.fillStyle='#fecaca';arenaCtx.font='bold 10px sans-serif';arenaCtx.textAlign='center';arenaCtx.fillText('OBJETIVO',state.x,state.y-43);arenaCtx.restore();
+      }
       drawShip(state,p.ship||'Gallina');
       arenaCtx.save();arenaCtx.font='bold 10px sans-serif';arenaCtx.textAlign='center';
       arenaCtx.fillStyle=pvpMode==='2v2'&&Number(p.team)===myTeam?'#86efac':'#fca5a5';
@@ -905,7 +915,16 @@
     const end=e=>{if(e.pointerId!==stick.id)return;stick.active=false;stick.id=null;stick.x=stick.y=0;knob.style.transform='translate(0,0)';};
     el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
   }
-  stickSetup($('pvpMoveStick'),moveStick,false);stickSetup($('pvpAimStick'),aimStick,true);
+  stickSetup($('pvpMoveStick'),moveStick,false);
+  const fireBtn=$('pvpFireBtn');
+  if(fireBtn){fireBtn.style.touchAction='none';fireBtn.addEventListener('pointerdown',e=>{e.preventDefault();shoot();});}
+  arenaCanvas?.addEventListener('pointerdown',e=>{
+    if(!running||meEliminated)return;
+    const r=arenaCanvas.getBoundingClientRect(),x=(e.clientX-r.left)*arenaCanvas.width/r.width,y=(e.clientY-r.top)*arenaCanvas.height/r.height;
+    const enemies=players.filter(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    const hit=enemies.map(p=>({p,d:Math.hypot(peerFor(p.slot).x-x,peerFor(p.slot).y-y)})).filter(v=>v.d<=48).sort((a,b)=>a.d-b.d)[0];
+    if(hit){selectedTargetSlot=Number(hit.p.slot);showStatus('🎯 Objetivo: '+playerName(selectedTargetSlot),true);}
+  });
   const missileBtn=$('pvpMissileBtn');
   if(missileBtn){
     // En móvil pointerdown responde inmediatamente y evita que un pequeño arrastre cancele el click.
