@@ -128,7 +128,13 @@ export class PvpRoom {
               body:JSON.stringify({playerId,name:disconnectedName,kills:0,result:"disconnect",matchId:"disconnect-"+url.pathname+"-"+this.mode})
             }).catch(()=>{});
           } catch {}
-          if (this.mode === "2v2") {
+          if (this.mode === "1v1") {
+            // En 1v1 la desconexion definitiva equivale a derrota.
+            // Avisamos al rival con el mismo mensaje que ya usa una derrota normal,
+            // para que cierre la partida en vez de quedar esperando.
+            this.finished = true;
+            this.broadcast({ type: "peer-message", from: slot, team, payload: { type: "defeat", reason: "disconnect", slot, team, killerSlot: 0, rewardEligible: false } });
+          } else if (this.mode === "2v2") {
             const expectedTeamSlots = team === 1 ? [1, 2] : [3, 4];
             if (expectedTeamSlots.every(s => this.eliminatedSlots.has(s))) {
               this.finished = true;
