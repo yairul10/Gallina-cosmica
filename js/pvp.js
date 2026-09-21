@@ -84,7 +84,8 @@
   let hitShakeUntil = 0;
   const moveStick = { active:false, id:null, x:0, y:0 };
   // Mundo PvP lógico: 2× ancho × 2× alto = 4× superficie. La cámara se añade en la fase siguiente.
-  const worldWidth=arenaCanvas.width*2, worldHeight=arenaCanvas.height*2;
+  let worldWidth=arenaCanvas.width*2, worldHeight=arenaCanvas.height*2;
+  function configureWorld(){const scale=pvpMode==='arena10'?5:2;worldWidth=arenaCanvas.width*scale;worldHeight=arenaCanvas.height*scale;}
   // Alcance universal medido en coordenadas del mundo, idéntico en todos los dispositivos.
   const PVP_ATTACK_RANGE=250;
   const PVP_LOCK_RANGE=350;
@@ -171,8 +172,8 @@
     if(!queueSocket||!queueStartedAt)return;
     const sec=Math.max(0,Math.floor((Date.now()-queueStartedAt)/1000));
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
-    const needed=pvpMode==='1v1'?2:pvpMode==='arena'?5:4;
-    showStatus('🔎 Buscando '+(pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena'?'jugadores para Arena':'rival')+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. 60 s',true);
+    const needed=pvpMode==='1v1'?2:(pvpMode==='arena'||pvpMode==='arena10')?5:pvpMode==='arena10'?10:4;
+    showStatus('🔎 Buscando '+(pvpMode==='2v2'?'jugadores para 2v2':(pvpMode==='arena'||pvpMode==='arena10')?'jugadores para Arena 5':pvpMode==='arena10'?'jugadores para Arena 10':'rival')+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. 60 s',true);
   }
   function cancelMatch(){
     if(!queueSocket)return;
@@ -239,7 +240,7 @@
     disconnect(true);
     const me=identity();
     const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
-    if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'||pvpMode==='arena')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
+    if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;
     showStatus((creating?'Creando':'Entrando a')+' sala '+code+'…');
@@ -270,7 +271,7 @@
         showStatus('✅ '+(m.player?.name||'Jugador')+' volvió a la partida.',true);
       } else if(m.type==='player-left') {
         const leftSlot=Number(m.slot);
-        if((running||countdownActive)&&(pvpMode==='2v2'||pvpMode==='arena')){
+        if((running||countdownActive)&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
           const alreadyOut=eliminated.has(leftSlot);
           markEliminated(leftSlot);
           const leftPlayer=players.find(p=>Number(p.slot)===leftSlot);
@@ -290,7 +291,7 @@
           killFeed.pop();
           addKillFeed((m.attackKind==='missile'?'🚀 ':'🔫 ')+playerName(killerSlot)+' eliminó a '+playerName(deadSlot)+(m.attackKind==='missile'?' con misil.':'.'));
         }
-        if(pvpMode==='arena' && Number(m.slot)!==mySlot && !meEliminated){
+        if((pvpMode==='arena'||pvpMode==='arena10') && Number(m.slot)!==mySlot && !meEliminated){
           const alive=players.filter(p=>!eliminated.has(Number(p.slot)));
           showStatus('🌌 Arena · quedan '+alive.length+' jugadores.',true);
         }
@@ -302,7 +303,7 @@
           else endArena('💥 DERROTA\n🏆 Equipo '+winnerTeam+' ganador'+(winners?'\n'+winners:''),'loss');
         }
       } else if(m.type==='arena-result') {
-        if(pvpMode==='arena'){
+        if((pvpMode==='arena'||pvpMode==='arena10')){
           const podium=Array.isArray(m.podiumSlots)?m.podiumSlots.map(Number).filter(Boolean):[Number(m.winnerSlot||0)].filter(Boolean);
           const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];
           const podiumText=podium.map((slot,i)=>medals[i]+' '+playerName(slot)).join('\n');
@@ -319,6 +320,7 @@
   }
 
   function resetArena(){
+    configureWorld();
     killFeed.length=0;matchKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
     botLives=20;lastBotHitAt=0;lastRegenAt=performance.now();botAiStates.clear();botHitTimes.clear();botRegenTimes.clear();
     for(const p of players.filter(p=>p.bot)){
@@ -334,15 +336,19 @@
     // Arena 5 conserva el mundo 2×2 actual y reparte los cinco spawns
     // alrededor del mapa para evitar que el quinto jugador nazca sobre otro.
     const arenaStarts=[[w*.50,h-90],[w*.88,h*.38],[w*.73,90],[w*.27,90],[w*.12,h*.38]];
+    const arena10Starts=Array.from({length:10},(_,i)=>{
+      const a=-Math.PI/2+(i/10)*Math.PI*2;
+      return [w/2+Math.cos(a)*w*.40,h/2+Math.sin(a)*h*.40];
+    });
     if(pvpMode==='1v1'){
       meState.x=w/2;meState.y=h-90;meState.angle=-Math.PI/2;meState.visualAngle=-Math.PI/2;
     }else{
-      const pos=pvpMode==='arena'?arenaStarts[(mySlot-1+5)%5]:starts[(mySlot-1+4)%4];meState.x=pos[0];meState.y=pos[1];
+      const pos=pvpMode==='arena10'?arena10Starts[(mySlot-1+10)%10]:(pvpMode==='arena'||pvpMode==='arena10')?arenaStarts[(mySlot-1+5)%5]:starts[(mySlot-1+4)%4];meState.x=pos[0];meState.y=pos[1];
       meState.angle=myTeam===2?Math.PI/2:-Math.PI/2;meState.visualAngle=meState.angle;
     }
     meState.lives=20;
     for(const [slot,state] of peerStates){
-      const pos=pvpMode==='arena'?arenaStarts[(slot-1)%5]:starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=20;
+      const pos=pvpMode==='arena10'?arena10Starts[(slot-1)%10]:(pvpMode==='arena'||pvpMode==='arena10')?arenaStarts[(slot-1)%5]:starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=20;
       const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=state.targetAngle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.targetVisualAngle=state.angle;
     }
     if(pvpMode==='1v1'){
@@ -475,7 +481,7 @@
       }
       return;
     }
-    if(p.type==='bot-state'&&botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
+    if(p.type==='bot-state'&&botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       const slot=Number(p.slot||0), bp=players.find(x=>x.bot&&Number(x.slot)===slot);
       if(!bp)return;
       const st=peerFor(slot);
@@ -486,10 +492,10 @@
       // No sobrescribir vidas aquí: en 2H vs 2B cada humano es autoridad de
       // sus propios impactos contra bots. La eliminación oficial la confirma el servidor.
       updateLives(); return;
-    } else if(p.type==='bot-shot'&&botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
+    } else if(p.type==='bot-shot'&&botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       const bp=players.find(x=>x.bot&&Number(x.slot)===Number(p.slot||0));if(!bp)return;
       spawnRemoteShot(Number(p.x),Number(p.y),Number(p.angle),bp.ship,bp.slot,Number(bp.team||0),Number(p.targetSlot||0));return;
-    } else if(p.type==='bot-missile'&&botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
+    } else if(p.type==='bot-missile'&&botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       const bp=players.find(x=>x.bot&&Number(x.slot)===Number(p.slot||0));if(!bp)return;
       spawnRemoteMissile(Number(p.x),Number(p.y),bp.ship,p.missileType,false,bp.slot,Number(bp.team||0),Number(p.targetSlot||0));return;
     }
@@ -592,7 +598,7 @@
     if(running&&!matchFinished&&!meEliminated&&meState.lives>0&&meState.lives<20&&now-lastHitAt>=3000&&now-lastRegenAt>=2000){
       meState.lives++;lastRegenAt=now;updateLives();
     }
-    if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||pvpMode==='arena')){
+    if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       for(const bp of players.filter(p=>p.bot&&!eliminated.has(Number(p.slot)))){
         const slot=Number(bp.slot),st=peerFor(slot),hit=Number(botHitTimes.get(slot)||0);
         let regen=Number(botRegenTimes.get(slot)||hit);
@@ -629,7 +635,7 @@
 
     // IA básica de bots. En 2v2 esta primera prueba mueve y hace disparar
     // a los tres bots; cada uno sólo apunta a integrantes del equipo contrario.
-    if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||pvpMode==='arena')&&running&&!matchFinished){
+    if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')&&running&&!matchFinished){
       const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
       const botSimAuthority=(pvpMode!=='2v2'&&pvpMode!=='arena')||humanSlots.length===0||mySlot===Math.min(...humanSlots);
       const activeBots=botSimAuthority?players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))):[];
@@ -723,14 +729,14 @@
           const missAngle=0.30+Math.random()*1.15;
           const aim=accurate?trueAim:trueAim+missAngle*missSide;
           spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
-          if(pvpMode==='2v2'||pvpMode==='arena')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim,targetSlot:Number(chosen.p.slot)});
+          if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim,targetSlot:Number(chosen.p.slot)});
         }
         // Misil con cadencia humana: espera aleatoriamente entre 8 y 12 s.
         if(targetInAttackRange&&now>=ai.nextMissileAt){
           ai.nextMissileAt=now+8000+Math.random()*4000;
           const info=shipCombatInfo(botPlayer.ship||'Gallina');
           spawnRemoteMissile(bot.x,bot.y,botPlayer.ship,info.missileType,false,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
-          if(pvpMode==='2v2'||pvpMode==='arena')send({type:'bot-missile',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,missileType:info.missileType,targetSlot:Number(chosen.p.slot)});
+          if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')send({type:'bot-missile',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,missileType:info.missileType,targetSlot:Number(chosen.p.slot)});
         }
       }
     }
@@ -812,7 +818,7 @@
         // viene a continuación debe consumir el proyectil y descontar la vida.
         // Si lo anulamos aquí, sólo queda el efecto visual y nunca llega daño.
         const bestPlayer=players.find(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&Math.hypot(peerFor(p.slot).x-best.hitX,peerFor(p.slot).y-best.hitY)<31);
-        const deferBotDamage=!!(botMatch&&(pvpMode==='2v2'||pvpMode==='arena')&&bestPlayer?.bot);
+        const deferBotDamage=!!(botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')&&bestPlayer?.bot);
         if(!deferBotDamage){
           b.life=0;b.x=best.hitX;b.y=best.hitY;
           impactFx.push({x:best.hitX,y:best.hitY,life:.32,maxLife:.32});
@@ -835,7 +841,7 @@
     // En partidas 2v2 con bots, este cliente simula las vidas de las naves
     // sintéticas. Sólo el cliente del humano con slot más bajo procesa este daño,
     // evitando que dos dispositivos descuenten el mismo impacto.
-    if(botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
+    if(botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
       // Cada humano procesa sus propios impactos contra bots. Los proyectiles
       // creados por bots se procesan sólo en el humano de menor slot para no
@@ -905,7 +911,7 @@
           lastHitAt=now;lastRegenAt=now;
           lastAttackerSlot=Number(b.ownerSlot||0);lastAttackKind='laser';
           meState.lives=Math.max(0,meState.lives-1);updateLives();
-          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||pvpMode==='arena'){markEliminated(mySlot);showStatus(pvpMode==='arena'?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10'){markEliminated(mySlot);showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
         }
       }
     }
@@ -934,7 +940,7 @@
         if(!m.own && (!targetSlot||targetSlot===mySlot) && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
           lastHitAt=now;lastRegenAt=now;lastAttackerSlot=Number(m.ownerSlot||0);lastAttackKind='missile';meState.lives=Math.max(0,meState.lives-1);updateLives();
           hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
-          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||pvpMode==='arena'){markEliminated(mySlot);showStatus(pvpMode==='arena'?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10'){markEliminated(mySlot);showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
         }
       }
     }
@@ -949,7 +955,7 @@
       const sa=pvpMode==='1v1'&&mySlot===2?meState.angle+Math.PI:meState.angle;
       const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
       send({type:'state',x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives});
-      if(botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
+      if(botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
         const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
         if(humanSlots.length===0||mySlot===Math.min(...humanSlots)){
           for(const bp of players.filter(p=>p.bot&&!eliminated.has(Number(p.slot)))){
@@ -1005,7 +1011,7 @@
     }
     if(performance.now()<hitFlashUntil){arenaCtx.save();arenaCtx.globalAlpha=.42;arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
     if(!meEliminated) drawShip(meState,mine.ship);
-    if(meEliminated && !matchFinished && (pvpMode==='2v2'||pvpMode==='arena')){
+    if(meEliminated && !matchFinished && (pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       arenaCtx.save();arenaCtx.translate(cam.x,cam.y);
       arenaCtx.fillStyle='rgba(2,6,23,.72)';
       arenaCtx.fillRect(45,h/2-48,w-90,96);
@@ -1015,7 +1021,7 @@
       arenaCtx.fillText('💥 Has sido eliminado',w/2,h/2-8);
       arenaCtx.font='14px sans-serif';
       arenaCtx.fillStyle='#cbd5e1';
-      arenaCtx.fillText(pvpMode==='arena'?'Observa hasta que quede un sobreviviente':'Espera a que termine la partida',w/2,h/2+22);
+      arenaCtx.fillText((pvpMode==='arena'||pvpMode==='arena10')?'Observa hasta que quede un sobreviviente':'Espera a que termine la partida',w/2,h/2+22);
       arenaCtx.restore();
     }
     for(const b of bullets){
@@ -1145,8 +1151,8 @@
     pvpMode=btn.dataset.mode||'1v1';
     document.querySelectorAll('.pvp-mode-btn').forEach(b=>b.style.background=b===btn?'#7c3aed':'#475569');
     const find=$('pvpFindMatchBtn');
-    if(find) find.textContent=pvpMode==='2v2'?'🤝 Buscar equipo 2v2':pvpMode==='arena'?'🌌 Buscar Arena':'⚔️ Buscar rival';
-    showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':pvpMode==='arena'?'Modo Arena · 4 jugadores, todos contra todos.':'Modo 1v1.');
+    if(find) find.textContent=pvpMode==='2v2'?'🤝 Buscar equipo 2v2':(pvpMode==='arena'||pvpMode==='arena10')?'🌌 Buscar Arena 5':pvpMode==='arena10'?'🌠 Buscar Arena 10':'⚔️ Buscar rival';
+    showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':(pvpMode==='arena'||pvpMode==='arena10')?'Modo Arena 5 · todos contra todos.':pvpMode==='arena10'?'Modo Arena 10 · mapa 5×5, todos contra todos.':'Modo 1v1.');
   }));
   function pvpRank(cups){
     cups=Math.max(0,Number(cups)||0);
