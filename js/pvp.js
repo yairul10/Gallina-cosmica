@@ -324,9 +324,9 @@
       const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:playerId(),name:me.name||'Jugador',kills:matchKills,result,matchId})});
       const data=await r.json();
       if(data?.ok&&data.record){
-        const weeklyCups=Number(data.weeklyRecord?.cups ?? data.record.cups ?? 0);
-        localStorage.setItem(PVP_CUPS_KEY,String(weeklyCups));
-        return {cups:weeklyCups,delta:Number(data.delta||0),record:data.record,weeklyRecord:data.weeklyRecord||null};
+        const cups=Number(data.record.cups||0);
+        localStorage.setItem(PVP_CUPS_KEY,String(cups));
+        return {cups,delta:Number(data.delta||0),record:data.record};
       }
     }catch{}
     const rawDelta=(result==='forfeit'||result==='disconnect')?-15:(matchKills*3+(result==='win'?20:-10));
@@ -742,48 +742,40 @@
     if(find) find.textContent=pvpMode==='2v2'?'🤝 Buscar equipo 2v2':pvpMode==='arena'?'🌌 Buscar Arena':'⚔️ Buscar rival';
     showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':pvpMode==='arena'?'Modo Arena · 4 jugadores, todos contra todos.':'Modo 1v1.');
   }));
+  function pvpRank(cups){
+    cups=Math.max(0,Number(cups)||0);
+    if(cups>=12000)return '🌌 Leyenda Galáctica';
+    if(cups>=7000)return '🚀 Maestro Cósmico';
+    if(cups>=3000)return '💎 Diamante';
+    if(cups>=1000)return '🥇 Oro';
+    if(cups>=500)return '🥈 Plata';
+    if(cups>=200)return '🥉 Bronce';
+    return '🥚 Novato';
+  }
   async function showPvpRanking(){
     const panel=$('pvpRankingPanel'),list=$('pvpRankingList'),mine=$('pvpMyRecord');
     if(!panel||!list||!mine)return;
     panel.style.display='block';list.textContent='Cargando…';mine.textContent='Cargando tu récord…';
+    const rewardBox=$('pvpRankingReward'); if(rewardBox)rewardBox.style.display='none';
     try{
       const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId()),{cache:'no-store'}),data=await r.json();
       if(!data?.ok||!Array.isArray(data.ranking))throw new Error('ranking');
-      const ranking=data.ranking,meId=playerId(),myIndex=ranking.findIndex(x=>String(x.playerId)===meId),my=myIndex>=0?ranking[myIndex]:null;
-      const rewardBox=$('pvpRankingReward'),rewardText=$('pvpRankingRewardText'),claimBtn=$('pvpClaimWeeklyBtn');
-      const pending=Array.isArray(data.pendingRewards)?data.pendingRewards[0]:null;
-      if(rewardBox){
-        rewardBox.style.display=pending?'block':'none';
-        if(pending&&rewardText)rewardText.textContent='🎁 Premio pendiente · #'+pending.position+' · 🪙 '+Number(pending.coins||0).toLocaleString('es-CL')+' monedas';
-        if(claimBtn)claimBtn.disabled=false;
-      }
-      const lifetime=data.record||null, weekLabel=data.period?'Semana '+data.period:'Ranking semanal';
-      mine.textContent=my?'🏆 '+weekLabel+' · #'+(myIndex+1)+' · '+my.cups+' copas · ☠️ '+my.kills+(lifetime?'\nHistórico · ✅ '+lifetime.wins+' / ❌ '+lifetime.losses:''):'🏆 '+weekLabel+' · Aún no tienes partidas esta semana.';
+      const ranking=data.ranking,meId=playerId(),myIndex=ranking.findIndex(x=>String(x.playerId)===meId),my=myIndex>=0?ranking[myIndex]:data.record;
+      mine.textContent=my?'🏆 #'+(myIndex>=0?myIndex+1:'—')+' · '+Number(my.cups||0)+' copas · '+pvpRank(my.cups)+'\n☠️ '+Number(my.kills||0)+' · ✅ '+Number(my.wins||0)+' / ❌ '+Number(my.losses||0):'🏆 Aún no tienes partidas PvP.';
       list.replaceChildren();
       if(!ranking.length){list.textContent='Todavía no hay jugadores en el ranking.';return;}
       ranking.slice(0,100).forEach((p,i)=>{
         const row=document.createElement('div');
-        row.style.cssText='display:grid;grid-template-columns:32px 1fr auto auto;gap:6px;padding:7px 3px;border-top:1px solid rgba(148,163,184,.18);align-items:center;';
-        const pos=document.createElement('span'),name=document.createElement('span'),cups=document.createElement('span'),kills=document.createElement('span');
+        row.style.cssText='display:grid;grid-template-columns:32px 1fr auto;gap:6px;padding:7px 3px;border-top:1px solid rgba(148,163,184,.18);align-items:center;';
+        const pos=document.createElement('span'),name=document.createElement('span'),cups=document.createElement('span');
         pos.textContent=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
-        name.textContent=String(p.name||'Jugador');cups.textContent='🏆 '+Number(p.cups||0);kills.textContent='☠️ '+Number(p.kills||0);
+        name.textContent=String(p.name||'Jugador')+' · '+pvpRank(p.cups);
+        cups.textContent='🏆 '+Number(p.cups||0);
         if(String(p.playerId)===meId)row.style.fontWeight='bold';
-        row.append(pos,name,cups,kills);list.appendChild(row);
+        row.append(pos,name,cups);list.appendChild(row);
       });
     }catch{mine.textContent='No se pudo cargar el récord.';list.textContent='Intenta nuevamente en unos segundos.';}
   }
-  $('pvpClaimWeeklyBtn')?.addEventListener('click',async()=>{
-    const btn=$('pvpClaimWeeklyBtn'),txt=$('pvpRankingRewardText'); if(btn)btn.disabled=true;
-    try{
-      const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'claim-weekly',playerId:playerId()})});
-      const data=await r.json(); if(!data?.ok)throw new Error('claim');
-      if(!data.claimed||!data.reward){if(txt)txt.textContent='No tienes premios pendientes.';return;}
-      const applied=window.gallinaApplyCloudCoinReward?.(data.rewardId,Number(data.reward.coins||0));
-      if(!applied?.success)throw new Error('apply');
-      if(txt)txt.textContent='✅ Premio reclamado · 🪙 '+Number(data.reward.coins||0).toLocaleString('es-CL')+' monedas';
-      setTimeout(showPvpRanking,900);
-    }catch{if(txt)txt.textContent='⚠️ No se pudo reclamar. Intenta nuevamente.';if(btn)btn.disabled=false;}
-  });
     $('pvpRankingBtn')?.addEventListener('click',showPvpRanking);
   $('pvpRankingCloseBtn')?.addEventListener('click',()=>{const p=$('pvpRankingPanel');if(p)p.style.display='none';});
   $('pvpFindMatchBtn')?.addEventListener('click',()=>{unlockPvpMusic();findMatch();});
