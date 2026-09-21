@@ -329,8 +329,10 @@
         return {cups,delta:Number(data.delta||0),record:data.record};
       }
     }catch{}
-    const rawDelta=(result==='forfeit'||result==='disconnect')?-15:(matchKills*3+(result==='win'?20:-10));
-    const before=getPvpCups(),cups=addPvpCups(rawDelta);
+    const before=getPvpCups();
+    const lossPenalty=before>=12000?10:before>=7000?8:before>=3000?5:before>=1000?3:0;
+    const rawDelta=result==='win'?(20+matchKills*3):-lossPenalty;
+    const cups=addPvpCups(rawDelta);
     return {cups,delta:cups-before,local:true};
   }
   function endArena(text,result='none'){
