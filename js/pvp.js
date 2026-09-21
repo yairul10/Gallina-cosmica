@@ -124,18 +124,28 @@
     const names=['Gallina','Oveja','Caballo','Vaca'];
     const stats=currentGameStats();
     const i=Number(stats.selectedShip ?? 0);
+    const pvpNames={toro_aniquilador:'Toro Aniquilador',toro_blindado:'Toro Blindado',toro_baliza:'Toro Baliza'};
+    if(stats.selectedPvpShip&&stats.pvpShips?.[stats.selectedPvpShip]) return pvpNames[stats.selectedPvpShip]||'Gallina';
     if(stats.useGallinaChile) return 'Gallina Chile';
     return (names[i]||'Gallina')+(stats.useProShip?' Pro':'');
   }
   function shipSrc(label){
+    const toroSrc={'Toro Aniquilador':'assets/toro_aniquilador.png','Toro Blindado':'assets/toro_blindado.png','Toro Baliza':'assets/toro_baliza.png'};
+    if(toroSrc[label]) return toroSrc[label];
     if(label==='Gallina Chile') return 'assets/gallina_chile.png';
     const pro=/ Pro$/.test(label);
     const base=label.replace(/ Pro$/,'').toLowerCase();
     return 'assets/'+base+(pro?'_pro':'')+'_1.png';
   }
+  function pvpShipStats(label){
+    if(label==='Toro Aniquilador') return {maxLives:20,shotCooldown:247.5,regenDelay:5000,regenEvery:2000};
+    if(label==='Toro Blindado') return {maxLives:26,shotCooldown:330,regenDelay:5000,regenEvery:2000};
+    if(label==='Toro Baliza') return {maxLives:20,shotCooldown:330,regenDelay:4000,regenEvery:1500};
+    return {maxLives:20,shotCooldown:330,regenDelay:5000,regenEvery:2000};
+  }
   function shipCombatInfo(label){
     const base=String(label||'Gallina').replace(/ Pro$/,'');
-    const index={Gallina:0,'Gallina Chile':0,Oveja:1,Caballo:2,Vaca:3}[base] ?? 0;
+    const index={Gallina:0,'Gallina Chile':0,Oveja:1,Caballo:2,Vaca:3,'Toro Aniquilador':0,'Toro Blindado':0,'Toro Baliza':0}[base] ?? 0;
     const missileType=['chick','wool','horseshoe','milk'][index];
     return {index, missileType, isPro:/ Pro$/.test(String(label||''))};
   }
@@ -373,7 +383,7 @@
       const pos=pvpMode==='arena10'?arena10Starts[(mySlot-1+10)%10]:(pvpMode==='arena'||pvpMode==='arena10')?arenaStarts[(mySlot-1+5)%5]:starts[(mySlot-1+4)%4];meState.x=pos[0];meState.y=pos[1];
       meState.angle=myTeam===2?Math.PI/2:-Math.PI/2;meState.visualAngle=meState.angle;
     }
-    meState.lives=20;
+    meState.lives=pvpShipStats(shipLabel()).maxLives;
     for(const [slot,state] of peerStates){
       const pos=pvpMode==='arena10'?arena10Starts[(slot-1)%10]:(pvpMode==='arena'||pvpMode==='arena10')?arenaStarts[(slot-1)%5]:starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=20;
       const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=state.targetAngle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.targetVisualAngle=state.angle;
@@ -550,7 +560,7 @@
   }
 
   function shoot(){
-    const now=performance.now();if(!running||meEliminated||now-lastShot<330)return;
+    const now=performance.now(), myStats=pvpShipStats((players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship);if(!running||meEliminated||now-lastShot<myStats.shotCooldown)return;
     const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     if(!targetPlayer){showStatus('🎯 Toca una nave enemiga para seleccionarla.');return;}
     const target=peerFor(targetPlayer.slot);
@@ -630,7 +640,8 @@
   function update(dt,now){
     // Regeneración PvP: tras 5 s sin recibir daño, recupera 1 vida cada 2 s
     // hasta el máximo de 20. Cada impacto reinicia el temporizador.
-    if(running&&!matchFinished&&!meEliminated&&meState.lives>0&&meState.lives<20&&now-lastHitAt>=5000&&now-lastRegenAt>=2000){
+    const myRegen=pvpShipStats((players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship);
+    if(running&&!matchFinished&&!meEliminated&&meState.lives>0&&meState.lives<myRegen.maxLives&&now-lastHitAt>=myRegen.regenDelay&&now-lastRegenAt>=myRegen.regenEvery){
       meState.lives++;lastRegenAt=now;updateLives();
     }
     if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
