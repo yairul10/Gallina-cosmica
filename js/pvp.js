@@ -453,7 +453,10 @@
       const mult=before>=12000?2:before>=7000?1.5:before>=3000?1.25:before>=1000?1:0;
       if(posDelta<0)posDelta=-Math.round(Math.abs(posDelta)*mult);
       rawDelta=posDelta+killCups;
-    }else rawDelta=(result==='win'?20:-lossPenalty)+killCups;
+    }else {
+      const winCups=pvpMode==='2v2'?8:5;
+      rawDelta=result==='win'?winCups:-lossPenalty;
+    }
     const cups=addPvpCups(rawDelta);
     return {cups,delta:cups-before,local:true};
   }
