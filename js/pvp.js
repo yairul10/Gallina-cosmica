@@ -324,8 +324,9 @@
       const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:playerId(),name:me.name||'Jugador',kills:matchKills,result,matchId})});
       const data=await r.json();
       if(data?.ok&&data.record){
-        localStorage.setItem(PVP_CUPS_KEY,String(data.record.cups||0));
-        return {cups:Number(data.record.cups||0),delta:Number(data.delta||0),record:data.record};
+        const weeklyCups=Number(data.weeklyRecord?.cups ?? data.record.cups ?? 0);
+        localStorage.setItem(PVP_CUPS_KEY,String(weeklyCups));
+        return {cups:weeklyCups,delta:Number(data.delta||0),record:data.record,weeklyRecord:data.weeklyRecord||null};
       }
     }catch{}
     const rawDelta=(result==='forfeit'||result==='disconnect')?-15:(matchKills*3+(result==='win'?20:-10));
