@@ -1151,8 +1151,8 @@
     pvpMode=btn.dataset.mode||'1v1';
     document.querySelectorAll('.pvp-mode-btn').forEach(b=>b.style.background=b===btn?'#7c3aed':'#475569');
     const find=$('pvpFindMatchBtn');
-    if(find) find.textContent=pvpMode==='2v2'?'🤝 Buscar equipo 2v2':(pvpMode==='arena'||pvpMode==='arena10')?'🌌 Buscar Arena 5':pvpMode==='arena10'?'🌠 Buscar Arena 10':'⚔️ Buscar rival';
-    showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':(pvpMode==='arena'||pvpMode==='arena10')?'Modo Arena 5 · todos contra todos.':pvpMode==='arena10'?'Modo Arena 10 · mapa 5×5, todos contra todos.':'Modo 1v1.');
+    if(find) find.textContent=pvpMode==='2v2'?'🤝 Buscar equipo 2v2':pvpMode==='arena10'?'🌠 Buscar Arena 10':pvpMode==='arena'?'🌌 Buscar Arena 5':'⚔️ Buscar rival';
+    showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':pvpMode==='arena10'?'Modo Arena 10 · mapa 5×5, todos contra todos.':pvpMode==='arena'?'Modo Arena 5 · todos contra todos.':'Modo 1v1.');
   }));
   function pvpRank(cups){
     cups=Math.max(0,Number(cups)||0);
