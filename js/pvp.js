@@ -332,6 +332,8 @@
           if(winnerTeam===myTeam) endArena('🏆 ¡VICTORIA!\n🤝 Equipo '+winnerTeam+' ganador'+(winners?'\n'+winners:''),'win');
           else endArena('💥 DERROTA\n🏆 Equipo '+winnerTeam+' ganador'+(winners?'\n'+winners:''),'loss');
         }
+      } else if(m.type==='arena-simulated') {
+        if(pvpMode==='arena'||pvpMode==='arena10') showStatus('🤖 Simulando combate restante…',true);
       } else if(m.type==='arena-result') {
         if((pvpMode==='arena'||pvpMode==='arena10')){
           const podium=Array.isArray(m.podiumSlots)?m.podiumSlots.map(Number).filter(Boolean):[Number(m.winnerSlot||0)].filter(Boolean);
