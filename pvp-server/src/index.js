@@ -79,7 +79,9 @@ export class PvpRoom {
         }
         if ((this.mode === "2v2" || this.mode === "arena") && !this.finished) {
           this.eliminatedSlots.add(slot);
-          this.broadcast({ type: "player-eliminated", slot, team, reason: message.reason || "combat" });
+          const killerSlot = Number(message.killerSlot || 0);
+          const attackKind = message.attackKind === "missile" ? "missile" : "laser";
+          this.broadcast({ type: "player-eliminated", slot, team, reason: message.reason || "combat", killerSlot, attackKind });
           if (this.mode === "2v2") {
             const teamSlots = Array.from(this.players.values()).filter(p => p.team === team).map(p => p.slot);
             if (teamSlots.length === 2 && teamSlots.every(s => this.eliminatedSlots.has(s))) {
