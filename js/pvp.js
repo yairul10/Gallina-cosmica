@@ -348,7 +348,7 @@
     running=false;countdownActive=false; syncBackgroundCombat(); stopPvpMusic();
     if(countdownTimer){clearInterval(countdownTimer);countdownTimer=0;}
     const overlay=$('pvpCountdown');if(overlay)overlay.style.display='none';
-    if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;aimStick.active=false;
+    if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;
   }
   async function settlePvpRecord(result,forcedMatchId=''){
     const me=identity(),matchId=forcedMatchId||(currentRoom+'-'+pvpMode);
