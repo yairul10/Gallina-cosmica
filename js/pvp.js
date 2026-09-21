@@ -637,7 +637,7 @@
     // a los tres bots; cada uno sólo apunta a integrantes del equipo contrario.
     if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')&&running&&!matchFinished){
       const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
-      const botSimAuthority=(pvpMode!=='2v2'&&pvpMode!=='arena')||humanSlots.length===0||mySlot===Math.min(...humanSlots);
+      const botSimAuthority=(pvpMode!=='2v2'&&pvpMode!=='arena'&&pvpMode!=='arena10')||humanSlots.length===0||mySlot===Math.min(...humanSlots);
       const activeBots=botSimAuthority?players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))):[];
       for(const botPlayer of activeBots){
         const bot=peerFor(botPlayer.slot);
