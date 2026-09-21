@@ -22,6 +22,30 @@ function gameMode(url) {
   return mode === "2v2" || mode === "arena" || mode === "arena10" ? mode : "1v1";
 }
 
+function pvpRankFromCups(cups){
+  cups=Math.max(0,Number(cups)||0);
+  if(cups>=12000)return {label:"🌌 Leyenda Galáctica",level:6};
+  if(cups>=7000)return {label:"🚀 Maestro Cósmico",level:5};
+  if(cups>=3000)return {label:"💎 Diamante",level:4};
+  if(cups>=1000)return {label:"🥇 Oro",level:3};
+  if(cups>=500)return {label:"🥈 Plata",level:2};
+  if(cups>=200)return {label:"🥉 Bronce",level:1};
+  return {label:"🥚 Novato",level:0};
+}
+function seeded01(slot,salt=0){let x=(Number(slot)*1103515245+12345+salt*2654435761)>>>0;return x/4294967296;}
+function botShipForRank(level,slot){
+  const chance=level>=6?.25:level===5?.20:level===4?.15:0;
+  if(!chance||seeded01(slot,17)>=chance)return "Gallina";
+  const toros=["Toro Aniquilador","Toro Blindado","Toro Baliza"];
+  return toros[Math.floor(seeded01(slot,31)*toros.length)%toros.length];
+}
+function configureBotProfiles(list,humanPlayers){
+  const humans=humanPlayers.filter(p=>!p.bot);
+  const avg=humans.length?humans.reduce((a,p)=>a+Math.max(0,Number(p.cups)||0),0)/humans.length:0;
+  const rank=pvpRankFromCups(avg);
+  for(const bot of list){bot.rankLevel=rank.level;bot.rankLabel=rank.label;bot.ship=botShipForRank(rank.level,bot.slot);bot.name="🤖 "+rank.label+" · Bot "+bot.slot;}
+}
+
 function roomCapacity(mode) {
   return mode === "1v1" ? 2 : mode === "arena" ? 5 : mode === "arena10" ? 10 : 4;
 }
@@ -60,7 +84,7 @@ export class PvpRoom {
     server.accept();
     const playerId = safeText(url.searchParams.get("playerId"), crypto.randomUUID(), 128);
     const name = safeText(url.searchParams.get("name"), "Jugador", 40);
-    const ship = safeText(url.searchParams.get("ship"), "Gallina", 40);
+    const ship = safeText(url.searchParams.get("ship"), "Gallina", 40);\n    const cups = Math.max(0, Math.min(9999999, Number(url.searchParams.get("cups") || 0)));
     let slot, team, reconnected = false;
     const pending = Array.from(this.rewardStatus.entries()).find(([,s]) => s.playerId === playerId && s.pendingReconnect);
     if (pending) {
@@ -81,7 +105,7 @@ export class PvpRoom {
       team = this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0;
       this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
     }
-    this.players.set(server, { playerId, name, ship, slot, team });
+    this.players.set(server, { playerId, name, ship, slot, team, cups });
     if (wantsBot && this.players.size === 1 && !this.botPlayer && this.botPlayers.length === 0) {
       if (this.mode === "1v1") {
         const botSlot = slot === 1 ? 2 : 1;
