@@ -353,6 +353,14 @@
         }
         if((pvpMode==='arena'||pvpMode==='arena10') && Number(m.slot)!==mySlot && !meEliminated){
           const alive=players.filter(p=>!eliminated.has(Number(p.slot)));
+          // Respaldo del cliente: si ya soy el único superviviente no quedarse
+          // esperando el arena-result del Worker. El POST de ranking se deduplica
+          // por partida, así que el resultado oficial posterior no duplica copas.
+          if(alive.length===1&&Number(alive[0]?.slot)===mySlot){
+            const capacity=pvpMode==='arena10'?10:5;
+            endArena('🏆 ¡VICTORIA EN ARENA!','win',1);
+            return;
+          }
           showStatus('🌌 Arena · quedan '+alive.length+' jugadores.',true);
         }
       } else if(m.type==='team-result') {
@@ -692,7 +700,7 @@
       meState.lives++;lastRegenAt=now;updateLives();
     }
     const zone=cosmicZoneState(dt);
-    if(zone?.active&&!meEliminated&&Math.hypot(meState.x-zone.cx,meState.y-zone.cy)>zone.radius&&now-lastZoneDamageAt>=2000){
+    if(zone?.active&&!meEliminated&&Math.hypot(meState.x-zone.cx,meState.y-zone.cy)>zone.radius&&now-lastZoneDamageAt>=1000){
       lastZoneDamageAt=now;lastHitAt=now;lastRegenAt=now;
       meState.lives=Math.max(0,meState.lives-1);updateLives();
       hitFlashUntil=now+180;
@@ -846,7 +854,7 @@
         else{ai.wander=(Number(ai.wander||0)>=0?-1:1)*.8;ai.nextMoveAt=0;}
         if(botZone?.active&&Math.hypot(bot.x-botZone.cx,bot.y-botZone.cy)>botZone.radius){
           const lastZone=Number(ai.lastZoneDamageAt||0);
-          if(now-lastZone>=2000){
+          if(now-lastZone>=1000){
             ai.lastZoneDamageAt=now;botHitTimes.set(Number(botPlayer.slot),now);botRegenTimes.set(Number(botPlayer.slot),now);
             bot.lives=Math.max(0,Number(bot.lives||20)-1);updateLives();
             if(bot.lives<=0&&!eliminated.has(Number(botPlayer.slot))&&!pendingBotDefeats.has(Number(botPlayer.slot))){
