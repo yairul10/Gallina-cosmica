@@ -157,6 +157,18 @@
                         <button class="shop-btn" id="btn-hs-3-pro" onclick="equipShip(3, true)">Pro</button>
                     </div>
                 </div>
+                <div id="hangar-pvp-toro-aniquilador" class="shop-item" style="display:none;">
+                    <h4>Toro Aniquilador</h4><img src="assets/toro_aniquilador.png" class="shop-img" style="height:50px;object-fit:contain;">
+                    <p style="font-size:.75rem;color:#fca5a5;">⚔️ PvP · +25% cadencia</p><button class="shop-btn" id="btn-equip-pvp-toro-aniquilador" onclick="equipPvpShip('toro_aniquilador')">Equipar</button>
+                </div>
+                <div id="hangar-pvp-toro-blindado" class="shop-item" style="display:none;">
+                    <h4>Toro Blindado</h4><img src="assets/toro_blindado.png" class="shop-img" style="height:50px;object-fit:contain;">
+                    <p style="font-size:.75rem;color:#86efac;">🛡️ PvP · 26 vidas</p><button class="shop-btn" id="btn-equip-pvp-toro-blindado" onclick="equipPvpShip('toro_blindado')">Equipar</button>
+                </div>
+                <div id="hangar-pvp-toro-baliza" class="shop-item" style="display:none;">
+                    <h4>Toro Baliza</h4><img src="assets/toro_baliza.png" class="shop-img" style="height:50px;object-fit:contain;">
+                    <p style="font-size:.75rem;color:#7dd3fc;">🔧 PvP · reparación rápida</p><button class="shop-btn" id="btn-equip-pvp-toro-baliza" onclick="equipPvpShip('toro_baliza')">Equipar</button>
+                </div>
             </div>
             <!-- SECCIÓN NUEVA: MÓDULOS -->
             <div id="hangarExtras" class="shop-grid" style="display: none; margin-top: 10px;">
@@ -179,6 +191,9 @@
                 <div class="shop-item"><h4>Caballo Pro</h4><img id="shop-img-pro-2" src="assets/caballo_pro_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+30% Daño<br>+20% a Lechuga.</p><button class="shop-btn" id="btn-skin-pro-2" onclick="buyShip(2, true, 60000)">🪙 60,000</button></div>
                 <div class="shop-item"><h4>Vaca Base</h4><img id="shop-img-base-3" src="assets/vaca_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+20% a Jefes Lech.</p><button class="shop-btn" id="btn-skin-base-3" onclick="buyShip(3, false, 40000)">🪙 40,000</button></div>
                 <div class="shop-item"><h4>Vaca Pro</h4><img id="shop-img-pro-3" src="assets/vaca_pro_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+30% Daño<br>+20% a Jefes Lech.</p><button class="shop-btn" id="btn-skin-pro-3" onclick="buyShip(3, true, 100000)">🪙 100,000</button></div>
+                <div class="shop-item" style="border-color:#ef4444;"><h4>Toro Aniquilador</h4><img src="assets/toro_aniquilador.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">⚔️ PvP · +25% cadencia.</p><button class="shop-btn" id="btn-buy-pvp-toro-aniquilador" onclick="buyPvpShip('toro_aniquilador')">🪙 1,500,000</button></div>
+                <div class="shop-item" style="border-color:#22c55e;"><h4>Toro Blindado</h4><img src="assets/toro_blindado.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🛡️ PvP · 26 vidas.</p><button class="shop-btn" id="btn-buy-pvp-toro-blindado" onclick="buyPvpShip('toro_blindado')">🪙 1,500,000</button></div>
+                <div class="shop-item" style="border-color:#38bdf8;"><h4>Toro Baliza</h4><img src="assets/toro_baliza.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🔧 PvP · repara desde 4 s, cada 1.5 s.</p><button class="shop-btn" id="btn-buy-pvp-toro-baliza" onclick="buyPvpShip('toro_baliza')">🪙 1,500,000</button></div>
             </div>
             <div id="shopBoosters" class="shop-grid" style="display: none;">
                 <!-- EXTRA AUTO-VIDA -->
