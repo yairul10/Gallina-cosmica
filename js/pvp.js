@@ -315,9 +315,10 @@
           const podium=Array.isArray(m.podiumSlots)?m.podiumSlots.map(Number).filter(Boolean):[Number(m.winnerSlot||0)].filter(Boolean);
           const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];
           const podiumText=podium.map((slot,i)=>medals[i]+' '+playerName(slot)).join('\n');
-          const myPlace=podium.indexOf(mySlot)+1;
+          const finalOrder=Array.isArray(m.finalOrder)?m.finalOrder.map(Number).filter(Boolean):podium;
+          const myPlace=finalOrder.indexOf(mySlot)+1;
           const title=Number(m.winnerSlot)===mySlot?'🏆 ¡VICTORIA EN ARENA!':(myPlace>0?'🌌 ARENA FINALIZADA · Puesto #'+myPlace:'🌌 ARENA FINALIZADA');
-          endArena(title+(podiumText?'\n\n'+podiumText:''),Number(m.winnerSlot)===mySlot?'win':'loss');
+          endArena(title+(podiumText?'\n\n'+podiumText:''),Number(m.winnerSlot)===mySlot?'win':'loss',myPlace);
         }
       } else if(m.type==='peer-message') {
         handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
@@ -409,10 +410,10 @@
     const overlay=$('pvpCountdown');if(overlay)overlay.style.display='none';
     if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;
   }
-  async function settlePvpRecord(result,forcedMatchId=''){
+  async function settlePvpRecord(result,forcedMatchId='',placement=0){
     const me=identity(),matchId=forcedMatchId||(currentRoom+'-'+pvpMode);
     try{
-      const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:playerId(),name:me.name||'Jugador',kills:matchKills,botKills:matchBotKills,humanKills:matchHumanKills,result,matchId})});
+      const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:playerId(),name:me.name||'Jugador',kills:matchKills,botKills:matchBotKills,humanKills:matchHumanKills,result,mode:pvpMode,placement,matchId})});
       const data=await r.json();
       if(data?.ok&&data.record){
         const cups=Number(data.record.cups||0);
@@ -421,8 +422,16 @@
       }
     }catch{}
     const before=getPvpCups();
+    const killCups=matchBotKills+matchHumanKills*3;
     const lossPenalty=before>=12000?10:before>=7000?8:before>=3000?5:before>=1000?3:0;
-    const rawDelta=result==='win'?(20+matchBotKills+matchHumanKills*3):-lossPenalty;
+    let rawDelta;
+    if(pvpMode==='arena'||pvpMode==='arena10'){
+      const table=pvpMode==='arena'?{1:10,2:5,3:0,4:-5,5:-10}:{1:10,2:8,3:5,4:0,5:-2,6:-4,7:-6,8:-8,9:-9,10:-10};
+      let posDelta=Number(table[Number(placement)||0]||0);
+      const mult=before>=12000?2:before>=7000?1.5:before>=3000?1.25:before>=1000?1:0;
+      if(posDelta<0)posDelta=-Math.round(Math.abs(posDelta)*mult);
+      rawDelta=posDelta+killCups;
+    }else rawDelta=(result==='win'?20:-lossPenalty)+killCups;
     const cups=addPvpCups(rawDelta);
     return {cups,delta:cups-before,local:true};
   }
@@ -436,7 +445,7 @@
     if(cups>=200)return '🥉 Bronce';
     return '🥚 Novato';
   }
-  function endArena(text,result='none'){
+  function endArena(text,result='none',placement=0){
     if(matchFinished)return; matchFinished=true;
     stopArena();
     const resultEl=$('pvpResultText');
@@ -445,7 +454,7 @@
     if(!matchCupsSettled && (result==='win'||result==='loss')){
       matchCupsSettled=true;
       const cupsBefore=getPvpCups();
-      settlePvpRecord(result).then(saved=>{
+      settlePvpRecord(result,'',placement).then(saved=>{
         const oldRank=pvpRankName(cupsBefore), newRank=pvpRankName(saved.cups);
         const rankUp=newRank!==oldRank && saved.cups>cupsBefore ? '\n🎉 ¡Subiste de rango a '+newRank+'!' : '';
         resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'')+rankUp;
