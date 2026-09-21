@@ -662,6 +662,21 @@
       if(!target)continue;
       if(Math.hypot(m.x-target.x,m.y-target.y)<31){
         m.life=0; impactFx.push({x:m.x,y:m.y,life:.4,maxLife:.4});
+        // En una partida contra bot no existe un segundo cliente que descuente
+        // sus vidas, así que el dispositivo local debe aplicar el impacto del
+        // misil propio al Bot Cósmico.
+        if(m.own&&botMatch&&pvpMode==='1v1'&&targetSlot&&now-lastBotHitAt>180){
+          const botPlayer=players.find(p=>p.bot&&Number(p.slot)===targetSlot);
+          if(botPlayer){
+            lastBotHitAt=now;botLives=Math.max(0,botLives-1);
+            const bot=peerFor(botPlayer.slot);bot.lives=botLives;updateLives();
+            if(botLives<=0){
+              eliminated.add(Number(botPlayer.slot));matchKills++;
+              endArena('🏆 ¡VICTORIA!\n🚀 '+playerName(mySlot)+' derrotó a '+playerName(botPlayer.slot),'win');
+              return;
+            }
+          }
+        }
         if(!m.own && (!targetSlot||targetSlot===mySlot) && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
           lastHitAt=now;lastAttackerSlot=Number(m.ownerSlot||0);lastAttackKind='missile';meState.lives=Math.max(0,meState.lives-1);updateLives();
           hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
