@@ -364,7 +364,7 @@ export class PvpRanking {
       if(cups>=1000)return 3;
       return 0;
     };
-    // Las eliminaciones siempre dan copas, incluso al perder.
+    // Las eliminaciones sólo dan copas en Arena. 1v1 y 2v2 no tienen bono por muerte.
     const killCups=botKills+(humanKills*3);
     let delta;
     if(mode==='arena'||mode==='arena10'){
@@ -375,8 +375,9 @@ export class PvpRanking {
       if(placementDelta<0) placementDelta=-Math.round(Math.abs(placementDelta)*rankLossMultiplier(oldCups));
       delta=placementDelta+killCups;
     }else{
-      // 1v1 y 2v2 conservan su sistema actual; las bajas también suman siempre.
-      delta=(result==='win'?20:-legacyLossPenalty(oldCups))+killCups;
+      // Duelo: premio fijo por victoria, sin bono por eliminaciones.
+      const winCups=mode==='2v2'?8:5;
+      delta=result==='win'?winCups:-legacyLossPenalty(oldCups);
     }
     const newCups=Math.max(0,oldCups+delta), appliedDelta=newCups-oldCups;
     const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result!=='win'?1:0),matches:Number(prev.matches||0)+1};
