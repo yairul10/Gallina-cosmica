@@ -140,11 +140,13 @@
     queueStartedAt=0;
     const btn=$('pvpFindMatchBtn'); if(btn)btn.textContent='⚔️ Buscar rival';
   }
+  let queueWaitingCount=1;
   function updateQueueStatus(){
     if(!queueSocket||!queueStartedAt)return;
     const sec=Math.max(0,Math.floor((Date.now()-queueStartedAt)/1000));
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
-    showStatus('🔎 Buscando '+(pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena'?'jugadores para Arena':'rival')+'… '+mm+':'+ss+' · ⏱️ Espera máxima: 60 s',true);
+    const needed=pvpMode==='1v1'?2:4;
+    showStatus('🔎 Buscando '+(pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena'?'jugadores para Arena':'rival')+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. 60 s',true);
   }
   function cancelMatch(){
     if(!queueSocket)return;
@@ -176,12 +178,14 @@
     const ws=new WebSocket(`${PVP_WS_BASE}/matchmake?${params}`);
     queueSocket=ws;
     queueStartedAt=Date.now();
+    queueWaitingCount=1;
     const findBtn=$('pvpFindMatchBtn'); if(findBtn)findBtn.textContent='✖️ Cancelar búsqueda';
     updateQueueStatus(); queueTimer=setInterval(updateQueueStatus,1000);
     ws.addEventListener('message',event=>{
       if(queueSocket!==ws)return;
       let m;try{m=JSON.parse(event.data);}catch{return;}
       if(m.type==='queue-waiting'){
+        queueWaitingCount=Math.max(1,Number(m.waiting||1));
         updateQueueStatus();
       } else if(m.type==='match-found' && /^\d{6}$/.test(String(m.roomCode||''))){
         const code=String(m.roomCode);
