@@ -194,7 +194,7 @@
         try{ws.close(1000,'matched');}catch{}
         botMatch=!!m.bot;
         showStatus(botMatch?'🤖 ¡Bot Cósmico encontrado! Entrando…':'⚔️ ¡Partida encontrada! Entrando…',true);
-        setTimeout(()=>connect(code,false,botMatch),120);
+        setTimeout(()=>connect(code,false,botMatch,Number(m.humanCount||1)),120);
       }
     });
     ws.addEventListener('close',e=>{
@@ -207,13 +207,13 @@
     ws.addEventListener('error',()=>{if(queueSocket===ws)showStatus('No se pudo conectar a la cola PvP.');});
   }
 
-  function connect(code,creating=false,useBot=false){
+  function connect(code,creating=false,useBot=false,humanCount=1){
     code=String(code||'').replace(/\D/g,'').slice(0,6); roomInput.value=code;
     if(code.length!==6)return showStatus('Escribe un código de sala de 6 dígitos.');
     disconnect(true);
     const me=identity();
     const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
-    if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'))params.set('bot','1');
+    if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;
     showStatus((creating?'Creando':'Entrando a')+' sala '+code+'…');
