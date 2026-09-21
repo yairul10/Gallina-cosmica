@@ -68,7 +68,7 @@
   const meState = { x: 210, y: 560, lives: 20, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
   const peerState = { x: 210, y: 80, lives: 20, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
   const peerStates = new Map();
-  let eliminated = new Set(), meEliminated = false, matchFinished = false;
+  let eliminated = new Set(), pendingBotDefeats = new Set(), meEliminated = false, matchFinished = false;
   function peerFor(slot){
     slot=Number(slot||0);
     if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,targetX:210,targetY:80,lives:20,angle:Math.PI/2,targetAngle:Math.PI/2,visualAngle:Math.PI/2,targetVisualAngle:Math.PI/2,slot});
@@ -293,6 +293,7 @@
       } else if(m.type==='player-eliminated') {
         const deadSlot=Number(m.slot||0),killerSlot=Number(m.killerSlot||0);
         const alreadyOut=eliminated.has(deadSlot);
+        pendingBotDefeats.delete(deadSlot);
         markEliminated(deadSlot);
         if(!alreadyOut && m.reason==='combat' && killerSlot && killerSlot!==deadSlot){
           if(killerSlot===mySlot){matchKills++;const victim=players.find(p=>Number(p.slot)===deadSlot);if(victim?.bot)matchBotKills++;else matchHumanKills++;}
@@ -347,7 +348,7 @@
 
   function resetArena(){
     configureWorld();
-    killFeed.length=0;matchKills=0;matchBotKills=0;matchHumanKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
+    killFeed.length=0;matchKills=0;matchBotKills=0;matchHumanKills=0;matchCupsSettled=false;pendingBotDefeats.clear();lastAttackerSlot=0;lastAttackKind='laser';
     botLives=20;lastBotHitAt=0;lastRegenAt=performance.now();botAiStates.clear();botHitTimes.clear();botRegenTimes.clear();
     for(const p of players.filter(p=>p.bot)){
       const ai=botAiFor(p.slot), t=performance.now();
@@ -906,8 +907,11 @@
           botHitTimes.set(slot,now);botRegenTimes.set(slot,now);
           const st=peerFor(slot);st.lives=Math.max(0,Number(st.lives??20)-1);
           impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});updateLives();
-          if(st.lives<=0&&!eliminated.has(slot)){
-            eliminated.add(slot);
+          if(st.lives<=0&&!eliminated.has(slot)&&!pendingBotDefeats.has(slot)){
+            // Esperar la confirmación oficial del servidor antes de marcarlo
+            // eliminado. Antes se añadía aquí a "eliminated", por lo que cuando
+            // llegaba player-eliminated parecía duplicado y no sumaba la baja.
+            pendingBotDefeats.add(slot);
             send({type:'bot-defeat',slot,team:Number(targetPlayer.team||0),killerSlot:Number(killerSlot||0),attackKind:kind});
           }
           return true;
