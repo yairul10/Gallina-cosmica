@@ -372,6 +372,24 @@ export class PvpMatchmaker {
         const list = this.waitingByMode?.get(mode) || [];
         const index = list.findIndex(entry => entry.socket === server);
         if (index < 0) return;
+
+        if (mode === "2v2") {
+          // Al vencer el tiempo, todos los humanos que siguen esperando entran
+          // juntos en UNA misma sala; los puestos restantes se completan con bots.
+          // Sólo el jugador más antiguo de la cola ejecuta esta agrupación.
+          if (index !== 0) return;
+          const group = list.splice(0, Math.min(needed, list.length));
+          this.waitingByMode.set(mode, list);
+          const roomCode = queueRoomCode();
+          const humanCount = group.length;
+          const match = { type:"match-found", roomCode, mode, players:needed, bot:true, humanCount };
+          for (const queued of group) {
+            try { queued.socket.send(JSON.stringify(match)); } catch {}
+            try { queued.socket.close(1000, "matched-bots"); } catch {}
+          }
+          return;
+        }
+
         const [entry] = list.splice(index, 1);
         this.waitingByMode.set(mode, list);
         const roomCode = queueRoomCode();
