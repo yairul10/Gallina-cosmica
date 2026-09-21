@@ -58,7 +58,7 @@
   let eliminated = new Set(), meEliminated = false, matchFinished = false;
   function peerFor(slot){
     slot=Number(slot||0);
-    if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,lives:10,angle:Math.PI/2,visualAngle:Math.PI/2,slot});
+    if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,targetX:210,targetY:80,lives:10,angle:Math.PI/2,targetAngle:Math.PI/2,visualAngle:Math.PI/2,targetVisualAngle:Math.PI/2,slot});
     return peerStates.get(slot);
   }
   function syncPeerPlayers(){
@@ -274,7 +274,7 @@
       meState.angle=myTeam===2?Math.PI/2:-Math.PI/2;meState.visualAngle=meState.angle;
     }
     meState.lives=10;
-    for(const [slot,state] of peerStates){const pos=starts[(slot-1)%4];state.x=pos[0];state.y=pos[1];state.lives=10;const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.angle;}
+    for(const [slot,state] of peerStates){const pos=starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=10;const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=state.targetAngle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.targetVisualAngle=state.angle;}
     bullets=[]; missiles=[]; eliminated.clear(); meEliminated=false; matchFinished=false; lastMissile=-Infinity; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
@@ -346,11 +346,11 @@
     }
     if(p.type==='state'){
       const px=Number(p.x), py=Number(p.y), pa=Number(p.angle);
-      if(Number.isFinite(px)) remote.x=mirrorX(px);
-      if(Number.isFinite(py)) remote.y=mirrorY(py);
-      if(Number.isFinite(pa)) remote.angle=mirrorAngle(pa);
+      if(Number.isFinite(px)) remote.targetX=mirrorX(px);
+      if(Number.isFinite(py)) remote.targetY=mirrorY(py);
+      if(Number.isFinite(pa)) remote.targetAngle=mirrorAngle(pa);
       const pva=Number(p.visualAngle);
-      if(Number.isFinite(pva)) remote.visualAngle=mirrorAngle(pva);
+      if(Number.isFinite(pva)) remote.targetVisualAngle=mirrorAngle(pva);
       remote.lives=Number.isFinite(Number(p.lives))?Number(p.lives):remote.lives;updateLives();
     } else if(p.type==='shot'){
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam);
@@ -429,6 +429,17 @@
   }
   document.addEventListener('visibilitychange',syncBackgroundCombat);
   function update(dt,now){
+    // Suaviza únicamente la representación de las naves remotas entre los
+    // paquetes de red (~15 Hz). La nave local y la lógica de combate conservan
+    // su respuesta inmediata.
+    const smooth=1-Math.pow(0.001,dt);
+    const angleLerp=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;
+    for(const state of peerStates.values()){
+      if(Number.isFinite(state.targetX)) state.x+=(state.targetX-state.x)*smooth;
+      if(Number.isFinite(state.targetY)) state.y+=(state.targetY-state.y)*smooth;
+      if(Number.isFinite(state.targetAngle)) state.angle=angleLerp(state.angle,state.targetAngle,smooth);
+      if(Number.isFinite(state.targetVisualAngle)) state.visualAngle=angleLerp(state.visualAngle,state.targetVisualAngle,smooth);
+    }
     let mx=meEliminated?0:moveStick.x,my=meEliminated?0:moveStick.y;
     if(keys.has('ArrowLeft')||keys.has('a'))mx-=1;if(keys.has('ArrowRight')||keys.has('d'))mx+=1;
     if(keys.has('ArrowUp')||keys.has('w'))my-=1;if(keys.has('ArrowDown')||keys.has('s'))my+=1;
