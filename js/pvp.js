@@ -675,14 +675,36 @@
         // Fuera del radio de búsqueda el bot patrulla su propio sector en vez de
         // conocer mágicamente la posición de todos. Así los bots se dispersan,
         // exploran el mapa y sólo persiguen cuando encuentran a alguien cerca.
-        const searchRadius=390;
+        const arena10Patrol=pvpMode==='arena10';
+        const searchRadius=arena10Patrol?700:390;
         if(!ai.patrolX||!ai.patrolY||Math.hypot(ai.patrolX-bot.x,ai.patrolY-bot.y)<65||now>=Number(ai.nextPatrolAt||0)){
-          const sector=(Number(botPlayer.slot)-1)%5;
-          const a=(sector/5)*Math.PI*2+(Math.random()-.5)*1.05;
-          const radius=180+Math.random()*260;
-          ai.patrolX=Math.max(65,Math.min(worldWidth-65,worldWidth/2+Math.cos(a)*radius));
-          ai.patrolY=Math.max(85,Math.min(worldHeight-85,worldHeight/2+Math.sin(a)*radius));
-          ai.nextPatrolAt=now+2800+Math.random()*3200;
+          if(arena10Patrol){
+            // Arena 10: divide el mundo 5×5 en zonas. Cada bot explora primero
+            // una zona distinta y cambia de destino dentro de ella, evitando que
+            // todos converjan al centro del mapa gigante.
+            const zone=(Number(botPlayer.slot)-1)%25;
+            const col=zone%5,row=Math.floor(zone/5);
+            const cellW=worldWidth/5,cellH=worldHeight/5;
+            const marginX=Math.min(90,cellW*.18),marginY=Math.min(90,cellH*.18);
+            ai.patrolX=col*cellW+marginX+Math.random()*Math.max(1,cellW-marginX*2);
+            ai.patrolY=row*cellH+marginY+Math.random()*Math.max(1,cellH-marginY*2);
+            // De vez en cuando salta a una zona vecina para que la Arena siga
+            // mezclándose y los encuentros no dependan sólo del spawn inicial.
+            if(Math.random()<.30){
+              const dc=Math.floor(Math.random()*3)-1,dr=Math.floor(Math.random()*3)-1;
+              const nc=Math.max(0,Math.min(4,col+dc)),nr=Math.max(0,Math.min(4,row+dr));
+              ai.patrolX=nc*cellW+marginX+Math.random()*Math.max(1,cellW-marginX*2);
+              ai.patrolY=nr*cellH+marginY+Math.random()*Math.max(1,cellH-marginY*2);
+            }
+            ai.nextPatrolAt=now+4500+Math.random()*4500;
+          }else{
+            const sector=(Number(botPlayer.slot)-1)%5;
+            const a=(sector/5)*Math.PI*2+(Math.random()-.5)*1.05;
+            const radius=180+Math.random()*260;
+            ai.patrolX=Math.max(65,Math.min(worldWidth-65,worldWidth/2+Math.cos(a)*radius));
+            ai.patrolY=Math.max(85,Math.min(worldHeight-85,worldHeight/2+Math.sin(a)*radius));
+            ai.nextPatrolAt=now+2800+Math.random()*3200;
+          }
         }
         const chosen=nearestDist<=searchRadius?nearest:null;
         const navTarget=chosen?chosen.state:{x:ai.patrolX,y:ai.patrolY};
