@@ -191,7 +191,7 @@ export class PvpRanking {
     const playerId=safeText(body.playerId,'',128); if(!playerId)return json({ok:false,error:'PLAYER_ID_REQUIRED'},400);
     const name=safeText(body.name,'Jugador',40);
     const kills=Math.max(0,Math.min(3,Math.floor(Number(body.kills)||0)));
-    const result=body.result==='win'?'win':body.result==='loss'?'loss':null;
+    const result=body.result==='win'?'win':body.result==='loss'?'loss':body.result==='forfeit'?'forfeit':body.result==='disconnect'?'disconnect':null;
     if(!result)return json({ok:false,error:'BAD_RESULT'},400);
     const matchId=safeText(body.matchId,'',80); if(!matchId)return json({ok:false,error:'MATCH_ID_REQUIRED'},400);
     const seen=(await this.ctx.storage.get('seen'))||{};
@@ -199,12 +199,13 @@ export class PvpRanking {
     const players=(await this.ctx.storage.get('players'))||{};
     if(seen[dedupe]) return json({ok:true,duplicate:true,record:players[playerId]||null});
     const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0};
-    // Copas: +20 victoria, +3 por eliminacion, -10 derrota. Nunca bajan de 0.
-    const delta=kills*3+(result==='win'?20:-10);
+    // Copas: +20 victoria, +3 por eliminacion, -10 derrota, -15 abandono/desconexion definitiva.
+    const penalizedExit=result==='forfeit'||result==='disconnect';
+    const delta=penalizedExit?-15:(kills*3+(result==='win'?20:-10));
     const oldCups=Math.max(0,Number(prev.cups||0));
     const newCups=Math.max(0,oldCups+delta);
     const appliedDelta=newCups-oldCups;
-    const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result==='loss'?1:0),matches:Number(prev.matches||0)+1};
+    const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result!=='win'?1:0),matches:Number(prev.matches||0)+1};
     players[playerId]=record; seen[dedupe]=Date.now();
     const keys=Object.keys(seen); if(keys.length>1000) keys.sort((a,b)=>seen[a]-seen[b]).slice(0,keys.length-1000).forEach(k=>delete seen[k]);
     await this.ctx.storage.put({players,seen});
