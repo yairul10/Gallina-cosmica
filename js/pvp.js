@@ -52,7 +52,13 @@
     resumeBgMusicAfterPvp = false;
   }
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
-  let botMatch=false, botLives=10, botLastShot=0, botLastMove=0, botMoveX=0, botMoveY=0, lastBotHitAt=0, botNextMissileAt=0;
+  let botMatch=false, botLives=10, lastBotHitAt=0;
+  const botAiStates=new Map();
+  function botAiFor(slot){
+    slot=Number(slot||0);
+    if(!botAiStates.has(slot))botAiStates.set(slot,{lastShot:0,lastMove:0,moveX:0,moveY:0,nextMoveAt:0,nextMissileAt:0});
+    return botAiStates.get(slot);
+  }
   let lastAttackerSlot = 0, lastAttackKind = 'laser';
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
@@ -284,7 +290,13 @@
 
   function resetArena(){
     killFeed.length=0;matchKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
-    botLives=10;botLastShot=0;botLastMove=0;botMoveX=0;botMoveY=0;lastBotHitAt=0;botNextMissileAt=performance.now()+8000+Math.random()*4000;
+    botLives=10;lastBotHitAt=0;botAiStates.clear();
+    for(const p of players.filter(p=>p.bot)){
+      const ai=botAiFor(p.slot), t=performance.now();
+      ai.nextMoveAt=t+300+Math.random()*900;
+      ai.nextMissileAt=t+8000+Math.random()*4000;
+      const a=Math.random()*Math.PI*2;ai.moveX=Math.cos(a);ai.moveY=Math.sin(a);
+    }
     const h=arenaCanvas.height,w=arenaCanvas.width;
     peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
@@ -542,22 +554,24 @@
       const activeBots=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot)));
       for(const botPlayer of activeBots){
         const bot=peerFor(botPlayer.slot);
-        // Cambia de dirección al azar: horizontal, vertical o diagonal.
-        if(now-botLastMove>700+Math.random()*900){
-          botLastMove=now;
+        const ai=botAiFor(botPlayer.slot);
+        // Cada bot tiene su propio reloj y dirección aleatoria. Así no se
+        // superponen ni se mueven en sincronía con los demás.
+        if(!ai.nextMoveAt||now>=ai.nextMoveAt){
+          ai.lastMove=now;ai.nextMoveAt=now+700+Math.random()*900;
           const a=Math.random()*Math.PI*2;
-          botMoveX=Math.cos(a);botMoveY=Math.sin(a);
+          ai.moveX=Math.cos(a);ai.moveY=Math.sin(a);
         }
-        bot.targetX=Math.max(45,Math.min(arenaCanvas.width-45,bot.targetX+botMoveX*105*dt));
-        bot.targetY=Math.max(70,Math.min(arenaCanvas.height-70,bot.targetY+botMoveY*105*dt));
+        bot.targetX=Math.max(45,Math.min(arenaCanvas.width-45,bot.targetX+ai.moveX*105*dt));
+        bot.targetY=Math.max(70,Math.min(arenaCanvas.height-70,bot.targetY+ai.moveY*105*dt));
         const enemyPlayers=players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==Number(botPlayer.team)));
         const enemyTargets=enemyPlayers.map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)}));
         const chosen=enemyTargets.sort((a,b)=>Math.hypot(a.state.x-bot.x,a.state.y-bot.y)-Math.hypot(b.state.x-bot.x,b.state.y-bot.y))[0];
         if(!chosen)continue;
         const trueAim=Math.atan2(chosen.state.y-bot.y,chosen.state.x-bot.x);
         bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
-        if(now-botLastShot>850){
-          botLastShot=now;
+        if(now-ai.lastShot>850){
+          ai.lastShot=now;
           // 50% de tiros apuntan correctamente. El resto lleva un error amplio
           // para que un jugador nuevo tenga una oportunidad real de esquivarlos.
           const accurate=Math.random()<0.50;
@@ -569,8 +583,8 @@
           spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,Number(botPlayer.team||0));
         }
         // Misil con cadencia humana: espera aleatoriamente entre 8 y 12 s.
-        if(now>=botNextMissileAt){
-          botNextMissileAt=now+8000+Math.random()*4000;
+        if(now>=ai.nextMissileAt){
+          ai.nextMissileAt=now+8000+Math.random()*4000;
           const info=shipCombatInfo(botPlayer.ship||'Gallina');
           spawnRemoteMissile(bot.x,bot.y,botPlayer.ship,info.missileType,false,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
         }
