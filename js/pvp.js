@@ -288,7 +288,7 @@
         handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
       }
     });
-    ws.addEventListener('close',e=>{if(socket===ws){socket=null;if(e.code!==1000){if(running)endArena('Se perdió la conexión.');else showStatus('Se perdió la conexión con la sala.');}}});
+    ws.addEventListener('close',e=>{if(socket===ws){socket=null;if(e.code!==1000){const detail=' [código '+e.code+(e.reason?' · '+e.reason:'')+']';console.error('[PvP] WebSocket de sala cerrado',e.code,e.reason||'(sin motivo)');if(running)endArena('Se perdió la conexión.'+detail);else showStatus('Se perdió la conexión con la sala.'+detail);}}});
     ws.addEventListener('error',()=>{if(socket===ws)showStatus('No se pudo conectar al servidor PvP.');});
   }
 
