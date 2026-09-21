@@ -217,6 +217,13 @@
         const mates=players.filter(p=>Number(p.slot)!==mySlot && Number(p.team)===myTeam);
         showStatus(pvpMode==='2v2'?'🤝 ¡2v2 listo! Compañero: '+(mates[0]?.name||'Jugador'):'⚔️ ¡Sala lista!',true);
         setTimeout(()=>startArena(),450);
+      } else if(m.type==='player-reconnecting') {
+        const p=players.find(x=>Number(x.slot)===Number(m.slot));
+        showStatus('📡 '+(p?.name||'Un jugador')+' perdió conexión · esperando 5 s…');
+      } else if(m.type==='player-reconnected') {
+        if(m.player && !players.some(p=>Number(p.slot)===Number(m.player.slot))) players.push(m.player);
+        syncPeerPlayers();
+        showStatus('✅ '+(m.player?.name||'Jugador')+' volvió a la partida.',true);
       } else if(m.type==='player-left') {
         const leftSlot=Number(m.slot);
         if((running||countdownActive)&&pvpMode==='2v2'){
