@@ -52,6 +52,7 @@
     resumeBgMusicAfterPvp = false;
   }
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
+  let botMatch=false, botLives=10, botLastShot=0, botLastMove=0, botMoveDir=1, lastBotHitAt=0;
   let lastAttackerSlot = 0, lastAttackKind = 'laser';
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
@@ -181,8 +182,9 @@
         queueSocket=null;
         stopQueueTimer();
         try{ws.close(1000,'matched');}catch{}
-        showStatus('⚔️ ¡Partida encontrada! Entrando…',true);
-        setTimeout(()=>connect(code,false),120);
+        botMatch=!!m.bot;
+        showStatus(botMatch?'🤖 ¡Bot Cósmico encontrado! Entrando…':'⚔️ ¡Partida encontrada! Entrando…',true);
+        setTimeout(()=>connect(code,false,botMatch),120);
       }
     });
     ws.addEventListener('close',e=>{
@@ -195,12 +197,13 @@
     ws.addEventListener('error',()=>{if(queueSocket===ws)showStatus('No se pudo conectar a la cola PvP.');});
   }
 
-  function connect(code,creating=false){
+  function connect(code,creating=false,useBot=false){
     code=String(code||'').replace(/\D/g,'').slice(0,6); roomInput.value=code;
     if(code.length!==6)return showStatus('Escribe un código de sala de 6 dígitos.');
     disconnect(true);
     const me=identity();
     const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
+    if(useBot&&pvpMode==='1v1')params.set('bot','1');
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;
     showStatus((creating?'Creando':'Entrando a')+' sala '+code+'…');
@@ -281,6 +284,7 @@
 
   function resetArena(){
     killFeed.length=0;matchKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
+    botLives=10;botLastShot=0;botLastMove=0;botMoveDir=1;lastBotHitAt=0;
     const h=arenaCanvas.height,w=arenaCanvas.width;
     peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
@@ -513,6 +517,20 @@
     if(!meEliminated&&aimStick.active&&Math.hypot(aimStick.x,aimStick.y)>.25){meState.angle=Math.atan2(aimStick.y,aimStick.x);shoot();}
     if(!meEliminated&&keys.has(' '))shoot();
 
+    // IA básica del Bot Cósmico (sólo 1v1 de prueba).
+    if(botMatch&&pvpMode==='1v1'&&running&&!matchFinished){
+      const botPlayer=players.find(p=>p.bot);
+      if(botPlayer){
+        const bot=peerFor(botPlayer.slot);
+        if(now-botLastMove>900){botLastMove=now;if(Math.random()<.45)botMoveDir*=-1;}
+        bot.targetX=Math.max(45,Math.min(arenaCanvas.width-45,bot.targetX+botMoveDir*85*dt));
+        bot.targetY=Math.max(70,Math.min(arenaCanvas.height*.48,bot.targetY+Math.sin(now/850)*22*dt));
+        const aim=Math.atan2(meState.y-bot.y,meState.x-bot.x);
+        bot.targetAngle=aim;bot.targetVisualAngle=aim;
+        if(now-botLastShot>700){botLastShot=now;spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,0);}
+      }
+    }
+
     for(const b of bullets){
       if(b.ownerSlot && eliminated.has(Number(b.ownerSlot))){b.life=0;continue;}
       b.prevX=b.x;b.prevY=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
@@ -571,6 +589,18 @@
       if(best){
         b.life=0;b.x=best.hitX;b.y=best.hitY;
         impactFx.push({x:best.hitX,y:best.hitY,life:.32,maxLife:.32});
+        if(botMatch&&pvpMode==='1v1'&&now-lastBotHitAt>180){
+          const botPlayer=players.find(p=>p.bot);
+          if(botPlayer){
+            lastBotHitAt=now;botLives=Math.max(0,botLives-1);
+            const bot=peerFor(botPlayer.slot);bot.lives=botLives;updateLives();
+            if(botLives<=0){
+              eliminated.add(Number(botPlayer.slot));matchKills++;
+              endArena('🏆 ¡VICTORIA!\n⚔️ '+playerName(mySlot)+' derrotó a '+playerName(botPlayer.slot),'win');
+              return;
+            }
+          }
+        }
       }
     }
 
