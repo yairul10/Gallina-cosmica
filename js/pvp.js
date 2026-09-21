@@ -350,6 +350,16 @@
     const cups=addPvpCups(rawDelta);
     return {cups,delta:cups-before,local:true};
   }
+  function pvpRankName(cups){
+    cups=Number(cups||0);
+    if(cups>=12000)return '🌌 Leyenda Galáctica';
+    if(cups>=7000)return '🚀 Maestro Cósmico';
+    if(cups>=3000)return '💎 Diamante';
+    if(cups>=1000)return '🥇 Oro';
+    if(cups>=500)return '🥈 Plata';
+    if(cups>=200)return '🥉 Bronce';
+    return '🥚 Novato';
+  }
   function endArena(text,result='none'){
     if(matchFinished)return; matchFinished=true;
     stopArena();
@@ -358,8 +368,11 @@
     $('pvpResult').style.display='flex';
     if(!matchCupsSettled && (result==='win'||result==='loss')){
       matchCupsSettled=true;
+      const cupsBefore=getPvpCups();
       settlePvpRecord(result).then(saved=>{
-        resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'');
+        const oldRank=pvpRankName(cupsBefore), newRank=pvpRankName(saved.cups);
+        const rankUp=newRank!==oldRank && saved.cups>cupsBefore ? '\n🎉 ¡Subiste de rango a '+newRank+'!' : '';
+        resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'')+rankUp;
       });
     }
   }
