@@ -121,7 +121,14 @@ function updateHangarUI() {
         }
     }
     
-        let btnExtra = document.getElementById('btn-equip-autolife');
+    const pvpIds=['toro_aniquilador','toro_blindado','toro_baliza'];
+    pvpIds.forEach(id=>{
+        const owned=!!gameStats.pvpShips?.[id], card=document.getElementById('hangar-pvp-'+id.replaceAll('_','-')), btn=document.getElementById('btn-equip-pvp-'+id.replaceAll('_','-'));
+        if(card) card.style.display=owned?'flex':'none';
+        if(btn){const equipped=gameStats.selectedPvpShip===id;btn.textContent=equipped?'Equipado':'Equipar';btn.style.background=equipped?'#f59e0b':'#334155';}
+    });
+
+    let btnExtra = document.getElementById('btn-equip-autolife');
     if (btnExtra) {
         if (!gameStats.extraModule) { btnExtra.textContent = 'Bloqueado'; btnExtra.style.background = '#1e293b'; btnExtra.disabled = true; }
         else if (gameStats.equipExtraModule) { btnExtra.textContent = 'Equipado'; btnExtra.style.background = '#f59e0b'; btnExtra.disabled = false; }
@@ -134,9 +141,9 @@ window.updateMenuShip = function() {
     if (!img) return;
     const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
     const dir = dirs[gameStats.selectedShip] || 'gallina';
-    img.src = gameStats.useGallinaChile
-        ? 'assets/gallina_chile.png'
-        : `assets/${dir}${gameStats.useProShip ? '_pro' : ''}_1.png`;
+    img.src = gameStats.selectedPvpShip && gameStats.pvpShips?.[gameStats.selectedPvpShip]
+        ? `assets/${gameStats.selectedPvpShip}.png`
+        : gameStats.useGallinaChile ? 'assets/gallina_chile.png' : `assets/${dir}${gameStats.useProShip ? '_pro' : ''}_1.png`;
     img.alt = 'Nave seleccionada';
 };
 window.refreshGallinaEquipmentUI = function() {
@@ -146,8 +153,9 @@ window.refreshGallinaEquipmentUI = function() {
 };
 window.addEventListener('gallina-cloud-progress-loaded', window.refreshGallinaEquipmentUI);
 
-window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; gameStats.useGallinaChile = false; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
-window.equipGallinaChile = function() { if (gameStats.gallinaChile) { gameStats.selectedShip = 0; gameStats.useProShip = false; gameStats.useGallinaChile = true; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
+window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; gameStats.useGallinaChile = false; gameStats.selectedPvpShip=null; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
+window.equipGallinaChile = function() { if (gameStats.gallinaChile) { gameStats.selectedShip = 0; gameStats.useProShip = false; gameStats.useGallinaChile = true; gameStats.selectedPvpShip=null; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
+window.equipPvpShip = function(id) { if (gameStats.pvpShips?.[id]) { gameStats.selectedPvpShip=id; gameStats.useProShip=false; gameStats.useGallinaChile=false; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
 window.equipExtra = function() { if (gameStats.extraModule) { gameStats.equipExtraModule = !gameStats.equipExtraModule; saveStats(); updateHangarUI(); } }
 
 window.switchShopTab = function(tab) {
@@ -176,6 +184,12 @@ function updateShopUI() {
         }
     }
     
+    ['toro_aniquilador','toro_blindado','toro_baliza'].forEach(id=>{
+        const btn=document.getElementById('btn-buy-pvp-'+id.replaceAll('_','-')); if(!btn)return;
+        if(gameStats.pvpShips?.[id]){btn.textContent='Comprado';btn.style.background='#475569';btn.disabled=true;}
+        else{btn.textContent='🪙 1,500,000';btn.style.background='#10b981';btn.disabled=coins<1500000;}
+    });
+
     let bAuto = document.getElementById('btn-buy-autolife');
     if (bAuto) {
         if (gameStats.extraModule) { bAuto.textContent = 'Comprado'; bAuto.style.background = '#475569'; bAuto.disabled = true; }
@@ -200,6 +214,7 @@ function updateShopUI() {
 }
 
 window.buyShip = function(index, isPro, cost) { if (isPro) { if (gameStats.skins[index] && !gameStats.proSkins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.proSkins[index] = true; saveStats(); updateShopUI(); } } else { if (!gameStats.skins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; saveStats(); updateShopUI(); } } }
+window.buyPvpShip = function(id) { const valid=['toro_aniquilador','toro_blindado','toro_baliza']; if(valid.includes(id)&&!gameStats.pvpShips?.[id]&&coins>=1500000){coins-=1500000;gameStats.savedCoins=coins;gameStats.pvpShips[id]=true;saveStats();updateShopUI();updateHangarUI();} }
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
 window.buyAutoLife = function() { if (!gameStats.extraModule && coins >= 50000) { coins -= 50000; gameStats.savedCoins = coins; gameStats.extraModule = true; gameStats.equipExtraModule = true; saveStats(); updateShopUI(); } }
 
