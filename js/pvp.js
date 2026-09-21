@@ -914,6 +914,31 @@
       for(let i=0;i<8;i++){const a=i*Math.PI/4,len=10+(1-t)*24;arenaCtx.beginPath();arenaCtx.moveTo(fx.x+Math.cos(a)*8,fx.y+Math.sin(a)*8);arenaCtx.lineTo(fx.x+Math.cos(a)*len,fx.y+Math.sin(a)*len);arenaCtx.stroke();}
       arenaCtx.restore();
     }
+    // Minimapa: usa las mismas coordenadas lógicas del combate, por lo que es
+    // idéntico en PC y móvil. Los dos círculos representan ataque (250) y fijación (300).
+    arenaCtx.save();arenaCtx.translate(cam.x,cam.y);
+    const mapW=112,mapH=112,mapX=w-mapW-12,mapY=12,sx=mapW/worldWidth,sy=mapH/worldHeight;
+    arenaCtx.fillStyle='rgba(2,6,23,.78)';arenaCtx.fillRect(mapX,mapY,mapW,mapH);
+    arenaCtx.strokeStyle='rgba(148,163,184,.75)';arenaCtx.lineWidth=1;arenaCtx.strokeRect(mapX,mapY,mapW,mapH);
+    const mx=mapX+meState.x*sx,my=mapY+meState.y*sy;
+    // Alcances centrados en el jugador.
+    arenaCtx.save();arenaCtx.beginPath();arenaCtx.rect(mapX,mapY,mapW,mapH);arenaCtx.clip();
+    arenaCtx.strokeStyle='rgba(250,204,21,.65)';arenaCtx.setLineDash([3,3]);arenaCtx.beginPath();arenaCtx.ellipse(mx,my,PVP_LOCK_RANGE*sx,PVP_LOCK_RANGE*sy,0,0,Math.PI*2);arenaCtx.stroke();
+    arenaCtx.strokeStyle='rgba(34,211,238,.75)';arenaCtx.setLineDash([]);arenaCtx.beginPath();arenaCtx.ellipse(mx,my,PVP_ATTACK_RANGE*sx,PVP_ATTACK_RANGE*sy,0,0,Math.PI*2);arenaCtx.stroke();
+    // Jugador local.
+    arenaCtx.fillStyle='#ffffff';arenaCtx.beginPath();arenaCtx.arc(mx,my,3.5,0,Math.PI*2);arenaCtx.fill();
+    for(const p of players){
+      const slot=Number(p.slot);if(slot===mySlot||eliminated.has(slot))continue;
+      const st=peerFor(slot),px=mapX+st.x*sx,py=mapY+st.y*sy;
+      const ally=pvpMode==='2v2'&&Number(p.team)===myTeam;
+      arenaCtx.fillStyle=ally?'#3b82f6':'#ef4444';
+      arenaCtx.beginPath();arenaCtx.arc(px,py,3.2,0,Math.PI*2);arenaCtx.fill();
+      if(slot===selectedTargetSlot){arenaCtx.strokeStyle='#ffffff';arenaCtx.lineWidth=1.5;arenaCtx.beginPath();arenaCtx.arc(px,py,5.5,0,Math.PI*2);arenaCtx.stroke();}
+    }
+    arenaCtx.restore();
+    arenaCtx.fillStyle='rgba(255,255,255,.85)';arenaCtx.font='bold 8px sans-serif';arenaCtx.textAlign='left';arenaCtx.fillText('RADAR',mapX+5,mapY+10);
+    arenaCtx.restore();
+
     // Kill Feed visual: sólo informa eventos confirmados; no modifica combate ni resultados.
     const feedNow=performance.now();
     while(killFeed.length&&killFeed[0].until<=feedNow)killFeed.shift();
