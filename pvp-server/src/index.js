@@ -19,11 +19,11 @@ function queueRoomCode() {
 
 function gameMode(url) {
   const mode = safeText(url.searchParams.get("mode"), "1v1", 16).toLowerCase();
-  return mode === "2v2" || mode === "arena" ? mode : "1v1";
+  return mode === "2v2" || mode === "arena" || mode === "arena10" ? mode : "1v1";
 }
 
 function roomCapacity(mode) {
-  return mode === "1v1" ? 2 : mode === "arena" ? 5 : 4;
+  return mode === "1v1" ? 2 : mode === "arena" ? 5 : mode === "arena10" ? 10 : 4;
 }
 
 export class PvpRoom {
@@ -52,7 +52,7 @@ export class PvpRoom {
     if (!this.mode) this.mode = requestedMode;
     if (requestedMode !== this.mode) return json({ ok: false, error: "MODE_MISMATCH" }, 409);
     const capacity = roomCapacity(this.mode);
-    const wantsBot = (this.mode === "1v1" || this.mode === "2v2" || this.mode === "arena") && url.searchParams.get("bot") === "1";
+    const wantsBot = (this.mode === "1v1" || this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && url.searchParams.get("bot") === "1";
     const requestedHumanCount = Math.max(1, Math.min(capacity, Number(url.searchParams.get("humanCount") || 1)));
     if (this.players.size >= capacity) return json({ ok: false, error: "ROOM_FULL" }, 409);
 
@@ -74,7 +74,7 @@ export class PvpRoom {
       if(wantsBot&&this.mode==="2v2"&&requestedHumanCount===2&&!this.humanSlotPlan){
         this.humanSlotPlan=Math.random()<0.5?[1,2]:[1,3];
       }
-      const humanSlots = wantsBot && (this.mode==="2v2"||this.mode==="arena")
+      const humanSlots = wantsBot && (this.mode==="2v2"||this.mode==="arena"||this.mode==="arena10")
         ? (this.mode==="2v2"&&requestedHumanCount===2 ? this.humanSlotPlan : Array.from({length:requestedHumanCount},(_,i)=>i+1))
         : Array.from({length:capacity},(_,i)=>i+1);
       slot = humanSlots.find(s => !used.has(s)) || Array.from({length:capacity},(_,i)=>i+1).find(s => !used.has(s)) || capacity;
@@ -96,7 +96,7 @@ export class PvpRoom {
           name:botSlot<=2?"🤖 Bot Aliado":"🤖 Bot Cósmico "+botSlot,
           ship:"Gallina", slot:botSlot, team:botSlot<=2?1:2, bot:true
         }));
-      } else if (this.mode === "arena") {
+      } else if (this.mode === "arena" || this.mode === "arena10") {
         const plannedHumanSlots=Array.from({length:requestedHumanCount},(_,i)=>i+1);
         const botSlots=Array.from({length:capacity},(_,i)=>i+1).filter(s=>!plannedHumanSlots.includes(s));
         this.botPlayers=botSlots.map(botSlot=>({
@@ -110,7 +110,7 @@ export class PvpRoom {
     server.addEventListener("message", event => {
       let message; try { message = JSON.parse(event.data); } catch { return; }
       if (!message || typeof message !== "object") return;
-      if (message.type === "bot-defeat" && (this.mode === "2v2" || this.mode === "arena") && !this.finished) {
+      if (message.type === "bot-defeat" && (this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && !this.finished) {
         const deadSlot=Number(message.slot||0);
         const bot=this.botPlayers.find(p=>Number(p.slot)===deadSlot);
         if(bot && !this.eliminatedSlots.has(deadSlot)){
@@ -147,7 +147,7 @@ export class PvpRoom {
           message.rewardEligible = false;
           this.broadcast({ type: "reward-status", slot, team, eligible: false, reason: "forfeit" });
         }
-        if ((this.mode === "2v2" || this.mode === "arena") && !this.finished) {
+        if ((this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && !this.finished) {
           if (!this.eliminatedSlots.has(slot)) this.eliminationOrder.push(slot);
           this.eliminatedSlots.add(slot);
           const killerSlot = Number(message.killerSlot || 0);
@@ -208,7 +208,7 @@ export class PvpRoom {
               const winnerTeam = team === 1 ? 2 : 1;
               this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
             }
-          } else if (this.mode === "arena") {
+          } else if ((this.mode === "arena" || this.mode === "arena10")) {
             this.checkArenaResult();
           }
           this.disconnectTimers.delete(playerId);
@@ -233,11 +233,10 @@ export class PvpRoom {
 
   playerList() { return [...Array.from(this.players.values()), ...(this.botPlayer ? [this.botPlayer] : []), ...this.botPlayers]; }
   checkArenaResult() {
-    if (this.finished || this.mode !== "arena" || !this.started) return;
-    // Arena 5 siempre comienza con 5 participantes. No dependemos de los sockets
-    // actualmente conectados para decidir la victoria: una desconexion temporal
-    // no puede convertir accidentalmente a varios jugadores en ganadores.
-    const arenaSlots = [1, 2, 3, 4, 5];
+    if (this.finished || (this.mode !== "arena" && this.mode !== "arena10") || !this.started) return;
+    // Arena 5 y Arena 10 terminan sólo cuando queda un participante vivo.
+    const capacity=roomCapacity(this.mode);
+    const arenaSlots = Array.from({length:capacity},(_,i)=>i+1);
     const dead = arenaSlots.filter(slot => this.eliminatedSlots.has(slot));
     if (dead.length !== arenaSlots.length - 1) return;
     const winnerSlot = arenaSlots.find(slot => !this.eliminatedSlots.has(slot)) || 0;
@@ -414,13 +413,13 @@ export class PvpMatchmaker {
 
     // Prueba: en 1v1 o 2v2, si no se completa la cola en 5 s, crear
     // una partida con bots. Al terminar las pruebas cambiaremos 5000 por 60000.
-    if (mode === "1v1" || mode === "2v2" || mode === "arena") {
+    if (mode === "1v1" || mode === "2v2" || mode === "arena" || mode === "arena10") {
       setTimeout(() => {
         const list = this.waitingByMode?.get(mode) || [];
         const index = list.findIndex(entry => entry.socket === server);
         if (index < 0) return;
 
-        if (mode === "2v2" || mode === "arena") {
+        if (mode === "2v2" || mode === "arena" || mode === "arena10") {
           // Al vencer el tiempo, todos los humanos que siguen esperando entran
           // juntos en UNA misma sala; los puestos restantes se completan con bots.
           // Sólo el jugador más antiguo de la cola ejecuta esta agrupación.
@@ -465,7 +464,7 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: JSON_HEADERS });
     if (url.pathname === "/" || url.pathname === "/health") {
-      return json({ ok: true, service: "gallina-cosmica-pvp", version: 3, matchmaking: true, modes: ["1v1", "2v2", "arena"] });
+      return json({ ok: true, service: "gallina-cosmica-pvp", version: 3, matchmaking: true, modes: ["1v1", "2v2", "arena", "arena10"] });
     }
     if (url.pathname === "/ranking") {
       const id = env.PVP_RANKING.idFromName("global");
