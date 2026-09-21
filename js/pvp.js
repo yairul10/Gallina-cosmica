@@ -325,8 +325,9 @@
         return {cups:Number(data.record.cups||0),delta:Number(data.delta||0),record:data.record};
       }
     }catch{}
-    const delta=matchKills*3+(result==='win'?20:0);
-    return {cups:addPvpCups(delta),delta,local:true};
+    const rawDelta=matchKills*3+(result==='win'?20:-10);
+    const before=getPvpCups(),cups=addPvpCups(rawDelta);
+    return {cups,delta:cups-before,local:true};
   }
   function endArena(text,result='none'){
     if(matchFinished)return; matchFinished=true;
@@ -337,7 +338,7 @@
     if(!matchCupsSettled && (result==='win'||result==='loss')){
       matchCupsSettled=true;
       settlePvpRecord(result).then(saved=>{
-        resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' (+'+saved.delta+')':'');
+        resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'');
       });
     }
   }
