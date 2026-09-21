@@ -69,6 +69,23 @@
   const peerState = { x: 210, y: 80, lives: 20, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
   const peerStates = new Map();
   let eliminated = new Set(), pendingBotDefeats = new Set(), meEliminated = false, matchFinished = false;
+  // Zona Cósmica: exclusiva de Arena 10. Da 90 s de mapa completo y luego
+  // reduce gradualmente el área jugable; el cierre acelera con pocos supervivientes.
+  let cosmicZoneElapsed=0, cosmicZoneProgress=0, lastZoneDamageAt=0;
+  const COSMIC_ZONE_GRACE=90, COSMIC_ZONE_SHRINK_SECONDS=180, COSMIC_ZONE_MIN_RADIUS=420;
+  function cosmicZoneState(dt=0){
+    if(pvpMode!=='arena10') return null;
+    cosmicZoneElapsed+=Math.max(0,dt);
+    const aliveCount=players.filter(p=>!eliminated.has(Number(p.slot))).length;
+    if(cosmicZoneElapsed>COSMIC_ZONE_GRACE && cosmicZoneProgress<1){
+      const speed=aliveCount<=2?2.3:aliveCount<=3?1.8:aliveCount<=5?1.4:1;
+      cosmicZoneProgress=Math.min(1,cosmicZoneProgress+(Math.max(0,dt)/COSMIC_ZONE_SHRINK_SECONDS)*speed);
+    }
+    const cx=worldWidth/2,cy=worldHeight/2;
+    const startRadius=Math.hypot(worldWidth,worldHeight)/2+40;
+    const radius=startRadius+(COSMIC_ZONE_MIN_RADIUS-startRadius)*cosmicZoneProgress;
+    return {cx,cy,radius,aliveCount,active:cosmicZoneElapsed>COSMIC_ZONE_GRACE};
+  }
   function peerFor(slot){
     slot=Number(slot||0);
     if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,targetX:210,targetY:80,lives:20,angle:Math.PI/2,targetAngle:Math.PI/2,visualAngle:Math.PI/2,targetVisualAngle:Math.PI/2,slot});
@@ -418,7 +435,7 @@
     if(pvpMode==='1v1'){
       for(const [slot,state] of peerStates){state.x=state.targetX=w/2;state.y=state.targetY=90;state.angle=state.targetAngle=Math.PI/2;state.visualAngle=state.targetVisualAngle=Math.PI/2;}
     }
-    bullets=[]; missiles=[]; selectedTargetSlot=0; eliminated.clear(); meEliminated=false; matchFinished=false; lastMissile=-Infinity; impactFx=[]; asteroidFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
+    bullets=[]; missiles=[]; selectedTargetSlot=0; eliminated.clear(); meEliminated=false; matchFinished=false; cosmicZoneElapsed=0;cosmicZoneProgress=0;lastZoneDamageAt=0;lastMissile=-Infinity; impactFx=[]; asteroidFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
   }
@@ -674,6 +691,16 @@
     if(running&&!matchFinished&&!meEliminated&&meState.lives>0&&meState.lives<myRegen.maxLives&&now-lastHitAt>=myRegen.regenDelay&&now-lastRegenAt>=myRegen.regenEvery){
       meState.lives++;lastRegenAt=now;updateLives();
     }
+    const zone=cosmicZoneState(dt);
+    if(zone?.active&&!meEliminated&&Math.hypot(meState.x-zone.cx,meState.y-zone.cy)>zone.radius&&now-lastZoneDamageAt>=2000){
+      lastZoneDamageAt=now;lastHitAt=now;lastRegenAt=now;
+      meState.lives=Math.max(0,meState.lives-1);updateLives();
+      hitFlashUntil=now+180;
+      if(meState.lives<=0){
+        send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:0,attackKind:'zone',reason:'zone'});
+        markEliminated(mySlot);showStatus('🌌 La Zona Cósmica destruyó tu nave.',true);
+      }
+    }
     if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       for(const bp of players.filter(p=>p.bot&&!eliminated.has(Number(p.slot)))){
         const slot=Number(bp.slot),st=peerFor(slot),hit=Number(botHitTimes.get(slot)||0);
@@ -758,7 +785,9 @@
           }
         }
         const chosen=nearestDist<=searchRadius?nearest:null;
-        const navTarget=chosen?chosen.state:{x:ai.patrolX,y:ai.patrolY};
+        const botZone=pvpMode==='arena10'?cosmicZoneState(0):null;
+        const botOutsideZone=!!botZone?.active&&Math.hypot(bot.x-botZone.cx,bot.y-botZone.cy)>Math.max(80,botZone.radius-70);
+        const navTarget=botOutsideZone?{x:botZone.cx,y:botZone.cy}:(chosen?chosen.state:{x:ai.patrolX,y:ai.patrolY});
         const dx=navTarget.x-bot.x,dy=navTarget.y-bot.y,dist=Math.hypot(dx,dy)||1;
         const trueAim=chosen?Math.atan2(chosen.state.y-bot.y,chosen.state.x-bot.x):Math.atan2(dy,dx);
         bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
@@ -815,6 +844,17 @@
         else{ai.wander=(Number(ai.wander||0)>=0?-1:1)*.8;ai.nextMoveAt=0;}
         if(!positionBlockedByAsteroid(bot.targetX,botNextY,24))bot.targetY=botNextY;
         else{ai.wander=(Number(ai.wander||0)>=0?-1:1)*.8;ai.nextMoveAt=0;}
+        if(botZone?.active&&Math.hypot(bot.x-botZone.cx,bot.y-botZone.cy)>botZone.radius){
+          const lastZone=Number(ai.lastZoneDamageAt||0);
+          if(now-lastZone>=2000){
+            ai.lastZoneDamageAt=now;botHitTimes.set(Number(botPlayer.slot),now);botRegenTimes.set(Number(botPlayer.slot),now);
+            bot.lives=Math.max(0,Number(bot.lives||20)-1);updateLives();
+            if(bot.lives<=0&&!eliminated.has(Number(botPlayer.slot))&&!pendingBotDefeats.has(Number(botPlayer.slot))){
+              pendingBotDefeats.add(Number(botPlayer.slot));
+              send({type:'bot-defeat',slot:Number(botPlayer.slot),team:0,killerSlot:0,attackKind:'zone'});
+            }
+          }
+        }
         const targetInAttackRange=!!chosen&&Math.hypot(chosen.state.x-bot.x,chosen.state.y-bot.y)<=PVP_ATTACK_RANGE;
         if(targetInAttackRange&&now-ai.lastShot>850){
           ai.lastShot=now;
@@ -1087,6 +1127,18 @@
     // El fondo cubre todo el mundo lógico; la cámara sólo muestra la ventana visible.
     if(pvpBackground.complete&&pvpBackground.naturalWidth)arenaCtx.drawImage(pvpBackground,0,0,worldWidth,worldHeight);else{arenaCtx.fillStyle='#020617';arenaCtx.fillRect(0,0,worldWidth,worldHeight);}
     arenaCtx.strokeStyle='rgba(167,139,250,.35)';arenaCtx.setLineDash([8,10]);arenaCtx.beginPath();arenaCtx.moveTo(0,worldHeight/2);arenaCtx.lineTo(worldWidth,worldHeight/2);arenaCtx.stroke();arenaCtx.setLineDash([]);
+    // Zona Cósmica de Arena 10: borde visible sobre el mundo y sombreado exterior.
+    const drawZoneState=pvpMode==='arena10'?cosmicZoneState(0):null;
+    if(drawZoneState?.active){
+      arenaCtx.save();
+      arenaCtx.fillStyle='rgba(88,28,135,.20)';
+      arenaCtx.beginPath();arenaCtx.rect(0,0,worldWidth,worldHeight);
+      arenaCtx.arc(drawZoneState.cx,drawZoneState.cy,drawZoneState.radius,0,Math.PI*2,true);
+      arenaCtx.fill('evenodd');
+      arenaCtx.strokeStyle='rgba(192,132,252,.95)';arenaCtx.lineWidth=7;
+      arenaCtx.beginPath();arenaCtx.arc(drawZoneState.cx,drawZoneState.cy,drawZoneState.radius,0,Math.PI*2);arenaCtx.stroke();
+      arenaCtx.restore();
+    }
     // Asteroides de cobertura usando el PNG del juego.
     const asteroidImage=cachedImage('assets/asteroide_pvp.png');
     for(const a of asteroids){
@@ -1165,6 +1217,10 @@
     // El mapa y sus asteroides permanecen visibles completos.
     arenaCtx.fillStyle='rgba(148,163,184,.8)';
     for(const a of asteroids){arenaCtx.beginPath();arenaCtx.arc(mapX+a.x*sx,mapY+a.y*sy,2.2,0,Math.PI*2);arenaCtx.fill();}
+    if(drawZoneState?.active){
+      arenaCtx.strokeStyle='rgba(216,180,254,.95)';arenaCtx.lineWidth=1.5;
+      arenaCtx.beginPath();arenaCtx.ellipse(mapX+drawZoneState.cx*sx,mapY+drawZoneState.cy*sy,drawZoneState.radius*sx,drawZoneState.radius*sy,0,0,Math.PI*2);arenaCtx.stroke();
+    }
     // Posición real del jugador dentro del mapa completo.
     const mx=mapX+meState.x*sx,my=mapY+meState.y*sy;
     arenaCtx.fillStyle='#ffffff';arenaCtx.beginPath();arenaCtx.arc(mx,my,3.5,0,Math.PI*2);arenaCtx.fill();
@@ -1181,7 +1237,8 @@
     }
     arenaCtx.restore();
     arenaCtx.fillStyle='rgba(255,255,255,.85)';arenaCtx.font='bold 8px sans-serif';arenaCtx.textAlign='left';
-    arenaCtx.fillText(limitedEnemies?'RADAR 700':'RADAR',mapX+5,mapY+10);
+    const zoneWait=Math.max(0,Math.ceil(COSMIC_ZONE_GRACE-cosmicZoneElapsed));
+    arenaCtx.fillText(limitedEnemies?(drawZoneState?.active?'RADAR 700 · ZONA':'RADAR 700'+(zoneWait>0?' · ZONA '+zoneWait+'s':'')):'RADAR',mapX+5,mapY+10);
     arenaCtx.restore();
 
     // Kill Feed visual: sólo informa eventos confirmados; no modifica combate ni resultados.
