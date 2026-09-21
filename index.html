@@ -68,6 +68,12 @@
                     <button class="btn pvp-mode-btn" data-mode="arena" style="margin:0; padding:9px 6px; background:#475569;">🌌 Arena</button>
                 </div>
                 <button class="btn" id="pvpFindMatchBtn" style="margin-top:10px; background:#7c3aed;">🤝 Buscar equipo 2v2</button>
+                <button class="btn" id="pvpRankingBtn" style="margin-top:8px; background:#92400e;">🏆 Ranking PvP</button>
+                <div id="pvpRankingPanel" class="leaderboard-box" style="display:none; width:min(88%,340px); max-height:250px; overflow:auto; margin-top:8px; text-align:left;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><b>🏆 Ranking PvP</b><button id="pvpRankingCloseBtn" style="border:0;background:transparent;color:#fff;font-size:1rem;">✕</button></div>
+                    <div id="pvpMyRecord" style="margin:8px 0; padding:7px; border-radius:8px; background:rgba(124,58,237,.18); font-size:.78rem;">Cargando tu récord…</div>
+                    <div id="pvpRankingList" style="font-size:.78rem;">Cargando…</div>
+                </div>
             <details style="width:min(88%,340px); margin-top:8px; color:#94a3b8; font-size:.75rem;">
                 <summary style="cursor:pointer; padding:6px;">🔧 Sala privada / QA</summary>
                 <button class="btn" id="pvpCreateRoomBtn" style="margin-top:8px; background:#475569;">➕ Crear sala privada</button>
