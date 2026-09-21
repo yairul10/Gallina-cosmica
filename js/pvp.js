@@ -171,7 +171,7 @@
     if(!queueSocket||!queueStartedAt)return;
     const sec=Math.max(0,Math.floor((Date.now()-queueStartedAt)/1000));
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
-    const needed=pvpMode==='1v1'?2:4;
+    const needed=pvpMode==='1v1'?2:pvpMode==='arena'?5:4;
     showStatus('🔎 Buscando '+(pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena'?'jugadores para Arena':'rival')+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. 60 s',true);
   }
   function cancelMatch(){
@@ -304,7 +304,7 @@
       } else if(m.type==='arena-result') {
         if(pvpMode==='arena'){
           const podium=Array.isArray(m.podiumSlots)?m.podiumSlots.map(Number).filter(Boolean):[Number(m.winnerSlot||0)].filter(Boolean);
-          const medals=['🥇','🥈','🥉','4️⃣'];
+          const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];
           const podiumText=podium.map((slot,i)=>medals[i]+' '+playerName(slot)).join('\n');
           const myPlace=podium.indexOf(mySlot)+1;
           const title=Number(m.winnerSlot)===mySlot?'🏆 ¡VICTORIA EN ARENA!':(myPlace>0?'🌌 ARENA FINALIZADA · Puesto #'+myPlace:'🌌 ARENA FINALIZADA');
@@ -331,15 +331,18 @@
     peerState.x=w/2;peerState.y=90;peerState.lives=20;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
     const starts=[[w*.28,h-90],[w*.72,h-90],[w*.28,90],[w*.72,90]];
+    // Arena 5 conserva el mundo 2×2 actual y reparte los cinco spawns
+    // alrededor del mapa para evitar que el quinto jugador nazca sobre otro.
+    const arenaStarts=[[w*.50,h-90],[w*.88,h*.38],[w*.73,90],[w*.27,90],[w*.12,h*.38]];
     if(pvpMode==='1v1'){
       meState.x=w/2;meState.y=h-90;meState.angle=-Math.PI/2;meState.visualAngle=-Math.PI/2;
     }else{
-      const pos=starts[(mySlot-1+4)%4];meState.x=pos[0];meState.y=pos[1];
+      const pos=pvpMode==='arena'?arenaStarts[(mySlot-1+5)%5]:starts[(mySlot-1+4)%4];meState.x=pos[0];meState.y=pos[1];
       meState.angle=myTeam===2?Math.PI/2:-Math.PI/2;meState.visualAngle=meState.angle;
     }
     meState.lives=20;
     for(const [slot,state] of peerStates){
-      const pos=starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=20;
+      const pos=pvpMode==='arena'?arenaStarts[(slot-1)%5]:starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=20;
       const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=state.targetAngle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.targetVisualAngle=state.angle;
     }
     if(pvpMode==='1v1'){
