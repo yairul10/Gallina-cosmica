@@ -34,6 +34,8 @@ if (gameStats.selectedShip === undefined) gameStats.selectedShip = 0;
 if (gameStats.useProShip === undefined) gameStats.useProShip = false;
 if (gameStats.gallinaChile === undefined) gameStats.gallinaChile = false;
 if (gameStats.useGallinaChile === undefined) gameStats.useGallinaChile = false;
+if (!gameStats.pvpShips || typeof gameStats.pvpShips !== 'object') gameStats.pvpShips = {};
+if (gameStats.selectedPvpShip === undefined) gameStats.selectedPvpShip = null;
 
 if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
 
@@ -118,11 +120,13 @@ function getOwnedShipIds() {
         if (gameStats.proSkins[i]) owned.push(dir + '_pro');
     });
     if (gameStats.gallinaChile) owned.push('gallina_chile');
+    ['toro_aniquilador','toro_blindado','toro_baliza'].forEach(id => { if (gameStats.pvpShips?.[id]) owned.push(id); });
     return [...new Set(owned)];
 }
 
 function getEquippedShipId() {
     const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    if (gameStats.selectedPvpShip && gameStats.pvpShips?.[gameStats.selectedPvpShip]) return gameStats.selectedPvpShip;
     if (gameStats.useGallinaChile) return 'gallina_chile';
     const dir = dirs[gameStats.selectedShip] || 'gallina';
     return dir + (gameStats.useProShip ? '_pro' : '_normal');
@@ -134,6 +138,7 @@ function getOwnedExtraIds() {
 
 function applyCloudShipId(id) {
     const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    if (['toro_aniquilador','toro_blindado','toro_baliza'].includes(id)) { gameStats.pvpShips[id] = true; return; }
     if (id === 'gallina_chile') {
         gameStats.gallinaChile = true;
         return;
@@ -148,10 +153,12 @@ function applyCloudShipId(id) {
 
 function applyEquippedShipId(id) {
     const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
+    if (['toro_aniquilador','toro_blindado','toro_baliza'].includes(id) && gameStats.pvpShips?.[id]) { gameStats.selectedPvpShip=id; gameStats.useProShip=false; gameStats.useGallinaChile=false; return; }
     if (id === 'gallina_chile' && gameStats.gallinaChile) {
         gameStats.selectedShip = 0;
         gameStats.useProShip = false;
         gameStats.useGallinaChile = true;
+        gameStats.selectedPvpShip = null;
         return;
     }
     const match = /^(gallina|oveja|caballo|vaca)_(normal|pro)$/.exec(String(id || ''));
@@ -163,6 +170,7 @@ function applyEquippedShipId(id) {
     gameStats.selectedShip = index;
     gameStats.useProShip = isPro;
     gameStats.useGallinaChile = false;
+    gameStats.selectedPvpShip = null;
 }
 
 function localBestScore() {
