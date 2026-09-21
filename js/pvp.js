@@ -52,9 +52,10 @@
     resumeBgMusicAfterPvp = false;
   }
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
-  let botMatch=false, botLives=10, lastBotHitAt=0;
+  let botMatch=false, botLives=20, lastBotHitAt=0, lastRegenAt=0;
   const botAiStates=new Map();
   const botHitTimes=new Map();
+  const botRegenTimes=new Map();
   function botAiFor(slot){
     slot=Number(slot||0);
     if(!botAiStates.has(slot))botAiStates.set(slot,{lastShot:0,lastMove:0,moveX:0,moveY:0,nextMoveAt:0,nextMissileAt:0});
@@ -62,13 +63,13 @@
   }
   let lastAttackerSlot = 0, lastAttackKind = 'laser';
   const keys = new Set();
-  const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
-  const peerState = { x: 210, y: 80, lives: 10, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
+  const meState = { x: 210, y: 560, lives: 20, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
+  const peerState = { x: 210, y: 80, lives: 20, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
   const peerStates = new Map();
   let eliminated = new Set(), meEliminated = false, matchFinished = false;
   function peerFor(slot){
     slot=Number(slot||0);
-    if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,targetX:210,targetY:80,lives:10,angle:Math.PI/2,targetAngle:Math.PI/2,visualAngle:Math.PI/2,targetVisualAngle:Math.PI/2,slot});
+    if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,targetX:210,targetY:80,lives:20,angle:Math.PI/2,targetAngle:Math.PI/2,visualAngle:Math.PI/2,targetVisualAngle:Math.PI/2,slot});
     return peerStates.get(slot);
   }
   function syncPeerPlayers(){
@@ -319,7 +320,7 @@
 
   function resetArena(){
     killFeed.length=0;matchKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
-    botLives=10;lastBotHitAt=0;botAiStates.clear();botHitTimes.clear();
+    botLives=20;lastBotHitAt=0;lastRegenAt=performance.now();botAiStates.clear();botHitTimes.clear();botRegenTimes.clear();
     for(const p of players.filter(p=>p.bot)){
       const ai=botAiFor(p.slot), t=performance.now();
       ai.nextMoveAt=t+300+Math.random()*900;
@@ -327,7 +328,7 @@
       const a=Math.random()*Math.PI*2;ai.moveX=Math.cos(a);ai.moveY=Math.sin(a);
     }
     const h=worldHeight,w=worldWidth;
-    peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
+    peerState.x=w/2;peerState.y=90;peerState.lives=20;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
     const starts=[[w*.28,h-90],[w*.72,h-90],[w*.28,90],[w*.72,90]];
     if(pvpMode==='1v1'){
@@ -336,9 +337,9 @@
       const pos=starts[(mySlot-1+4)%4];meState.x=pos[0];meState.y=pos[1];
       meState.angle=myTeam===2?Math.PI/2:-Math.PI/2;meState.visualAngle=meState.angle;
     }
-    meState.lives=10;
+    meState.lives=20;
     for(const [slot,state] of peerStates){
-      const pos=starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=10;
+      const pos=starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=20;
       const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=state.targetAngle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.targetVisualAngle=state.angle;
     }
     if(pvpMode==='1v1'){
@@ -583,6 +584,21 @@
   }
   document.addEventListener('visibilitychange',syncBackgroundCombat);
   function update(dt,now){
+    // Regeneración PvP: tras 3 s sin recibir daño, recupera 1 vida cada 2 s
+    // hasta el máximo de 20. Cada impacto reinicia el temporizador.
+    if(running&&!matchFinished&&!meEliminated&&meState.lives>0&&meState.lives<20&&now-lastHitAt>=3000&&now-lastRegenAt>=2000){
+      meState.lives++;lastRegenAt=now;updateLives();
+    }
+    if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||pvpMode==='arena')){
+      for(const bp of players.filter(p=>p.bot&&!eliminated.has(Number(p.slot)))){
+        const slot=Number(bp.slot),st=peerFor(slot),hit=Number(botHitTimes.get(slot)||0);
+        let regen=Number(botRegenTimes.get(slot)||hit);
+        if(!regen){regen=now;botRegenTimes.set(slot,regen);}
+        if(st.lives>0&&st.lives<20&&now-hit>=3000&&now-regen>=2000){
+          st.lives++;botRegenTimes.set(slot,now);if(pvpMode==='1v1')botLives=st.lives;updateLives();
+        }
+      }
+    }
     // Suaviza únicamente la representación de las naves remotas entre los
     // paquetes de red (~15 Hz). La nave local y la lógica de combate conservan
     // su respuesta inmediata.
@@ -790,8 +806,8 @@
         const damageBot=(targetPlayer,kind,killerSlot,hitX,hitY)=>{
           const slot=Number(targetPlayer.slot), last=Number(botHitTimes.get(slot)||0);
           if(now-last<=180)return false;
-          botHitTimes.set(slot,now);
-          const st=peerFor(slot);st.lives=Math.max(0,Number(st.lives??10)-1);
+          botHitTimes.set(slot,now);botRegenTimes.set(slot,now);
+          const st=peerFor(slot);st.lives=Math.max(0,Number(st.lives??20)-1);
           impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});updateLives();
           if(st.lives<=0&&!eliminated.has(slot)){
             eliminated.add(slot);
@@ -840,7 +856,7 @@
         hitShakeUntil=performance.now()+150;
         // Las dos balas de una misma ráfaga cuentan como un solo impacto.
         if(now-lastHitAt>180){
-          lastHitAt=now;
+          lastHitAt=now;lastRegenAt=now;
           lastAttackerSlot=Number(b.ownerSlot||0);lastAttackKind='laser';
           meState.lives=Math.max(0,meState.lives-1);updateLives();
           if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||pvpMode==='arena'){markEliminated(mySlot);showStatus(pvpMode==='arena'?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
@@ -870,7 +886,7 @@
           }
         }
         if(!m.own && (!targetSlot||targetSlot===mySlot) && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
-          lastHitAt=now;lastAttackerSlot=Number(m.ownerSlot||0);lastAttackKind='missile';meState.lives=Math.max(0,meState.lives-1);updateLives();
+          lastHitAt=now;lastRegenAt=now;lastAttackerSlot=Number(m.ownerSlot||0);lastAttackKind='missile';meState.lives=Math.max(0,meState.lives-1);updateLives();
           hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
           if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||pvpMode==='arena'){markEliminated(mySlot);showStatus(pvpMode==='arena'?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
         }
