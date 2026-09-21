@@ -88,6 +88,17 @@
   const PVP_LOCK_RANGE=300;
   const inAttackRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_ATTACK_RANGE;
   const inLockRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_LOCK_RANGE;
+  // Obstáculos deterministas: todos los clientes ven exactamente los mismos asteroides.
+  const asteroids=[
+    {x:.24,y:.25,r:34},{x:.50,y:.18,r:28},{x:.76,y:.29,r:38},
+    {x:.34,y:.50,r:31},{x:.66,y:.52,r:35},
+    {x:.22,y:.74,r:37},{x:.50,y:.81,r:29},{x:.78,y:.72,r:33}
+  ].map(a=>({x:a.x*worldWidth,y:a.y*worldHeight,r:a.r}));
+  function segmentCircleHit(ax,ay,bx,by,cx,cy,r){
+    const dx=bx-ax,dy=by-ay,den=dx*dx+dy*dy;
+    const t=den?Math.max(0,Math.min(1,((cx-ax)*dx+(cy-ay)*dy)/den)):0;
+    return Math.hypot(ax+dx*t-cx,ay+dy*t-cy)<=r;
+  }
   let selectedTargetSlot=0;
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
@@ -675,6 +686,21 @@
       m.vy+=(Math.sin(angle)*m.speed-m.vy)*follow;
       m.x+=m.vx*dt;m.y+=m.vy*dt;m.life-=dt;
     }
+    // Los asteroides bloquean láseres y misiles para crear cobertura real.
+    for(const b of bullets){
+      if(b.life<=0)continue;
+      const ax=Number.isFinite(b.prevX)?b.prevX:b.x,ay=Number.isFinite(b.prevY)?b.prevY:b.y;
+      if(asteroids.some(a=>segmentCircleHit(ax,ay,b.x,b.y,a.x,a.y,a.r+3))){
+        b.life=0;impactFx.push({x:b.x,y:b.y,life:.22,maxLife:.22});
+      }
+    }
+    for(const m of missiles){
+      if(m.life<=0)continue;
+      const ax=Number.isFinite(m.prevX)?m.prevX:m.x,ay=Number.isFinite(m.prevY)?m.prevY:m.y;
+      if(asteroids.some(a=>segmentCircleHit(ax,ay,m.x,m.y,a.x,a.y,a.r+7))){
+        m.life=0;impactFx.push({x:m.x,y:m.y,life:.28,maxLife:.28});
+      }
+    }
     updateMissileButton(now);
     for(const fx of impactFx)fx.life-=dt;
     impactFx=impactFx.filter(fx=>fx.life>0);
@@ -859,6 +885,18 @@
     // El fondo cubre todo el mundo lógico; la cámara sólo muestra la ventana visible.
     if(pvpBackground.complete&&pvpBackground.naturalWidth)arenaCtx.drawImage(pvpBackground,0,0,worldWidth,worldHeight);else{arenaCtx.fillStyle='#020617';arenaCtx.fillRect(0,0,worldWidth,worldHeight);}
     arenaCtx.strokeStyle='rgba(167,139,250,.35)';arenaCtx.setLineDash([8,10]);arenaCtx.beginPath();arenaCtx.moveTo(0,worldHeight/2);arenaCtx.lineTo(worldWidth,worldHeight/2);arenaCtx.stroke();arenaCtx.setLineDash([]);
+    // Asteroides de cobertura.
+    for(const a of asteroids){
+      arenaCtx.save();arenaCtx.translate(a.x,a.y);
+      const g=arenaCtx.createRadialGradient(-a.r*.3,-a.r*.35,a.r*.12,0,0,a.r);
+      g.addColorStop(0,'#cbd5e1');g.addColorStop(.42,'#64748b');g.addColorStop(1,'#1e293b');
+      arenaCtx.fillStyle=g;arenaCtx.strokeStyle='rgba(226,232,240,.55)';arenaCtx.lineWidth=2;
+      arenaCtx.beginPath();
+      for(let i=0;i<10;i++){const ang=i*Math.PI*2/10,rr=a.r*(.82+((i*37)%19)/100);const x=Math.cos(ang)*rr,y=Math.sin(ang)*rr;i?arenaCtx.lineTo(x,y):arenaCtx.moveTo(x,y);}
+      arenaCtx.closePath();arenaCtx.fill();arenaCtx.stroke();
+      arenaCtx.fillStyle='rgba(15,23,42,.35)';arenaCtx.beginPath();arenaCtx.arc(-a.r*.22,-a.r*.08,a.r*.18,0,Math.PI*2);arenaCtx.fill();
+      arenaCtx.restore();
+    }
     const mine=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
     for(const p of players){
       if(Number(p.slot)===mySlot)continue;
@@ -925,6 +963,9 @@
     // Radar limpio: las distancias de ataque/fijación siguen funcionando
     // internamente, pero no dibujamos círculos porque reducen la legibilidad.
     arenaCtx.save();arenaCtx.beginPath();arenaCtx.rect(mapX,mapY,mapW,mapH);arenaCtx.clip();
+    // Asteroides.
+    arenaCtx.fillStyle='rgba(148,163,184,.8)';
+    for(const a of asteroids){arenaCtx.beginPath();arenaCtx.arc(mapX+a.x*sx,mapY+a.y*sy,2.2,0,Math.PI*2);arenaCtx.fill();}
     // Jugador local.
     arenaCtx.fillStyle='#ffffff';arenaCtx.beginPath();arenaCtx.arc(mx,my,3.5,0,Math.PI*2);arenaCtx.fill();
     for(const p of players){
