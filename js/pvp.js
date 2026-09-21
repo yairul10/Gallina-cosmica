@@ -52,7 +52,7 @@
     resumeBgMusicAfterPvp = false;
   }
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
-  let botMatch=false, botLives=10, botLastShot=0, botLastMove=0, botMoveDir=1, lastBotHitAt=0;
+  let botMatch=false, botLives=10, botLastShot=0, botLastMove=0, botMoveX=0, botMoveY=0, lastBotHitAt=0;
   let lastAttackerSlot = 0, lastAttackKind = 'laser';
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
@@ -284,7 +284,7 @@
 
   function resetArena(){
     killFeed.length=0;matchKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
-    botLives=10;botLastShot=0;botLastMove=0;botMoveDir=1;lastBotHitAt=0;
+    botLives=10;botLastShot=0;botLastMove=0;botMoveX=0;botMoveY=0;lastBotHitAt=0;
     const h=arenaCanvas.height,w=arenaCanvas.width;
     peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
@@ -296,7 +296,13 @@
       meState.angle=myTeam===2?Math.PI/2:-Math.PI/2;meState.visualAngle=meState.angle;
     }
     meState.lives=10;
-    for(const [slot,state] of peerStates){const pos=starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=10;const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=state.targetAngle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.targetVisualAngle=state.angle;}
+    for(const [slot,state] of peerStates){
+      const pos=starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=10;
+      const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=state.targetAngle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.targetVisualAngle=state.angle;
+    }
+    if(pvpMode==='1v1'){
+      for(const [slot,state] of peerStates){state.x=state.targetX=w/2;state.y=state.targetY=90;state.angle=state.targetAngle=Math.PI/2;state.visualAngle=state.targetVisualAngle=Math.PI/2;}
+    }
     bullets=[]; missiles=[]; eliminated.clear(); meEliminated=false; matchFinished=false; lastMissile=-Infinity; impactFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
@@ -522,12 +528,24 @@
       const botPlayer=players.find(p=>p.bot);
       if(botPlayer){
         const bot=peerFor(botPlayer.slot);
-        if(now-botLastMove>900){botLastMove=now;if(Math.random()<.45)botMoveDir*=-1;}
-        bot.targetX=Math.max(45,Math.min(arenaCanvas.width-45,bot.targetX+botMoveDir*85*dt));
-        bot.targetY=Math.max(70,Math.min(arenaCanvas.height*.48,bot.targetY+Math.sin(now/850)*22*dt));
-        const aim=Math.atan2(meState.y-bot.y,meState.x-bot.x);
-        bot.targetAngle=aim;bot.targetVisualAngle=aim;
-        if(now-botLastShot>700){botLastShot=now;spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,0);}
+        // Cambia de dirección al azar: horizontal, vertical o diagonal.
+        if(now-botLastMove>700+Math.random()*900){
+          botLastMove=now;
+          const a=Math.random()*Math.PI*2;
+          botMoveX=Math.cos(a);botMoveY=Math.sin(a);
+        }
+        bot.targetX=Math.max(45,Math.min(arenaCanvas.width-45,bot.targetX+botMoveX*105*dt));
+        bot.targetY=Math.max(70,Math.min(arenaCanvas.height-70,bot.targetY+botMoveY*105*dt));
+        const trueAim=Math.atan2(meState.y-bot.y,meState.x-bot.x);
+        bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
+        if(now-botLastShot>850){
+          botLastShot=now;
+          // 30% de tiros apuntan correctamente. El resto lleva un error amplio
+          // para que un jugador nuevo tenga una oportunidad real de esquivarlos.
+          const accurate=Math.random()<0.30;
+          const aim=accurate?trueAim:trueAim+(.45+Math.random()*.75)*(Math.random()<.5?-1:1);
+          spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,0);
+        }
       }
     }
 
