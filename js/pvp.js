@@ -86,7 +86,7 @@
   const worldWidth=arenaCanvas.width*2, worldHeight=arenaCanvas.height*2;
   // Alcance universal medido en coordenadas del mundo, idéntico en todos los dispositivos.
   const PVP_ATTACK_RANGE=250;
-  const PVP_LOCK_RANGE=300;
+  const PVP_LOCK_RANGE=350;
   const inAttackRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_ATTACK_RANGE;
   const inLockRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_LOCK_RANGE;
   // Obstáculos deterministas: todos los clientes ven exactamente los mismos asteroides.
