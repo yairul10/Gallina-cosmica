@@ -6,7 +6,8 @@
   "durable_objects": {
     "bindings": [
       { "name": "PVP_ROOMS", "class_name": "PvpRoom" },
-      { "name": "PVP_MATCHMAKER", "class_name": "PvpMatchmaker" }
+      { "name": "PVP_MATCHMAKER", "class_name": "PvpMatchmaker" },
+      { "name": "PVP_RANKING", "class_name": "PvpRanking" }
     ]
   },
   "migrations": [
@@ -17,7 +18,8 @@
       "renamed_classes": [
         { "from": "Matchmaker", "to": "PvpMatchmaker" }
       ]
-    }
+    },
+    { "tag": "v4", "new_sqlite_classes": ["PvpRanking"] }
   ]
 }
 
