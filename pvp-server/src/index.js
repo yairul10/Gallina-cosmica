@@ -280,6 +280,20 @@ export class PvpRanking {
     if(request.method!=='POST') return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
     let body; try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
 
+    if(body.action==='test-close-week'){
+      const weekly=(await this.ctx.storage.get('weeklyPlayers'))||{};
+      const activeWeek=(await this.ctx.storage.get('activeWeek'))||this.periodInfo().weekKey;
+      const rewards=(await this.ctx.storage.get('rewards'))||{};
+      const winners=this.sort(weekly).slice(0,50);
+      winners.forEach((p,i)=>{
+        const coins=this.weeklyPrize(i+1); if(!coins)return;
+        const key='test-week:'+activeWeek+':'+p.playerId;
+        if(!rewards[key]) rewards[key]={type:'weekly-coins',period:activeWeek+'-TEST',playerId:p.playerId,position:i+1,coins,claimed:false,createdAt:Date.now(),test:true};
+      });
+      await this.ctx.storage.put('rewards',rewards);
+      return json({ok:true,test:true,period:activeWeek,winners:winners.length});
+    }
+
     if(body.action==='claim-weekly'){
       const playerId=safeText(body.playerId,'',128); if(!playerId)return json({ok:false,error:'PLAYER_ID_REQUIRED'},400);
       const rewards=(await this.ctx.storage.get('rewards'))||{};
