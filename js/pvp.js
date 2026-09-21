@@ -14,6 +14,8 @@
   const roomInput = $('pvpRoomCode');
 
   let socket = null, queueSocket = null, currentRoom = '', mySlot = 0, myTeam = 0, players = [];
+  let reconnectTimer=0,reconnectAttempts=0,reconnecting=false,intentionalDisconnect=false;
+  const MAX_RECONNECT_ATTEMPTS=3, RECONNECT_DELAY=900;
   let pvpMode = '2v2';
   let queueStartedAt = 0, queueTimer = 0;
   const PVP_MISSILE_COOLDOWN = 8000;
@@ -190,6 +192,7 @@
   }
   function send(payload){ if(socket?.readyState!==WebSocket.OPEN)return false; socket.send(JSON.stringify(payload)); return true; }
   function disconnect(silent=false){
+    intentionalDisconnect=true;reconnecting=false;reconnectAttempts=0;if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=0;}
     stopArena();
     if(queueSocket){const q=queueSocket;queueSocket=null;try{q.close(1000,'leaving');}catch{}}
     stopQueueTimer();
@@ -235,10 +238,11 @@
     ws.addEventListener('error',()=>{if(queueSocket===ws)showStatus('No se pudo conectar a la cola PvP.');});
   }
 
-  function connect(code,creating=false,useBot=false,humanCount=1){
+  function connect(code,creating=false,useBot=false,humanCount=1,isReconnect=false){
     code=String(code||'').replace(/\D/g,'').slice(0,6); roomInput.value=code;
     if(code.length!==6)return showStatus('Escribe un código de sala de 6 dígitos.');
-    disconnect(true);
+    if(!isReconnect)disconnect(true);
+    intentionalDisconnect=false;
     const me=identity();
     const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
     if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
@@ -250,10 +254,13 @@
       if(socket!==ws)return;
       let m;try{m=JSON.parse(event.data);}catch{return;}
       if(m.type==='joined'){
+        const wasReconnect=reconnecting||!!m.reconnected;
+        reconnecting=false;reconnectAttempts=0;if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=0;}
         players=m.players||[]; const mine=players.find(p=>String(p.playerId)===playerId());
         mySlot=Number(mine?.slot||0); myTeam=Number(mine?.team||m.team||0); syncPeerPlayers();
-        const needed=pvpMode==='1v1'?2:4;
-        showStatus('Sala '+code+' · Jugador '+(mySlot||'?')+(pvpMode==='2v2'?' · Equipo '+(myTeam||'?'):'')+(players.length<needed?' · esperando '+(needed-players.length)+' jugador(es)…':''),true);
+        const needed=pvpMode==='1v1'?2:pvpMode==='arena10'?10:pvpMode==='arena'?5:4;
+        if(wasReconnect&&running)showStatus('✅ Conexión recuperada.',true);
+        else showStatus('Sala '+code+' · Jugador '+(mySlot||'?')+(pvpMode==='2v2'?' · Equipo '+(myTeam||'?'):'')+(players.length<needed?' · esperando '+(needed-players.length)+' jugador(es)…':''),true);
       } else if(m.type==='player-joined') {
         if(m.player && !players.some(p=>Number(p.slot)===Number(m.player.slot))) players.push(m.player);
         syncPeerPlayers();
@@ -316,7 +323,24 @@
         handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
       }
     });
-    ws.addEventListener('close',e=>{if(socket===ws){socket=null;if(e.code!==1000){const detail=' [código '+e.code+(e.reason?' · '+e.reason:'')+']';console.error('[PvP] WebSocket de sala cerrado',e.code,e.reason||'(sin motivo)');if(running)endArena('Se perdió la conexión.'+detail);else showStatus('Se perdió la conexión con la sala.'+detail);}}});
+    ws.addEventListener('close',e=>{
+      if(socket!==ws)return;
+      socket=null;
+      if(e.code===1000||intentionalDisconnect)return;
+      const detail=' [código '+e.code+(e.reason?' · '+e.reason:'')+']';
+      console.error('[PvP] WebSocket de sala cerrado',e.code,e.reason||'(sin motivo)');
+      if((running||countdownActive)&&currentRoom&&reconnectAttempts<MAX_RECONNECT_ATTEMPTS){
+        reconnecting=true;reconnectAttempts++;
+        showStatus('🔄 Reconectando… '+reconnectAttempts+'/'+MAX_RECONNECT_ATTEMPTS);
+        reconnectTimer=setTimeout(()=>{
+          reconnectTimer=0;
+          if(!reconnecting||socket||!currentRoom)return;
+          connect(currentRoom,false,botMatch,1,true);
+        },RECONNECT_DELAY);
+      }else if(running||countdownActive){
+        reconnecting=false;endArena('Se perdió la conexión.'+detail);
+      }else showStatus('Se perdió la conexión con la sala.'+detail);
+    });
     ws.addEventListener('error',()=>{if(socket===ws)showStatus('No se pudo conectar al servidor PvP.');});
   }
 
