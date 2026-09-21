@@ -52,7 +52,7 @@
     resumeBgMusicAfterPvp = false;
   }
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
-  let botMatch=false, botLives=10, botLastShot=0, botLastMove=0, botMoveX=0, botMoveY=0, lastBotHitAt=0;
+  let botMatch=false, botLives=10, botLastShot=0, botLastMove=0, botMoveX=0, botMoveY=0, lastBotHitAt=0, botNextMissileAt=0;
   let lastAttackerSlot = 0, lastAttackKind = 'laser';
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
@@ -284,7 +284,7 @@
 
   function resetArena(){
     killFeed.length=0;matchKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
-    botLives=10;botLastShot=0;botLastMove=0;botMoveX=0;botMoveY=0;lastBotHitAt=0;
+    botLives=10;botLastShot=0;botLastMove=0;botMoveX=0;botMoveY=0;lastBotHitAt=0;botNextMissileAt=performance.now()+8000+Math.random()*4000;
     const h=arenaCanvas.height,w=arenaCanvas.width;
     peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
@@ -549,6 +549,12 @@
           const missAngle=0.30+Math.random()*1.15;
           const aim=accurate?trueAim:trueAim+missAngle*missSide;
           spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,0);
+        }
+        // Misil con cadencia humana: espera aleatoriamente entre 8 y 12 s.
+        if(now>=botNextMissileAt){
+          botNextMissileAt=now+8000+Math.random()*4000;
+          const info=shipCombatInfo(botPlayer.ship||'Gallina');
+          spawnRemoteMissile(bot.x,bot.y,botPlayer.ship,info.missileType,false,botPlayer.slot,0,mySlot);
         }
       }
     }
