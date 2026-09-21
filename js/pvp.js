@@ -304,7 +304,7 @@
   }
   function updateLives(){
     $('pvpMyLives').textContent='❤️ x'+Math.max(0,meState.lives);
-    const enemies=players.filter(p=>Number(p.slot)!==mySlot && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    const enemies=players.filter(p=>Number(p.slot)!==mySlot && !eliminated.has(Number(p.slot)) && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
     const enemyLives=enemies.map(p=>'❤️ x'+Math.max(0,peerFor(p.slot).lives)).join(' · ');
     $('pvpRivalLives').textContent=enemyLives||'Esperando…';
     const label=$('pvpRivalLabel');if(label)label.textContent=pvpMode==='2v2'?'RIVALES':'RIVAL';
@@ -403,7 +403,7 @@
       if(m.own){
         target=m.targetSlot?peerStates.get(Number(m.targetSlot)):null;
         if(!target){
-          const candidates=players.filter(p=>Number(p.slot)!==mySlot&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+          const candidates=players.filter(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
           const nearest=candidates.map(p=>peerFor(p.slot)).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];
           target=nearest||peerState;
         }
@@ -514,13 +514,27 @@
     for(const p of players){
       if(Number(p.slot)===mySlot)continue;
       const state=peerFor(p.slot);
+      if(eliminated.has(Number(p.slot))) continue;
       drawShip(state,p.ship||'Gallina');
       arenaCtx.save();arenaCtx.font='bold 10px sans-serif';arenaCtx.textAlign='center';
       arenaCtx.fillStyle=pvpMode==='2v2'&&Number(p.team)===myTeam?'#86efac':'#fca5a5';
       arenaCtx.fillText((pvpMode==='2v2'&&Number(p.team)===myTeam?'🤝 ':'⚔️ ')+(p.name||('J'+p.slot)),state.x,state.y-34);arenaCtx.restore();
     }
     if(performance.now()<hitFlashUntil){arenaCtx.save();arenaCtx.globalAlpha=.42;arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
-    drawShip(meState,mine.ship);
+    if(!meEliminated) drawShip(meState,mine.ship);
+    if(meEliminated && !matchFinished && pvpMode==='2v2'){
+      arenaCtx.save();
+      arenaCtx.fillStyle='rgba(2,6,23,.72)';
+      arenaCtx.fillRect(45,h/2-48,w-90,96);
+      arenaCtx.fillStyle='#ffffff';
+      arenaCtx.font='bold 20px sans-serif';
+      arenaCtx.textAlign='center';
+      arenaCtx.fillText('💥 Has sido eliminado',w/2,h/2-8);
+      arenaCtx.font='14px sans-serif';
+      arenaCtx.fillStyle='#cbd5e1';
+      arenaCtx.fillText('Espera a que termine la partida',w/2,h/2+22);
+      arenaCtx.restore();
+    }
     for(const b of bullets){
       // Dibujo del láser copiado del modo normal, adaptado a cualquier ángulo del PvP.
       const colors=laserColors(b.ship||'Gallina'), bw=4, bh=20;
