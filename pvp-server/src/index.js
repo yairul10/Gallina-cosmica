@@ -29,6 +29,8 @@ export class PvpRoom {
     this.forfeitedPlayers = new Set();
     this.eliminatedSlots = new Set();
     this.finished = false;
+    this.started = false;
+    this.rewardStatus = new Map();
   }
 
   async fetch(request) {
@@ -51,6 +53,7 @@ export class PvpRoom {
     const slot = this.players.size + 1;
     const team = this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0;
     this.players.set(server, { playerId, name, ship, slot, team });
+    this.rewardStatus.set(slot, { playerId, eligible: true, reason: null });
 
     server.addEventListener("message", event => {
       let message; try { message = JSON.parse(event.data); } catch { return; }
@@ -58,7 +61,9 @@ export class PvpRoom {
       if (message.type === "defeat") {
         if (message.reason === "forfeit") {
           this.forfeitedPlayers.add(playerId);
+          this.rewardStatus.set(slot, { playerId, eligible: false, reason: "forfeit" });
           message.rewardEligible = false;
+          this.broadcast({ type: "reward-status", slot, team, eligible: false, reason: "forfeit" });
         }
         if (this.mode === "2v2" && !this.finished) {
           this.eliminatedSlots.add(slot);
@@ -67,7 +72,7 @@ export class PvpRoom {
           if (teamSlots.length === 2 && teamSlots.every(s => this.eliminatedSlots.has(s))) {
             this.finished = true;
             const winnerTeam = team === 1 ? 2 : 1;
-            this.broadcast({ type: "team-result", winnerTeam, loserTeam: team });
+            this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
           }
         }
       }
@@ -81,6 +86,8 @@ export class PvpRoom {
       // para que una futura capa de recompensas nunca premie a ese jugador.
       if (this.started) {
         this.forfeitedPlayers.add(playerId);
+        this.rewardStatus.set(slot, { playerId, eligible: false, reason: "disconnect" });
+        this.broadcast({ type: "reward-status", slot, team, eligible: false, reason: "disconnect" });
         if (this.mode === "2v2" && !this.finished) {
           this.eliminatedSlots.add(slot);
           this.broadcast({ type: "player-eliminated", slot, team, reason: "disconnect" });
@@ -90,7 +97,8 @@ export class PvpRoom {
           const expectedTeamSlots = team === 1 ? [1, 2] : [3, 4];
           if (expectedTeamSlots.every(s => this.eliminatedSlots.has(s))) {
             this.finished = true;
-            this.broadcast({ type: "team-result", winnerTeam: team === 1 ? 2 : 1, loserTeam: team });
+            const winnerTeam = team === 1 ? 2 : 1;
+            this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
           }
         }
       }
@@ -109,6 +117,12 @@ export class PvpRoom {
   }
 
   playerList() { return Array.from(this.players.values()); }
+  rewardList(winnerTeam) {
+    return this.playerList().filter(p => p.team === winnerTeam).map(p => {
+      const status = this.rewardStatus.get(p.slot);
+      return { slot: p.slot, playerId: p.playerId, eligible: status ? status.eligible !== false : true, reason: status?.reason || null };
+    });
+  }
   broadcast(message, except = null) {
     const data = JSON.stringify(message);
     for (const socket of this.players.keys()) {
