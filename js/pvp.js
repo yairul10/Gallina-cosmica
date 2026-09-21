@@ -737,6 +737,30 @@
     if(find) find.textContent=pvpMode==='2v2'?'🤝 Buscar equipo 2v2':pvpMode==='arena'?'🌌 Buscar Arena':'⚔️ Buscar rival';
     showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':pvpMode==='arena'?'Modo Arena · 4 jugadores, todos contra todos.':'Modo 1v1.');
   }));
+  async function showPvpRanking(){
+    const panel=$('pvpRankingPanel'),list=$('pvpRankingList'),mine=$('pvpMyRecord');
+    if(!panel||!list||!mine)return;
+    panel.style.display='block';list.textContent='Cargando…';mine.textContent='Cargando tu récord…';
+    try{
+      const r=await fetch(PVP_HTTP_BASE+'/ranking',{cache:'no-store'}),data=await r.json();
+      if(!data?.ok||!Array.isArray(data.ranking))throw new Error('ranking');
+      const ranking=data.ranking,meId=playerId(),myIndex=ranking.findIndex(x=>String(x.playerId)===meId),my=myIndex>=0?ranking[myIndex]:null;
+      mine.textContent=my?'Tu récord · #'+(myIndex+1)+' · 🏆 '+my.cups+' · ☠️ '+my.kills+' · ✅ '+my.wins+' / ❌ '+my.losses:'Aún no tienes partidas registradas.';
+      list.replaceChildren();
+      if(!ranking.length){list.textContent='Todavía no hay jugadores en el ranking.';return;}
+      ranking.slice(0,100).forEach((p,i)=>{
+        const row=document.createElement('div');
+        row.style.cssText='display:grid;grid-template-columns:32px 1fr auto auto;gap:6px;padding:7px 3px;border-top:1px solid rgba(148,163,184,.18);align-items:center;';
+        const pos=document.createElement('span'),name=document.createElement('span'),cups=document.createElement('span'),kills=document.createElement('span');
+        pos.textContent=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+        name.textContent=String(p.name||'Jugador');cups.textContent='🏆 '+Number(p.cups||0);kills.textContent='☠️ '+Number(p.kills||0);
+        if(String(p.playerId)===meId)row.style.fontWeight='bold';
+        row.append(pos,name,cups,kills);list.appendChild(row);
+      });
+    }catch{mine.textContent='No se pudo cargar el récord.';list.textContent='Intenta nuevamente en unos segundos.';}
+  }
+  $('pvpRankingBtn')?.addEventListener('click',showPvpRanking);
+  $('pvpRankingCloseBtn')?.addEventListener('click',()=>{const p=$('pvpRankingPanel');if(p)p.style.display='none';});
   $('pvpFindMatchBtn')?.addEventListener('click',()=>{unlockPvpMusic();findMatch();});
   $('pvpCreateRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();const c=randomCode();roomInput.value=c;connect(c,true);});
   $('pvpJoinRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();connect(roomInput.value,false);});
