@@ -243,6 +243,7 @@
         const alreadyOut=eliminated.has(deadSlot);
         markEliminated(deadSlot);
         if(!alreadyOut && m.reason==='combat' && killerSlot && killerSlot!==deadSlot){
+          if(killerSlot===mySlot)matchKills++;
           killFeed.pop();
           addKillFeed((m.attackKind==='missile'?'🚀 ':'🔫 ')+playerName(killerSlot)+' eliminó a '+playerName(deadSlot)+(m.attackKind==='missile'?' con misil.':'.'));
         }
@@ -272,7 +273,7 @@
   }
 
   function resetArena(){
-    killFeed.length=0;lastAttackerSlot=0;lastAttackKind='laser';
+    killFeed.length=0;matchKills=0;lastAttackerSlot=0;lastAttackKind='laser';
     const h=arenaCanvas.height,w=arenaCanvas.width;
     peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
@@ -312,9 +313,12 @@
   }
   function endArena(text){
     if(matchFinished)return; matchFinished=true;
-    stopArena(); $('pvpResultText').textContent=text; $('pvpResult').style.display='flex';
+    stopArena();
+    $('pvpResultText').textContent=text+'\n☠️ Eliminaciones: '+matchKills;
+    $('pvpResult').style.display='flex';
   }
   const killFeed=[];
+  let matchKills=0;
   function playerName(slot){
     const p=players.find(x=>Number(x.slot)===Number(slot));
     return p?.name||('Jugador '+slot);
