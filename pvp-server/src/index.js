@@ -199,12 +199,16 @@ export class PvpRanking {
     const players=(await this.ctx.storage.get('players'))||{};
     if(seen[dedupe]) return json({ok:true,duplicate:true,record:players[playerId]||null});
     const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0};
-    const delta=kills*3+(result==='win'?20:0);
-    const record={...prev,name,cups:Math.max(0,Number(prev.cups||0)+delta),kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result==='loss'?1:0),matches:Number(prev.matches||0)+1};
+    // Copas: +20 victoria, +3 por eliminacion, -10 derrota. Nunca bajan de 0.
+    const delta=kills*3+(result==='win'?20:-10);
+    const oldCups=Math.max(0,Number(prev.cups||0));
+    const newCups=Math.max(0,oldCups+delta);
+    const appliedDelta=newCups-oldCups;
+    const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result==='loss'?1:0),matches:Number(prev.matches||0)+1};
     players[playerId]=record; seen[dedupe]=Date.now();
     const keys=Object.keys(seen); if(keys.length>1000) keys.sort((a,b)=>seen[a]-seen[b]).slice(0,keys.length-1000).forEach(k=>delete seen[k]);
     await this.ctx.storage.put({players,seen});
-    return json({ok:true,delta,record});
+    return json({ok:true,delta:appliedDelta,record});
   }
 }
 
