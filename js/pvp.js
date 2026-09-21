@@ -799,7 +799,7 @@
           // Disparos humanos: sólo el propio dispositivo. Disparos de bot:
           // únicamente el cliente autoridad.
           if(owner.bot ? !botAuthority : Number(b.ownerSlot)!==mySlot)continue;
-          const targets=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))&&Number(p.slot)!==Number(b.ownerSlot)&&Number(p.team)!==Number(owner.team));
+          const targets=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))&&Number(p.slot)!==Number(b.ownerSlot)&&(pvpMode!=='2v2'||Number(p.team)!==Number(owner.team)));
           const ax=Number.isFinite(b.prevX)?b.prevX:b.x,ay=Number.isFinite(b.prevY)?b.prevY:b.y,dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
           let best=null;
           for(const p of targets){const st=peerFor(p.slot),t=den>0?Math.max(0,Math.min(1,((st.x-ax)*dx+(st.y-ay)*dy)/den)):0,hx=ax+dx*t,hy=ay+dy*t;if(Math.hypot(hx-st.x,hy-st.y)<30&&(!best||t<best.t))best={p,t,hx,hy};}
@@ -809,7 +809,7 @@
           if(m.life<=0)continue;
           const targetPlayer=players.find(p=>p.bot&&Number(p.slot)===Number(m.targetSlot)&&!eliminated.has(Number(p.slot)));
           const owner=players.find(p=>Number(p.slot)===Number(m.ownerSlot));
-          if(!targetPlayer||!owner||Number(targetPlayer.team)===Number(owner.team))continue;
+          if(!targetPlayer||!owner||(pvpMode==='2v2'&&Number(targetPlayer.team)===Number(owner.team)))continue;
           if(owner.bot ? !botAuthority : Number(m.ownerSlot)!==mySlot)continue;
           const st=peerFor(targetPlayer.slot);
           if(Math.hypot(m.x-st.x,m.y-st.y)<31){m.life=0;damageBot(targetPlayer,'missile',m.ownerSlot,m.x,m.y);}
