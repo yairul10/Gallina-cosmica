@@ -84,7 +84,7 @@
   // Mundo PvP lógico: 2× ancho × 2× alto = 4× superficie. La cámara se añade en la fase siguiente.
   const worldWidth=arenaCanvas.width*2, worldHeight=arenaCanvas.height*2;
   // Alcance universal medido en coordenadas del mundo, idéntico en todos los dispositivos.
-  const PVP_ATTACK_RANGE=600;
+  const PVP_ATTACK_RANGE=250;
   const inAttackRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_ATTACK_RANGE;
   let selectedTargetSlot=0;
 
