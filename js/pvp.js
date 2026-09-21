@@ -674,8 +674,11 @@
     // evitando que dos dispositivos descuenten el mismo impacto.
     if(botMatch&&pvpMode==='2v2'){
       const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
+      // Cada humano procesa sus propios impactos contra bots. Los proyectiles
+      // creados por bots se procesan sólo en el humano de menor slot para no
+      // duplicar el daño bot-vs-bot.
       const botAuthority=humanSlots.length===0||mySlot===Math.min(...humanSlots);
-      if(botAuthority){
+      {
         const damageBot=(targetPlayer,kind,killerSlot,hitX,hitY)=>{
           const slot=Number(targetPlayer.slot), last=Number(botHitTimes.get(slot)||0);
           if(now-last<=180)return false;
@@ -692,6 +695,9 @@
           if(b.life<=0)continue;
           const owner=players.find(p=>Number(p.slot)===Number(b.ownerSlot));
           if(!owner)continue;
+          // Disparos humanos: sólo el propio dispositivo. Disparos de bot:
+          // únicamente el cliente autoridad.
+          if(owner.bot ? !botAuthority : Number(b.ownerSlot)!==mySlot)continue;
           const targets=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))&&Number(p.slot)!==Number(b.ownerSlot)&&Number(p.team)!==Number(owner.team));
           const ax=Number.isFinite(b.prevX)?b.prevX:b.x,ay=Number.isFinite(b.prevY)?b.prevY:b.y,dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
           let best=null;
@@ -703,6 +709,7 @@
           const targetPlayer=players.find(p=>p.bot&&Number(p.slot)===Number(m.targetSlot)&&!eliminated.has(Number(p.slot)));
           const owner=players.find(p=>Number(p.slot)===Number(m.ownerSlot));
           if(!targetPlayer||!owner||Number(targetPlayer.team)===Number(owner.team))continue;
+          if(owner.bot ? !botAuthority : Number(m.ownerSlot)!==mySlot)continue;
           const st=peerFor(targetPlayer.slot);
           if(Math.hypot(m.x-st.x,m.y-st.y)<31){m.life=0;damageBot(targetPlayer,'missile',m.ownerSlot,m.x,m.y);}
         }
