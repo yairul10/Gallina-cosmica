@@ -283,7 +283,7 @@
     },1000);
   }
   function stopArena(){
-    running=false;countdownActive=false; stopPvpMusic();
+    running=false;countdownActive=false; syncBackgroundCombat(); stopPvpMusic();
     if(countdownTimer){clearInterval(countdownTimer);countdownTimer=0;}
     const overlay=$('pvpCountdown');if(overlay)overlay.style.display='none';
     if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;aimStick.active=false;
@@ -393,6 +393,25 @@
   function loop(now){
     if(!running)return; const dt=Math.min(.04,(now-lastFrame)/1000);lastFrame=now; update(dt,now);draw();raf=requestAnimationFrame(loop);
   }
+  // requestAnimationFrame se pausa cuando la pestaña/app queda en segundo plano.
+  // Un pulso liviano mantiene el combate local avanzando para que la nave siga
+  // recibiendo daño aun cuando el jugador cambie temporalmente de aplicación.
+  let backgroundCombatTimer=0;
+  function syncBackgroundCombat(){
+    if(document.hidden && running && !backgroundCombatTimer){
+      backgroundCombatTimer=setInterval(()=>{
+        if(!running||!document.hidden)return;
+        const now=performance.now();
+        const dt=Math.min(.1,Math.max(.016,(now-lastFrame)/1000));
+        lastFrame=now;
+        update(dt,now);
+      },50);
+    } else if((!document.hidden||!running) && backgroundCombatTimer){
+      clearInterval(backgroundCombatTimer);backgroundCombatTimer=0;
+      lastFrame=performance.now();
+    }
+  }
+  document.addEventListener('visibilitychange',syncBackgroundCombat);
   function update(dt,now){
     let mx=meEliminated?0:moveStick.x,my=meEliminated?0:moveStick.y;
     if(keys.has('ArrowLeft')||keys.has('a'))mx-=1;if(keys.has('ArrowRight')||keys.has('d'))mx+=1;
