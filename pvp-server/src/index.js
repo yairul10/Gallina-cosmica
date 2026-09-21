@@ -236,7 +236,10 @@ export class PvpRoom {
     if (this.finished || (this.mode !== "arena" && this.mode !== "arena10") || !this.started) return false;
     const list=this.playerList();
     const alive=list.filter(p=>!this.eliminatedSlots.has(Number(p.slot)));
-    if(alive.length<=1 || alive.some(p=>!p.bot)) return false;
+    // Si ya queda uno solo, cerrar la Arena inmediatamente. Esto evita que un
+    // cliente eliminado quede atascado en "Esperando…" cuando el resultado ya existe.
+    if(alive.length===1){ this.checkArenaResult(); return true; }
+    if(alive.length===0 || alive.some(p=>!p.bot)) return false;
     // Si sólo quedan bots, resolver el resto inmediatamente. El orden se pondera
     // ligeramente por las vidas reportadas cuando estén disponibles; si no, azar.
     const shuffled=alive.slice().sort(()=>Math.random()-.5);
