@@ -94,11 +94,24 @@
   const inAttackRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_ATTACK_RANGE;
   const inLockRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_LOCK_RANGE;
   // Obstáculos deterministas: todos los clientes ven exactamente los mismos asteroides.
-  const asteroids=[
+  // Arena 10 usa una distribución más densa para que el mundo 5×5 tenga cobertura útil.
+  const baseAsteroidLayout=[
     {x:.24,y:.25,r:34},{x:.50,y:.18,r:28},{x:.76,y:.29,r:38},
     {x:.34,y:.50,r:31},{x:.66,y:.52,r:35},
     {x:.22,y:.74,r:37},{x:.50,y:.81,r:29},{x:.78,y:.72,r:33}
-  ].map(a=>({x:a.x*worldWidth,y:a.y*worldHeight,r:a.r}));
+  ];
+  const arena10ExtraAsteroidLayout=[
+    {x:.10,y:.12,r:31},{x:.30,y:.11,r:27},{x:.69,y:.10,r:32},{x:.90,y:.15,r:29},
+    {x:.11,y:.34,r:36},{x:.43,y:.32,r:30},{x:.58,y:.36,r:34},{x:.89,y:.38,r:27},
+    {x:.12,y:.57,r:29},{x:.28,y:.62,r:35},{x:.49,y:.59,r:28},{x:.84,y:.58,r:37},
+    {x:.09,y:.86,r:33},{x:.36,y:.88,r:28},{x:.65,y:.84,r:35},{x:.91,y:.82,r:30}
+  ];
+  let asteroids=[];
+  function configureAsteroids(){
+    const layout=pvpMode==='arena10'?baseAsteroidLayout.concat(arena10ExtraAsteroidLayout):baseAsteroidLayout;
+    asteroids=layout.map(a=>({x:a.x*worldWidth,y:a.y*worldHeight,r:a.r}));
+  }
+  configureAsteroids();
   function segmentCircleHit(ax,ay,bx,by,cx,cy,r){
     const dx=bx-ax,dy=by-ay,den=dx*dx+dy*dy;
     const t=den?Math.max(0,Math.min(1,((cx-ax)*dx+(cy-ay)*dy)/den)):0;
@@ -371,6 +384,7 @@
 
   function resetArena(){
     configureWorld();
+    configureAsteroids();
     killFeed.length=0;matchKills=0;matchBotKills=0;matchHumanKills=0;matchCupsSettled=false;pendingBotDefeats.clear();lastAttackerSlot=0;lastAttackKind='laser';
     botLives=20;lastBotHitAt=0;lastRegenAt=performance.now();botAiStates.clear();botHitTimes.clear();botRegenTimes.clear();
     for(const p of players.filter(p=>p.bot)){
