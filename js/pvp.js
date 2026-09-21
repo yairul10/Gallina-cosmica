@@ -916,16 +916,15 @@
       arenaCtx.restore();
     }
     // Minimapa: usa las mismas coordenadas lógicas del combate, por lo que es
-    // idéntico en PC y móvil. Los dos círculos representan ataque (250) y fijación (300).
+    // idéntico en PC y móvil.
     arenaCtx.save();arenaCtx.translate(cam.x,cam.y);
     const mapW=112,mapH=112,mapX=w-mapW-12,mapY=12,sx=mapW/worldWidth,sy=mapH/worldHeight;
     arenaCtx.fillStyle='rgba(2,6,23,.78)';arenaCtx.fillRect(mapX,mapY,mapW,mapH);
     arenaCtx.strokeStyle='rgba(148,163,184,.75)';arenaCtx.lineWidth=1;arenaCtx.strokeRect(mapX,mapY,mapW,mapH);
     const mx=mapX+meState.x*sx,my=mapY+meState.y*sy;
-    // Alcances centrados en el jugador.
+    // Radar limpio: las distancias de ataque/fijación siguen funcionando
+    // internamente, pero no dibujamos círculos porque reducen la legibilidad.
     arenaCtx.save();arenaCtx.beginPath();arenaCtx.rect(mapX,mapY,mapW,mapH);arenaCtx.clip();
-    arenaCtx.strokeStyle='rgba(250,204,21,.65)';arenaCtx.setLineDash([3,3]);arenaCtx.beginPath();arenaCtx.ellipse(mx,my,PVP_LOCK_RANGE*sx,PVP_LOCK_RANGE*sy,0,0,Math.PI*2);arenaCtx.stroke();
-    arenaCtx.strokeStyle='rgba(34,211,238,.75)';arenaCtx.setLineDash([]);arenaCtx.beginPath();arenaCtx.ellipse(mx,my,PVP_ATTACK_RANGE*sx,PVP_ATTACK_RANGE*sy,0,0,Math.PI*2);arenaCtx.stroke();
     // Jugador local.
     arenaCtx.fillStyle='#ffffff';arenaCtx.beginPath();arenaCtx.arc(mx,my,3.5,0,Math.PI*2);arenaCtx.fill();
     for(const p of players){
