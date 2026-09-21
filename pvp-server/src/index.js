@@ -23,7 +23,7 @@ function gameMode(url) {
 }
 
 function roomCapacity(mode) {
-  return mode === "1v1" ? 2 : 4;
+  return mode === "1v1" ? 2 : mode === "arena" ? 5 : 4;
 }
 
 export class PvpRoom {
@@ -234,12 +234,12 @@ export class PvpRoom {
   playerList() { return [...Array.from(this.players.values()), ...(this.botPlayer ? [this.botPlayer] : []), ...this.botPlayers]; }
   checkArenaResult() {
     if (this.finished || this.mode !== "arena" || !this.started) return;
-    // Arena siempre comienza con 4 participantes. No dependemos de los sockets
+    // Arena 5 siempre comienza con 5 participantes. No dependemos de los sockets
     // actualmente conectados para decidir la victoria: una desconexion temporal
     // no puede convertir accidentalmente a varios jugadores en ganadores.
-    const arenaSlots = [1, 2, 3, 4];
+    const arenaSlots = [1, 2, 3, 4, 5];
     const dead = arenaSlots.filter(slot => this.eliminatedSlots.has(slot));
-    if (dead.length !== 3) return;
+    if (dead.length !== arenaSlots.length - 1) return;
     const winnerSlot = arenaSlots.find(slot => !this.eliminatedSlots.has(slot)) || 0;
     if (!winnerSlot) return;
     this.finished = true;
