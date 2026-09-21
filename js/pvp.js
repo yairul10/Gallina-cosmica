@@ -593,9 +593,9 @@
   }
   document.addEventListener('visibilitychange',syncBackgroundCombat);
   function update(dt,now){
-    // Regeneración PvP: tras 3 s sin recibir daño, recupera 1 vida cada 2 s
+    // Regeneración PvP: tras 5 s sin recibir daño, recupera 1 vida cada 2 s
     // hasta el máximo de 20. Cada impacto reinicia el temporizador.
-    if(running&&!matchFinished&&!meEliminated&&meState.lives>0&&meState.lives<20&&now-lastHitAt>=3000&&now-lastRegenAt>=2000){
+    if(running&&!matchFinished&&!meEliminated&&meState.lives>0&&meState.lives<20&&now-lastHitAt>=5000&&now-lastRegenAt>=2000){
       meState.lives++;lastRegenAt=now;updateLives();
     }
     if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
@@ -603,7 +603,7 @@
         const slot=Number(bp.slot),st=peerFor(slot),hit=Number(botHitTimes.get(slot)||0);
         let regen=Number(botRegenTimes.get(slot)||hit);
         if(!regen){regen=now;botRegenTimes.set(slot,regen);}
-        if(st.lives>0&&st.lives<20&&now-hit>=3000&&now-regen>=2000){
+        if(st.lives>0&&st.lives<20&&now-hit>=5000&&now-regen>=2000){
           st.lives++;botRegenTimes.set(slot,now);if(pvpMode==='1v1')botLives=st.lives;updateLives();
         }
       }
