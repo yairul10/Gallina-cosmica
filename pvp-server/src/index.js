@@ -206,13 +206,77 @@ export class PvpRoom {
 
 export class PvpRanking {
   constructor(ctx, env) { this.ctx=ctx; this.env=env; }
-  async fetch(request) {
-    const url=new URL(request.url);
-    if(request.method==='GET'){
-      const list=(await this.ctx.storage.get('players'))||{};
-      const ranking=Object.values(list).sort((a,b)=>b.cups-a.cups||b.wins-a.wins||b.kills-a.kills).slice(0,100);
-      return json({ok:true,ranking});
+
+  periodInfo(now=Date.now()){
+    const d=new Date(now), y=d.getUTCFullYear(), m=d.getUTCMonth();
+    const monthKey=y+'-'+String(m+1).padStart(2,'0');
+    const day=d.getUTCDay(), diff=(day+6)%7;
+    const monday=new Date(Date.UTC(y,m,d.getUTCDate()-diff));
+    const weekKey=monday.toISOString().slice(0,10);
+    return {weekKey,monthKey};
+  }
+
+  sort(list){ return Object.values(list).sort((a,b)=>Number(b.cups||0)-Number(a.cups||0)||Number(b.wins||0)-Number(a.wins||0)||Number(b.kills||0)-Number(a.kills||0)); }
+
+  weeklyPrize(pos){
+    if(pos===1)return 500000;
+    if(pos===2)return 300000;
+    if(pos===3)return 200000;
+    if(pos<=10)return 100000;
+    if(pos<=25)return 50000;
+    if(pos<=50)return 25000;
+    return 0;
+  }
+
+  async rollover(now=Date.now()){
+    const {weekKey,monthKey}=this.periodInfo(now);
+    let activeWeek=await this.ctx.storage.get('activeWeek');
+    let activeMonth=await this.ctx.storage.get('activeMonth');
+    let weekly=(await this.ctx.storage.get('weeklyPlayers'))||{};
+    let monthly=(await this.ctx.storage.get('monthlyPlayers'))||{};
+    let rewards=(await this.ctx.storage.get('rewards'))||{};
+    let monthlyAwards=(await this.ctx.storage.get('monthlyAwards'))||{};
+
+    if(!activeWeek) activeWeek=weekKey;
+    if(activeWeek!==weekKey){
+      const winners=this.sort(weekly).slice(0,50);
+      winners.forEach((p,i)=>{
+        const coins=this.weeklyPrize(i+1); if(!coins)return;
+        const key='week:'+activeWeek+':'+p.playerId;
+        rewards[key]={type:'weekly-coins',period:activeWeek,playerId:p.playerId,position:i+1,coins,claimed:false,createdAt:now};
+      });
+      await this.ctx.storage.put('lastWeek',{period:activeWeek,ranking:winners,closedAt:now});
+      weekly={}; activeWeek=weekKey;
     }
+
+    if(!activeMonth) activeMonth=monthKey;
+    if(activeMonth!==monthKey){
+      const winners=this.sort(monthly).slice(0,10);
+      winners.forEach((p,i)=>{
+        const key='month:'+activeMonth+':'+p.playerId;
+        monthlyAwards[key]={type:i<3?'monthly-skin':'monthly-cosmetic',period:activeMonth,playerId:p.playerId,position:i+1,claimed:false,createdAt:now};
+      });
+      await this.ctx.storage.put('lastMonth',{period:activeMonth,ranking:winners,closedAt:now});
+      monthly={}; activeMonth=monthKey;
+    }
+    await this.ctx.storage.put({activeWeek,activeMonth,weeklyPlayers:weekly,monthlyPlayers:monthly,rewards,monthlyAwards});
+    return {activeWeek,activeMonth,weekly,monthly,rewards,monthlyAwards};
+  }
+
+  async fetch(request) {
+    const state=await this.rollover();
+    const url=new URL(request.url);
+
+    if(request.method==='GET'){
+      const all=(await this.ctx.storage.get('players'))||{};
+      const ranking=this.sort(state.weekly).slice(0,100);
+      const monthlyRanking=this.sort(state.monthly).slice(0,100);
+      const playerId=safeText(url.searchParams.get('playerId'),'',128);
+      const pendingRewards=playerId?Object.values(state.rewards).filter(r=>r.playerId===playerId&&!r.claimed):[];
+      const pendingMonthly=playerId?Object.values(state.monthlyAwards).filter(r=>r.playerId===playerId&&!r.claimed):[];
+      return json({ok:true,period:state.activeWeek,month:state.activeMonth,ranking,monthlyRanking,record:playerId?all[playerId]||null:null,pendingRewards,pendingMonthly});
+    }
+
     if(request.method!=='POST') return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
     let body; try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
     const playerId=safeText(body.playerId,'',128); if(!playerId)return json({ok:false,error:'PLAYER_ID_REQUIRED'},400);
@@ -221,22 +285,28 @@ export class PvpRanking {
     const result=body.result==='win'?'win':body.result==='loss'?'loss':body.result==='forfeit'?'forfeit':body.result==='disconnect'?'disconnect':null;
     if(!result)return json({ok:false,error:'BAD_RESULT'},400);
     const matchId=safeText(body.matchId,'',80); if(!matchId)return json({ok:false,error:'MATCH_ID_REQUIRED'},400);
-    const seen=(await this.ctx.storage.get('seen'))||{};
-    const dedupe=playerId+'|'+matchId;
+
+    const seen=(await this.ctx.storage.get('seen'))||{}, dedupe=playerId+'|'+matchId;
     const players=(await this.ctx.storage.get('players'))||{};
     if(seen[dedupe]) return json({ok:true,duplicate:true,record:players[playerId]||null});
+
     const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0};
-    // Copas: +20 victoria, +3 por eliminacion, -10 derrota, -15 abandono/desconexion definitiva.
     const penalizedExit=result==='forfeit'||result==='disconnect';
     const delta=penalizedExit?-15:(kills*3+(result==='win'?20:-10));
-    const oldCups=Math.max(0,Number(prev.cups||0));
-    const newCups=Math.max(0,oldCups+delta);
-    const appliedDelta=newCups-oldCups;
+    const oldCups=Math.max(0,Number(prev.cups||0)), newCups=Math.max(0,oldCups+delta), appliedDelta=newCups-oldCups;
     const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result!=='win'?1:0),matches:Number(prev.matches||0)+1};
-    players[playerId]=record; seen[dedupe]=Date.now();
-    const keys=Object.keys(seen); if(keys.length>1000) keys.sort((a,b)=>seen[a]-seen[b]).slice(0,keys.length-1000).forEach(k=>delete seen[k]);
-    await this.ctx.storage.put({players,seen});
-    return json({ok:true,delta:appliedDelta,record});
+    players[playerId]=record;
+
+    const updatePeriod=(bucket)=>{
+      const p=bucket[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0};
+      const pc=Math.max(0,Number(p.cups||0)), nc=Math.max(0,pc+delta);
+      bucket[playerId]={...p,name,cups:nc,kills:Number(p.kills||0)+kills,wins:Number(p.wins||0)+(result==='win'?1:0),losses:Number(p.losses||0)+(result!=='win'?1:0),matches:Number(p.matches||0)+1};
+    };
+    updatePeriod(state.weekly); updatePeriod(state.monthly);
+    seen[dedupe]=Date.now();
+    const keys=Object.keys(seen); if(keys.length>1000) keys.sort((x,y)=>seen[x]-seen[y]).slice(0,keys.length-1000).forEach(k=>delete seen[k]);
+    await this.ctx.storage.put({players,seen,weeklyPlayers:state.weekly,monthlyPlayers:state.monthly});
+    return json({ok:true,delta:appliedDelta,record,weeklyRecord:state.weekly[playerId],monthlyRecord:state.monthly[playerId],period:state.activeWeek,month:state.activeMonth});
   }
 }
 
