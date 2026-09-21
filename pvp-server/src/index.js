@@ -280,9 +280,18 @@ export class PvpRanking {
     }
 
     const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0};
-    const penalizedExit=result==='forfeit'||result==='disconnect';
-    const delta=penalizedExit?-15:(kills*3+(result==='win'?20:-10));
-    const oldCups=Math.max(0,Number(prev.cups||0)), newCups=Math.max(0,oldCups+delta), appliedDelta=newCups-oldCups;
+    const oldCups=Math.max(0,Number(prev.cups||0));
+    const lossPenalty=(cups)=>{
+      if(cups>=12000)return 10; // Leyenda Galáctica
+      if(cups>=7000)return 8;   // Maestro Cósmico
+      if(cups>=3000)return 5;   // Diamante
+      if(cups>=1000)return 3;   // Oro
+      return 0;                 // Novato, Bronce y Plata
+    };
+    const penalty=lossPenalty(oldCups);
+    // Las eliminaciones solo bonifican copas al ganar. Así una derrota nunca termina sumando copas.
+    const delta=result==='win'?(20+kills*3):-penalty;
+    const newCups=Math.max(0,oldCups+delta), appliedDelta=newCups-oldCups;
     const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result!=='win'?1:0),matches:Number(prev.matches||0)+1};
     players[playerId]=record;
     seen[dedupe]=Date.now();
