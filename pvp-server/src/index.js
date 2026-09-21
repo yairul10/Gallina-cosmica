@@ -53,6 +53,7 @@ export class PvpRoom {
     if (requestedMode !== this.mode) return json({ ok: false, error: "MODE_MISMATCH" }, 409);
     const capacity = roomCapacity(this.mode);
     const wantsBot = (this.mode === "1v1" || this.mode === "2v2") && url.searchParams.get("bot") === "1";
+    const requestedHumanCount = Math.max(1, Math.min(capacity, Number(url.searchParams.get("humanCount") || 1)));
     if (this.players.size >= capacity) return json({ ok: false, error: "ROOM_FULL" }, 409);
 
     const pair = new WebSocketPair(), client = pair[0], server = pair[1];
@@ -70,7 +71,8 @@ export class PvpRoom {
       reconnected = true;
     } else {
       const used = new Set(Array.from(this.players.values()).map(p => p.slot));
-      slot = Array.from({length: capacity},(_,i)=>i+1).find(s => !used.has(s)) || capacity;
+      const humanSlots = wantsBot && this.mode==="2v2" ? Array.from({length:requestedHumanCount},(_,i)=>i+1) : Array.from({length:capacity},(_,i)=>i+1);
+      slot = humanSlots.find(s => !used.has(s)) || Array.from({length:capacity},(_,i)=>i+1).find(s => !used.has(s)) || capacity;
       team = this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0;
       this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
     }
@@ -80,11 +82,12 @@ export class PvpRoom {
         const botSlot = slot === 1 ? 2 : 1;
         this.botPlayer = { playerId:"bot-cosmico", name:"🤖 Bot Cósmico", ship:"Gallina", slot:botSlot, team:0, bot:true };
       } else if (this.mode === "2v2") {
-        // Primera prueba 2v2: un humano + tres bots. El humano ocupa slot 1,
-        // su compañero es slot 2 y los rivales son slots 3 y 4.
-        this.botPlayers = [2,3,4].map((botSlot,i)=>({
+        // Los humanos de la cola ocupan primero sus slots; sólo los espacios
+        // restantes se completan con bots.
+        const botSlots=Array.from({length:capacity-requestedHumanCount},(_,i)=>requestedHumanCount+i+1);
+        this.botPlayers = botSlots.map(botSlot=>({
           playerId:"bot-cosmico-"+botSlot,
-          name:i===0?"🤖 Bot Aliado":"🤖 Bot Cósmico "+(i+1),
+          name:botSlot<=2?"🤖 Bot Aliado":"🤖 Bot Cósmico "+botSlot,
           ship:"Gallina", slot:botSlot, team:botSlot<=2?1:2, bot:true
         }));
       }
@@ -185,7 +188,7 @@ export class PvpRoom {
     server.send(JSON.stringify({ type: "joined", slot, team, mode: this.mode, capacity, players: this.playerList(), reconnected }));
     if (reconnected) this.broadcast({ type: "player-reconnected", player: { playerId, name, ship, slot, team } }, server);
     this.broadcast({ type: "player-joined", player: { playerId, name, ship, slot, team } }, server);
-    if (this.players.size + (this.botPlayer ? 1 : 0) + this.botPlayers.length === capacity) {
+    if (new Set(this.playerList().map(p=>Number(p.slot))).size === capacity) {
       this.started = true;
       this.broadcast({ type: "ready", mode: this.mode, players: this.playerList() });
     }
