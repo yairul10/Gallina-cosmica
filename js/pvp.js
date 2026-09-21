@@ -226,7 +226,7 @@
         showStatus('✅ '+(m.player?.name||'Jugador')+' volvió a la partida.',true);
       } else if(m.type==='player-left') {
         const leftSlot=Number(m.slot);
-        if((running||countdownActive)&&pvpMode==='2v2'){
+        if((running||countdownActive)&&(pvpMode==='2v2'||pvpMode==='arena')){
           markEliminated(leftSlot);
           const leftPlayer=players.find(p=>Number(p.slot)===leftSlot);
           showStatus('⚠️ '+(leftPlayer?.name||'Un jugador')+' abandonó y cuenta como eliminado.');
@@ -237,6 +237,10 @@
         }
       } else if(m.type==='player-eliminated') {
         markEliminated(Number(m.slot||0));
+        if(pvpMode==='arena' && Number(m.slot)!==mySlot && !meEliminated){
+          const alive=players.filter(p=>!eliminated.has(Number(p.slot)));
+          showStatus('🌌 Arena · quedan '+alive.length+' jugadores.',true);
+        }
       } else if(m.type==='team-result') {
         if(pvpMode==='2v2'){
           if(Number(m.winnerTeam)===myTeam) endArena('🏆 ¡Victoria de tu equipo!');
@@ -334,6 +338,12 @@
     const mirrorX = x => pvpMode==='1v1' && mySlot === 2 ? arenaCanvas.width - x : x;
     const mirrorY = y => pvpMode==='1v1' && mySlot === 2 ? arenaCanvas.height - y : y;
     const mirrorAngle = a => pvpMode==='1v1' && mySlot === 2 ? a + Math.PI : a;
+    if(p.type==='defeat'){
+      // La eliminación oficial llega por player-eliminated desde el servidor.
+      // No finalizar Arena al recibir la derrota de un rival.
+      if(pvpMode==='1v1') endArena('🏆 ¡Victoria! Destruiste la nave rival.');
+      return;
+    }
     if(p.type==='state'){
       const px=Number(p.x), py=Number(p.y), pa=Number(p.angle);
       if(Number.isFinite(px)) remote.x=mirrorX(px);
@@ -346,8 +356,6 @@
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam);
     } else if(p.type==='missile'){
       spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam,Number(p.targetSlot||0));
-    } else if(p.type==='defeat') {
-      if(pvpMode!=='2v2') endArena('🏆 ¡Victoria! Destruiste la nave rival.');
     }
   }
 
