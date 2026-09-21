@@ -1058,7 +1058,7 @@
     // y la posición propia, pero sólo se revelan rivales dentro de 500 unidades.
     arenaCtx.save();arenaCtx.translate(cam.x,cam.y);
     const mapW=112,mapH=112,mapX=w-mapW-12,mapY=12,sx=mapW/worldWidth,sy=mapH/worldHeight;
-    const limitedEnemies=pvpMode==='arena10', radarRadius=500;
+    const limitedEnemies=pvpMode==='arena10', radarRadius=700;
     arenaCtx.fillStyle='rgba(2,6,23,.78)';arenaCtx.fillRect(mapX,mapY,mapW,mapH);
     arenaCtx.strokeStyle='rgba(148,163,184,.75)';arenaCtx.lineWidth=1;arenaCtx.strokeRect(mapX,mapY,mapW,mapH);
     arenaCtx.save();arenaCtx.beginPath();arenaCtx.rect(mapX,mapY,mapW,mapH);arenaCtx.clip();
@@ -1081,7 +1081,7 @@
     }
     arenaCtx.restore();
     arenaCtx.fillStyle='rgba(255,255,255,.85)';arenaCtx.font='bold 8px sans-serif';arenaCtx.textAlign='left';
-    arenaCtx.fillText(limitedEnemies?'RADAR 500':'RADAR',mapX+5,mapY+10);
+    arenaCtx.fillText(limitedEnemies?'RADAR 700':'RADAR',mapX+5,mapY+10);
     arenaCtx.restore();
 
     // Kill Feed visual: sólo informa eventos confirmados; no modifica combate ni resultados.
