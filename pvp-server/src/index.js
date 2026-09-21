@@ -39,6 +39,7 @@ export class PvpRoom {
     this.rewardStatus = new Map();
     this.disconnectTimers = new Map();
     this.botPlayer = null;
+    this.botPlayers = [];
   }
 
   async fetch(request) {
@@ -51,7 +52,7 @@ export class PvpRoom {
     if (!this.mode) this.mode = requestedMode;
     if (requestedMode !== this.mode) return json({ ok: false, error: "MODE_MISMATCH" }, 409);
     const capacity = roomCapacity(this.mode);
-    const wantsBot = this.mode === "1v1" && url.searchParams.get("bot") === "1";
+    const wantsBot = (this.mode === "1v1" || this.mode === "2v2") && url.searchParams.get("bot") === "1";
     if (this.players.size >= capacity) return json({ ok: false, error: "ROOM_FULL" }, 409);
 
     const pair = new WebSocketPair(), client = pair[0], server = pair[1];
@@ -74,9 +75,19 @@ export class PvpRoom {
       this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
     }
     this.players.set(server, { playerId, name, ship, slot, team });
-    if (wantsBot && this.players.size === 1 && !this.botPlayer) {
-      const botSlot = slot === 1 ? 2 : 1;
-      this.botPlayer = { playerId:"bot-cosmico", name:"🤖 Bot Cósmico", ship:"Gallina", slot:botSlot, team:0, bot:true };
+    if (wantsBot && this.players.size === 1 && !this.botPlayer && this.botPlayers.length === 0) {
+      if (this.mode === "1v1") {
+        const botSlot = slot === 1 ? 2 : 1;
+        this.botPlayer = { playerId:"bot-cosmico", name:"🤖 Bot Cósmico", ship:"Gallina", slot:botSlot, team:0, bot:true };
+      } else if (this.mode === "2v2") {
+        // Primera prueba 2v2: un humano + tres bots. El humano ocupa slot 1,
+        // su compañero es slot 2 y los rivales son slots 3 y 4.
+        this.botPlayers = [2,3,4].map((botSlot,i)=>({
+          playerId:"bot-cosmico-"+botSlot,
+          name:i===0?"🤖 Bot Aliado":"🤖 Bot Cósmico "+(i+1),
+          ship:"Gallina", slot:botSlot, team:botSlot<=2?1:2, bot:true
+        }));
+      }
     }
 
     server.addEventListener("message", event => {
@@ -174,14 +185,14 @@ export class PvpRoom {
     server.send(JSON.stringify({ type: "joined", slot, team, mode: this.mode, capacity, players: this.playerList(), reconnected }));
     if (reconnected) this.broadcast({ type: "player-reconnected", player: { playerId, name, ship, slot, team } }, server);
     this.broadcast({ type: "player-joined", player: { playerId, name, ship, slot, team } }, server);
-    if (this.players.size + (this.botPlayer ? 1 : 0) === capacity) {
+    if (this.players.size + (this.botPlayer ? 1 : 0) + this.botPlayers.length === capacity) {
       this.started = true;
       this.broadcast({ type: "ready", mode: this.mode, players: this.playerList() });
     }
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  playerList() { return [...Array.from(this.players.values()), ...(this.botPlayer ? [this.botPlayer] : [])]; }
+  playerList() { return [...Array.from(this.players.values()), ...(this.botPlayer ? [this.botPlayer] : []), ...this.botPlayers]; }
   checkArenaResult() {
     if (this.finished || this.mode !== "arena" || !this.started) return;
     // Arena siempre comienza con 4 participantes. No dependemos de los sockets
@@ -354,9 +365,9 @@ export class PvpMatchmaker {
     server.addEventListener("close", clear);
     server.addEventListener("error", clear);
 
-    // Prueba: en 1v1, si no aparece rival en 5 s, crear una partida contra bot.
-    // Al terminar las pruebas cambiaremos 5000 por 60000.
-    if (mode === "1v1") {
+    // Prueba: en 1v1 o 2v2, si no se completa la cola en 5 s, crear
+    // una partida con bots. Al terminar las pruebas cambiaremos 5000 por 60000.
+    if (mode === "1v1" || mode === "2v2") {
       setTimeout(() => {
         const list = this.waitingByMode?.get(mode) || [];
         const index = list.findIndex(entry => entry.socket === server);
@@ -364,7 +375,7 @@ export class PvpMatchmaker {
         const [entry] = list.splice(index, 1);
         this.waitingByMode.set(mode, list);
         const roomCode = queueRoomCode();
-        try { entry.socket.send(JSON.stringify({ type:"match-found", roomCode, mode, players:2, bot:true })); } catch {}
+        try { entry.socket.send(JSON.stringify({ type:"match-found", roomCode, mode, players:needed, bot:true })); } catch {}
         try { entry.socket.close(1000, "matched-bot"); } catch {}
       }, 5000);
     }
