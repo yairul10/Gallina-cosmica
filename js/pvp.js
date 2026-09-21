@@ -228,6 +228,13 @@
           if(running||countdownActive) endArena('Un jugador salió de la partida.');
           else showStatus('Un jugador salió. Esperando otro jugador…');
         }
+      } else if(m.type==='player-eliminated') {
+        markEliminated(Number(m.slot||0));
+      } else if(m.type==='team-result') {
+        if(pvpMode==='2v2'){
+          if(Number(m.winnerTeam)===myTeam) endArena('🏆 ¡Victoria de tu equipo!');
+          else endArena('💥 Tu equipo fue eliminado.');
+        }
       } else if(m.type==='peer-message') {
         handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
       }
@@ -283,7 +290,7 @@
     eliminated.add(slot);
     if(slot===mySlot)meEliminated=true;
     const s=peerStates.get(slot);if(s)s.lives=0;
-    updateLives(); checkTeamResult();
+    updateLives();
   }
   function checkTeamResult(){
     if(matchFinished||pvpMode!=='2v2'||!myTeam)return;
@@ -324,8 +331,7 @@
     } else if(p.type==='missile'){
       spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam,Number(p.targetSlot||0));
     } else if(p.type==='defeat') {
-      if(pvpMode==='2v2') markEliminated(fromSlot);
-      else endArena('🏆 ¡Victoria! Destruiste la nave rival.');
+      if(pvpMode!=='2v2') endArena('🏆 ¡Victoria! Destruiste la nave rival.');
     }
   }
 
