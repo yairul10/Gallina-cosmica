@@ -141,13 +141,18 @@ export class PvpRoom {
 
   playerList() { return Array.from(this.players.values()); }
   checkArenaResult() {
-    if (this.finished || this.mode !== "arena") return;
-    const alive = this.playerList().filter(p => !this.eliminatedSlots.has(p.slot));
-    if (alive.length <= 1) {
-      this.finished = true;
-      const winner = alive[0] || null;
-      this.broadcast({ type: "arena-result", winnerSlot: winner?.slot || 0, winnerPlayerId: winner?.playerId || null, rewards: winner ? this.rewardListBySlot(winner.slot) : [] });
-    }
+    if (this.finished || this.mode !== "arena" || !this.started) return;
+    // Arena siempre comienza con 4 participantes. No dependemos de los sockets
+    // actualmente conectados para decidir la victoria: una desconexion temporal
+    // no puede convertir accidentalmente a varios jugadores en ganadores.
+    const arenaSlots = [1, 2, 3, 4];
+    const dead = arenaSlots.filter(slot => this.eliminatedSlots.has(slot));
+    if (dead.length !== 3) return;
+    const winnerSlot = arenaSlots.find(slot => !this.eliminatedSlots.has(slot)) || 0;
+    if (!winnerSlot) return;
+    this.finished = true;
+    const winner = this.playerList().find(p => p.slot === winnerSlot) || null;
+    this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, rewards: this.rewardListBySlot(winnerSlot) });
   }
   rewardListBySlot(winnerSlot) {
     const p = this.playerList().find(p => p.slot === winnerSlot);
