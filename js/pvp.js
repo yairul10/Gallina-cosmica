@@ -315,8 +315,8 @@
     const overlay=$('pvpCountdown');if(overlay)overlay.style.display='none';
     if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;aimStick.active=false;
   }
-  async function settlePvpRecord(result){
-    const me=identity(),matchId=currentRoom+'-'+pvpMode;
+  async function settlePvpRecord(result,forcedMatchId=''){
+    const me=identity(),matchId=forcedMatchId||(currentRoom+'-'+pvpMode);
     try{
       const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:playerId(),name:me.name||'Jugador',kills:matchKills,result,matchId})});
       const data=await r.json();
@@ -325,7 +325,7 @@
         return {cups:Number(data.record.cups||0),delta:Number(data.delta||0),record:data.record};
       }
     }catch{}
-    const rawDelta=matchKills*3+(result==='win'?20:-10);
+    const rawDelta=(result==='forfeit'||result==='disconnect')?-15:(matchKills*3+(result==='win'?20:-10));
     const before=getPvpCups(),cups=addPvpCups(rawDelta);
     return {cups,delta:cups-before,local:true};
   }
@@ -768,8 +768,10 @@
   roomInput?.addEventListener('input',()=>roomInput.value=String(roomInput.value||'').replace(/\D/g,'').slice(0,6));
   $('pvpCloseBtn')?.addEventListener('click',()=>{disconnect(true);lobby.style.display='none';$('startScreen').style.display='flex';});
   $('pvpLeaveArenaBtn')?.addEventListener('click',()=>{
-    // Abandonar una batalla cuenta como derrota: avisamos al rival antes de cerrar el WebSocket.
-    if(socket?.readyState===WebSocket.OPEN && (running||countdownActive)) send({type:'defeat',reason:'forfeit',slot:mySlot,team:myTeam,rewardEligible:false});
+    // Abandono voluntario: penalizacion inmediata de -15 copas, una sola vez por sala.
+    const inBattle=running||countdownActive,forfeitMatchId=currentRoom+'-'+pvpMode;
+    if(socket?.readyState===WebSocket.OPEN && inBattle) send({type:'defeat',reason:'forfeit',slot:mySlot,team:myTeam,rewardEligible:false});
+    if(inBattle&&!matchCupsSettled){matchCupsSettled=true;settlePvpRecord('forfeit',forfeitMatchId);}
     disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';
   });
   $('pvpResultBackBtn')?.addEventListener('click',()=>{disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';});
