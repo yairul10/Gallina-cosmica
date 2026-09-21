@@ -702,7 +702,7 @@
     const zone=cosmicZoneState(dt);
     if(zone?.active&&!meEliminated&&Math.hypot(meState.x-zone.cx,meState.y-zone.cy)>zone.radius&&now-lastZoneDamageAt>=1000){
       lastZoneDamageAt=now;lastHitAt=now;lastRegenAt=now;
-      meState.lives=Math.max(0,meState.lives-1);updateLives();
+      meState.lives=Math.max(0,meState.lives-2);updateLives();
       hitFlashUntil=now+180;
       if(meState.lives<=0){
         send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:0,attackKind:'zone',reason:'zone'});
@@ -856,7 +856,7 @@
           const lastZone=Number(ai.lastZoneDamageAt||0);
           if(now-lastZone>=1000){
             ai.lastZoneDamageAt=now;botHitTimes.set(Number(botPlayer.slot),now);botRegenTimes.set(Number(botPlayer.slot),now);
-            bot.lives=Math.max(0,Number(bot.lives||20)-1);updateLives();
+            bot.lives=Math.max(0,Number(bot.lives||20)-2);updateLives();
             if(bot.lives<=0&&!eliminated.has(Number(botPlayer.slot))&&!pendingBotDefeats.has(Number(botPlayer.slot))){
               pendingBotDefeats.add(Number(botPlayer.slot));
               send({type:'bot-defeat',slot:Number(botPlayer.slot),team:0,killerSlot:0,attackKind:'zone'});
