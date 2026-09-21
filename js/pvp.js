@@ -644,14 +644,35 @@
         const trueAim=Math.atan2(dy,dx);
         bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
 
-        // Navegación táctica: acercarse si está lejos, mantener distancia de
-        // combate y bordear asteroides en vez de rebotar contra ellos.
+        // Navegación táctica imperfecta: perseguir, orbitar, retirarse con
+        // poca vida y hacer esquivas ocasionales. Mantiene oportunidades claras
+        // para jugadores nuevos en vez de reaccionar perfectamente a cada tiro.
         let desiredX=dx/dist,desiredY=dy/dist;
-        if(dist<155){desiredX=-desiredX;desiredY=-desiredY;}
-        else if(dist<=235){
+        const lifeRatio=Math.max(0,Number(bot.lives||0))/20;
+        if(!ai.nextDodgeAt)ai.nextDodgeAt=now+900+Math.random()*1800;
+        if(now>=ai.nextDodgeAt){
+          ai.nextDodgeAt=now+1200+Math.random()*2200;
+          ai.dodgeUntil=now+350+Math.random()*450;
+          ai.dodgeSide=Math.random()<.5?-1:1;
+        }
+        const dodging=now<Number(ai.dodgeUntil||0);
+        if(lifeRatio<=.30&&dist<330){
+          // Herido: intenta abrir distancia, pero no huye en línea recta.
+          const side=Number(ai.dodgeSide||((Number(botPlayer.slot)%2)?1:-1));
+          desiredX=(-dx/dist)*.78+(-dy/dist)*side*.42;
+          desiredY=(-dy/dist)*.78+( dx/dist)*side*.42;
+        }else if(dist<135){
+          desiredX=-dx/dist;desiredY=-dy/dist;
+        }else if(dist<=250){
+          // En combate gira alrededor del objetivo para no quedarse quieto.
           const side=(Number(botPlayer.slot)%2)?1:-1;
-          desiredX=(-dy/dist)*side*.82+(dx/dist)*.18;
-          desiredY=( dx/dist)*side*.82+(dy/dist)*.18;
+          desiredX=(-dy/dist)*side*.90+(dx/dist)*.12;
+          desiredY=( dx/dist)*side*.90+(dy/dist)*.12;
+        }
+        if(dodging){
+          const side=Number(ai.dodgeSide||1);
+          desiredX=desiredX*.42+(-dy/dist)*side*.90;
+          desiredY=desiredY*.42+( dx/dist)*side*.90;
         }
         // Si un asteroide corta el camino inmediato, elegir el lado libre.
         const aheadX=bot.targetX+desiredX*70,aheadY=bot.targetY+desiredY*70;
@@ -668,7 +689,7 @@
         }
         const wa=Number(ai.wander||0),ca=Math.cos(wa),sa=Math.sin(wa);
         ai.moveX=desiredX*ca-desiredY*sa;ai.moveY=desiredX*sa+desiredY*ca;
-        const speed=dist>250?118:100;
+        const speed=lifeRatio<=.30?122:dist>250?120:(dodging?126:106);
         const botNextX=Math.max(45,Math.min(worldWidth-45,bot.targetX+ai.moveX*speed*dt));
         const botNextY=Math.max(70,Math.min(worldHeight-70,bot.targetY+ai.moveY*speed*dt));
         if(!positionBlockedByAsteroid(botNextX,bot.targetY,24))bot.targetX=botNextX;
