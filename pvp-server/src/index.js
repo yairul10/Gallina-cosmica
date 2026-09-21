@@ -105,7 +105,7 @@ export class PvpRoom {
     const remove = () => {
       if (!this.players.has(server)) return;
       this.players.delete(server);
-      if (this.started && !this.finished) {
+      if (this.started && !this.finished && !this.forfeitedPlayers.has(playerId)) {
         this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: true });
         this.broadcast({ type: "player-reconnecting", slot, team, seconds: 5 });
         const timer = setTimeout(() => {
@@ -116,6 +116,18 @@ export class PvpRoom {
           this.eliminatedSlots.add(slot);
           this.broadcast({ type: "reward-status", slot, team, eligible: false, reason: "disconnect" });
           this.broadcast({ type: "player-eliminated", slot, team, reason: "disconnect" });
+          // La desconexion definitiva se liquida en el servidor tras los 5 s de gracia.
+          // El ranking deduplica por jugador+sala para evitar cobros repetidos.
+          try {
+            const rankingId=this.env.PVP_RANKING.idFromName("global");
+            const rankingStub=this.env.PVP_RANKING.get(rankingId);
+            const disconnectedName=safeText(state.name || name, name || "Jugador", 40);
+            rankingStub.fetch("https://ranking.internal/ranking", {
+              method:"POST",
+              headers:{"content-type":"application/json"},
+              body:JSON.stringify({playerId,name:disconnectedName,kills:0,result:"disconnect",matchId:"disconnect-"+url.pathname+"-"+this.mode})
+            }).catch(()=>{});
+          } catch {}
           if (this.mode === "2v2") {
             const expectedTeamSlots = team === 1 ? [1, 2] : [3, 4];
             if (expectedTeamSlots.every(s => this.eliminatedSlots.has(s))) {
