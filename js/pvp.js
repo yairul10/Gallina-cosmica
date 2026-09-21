@@ -488,7 +488,7 @@
       updateLives(); return;
     } else if(p.type==='bot-shot'&&botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
       const bp=players.find(x=>x.bot&&Number(x.slot)===Number(p.slot||0));if(!bp)return;
-      spawnRemoteShot(Number(p.x),Number(p.y),Number(p.angle),bp.ship,bp.slot,Number(bp.team||0));return;
+      spawnRemoteShot(Number(p.x),Number(p.y),Number(p.angle),bp.ship,bp.slot,Number(bp.team||0),Number(p.targetSlot||0));return;
     } else if(p.type==='bot-missile'&&botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
       const bp=players.find(x=>x.bot&&Number(x.slot)===Number(p.slot||0));if(!bp)return;
       spawnRemoteMissile(Number(p.x),Number(p.y),bp.ship,p.missileType,false,bp.slot,Number(bp.team||0),Number(p.targetSlot||0));return;
@@ -524,10 +524,10 @@
     const sa=pvpMode==='1v1'&&mySlot===2?a+Math.PI:a;
     send({type:'shot',x:sx,y:sy,angle:sa,ship:myShip});
   }
-  function spawnRemoteShot(x,y,a,ship,ownerSlot=0,ownerTeam=0){
+  function spawnRemoteShot(x,y,a,ship,ownerSlot=0,ownerTeam=0,targetSlot=0){
     if(!Number.isFinite(x+y+a))return;
     const sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
-    [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,ownerSlot,ownerTeam,life:1.5});});
+    [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,ownerSlot,ownerTeam,targetSlot:Number(targetSlot||0),life:1.5});});
   }
   function fireMissile(){
     const now=performance.now();
@@ -722,8 +722,8 @@
           const missSide=Math.random()<0.5?-1:1;
           const missAngle=0.30+Math.random()*1.15;
           const aim=accurate?trueAim:trueAim+missAngle*missSide;
-          spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,Number(botPlayer.team||0));
-          if(pvpMode==='2v2'||pvpMode==='arena')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim});
+          spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
+          if(pvpMode==='2v2'||pvpMode==='arena')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim,targetSlot:Number(chosen.p.slot)});
         }
         // Misil con cadencia humana: espera aleatoriamente entre 8 y 12 s.
         if(targetInAttackRange&&now>=ai.nextMissileAt){
@@ -861,7 +861,14 @@
           // Disparos humanos: sólo el propio dispositivo. Disparos de bot:
           // únicamente el cliente autoridad.
           if(owner.bot ? !botAuthority : Number(b.ownerSlot)!==mySlot)continue;
-          const targets=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))&&Number(p.slot)!==Number(b.ownerSlot)&&(pvpMode!=='2v2'||Number(p.team)!==Number(owner.team)));
+          let targets=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))&&Number(p.slot)!==Number(b.ownerSlot)&&(pvpMode!=='2v2'||Number(p.team)!==Number(owner.team)));
+          // Para disparos bot, priorizar el objetivo que el propio bot eligió.
+          // Evita inconsistencias entre la simulación del movimiento y la detección
+          // bot-vs-bot cuando hay varios bots moviéndose e interpolándose a la vez.
+          if(owner.bot&&Number(b.targetSlot||0)){
+            const intended=targets.find(p=>Number(p.slot)===Number(b.targetSlot));
+            if(intended)targets=[intended,...targets.filter(p=>p!==intended)];
+          }
           const ax=Number.isFinite(b.prevX)?b.prevX:b.x,ay=Number.isFinite(b.prevY)?b.prevY:b.y,dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
           let best=null;
           for(const p of targets){const st=peerFor(p.slot),t=den>0?Math.max(0,Math.min(1,((st.x-ax)*dx+(st.y-ay)*dy)/den)):0,hx=ax+dx*t,hy=ay+dy*t;if(Math.hypot(hx-st.x,hy-st.y)<30&&(!best||t<best.t))best={p,t,hx,hy};}
