@@ -538,9 +538,9 @@
     }
     bullets=bullets.filter(b=>b.life>0&&b.x>-20&&b.x<arenaCanvas.width+20&&b.y>-20&&b.y<arenaCanvas.height+20);
     missiles=missiles.filter(m=>m.life>0&&m.x>-40&&m.x<arenaCanvas.width+40&&m.y>-40&&m.y<arenaCanvas.height+40);
-    // Sincronización de red a ~12 Hz. El render y el combate siguen a la
+    // Sincronización de red a ~15 Hz. El render y el combate siguen a la
     // frecuencia normal del dispositivo; sólo reducimos los paquetes de estado.
-    if(now-lastStateSend>83){
+    if(now-lastStateSend>67){
       lastStateSend=now;
       const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
       const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
