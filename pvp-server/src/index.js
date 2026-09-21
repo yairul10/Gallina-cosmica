@@ -27,6 +27,8 @@ export class PvpRoom {
     this.env = env;
     this.players = new Map();
     this.forfeitedPlayers = new Set();
+    this.eliminatedSlots = new Set();
+    this.finished = false;
   }
 
   async fetch(request) {
@@ -53,9 +55,21 @@ export class PvpRoom {
     server.addEventListener("message", event => {
       let message; try { message = JSON.parse(event.data); } catch { return; }
       if (!message || typeof message !== "object") return;
-      if (message.type === "defeat" && message.reason === "forfeit") {
-        this.forfeitedPlayers.add(playerId);
-        message.rewardEligible = false;
+      if (message.type === "defeat") {
+        if (message.reason === "forfeit") {
+          this.forfeitedPlayers.add(playerId);
+          message.rewardEligible = false;
+        }
+        if (this.mode === "2v2" && !this.finished) {
+          this.eliminatedSlots.add(slot);
+          this.broadcast({ type: "player-eliminated", slot, team, reason: message.reason || "combat" });
+          const teamSlots = Array.from(this.players.values()).filter(p => p.team === team).map(p => p.slot);
+          if (teamSlots.length === 2 && teamSlots.every(s => this.eliminatedSlots.has(s))) {
+            this.finished = true;
+            const winnerTeam = team === 1 ? 2 : 1;
+            this.broadcast({ type: "team-result", winnerTeam, loserTeam: team });
+          }
+        }
       }
       this.broadcast({ type: "peer-message", from: slot, team, payload: message }, server);
     });
@@ -65,7 +79,21 @@ export class PvpRoom {
       this.players.delete(server);
       // Toda desconexión durante una sala iniciada queda registrada como abandono
       // para que una futura capa de recompensas nunca premie a ese jugador.
-      if (this.started) this.forfeitedPlayers.add(playerId);
+      if (this.started) {
+        this.forfeitedPlayers.add(playerId);
+        if (this.mode === "2v2" && !this.finished) {
+          this.eliminatedSlots.add(slot);
+          this.broadcast({ type: "player-eliminated", slot, team, reason: "disconnect" });
+          const teamSlots = Array.from(this.players.values()).filter(p => p.team === team).map(p => p.slot);
+          // El jugador que se desconecta ya fue quitado del Map, así que incluimos su slot.
+          if (!teamSlots.includes(slot)) teamSlots.push(slot);
+          const expectedTeamSlots = team === 1 ? [1, 2] : [3, 4];
+          if (expectedTeamSlots.every(s => this.eliminatedSlots.has(s))) {
+            this.finished = true;
+            this.broadcast({ type: "team-result", winnerTeam: team === 1 ? 2 : 1, loserTeam: team });
+          }
+        }
+      }
       this.broadcast({ type: "player-left", slot, team, playerId, forfeited: this.started, rewardEligible: !this.started });
     };
     server.addEventListener("close", remove);
