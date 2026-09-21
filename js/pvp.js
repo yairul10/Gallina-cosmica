@@ -50,7 +50,7 @@
     }catch{}
     resumeBgMusicAfterPvp = false;
   }
-  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;\n  let lastSentState = null;
+  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
   const keys = new Set();
   const meState = { x: 210, y: 560, lives: 10, angle: -Math.PI / 2, visualAngle: -Math.PI / 2 };
   const peerState = { x: 210, y: 80, lives: 10, angle: Math.PI / 2, visualAngle: Math.PI / 2 };
@@ -549,23 +549,15 @@
     }
     bullets=bullets.filter(b=>b.life>0&&b.x>-20&&b.x<arenaCanvas.width+20&&b.y>-20&&b.y<arenaCanvas.height+20);
     missiles=missiles.filter(m=>m.life>0&&m.x>-40&&m.x<arenaCanvas.width+40&&m.y>-40&&m.y<arenaCanvas.height+40);
-    // Sincronización adaptativa: ~12 Hz mientras la nave cambia y heartbeat
-    // de 1 Hz cuando permanece quieta. Combate y daño mantienen sus eventos.
-    const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
-    const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
-    const sa=pvpMode==='1v1'&&mySlot===2?meState.angle+Math.PI:meState.angle;
-    const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
-    const netState={x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives};
-    const changed=!lastSentState ||
-      Math.abs(netState.x-lastSentState.x)>=1 ||
-      Math.abs(netState.y-lastSentState.y)>=1 ||
-      Math.abs(Math.atan2(Math.sin(netState.angle-lastSentState.angle),Math.cos(netState.angle-lastSentState.angle)))>=0.01 ||
-      Math.abs(Math.atan2(Math.sin(netState.visualAngle-lastSentState.visualAngle),Math.cos(netState.visualAngle-lastSentState.visualAngle)))>=0.01 ||
-      netState.lives!==lastSentState.lives;
-    if(now-lastStateSend>(changed?83:1000)){
+    // Sincronización de red a ~12 Hz. El render y el combate siguen a la
+    // frecuencia normal del dispositivo; sólo reducimos los paquetes de estado.
+    if(now-lastStateSend>83){
       lastStateSend=now;
-      lastSentState=netState;
-      send({type:'state',...netState});
+      const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
+      const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
+      const sa=pvpMode==='1v1'&&mySlot===2?meState.angle+Math.PI:meState.angle;
+      const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
+      send({type:'state',x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives});
     }
   }
   const imageCache=new Map();
