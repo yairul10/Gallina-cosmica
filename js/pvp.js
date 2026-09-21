@@ -829,13 +829,20 @@
     if(im.complete&&im.naturalWidth)arenaCtx.drawImage(im,-26,-26,52,52);else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
     arenaCtx.restore();
   }
-  function draw(){
+  function cameraPosition(){
     const w=arenaCanvas.width,h=arenaCanvas.height;
+    return {
+      x:Math.max(0,Math.min(worldWidth-w,meState.x-w/2)),
+      y:Math.max(0,Math.min(worldHeight-h,meState.y-h/2))
+    };
+  }
+  function draw(){
+    const w=arenaCanvas.width,h=arenaCanvas.height,cam=cameraPosition();
     arenaCtx.clearRect(0,0,w,h);
     arenaCtx.save();
-    // Fase 4: vista temporal del mundo completo. En Fase 5 se reemplaza por cámara de seguimiento.
-    arenaCtx.scale(w/worldWidth,h/worldHeight);
     if(performance.now()<hitShakeUntil) arenaCtx.translate((Math.random()-.5)*7,(Math.random()-.5)*7);
+    arenaCtx.translate(-cam.x,-cam.y);
+    // El fondo cubre todo el mundo lógico; la cámara sólo muestra la ventana visible.
     if(pvpBackground.complete&&pvpBackground.naturalWidth)arenaCtx.drawImage(pvpBackground,0,0,worldWidth,worldHeight);else{arenaCtx.fillStyle='#020617';arenaCtx.fillRect(0,0,worldWidth,worldHeight);}
     arenaCtx.strokeStyle='rgba(167,139,250,.35)';arenaCtx.setLineDash([8,10]);arenaCtx.beginPath();arenaCtx.moveTo(0,worldHeight/2);arenaCtx.lineTo(worldWidth,worldHeight/2);arenaCtx.stroke();arenaCtx.setLineDash([]);
     const mine=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
@@ -854,7 +861,7 @@
     if(performance.now()<hitFlashUntil){arenaCtx.save();arenaCtx.globalAlpha=.42;arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
     if(!meEliminated) drawShip(meState,mine.ship);
     if(meEliminated && !matchFinished && (pvpMode==='2v2'||pvpMode==='arena')){
-      arenaCtx.save();
+      arenaCtx.save();arenaCtx.translate(cam.x,cam.y);
       arenaCtx.fillStyle='rgba(2,6,23,.72)';
       arenaCtx.fillRect(45,h/2-48,w-90,96);
       arenaCtx.fillStyle='#ffffff';
@@ -898,7 +905,7 @@
     const feedNow=performance.now();
     while(killFeed.length&&killFeed[0].until<=feedNow)killFeed.shift();
     if(killFeed.length){
-      arenaCtx.save();
+      arenaCtx.save();arenaCtx.translate(cam.x,cam.y);
       arenaCtx.font='bold 11px sans-serif';
       arenaCtx.textAlign='left';arenaCtx.textBaseline='middle';
       killFeed.forEach((item,i)=>{
@@ -925,7 +932,8 @@
   if(fireBtn){fireBtn.style.touchAction='none';fireBtn.addEventListener('pointerdown',e=>{e.preventDefault();shoot();});}
   arenaCanvas?.addEventListener('pointerdown',e=>{
     if(!running||meEliminated)return;
-    const r=arenaCanvas.getBoundingClientRect(),x=(e.clientX-r.left)*worldWidth/r.width,y=(e.clientY-r.top)*worldHeight/r.height;
+    const r=arenaCanvas.getBoundingClientRect(),cam=cameraPosition();
+    const x=cam.x+(e.clientX-r.left)*arenaCanvas.width/r.width,y=cam.y+(e.clientY-r.top)*arenaCanvas.height/r.height;
     const enemies=players.filter(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     const hit=enemies.map(p=>({p,d:Math.hypot(peerFor(p.slot).x-x,peerFor(p.slot).y-y)})).filter(v=>v.d<=48).sort((a,b)=>a.d-b.d)[0];
     if(hit){selectedTargetSlot=Number(hit.p.slot);showStatus('🎯 Objetivo: '+playerName(selectedTargetSlot),true);}
