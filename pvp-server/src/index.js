@@ -243,8 +243,9 @@ export class PvpRoom {
     if (!winnerSlot) return;
     this.finished = true;
     const winner = this.playerList().find(p => p.slot === winnerSlot) || null;
-    const podiumSlots = [winnerSlot, ...this.eliminationOrder.slice().reverse()].slice(0, 4);
-    this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, podiumSlots, rewards: this.rewardListBySlot(winnerSlot) });
+    const finalOrder = [winnerSlot, ...this.eliminationOrder.slice().reverse()].filter((slot,i,a)=>slot&&a.indexOf(slot)===i).slice(0,capacity);
+    const podiumSlots = finalOrder.slice(0, 4);
+    this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, podiumSlots, finalOrder, rewards: this.rewardListBySlot(winnerSlot) });
   }
   rewardListBySlot(winnerSlot) {
     const p = this.playerList().find(p => p.slot === winnerSlot);
@@ -335,6 +336,9 @@ export class PvpRanking {
     const humanKills=Math.max(0,Math.min(kills-botKills,Math.floor(Number(body.humanKills)||0)));
     const result=body.result==='win'?'win':body.result==='loss'?'loss':body.result==='forfeit'?'forfeit':body.result==='disconnect'?'disconnect':null;
     if(!result)return json({ok:false,error:'BAD_RESULT'},400);
+    const mode=['1v1','2v2','arena','arena10'].includes(String(body.mode||''))?String(body.mode):'1v1';
+    const maxPlace=mode==='arena10'?10:mode==='arena'?5:0;
+    const placement=maxPlace?Math.max(1,Math.min(maxPlace,Math.floor(Number(body.placement)||maxPlace))):0;
     const matchId=safeText(body.matchId,'',80); if(!matchId)return json({ok:false,error:'MATCH_ID_REQUIRED'},400);
 
     const seen=(await this.ctx.storage.get('seen'))||{}, dedupe=playerId+'|'+matchId;
@@ -346,17 +350,34 @@ export class PvpRanking {
 
     const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0};
     const oldCups=Math.max(0,Number(prev.cups||0));
-    const lossPenalty=(cups)=>{
-      if(cups>=12000)return 10; // Leyenda Galáctica
-      if(cups>=7000)return 8;   // Maestro Cósmico
-      if(cups>=3000)return 5;   // Diamante
-      if(cups>=1000)return 3;   // Oro
-      return 0;                 // Novato, Bronce y Plata
+    const rankLossMultiplier=(cups)=>{
+      if(cups>=12000)return 2;    // Leyenda Galáctica
+      if(cups>=7000)return 1.5;   // Maestro Cósmico
+      if(cups>=3000)return 1.25;  // Diamante
+      if(cups>=1000)return 1;     // Oro
+      return 0;                   // Novato, Bronce y Plata: protegidos
     };
-    const penalty=lossPenalty(oldCups);
-    // Las eliminaciones solo bonifican copas al ganar. Así una derrota nunca termina sumando copas.
+    const legacyLossPenalty=(cups)=>{
+      if(cups>=12000)return 10;
+      if(cups>=7000)return 8;
+      if(cups>=3000)return 5;
+      if(cups>=1000)return 3;
+      return 0;
+    };
+    // Las eliminaciones siempre dan copas, incluso al perder.
     const killCups=botKills+(humanKills*3);
-    const delta=result==='win'?(20+killCups):-penalty;
+    let delta;
+    if(mode==='arena'||mode==='arena10'){
+      const table=mode==='arena'
+        ? {1:10,2:5,3:0,4:-5,5:-10}
+        : {1:10,2:8,3:5,4:0,5:-2,6:-4,7:-6,8:-8,9:-9,10:-10};
+      let placementDelta=Number(table[placement]||0);
+      if(placementDelta<0) placementDelta=-Math.round(Math.abs(placementDelta)*rankLossMultiplier(oldCups));
+      delta=placementDelta+killCups;
+    }else{
+      // 1v1 y 2v2 conservan su sistema actual; las bajas también suman siempre.
+      delta=(result==='win'?20:-legacyLossPenalty(oldCups))+killCups;
+    }
     const newCups=Math.max(0,oldCups+delta), appliedDelta=newCups-oldCups;
     const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result!=='win'?1:0),matches:Number(prev.matches||0)+1};
     players[playerId]=record;
