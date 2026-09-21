@@ -71,7 +71,12 @@ export class PvpRoom {
       reconnected = true;
     } else {
       const used = new Set(Array.from(this.players.values()).map(p => p.slot));
-      const humanSlots = wantsBot && this.mode==="2v2" ? Array.from({length:requestedHumanCount},(_,i)=>i+1) : Array.from({length:capacity},(_,i)=>i+1);
+      if(wantsBot&&this.mode==="2v2"&&requestedHumanCount===2&&!this.humanSlotPlan){
+        this.humanSlotPlan=Math.random()<0.5?[1,2]:[1,3];
+      }
+      const humanSlots = wantsBot && this.mode==="2v2"
+        ? (requestedHumanCount===2 ? this.humanSlotPlan : Array.from({length:requestedHumanCount},(_,i)=>i+1))
+        : Array.from({length:capacity},(_,i)=>i+1);
       slot = humanSlots.find(s => !used.has(s)) || Array.from({length:capacity},(_,i)=>i+1).find(s => !used.has(s)) || capacity;
       team = this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0;
       this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
@@ -84,7 +89,8 @@ export class PvpRoom {
       } else if (this.mode === "2v2") {
         // Los humanos de la cola ocupan primero sus slots; sólo los espacios
         // restantes se completan con bots.
-        const botSlots=Array.from({length:capacity-requestedHumanCount},(_,i)=>requestedHumanCount+i+1);
+        const plannedHumanSlots=requestedHumanCount===2?(this.humanSlotPlan||[1,2]):Array.from({length:requestedHumanCount},(_,i)=>i+1);
+        const botSlots=Array.from({length:capacity},(_,i)=>i+1).filter(s=>!plannedHumanSlots.includes(s));
         this.botPlayers = botSlots.map(botSlot=>({
           playerId:"bot-cosmico-"+botSlot,
           name:botSlot<=2?"🤖 Bot Aliado":"🤖 Bot Cósmico "+botSlot,
@@ -136,7 +142,7 @@ export class PvpRoom {
           const attackKind = message.attackKind === "missile" ? "missile" : "laser";
           this.broadcast({ type: "player-eliminated", slot, team, reason: message.reason || "combat", killerSlot, attackKind });
           if (this.mode === "2v2") {
-            const teamSlots = Array.from(this.players.values()).filter(p => p.team === team).map(p => p.slot);
+            const teamSlots = this.playerList().filter(p => Number(p.team) === Number(team)).map(p => Number(p.slot));
             if (teamSlots.length === 2 && teamSlots.every(s => this.eliminatedSlots.has(s))) {
               this.finished = true;
               const winnerTeam = team === 1 ? 2 : 1;
