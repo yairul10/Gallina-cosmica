@@ -753,8 +753,15 @@
         if(Math.hypot(hitX-target.x,hitY-target.y)<30 && (!best||t<best.t))best={t,hitX,hitY};
       }
       if(best){
-        b.life=0;b.x=best.hitX;b.y=best.hitY;
-        impactFx.push({x:best.hitX,y:best.hitY,life:.32,maxLife:.32});
+        // En partidas con bots 2v2/Arena, el bloque específico de daño que
+        // viene a continuación debe consumir el proyectil y descontar la vida.
+        // Si lo anulamos aquí, sólo queda el efecto visual y nunca llega daño.
+        const bestPlayer=players.find(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&Math.hypot(peerFor(p.slot).x-best.hitX,peerFor(p.slot).y-best.hitY)<31);
+        const deferBotDamage=!!(botMatch&&(pvpMode==='2v2'||pvpMode==='arena')&&bestPlayer?.bot);
+        if(!deferBotDamage){
+          b.life=0;b.x=best.hitX;b.y=best.hitY;
+          impactFx.push({x:best.hitX,y:best.hitY,life:.32,maxLife:.32});
+        }
         if(botMatch&&pvpMode==='1v1'&&now-lastBotHitAt>180){
           const botPlayer=players.find(p=>p.bot);
           if(botPlayer){
