@@ -749,6 +749,13 @@
       const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId()),{cache:'no-store'}),data=await r.json();
       if(!data?.ok||!Array.isArray(data.ranking))throw new Error('ranking');
       const ranking=data.ranking,meId=playerId(),myIndex=ranking.findIndex(x=>String(x.playerId)===meId),my=myIndex>=0?ranking[myIndex]:null;
+      const rewardBox=$('pvpRankingReward'),rewardText=$('pvpRankingRewardText'),claimBtn=$('pvpClaimWeeklyBtn');
+      const pending=Array.isArray(data.pendingRewards)?data.pendingRewards[0]:null;
+      if(rewardBox){
+        rewardBox.style.display=pending?'block':'none';
+        if(pending&&rewardText)rewardText.textContent='🎁 Premio pendiente · #'+pending.position+' · 🪙 '+Number(pending.coins||0).toLocaleString('es-CL')+' monedas';
+        if(claimBtn)claimBtn.disabled=false;
+      }
       const lifetime=data.record||null, weekLabel=data.period?'Semana '+data.period:'Ranking semanal';
       mine.textContent=my?'🏆 '+weekLabel+' · #'+(myIndex+1)+' · '+my.cups+' copas · ☠️ '+my.kills+(lifetime?'\nHistórico · ✅ '+lifetime.wins+' / ❌ '+lifetime.losses:''):'🏆 '+weekLabel+' · Aún no tienes partidas esta semana.';
       list.replaceChildren();
@@ -764,7 +771,19 @@
       });
     }catch{mine.textContent='No se pudo cargar el récord.';list.textContent='Intenta nuevamente en unos segundos.';}
   }
-  $('pvpRankingBtn')?.addEventListener('click',showPvpRanking);
+  $('pvpClaimWeeklyBtn')?.addEventListener('click',async()=>{
+    const btn=$('pvpClaimWeeklyBtn'),txt=$('pvpRankingRewardText'); if(btn)btn.disabled=true;
+    try{
+      const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'claim-weekly',playerId:playerId()})});
+      const data=await r.json(); if(!data?.ok)throw new Error('claim');
+      if(!data.claimed||!data.reward){if(txt)txt.textContent='No tienes premios pendientes.';return;}
+      const applied=window.gallinaApplyCloudCoinReward?.(data.rewardId,Number(data.reward.coins||0));
+      if(!applied?.success)throw new Error('apply');
+      if(txt)txt.textContent='✅ Premio reclamado · 🪙 '+Number(data.reward.coins||0).toLocaleString('es-CL')+' monedas';
+      setTimeout(showPvpRanking,900);
+    }catch{if(txt)txt.textContent='⚠️ No se pudo reclamar. Intenta nuevamente.';if(btn)btn.disabled=false;}
+  });
+    $('pvpRankingBtn')?.addEventListener('click',showPvpRanking);
   $('pvpRankingCloseBtn')?.addEventListener('click',()=>{const p=$('pvpRankingPanel');if(p)p.style.display='none';});
   $('pvpFindMatchBtn')?.addEventListener('click',()=>{unlockPvpMusic();findMatch();});
   $('pvpCreateRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();const c=randomCode();roomInput.value=c;connect(c,true);});
