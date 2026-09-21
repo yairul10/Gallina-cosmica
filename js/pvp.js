@@ -1054,40 +1054,34 @@
       arenaCtx.fillStyle='#94a3b8';arenaCtx.fillRect(fx.x-fx.size/2,fx.y-fx.size/2,fx.size,fx.size);
       arenaCtx.restore();
     }
-    // Radar/minimapa. Arena 10 usa un radar local de 500 unidades centrado
-    // en la nave; los demás modos conservan el minimapa completo.
+    // Minimapa completo en todos los modos. En Arena 10 se ve todo el mundo
+    // y la posición propia, pero sólo se revelan rivales dentro de 500 unidades.
     arenaCtx.save();arenaCtx.translate(cam.x,cam.y);
-    const mapW=112,mapH=112,mapX=w-mapW-12,mapY=12;
-    const localRadar=pvpMode==='arena10', radarRadius=500;
-    const sx=localRadar?mapW/(radarRadius*2):mapW/worldWidth;
-    const sy=localRadar?mapH/(radarRadius*2):mapH/worldHeight;
-    const toRadar=(x,y)=>localRadar
-      ? [mapX+mapW/2+(x-meState.x)*sx,mapY+mapH/2+(y-meState.y)*sy]
-      : [mapX+x*sx,mapY+y*sy];
+    const mapW=112,mapH=112,mapX=w-mapW-12,mapY=12,sx=mapW/worldWidth,sy=mapH/worldHeight;
+    const limitedEnemies=pvpMode==='arena10', radarRadius=500;
     arenaCtx.fillStyle='rgba(2,6,23,.78)';arenaCtx.fillRect(mapX,mapY,mapW,mapH);
     arenaCtx.strokeStyle='rgba(148,163,184,.75)';arenaCtx.lineWidth=1;arenaCtx.strokeRect(mapX,mapY,mapW,mapH);
     arenaCtx.save();arenaCtx.beginPath();arenaCtx.rect(mapX,mapY,mapW,mapH);arenaCtx.clip();
-    // En Arena 10 sólo aparecen objetos dentro de 500 unidades del jugador.
+    // El mapa y sus asteroides permanecen visibles completos.
     arenaCtx.fillStyle='rgba(148,163,184,.8)';
-    for(const a of asteroids){
-      if(localRadar&&Math.hypot(a.x-meState.x,a.y-meState.y)>radarRadius)continue;
-      const [ax,ay]=toRadar(a.x,a.y);arenaCtx.beginPath();arenaCtx.arc(ax,ay,2.2,0,Math.PI*2);arenaCtx.fill();
-    }
-    const [mx,my]=toRadar(meState.x,meState.y);
+    for(const a of asteroids){arenaCtx.beginPath();arenaCtx.arc(mapX+a.x*sx,mapY+a.y*sy,2.2,0,Math.PI*2);arenaCtx.fill();}
+    // Posición real del jugador dentro del mapa completo.
+    const mx=mapX+meState.x*sx,my=mapY+meState.y*sy;
     arenaCtx.fillStyle='#ffffff';arenaCtx.beginPath();arenaCtx.arc(mx,my,3.5,0,Math.PI*2);arenaCtx.fill();
     for(const p of players){
       const slot=Number(p.slot);if(slot===mySlot||eliminated.has(slot))continue;
       const st=peerFor(slot);
-      if(localRadar&&Math.hypot(st.x-meState.x,st.y-meState.y)>radarRadius)continue;
-      const [px,py]=toRadar(st.x,st.y);
       const ally=pvpMode==='2v2'&&Number(p.team)===myTeam;
+      // Arena 10: los puntos enemigos sólo se revelan dentro de 500 unidades.
+      if(limitedEnemies&&!ally&&Math.hypot(st.x-meState.x,st.y-meState.y)>radarRadius)continue;
+      const px=mapX+st.x*sx,py=mapY+st.y*sy;
       arenaCtx.fillStyle=ally?'#3b82f6':'#ef4444';
       arenaCtx.beginPath();arenaCtx.arc(px,py,3.2,0,Math.PI*2);arenaCtx.fill();
       if(slot===selectedTargetSlot){arenaCtx.strokeStyle='#ffffff';arenaCtx.lineWidth=1.5;arenaCtx.beginPath();arenaCtx.arc(px,py,5.5,0,Math.PI*2);arenaCtx.stroke();}
     }
     arenaCtx.restore();
     arenaCtx.fillStyle='rgba(255,255,255,.85)';arenaCtx.font='bold 8px sans-serif';arenaCtx.textAlign='left';
-    arenaCtx.fillText(localRadar?'RADAR 500':'RADAR',mapX+5,mapY+10);
+    arenaCtx.fillText(limitedEnemies?'RADAR 500':'RADAR',mapX+5,mapY+10);
     arenaCtx.restore();
 
     // Kill Feed visual: sólo informa eventos confirmados; no modifica combate ni resultados.
