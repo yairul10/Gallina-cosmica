@@ -77,6 +77,14 @@ export class PvpRoom {
       let message; try { message = JSON.parse(event.data); } catch { return; }
       if (!message || typeof message !== "object") return;
       if (message.type === "defeat") {
+        // En 1v1 una derrota de combate termina oficialmente la sala.
+        // Sin esto, al cerrar la pantalla después del resultado el servidor
+        // interpretaba ambos sockets como desconexiones y volvía a penalizar copas.
+        if (this.mode === "1v1" && message.reason !== "forfeit") {
+          this.finished = true;
+          if (!this.eliminatedSlots.has(slot)) this.eliminationOrder.push(slot);
+          this.eliminatedSlots.add(slot);
+        }
         if (message.reason === "forfeit") {
           this.forfeitedPlayers.add(playerId);
           this.rewardStatus.set(slot, { playerId, eligible: false, reason: "forfeit" });
