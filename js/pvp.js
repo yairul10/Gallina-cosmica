@@ -302,6 +302,11 @@
     lobby.style.display='none'; arena.style.display='flex'; resetArena(); startPvpMusic();
     const overlay=$('pvpCountdown'), label=$('pvpCountdownText');
     countdownActive=true; let count=3;
+    // Pintar inmediatamente el estado inicial de la nueva partida.
+    // El loop aún no corre durante la cuenta atrás, por lo que sin esto
+    // el canvas conserva visualmente el último frame de la partida anterior.
+    arenaCtx.clearRect(0,0,arenaCanvas.width,arenaCanvas.height);
+    if(pvpBackground.complete&&pvpBackground.naturalWidth) arenaCtx.drawImage(pvpBackground,0,0,arenaCanvas.width,arenaCanvas.height);
     overlay.style.display='flex'; label.textContent=count;
     clearInterval(countdownTimer);
     countdownTimer=setInterval(()=>{
