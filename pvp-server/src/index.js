@@ -330,7 +330,9 @@ export class PvpRanking {
     let body; try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
     const playerId=safeText(body.playerId,'',128); if(!playerId)return json({ok:false,error:'PLAYER_ID_REQUIRED'},400);
     const name=safeText(body.name,'Jugador',40);
-    const kills=Math.max(0,Math.min(3,Math.floor(Number(body.kills)||0)));
+    const kills=Math.max(0,Math.min(9,Math.floor(Number(body.kills)||0)));
+    const botKills=Math.max(0,Math.min(kills,Math.floor(Number(body.botKills)||0)));
+    const humanKills=Math.max(0,Math.min(kills-botKills,Math.floor(Number(body.humanKills)||0)));
     const result=body.result==='win'?'win':body.result==='loss'?'loss':body.result==='forfeit'?'forfeit':body.result==='disconnect'?'disconnect':null;
     if(!result)return json({ok:false,error:'BAD_RESULT'},400);
     const matchId=safeText(body.matchId,'',80); if(!matchId)return json({ok:false,error:'MATCH_ID_REQUIRED'},400);
@@ -353,7 +355,8 @@ export class PvpRanking {
     };
     const penalty=lossPenalty(oldCups);
     // Las eliminaciones solo bonifican copas al ganar. Así una derrota nunca termina sumando copas.
-    const delta=result==='win'?(20+kills*3):-penalty;
+    const killCups=botKills+(humanKills*3);
+    const delta=result==='win'?(20+killCups):-penalty;
     const newCups=Math.max(0,oldCups+delta), appliedDelta=newCups-oldCups;
     const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result!=='win'?1:0),matches:Number(prev.matches||0)+1};
     players[playerId]=record;
