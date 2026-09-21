@@ -77,14 +77,18 @@ export class PvpRoom {
           message.rewardEligible = false;
           this.broadcast({ type: "reward-status", slot, team, eligible: false, reason: "forfeit" });
         }
-        if (this.mode === "2v2" && !this.finished) {
+        if ((this.mode === "2v2" || this.mode === "arena") && !this.finished) {
           this.eliminatedSlots.add(slot);
           this.broadcast({ type: "player-eliminated", slot, team, reason: message.reason || "combat" });
-          const teamSlots = Array.from(this.players.values()).filter(p => p.team === team).map(p => p.slot);
-          if (teamSlots.length === 2 && teamSlots.every(s => this.eliminatedSlots.has(s))) {
-            this.finished = true;
-            const winnerTeam = team === 1 ? 2 : 1;
-            this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
+          if (this.mode === "2v2") {
+            const teamSlots = Array.from(this.players.values()).filter(p => p.team === team).map(p => p.slot);
+            if (teamSlots.length === 2 && teamSlots.every(s => this.eliminatedSlots.has(s))) {
+              this.finished = true;
+              const winnerTeam = team === 1 ? 2 : 1;
+              this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
+            }
+          } else {
+            this.checkArenaResult();
           }
         }
       }
@@ -112,6 +116,8 @@ export class PvpRoom {
               const winnerTeam = team === 1 ? 2 : 1;
               this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
             }
+          } else if (this.mode === "arena") {
+            this.checkArenaResult();
           }
           this.disconnectTimers.delete(playerId);
         }, 5000);
@@ -134,6 +140,21 @@ export class PvpRoom {
   }
 
   playerList() { return Array.from(this.players.values()); }
+  checkArenaResult() {
+    if (this.finished || this.mode !== "arena") return;
+    const alive = this.playerList().filter(p => !this.eliminatedSlots.has(p.slot));
+    if (alive.length <= 1) {
+      this.finished = true;
+      const winner = alive[0] || null;
+      this.broadcast({ type: "arena-result", winnerSlot: winner?.slot || 0, winnerPlayerId: winner?.playerId || null, rewards: winner ? this.rewardListBySlot(winner.slot) : [] });
+    }
+  }
+  rewardListBySlot(winnerSlot) {
+    const p = this.playerList().find(p => p.slot === winnerSlot);
+    if (!p) return [];
+    const status = this.rewardStatus.get(p.slot);
+    return [{ slot:p.slot, playerId:p.playerId, eligible:status ? status.eligible !== false : true, reason:status?.reason || null }];
+  }
   rewardList(winnerTeam) {
     return this.playerList().filter(p => p.team === winnerTeam).map(p => {
       const status = this.rewardStatus.get(p.slot);
