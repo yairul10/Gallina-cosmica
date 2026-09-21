@@ -242,6 +242,14 @@
           if(Number(m.winnerTeam)===myTeam) endArena('🏆 ¡Victoria de tu equipo!');
           else endArena('💥 Tu equipo fue eliminado.');
         }
+      } else if(m.type==='arena-result') {
+        if(pvpMode==='arena'){
+          if(Number(m.winnerSlot)===mySlot) endArena('🏆 ¡Victoria! Eres el último sobreviviente.');
+          else if(Number(m.winnerSlot)>0){
+            const winner=players.find(p=>Number(p.slot)===Number(m.winnerSlot));
+            endArena('💥 Eliminado · ganó '+(winner?.name||('Jugador '+m.winnerSlot))+'.');
+          } else endArena('⚔️ Arena terminada sin sobrevivientes.');
+        }
       } else if(m.type==='peer-message') {
         handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
       }
@@ -502,7 +510,7 @@
         if(now-lastHitAt>180){
           lastHitAt=now;
           meState.lives=Math.max(0,meState.lives-1);updateLives();
-          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});if(pvpMode==='2v2'){markEliminated(mySlot);}else endArena('💥 Tu nave fue destruida.');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});if(pvpMode==='2v2'||pvpMode==='arena'){markEliminated(mySlot);showStatus(pvpMode==='arena'?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.');return;}
         }
       }
     }
@@ -516,7 +524,7 @@
         if(!m.own && (!targetSlot||targetSlot===mySlot) && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
           lastHitAt=now;meState.lives=Math.max(0,meState.lives-1);updateLives();
           hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
-          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});if(pvpMode==='2v2'){markEliminated(mySlot);}else endArena('💥 Tu nave fue destruida.');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam});if(pvpMode==='2v2'||pvpMode==='arena'){markEliminated(mySlot);showStatus(pvpMode==='arena'?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.');return;}
         }
       }
     }
@@ -558,7 +566,7 @@
     }
     if(performance.now()<hitFlashUntil){arenaCtx.save();arenaCtx.globalAlpha=.42;arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
     if(!meEliminated) drawShip(meState,mine.ship);
-    if(meEliminated && !matchFinished && pvpMode==='2v2'){
+    if(meEliminated && !matchFinished && (pvpMode==='2v2'||pvpMode==='arena')){
       arenaCtx.save();
       arenaCtx.fillStyle='rgba(2,6,23,.72)';
       arenaCtx.fillRect(45,h/2-48,w-90,96);
@@ -568,7 +576,7 @@
       arenaCtx.fillText('💥 Has sido eliminado',w/2,h/2-8);
       arenaCtx.font='14px sans-serif';
       arenaCtx.fillStyle='#cbd5e1';
-      arenaCtx.fillText('Espera a que termine la partida',w/2,h/2+22);
+      arenaCtx.fillText(pvpMode==='arena'?'Observa hasta que quede un sobreviviente':'Espera a que termine la partida',w/2,h/2+22);
       arenaCtx.restore();
     }
     for(const b of bullets){
