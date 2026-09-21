@@ -33,6 +33,7 @@ export class PvpRoom {
     this.players = new Map();
     this.forfeitedPlayers = new Set();
     this.eliminatedSlots = new Set();
+    this.eliminationOrder = [];
     this.finished = false;
     this.started = false;
     this.rewardStatus = new Map();
@@ -83,6 +84,7 @@ export class PvpRoom {
           this.broadcast({ type: "reward-status", slot, team, eligible: false, reason: "forfeit" });
         }
         if ((this.mode === "2v2" || this.mode === "arena") && !this.finished) {
+          if (!this.eliminatedSlots.has(slot)) this.eliminationOrder.push(slot);
           this.eliminatedSlots.add(slot);
           const killerSlot = Number(message.killerSlot || 0);
           const attackKind = message.attackKind === "missile" ? "missile" : "laser";
@@ -113,6 +115,7 @@ export class PvpRoom {
           if (!state?.pendingReconnect) return;
           this.forfeitedPlayers.add(playerId);
           this.rewardStatus.set(slot, { playerId, eligible: false, reason: "disconnect", team, pendingReconnect: false });
+          if (!this.eliminatedSlots.has(slot)) this.eliminationOrder.push(slot);
           this.eliminatedSlots.add(slot);
           this.broadcast({ type: "reward-status", slot, team, eligible: false, reason: "disconnect" });
           this.broadcast({ type: "player-eliminated", slot, team, reason: "disconnect" });
@@ -177,7 +180,8 @@ export class PvpRoom {
     if (!winnerSlot) return;
     this.finished = true;
     const winner = this.playerList().find(p => p.slot === winnerSlot) || null;
-    this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, rewards: this.rewardListBySlot(winnerSlot) });
+    const podiumSlots = [winnerSlot, ...this.eliminationOrder.slice().reverse()].slice(0, 4);
+    this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, podiumSlots, rewards: this.rewardListBySlot(winnerSlot) });
   }
   rewardListBySlot(winnerSlot) {
     const p = this.playerList().find(p => p.slot === winnerSlot);
