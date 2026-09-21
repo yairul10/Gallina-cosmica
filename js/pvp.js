@@ -256,7 +256,7 @@
     if(queueSocket){cancelMatch();return;}
     disconnect(true);
     const me=identity();
-    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
+    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(getPvpCups())});
     const ws=new WebSocket(`${PVP_WS_BASE}/matchmake?${params}`);
     queueSocket=ws;
     queueStartedAt=Date.now();
