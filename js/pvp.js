@@ -238,7 +238,7 @@
     disconnect(true);
     const me=identity();
     const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
-    if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
+    if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'||pvpMode==='arena')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;
     showStatus((creating?'Creando':'Entrando a')+' sala '+code+'…');
@@ -610,9 +610,9 @@
 
     // IA básica de bots. En 2v2 esta primera prueba mueve y hace disparar
     // a los tres bots; cada uno sólo apunta a integrantes del equipo contrario.
-    if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2')&&running&&!matchFinished){
+    if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2'||pvpMode==='arena')&&running&&!matchFinished){
       const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
-      const botSimAuthority=pvpMode!=='2v2'||humanSlots.length===0||mySlot===Math.min(...humanSlots);
+      const botSimAuthority=(pvpMode!=='2v2'&&pvpMode!=='arena')||humanSlots.length===0||mySlot===Math.min(...humanSlots);
       const activeBots=botSimAuthority?players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))):[];
       for(const botPlayer of activeBots){
         const bot=peerFor(botPlayer.slot);
@@ -668,14 +668,14 @@
           const missAngle=0.30+Math.random()*1.15;
           const aim=accurate?trueAim:trueAim+missAngle*missSide;
           spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,Number(botPlayer.team||0));
-          if(pvpMode==='2v2')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim});
+          if(pvpMode==='2v2'||pvpMode==='arena')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim});
         }
         // Misil con cadencia humana: espera aleatoriamente entre 8 y 12 s.
         if(targetInAttackRange&&now>=ai.nextMissileAt){
           ai.nextMissileAt=now+8000+Math.random()*4000;
           const info=shipCombatInfo(botPlayer.ship||'Gallina');
           spawnRemoteMissile(bot.x,bot.y,botPlayer.ship,info.missileType,false,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
-          if(pvpMode==='2v2')send({type:'bot-missile',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,missileType:info.missileType,targetSlot:Number(chosen.p.slot)});
+          if(pvpMode==='2v2'||pvpMode==='arena')send({type:'bot-missile',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,missileType:info.missileType,targetSlot:Number(chosen.p.slot)});
         }
       }
     }
@@ -773,7 +773,7 @@
     // En partidas 2v2 con bots, este cliente simula las vidas de las naves
     // sintéticas. Sólo el cliente del humano con slot más bajo procesa este daño,
     // evitando que dos dispositivos descuenten el mismo impacto.
-    if(botMatch&&pvpMode==='2v2'){
+    if(botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
       const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
       // Cada humano procesa sus propios impactos contra bots. Los proyectiles
       // creados por bots se procesan sólo en el humano de menor slot para no
