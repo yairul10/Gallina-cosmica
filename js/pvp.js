@@ -471,7 +471,7 @@
       }
       return;
     }
-    if(p.type==='bot-state'&&botMatch&&pvpMode==='2v2'){
+    if(p.type==='bot-state'&&botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
       const slot=Number(p.slot||0), bp=players.find(x=>x.bot&&Number(x.slot)===slot);
       if(!bp)return;
       const st=peerFor(slot);
@@ -482,10 +482,10 @@
       // No sobrescribir vidas aquí: en 2H vs 2B cada humano es autoridad de
       // sus propios impactos contra bots. La eliminación oficial la confirma el servidor.
       updateLives(); return;
-    } else if(p.type==='bot-shot'&&botMatch&&pvpMode==='2v2'){
+    } else if(p.type==='bot-shot'&&botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
       const bp=players.find(x=>x.bot&&Number(x.slot)===Number(p.slot||0));if(!bp)return;
       spawnRemoteShot(Number(p.x),Number(p.y),Number(p.angle),bp.ship,bp.slot,Number(bp.team||0));return;
-    } else if(p.type==='bot-missile'&&botMatch&&pvpMode==='2v2'){
+    } else if(p.type==='bot-missile'&&botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
       const bp=players.find(x=>x.bot&&Number(x.slot)===Number(p.slot||0));if(!bp)return;
       spawnRemoteMissile(Number(p.x),Number(p.y),bp.ship,p.missileType,false,bp.slot,Number(bp.team||0),Number(p.targetSlot||0));return;
     }
@@ -744,7 +744,7 @@
       const dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
       // El disparo propio atraviesa al compañero y sólo se corta visualmente
       // cuando alcanza una nave enemiga.
-      const targets=players.filter(p=>Number(p.slot)!==mySlot && !eliminated.has(Number(p.slot)) && (pvpMode!=='2v2'||Number(p.team)!==myTeam) && !(botMatch&&pvpMode==='2v2'&&p.bot));
+      const targets=players.filter(p=>Number(p.slot)!==mySlot && !eliminated.has(Number(p.slot)) && (pvpMode!=='2v2'||Number(p.team)!==myTeam) && !(botMatch&&(pvpMode==='2v2'||pvpMode==='arena')&&p.bot));
       let best=null;
       for(const p of targets){
         const target=peerFor(p.slot);
@@ -880,7 +880,7 @@
       const sa=pvpMode==='1v1'&&mySlot===2?meState.angle+Math.PI:meState.angle;
       const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
       send({type:'state',x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives});
-      if(botMatch&&pvpMode==='2v2'){
+      if(botMatch&&(pvpMode==='2v2'||pvpMode==='arena')){
         const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
         if(humanSlots.length===0||mySlot===Math.min(...humanSlots)){
           for(const bp of players.filter(p=>p.bot&&!eliminated.has(Number(p.slot)))){
