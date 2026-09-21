@@ -617,27 +617,45 @@
       for(const botPlayer of activeBots){
         const bot=peerFor(botPlayer.slot);
         const ai=botAiFor(botPlayer.slot);
-        // Cada bot tiene su propio reloj y dirección aleatoria. Así no se
-        // superponen ni se mueven en sincronía con los demás.
-        if(!ai.nextMoveAt||now>=ai.nextMoveAt){
-          ai.lastMove=now;ai.nextMoveAt=now+700+Math.random()*900;
-          const a=Math.random()*Math.PI*2;
-          ai.moveX=Math.cos(a);ai.moveY=Math.sin(a);
-        }
-        const botNextX=Math.max(45,Math.min(worldWidth-45,bot.targetX+ai.moveX*105*dt));
-        const botNextY=Math.max(70,Math.min(worldHeight-70,bot.targetY+ai.moveY*105*dt));
-        if(!positionBlockedByAsteroid(botNextX,bot.targetY,24))bot.targetX=botNextX;else{ai.moveX*=-1;ai.nextMoveAt=0;}
-        if(!positionBlockedByAsteroid(bot.targetX,botNextY,24))bot.targetY=botNextY;else{ai.moveY*=-1;ai.nextMoveAt=0;}
         const enemyPlayers=players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==Number(botPlayer.team)));
         const enemyTargets=enemyPlayers.map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)}));
         const chosen=enemyTargets.sort((a,b)=>Math.hypot(a.state.x-bot.x,a.state.y-bot.y)-Math.hypot(b.state.x-bot.x,b.state.y-bot.y))[0];
         if(!chosen)continue;
-        const dx=chosen.state.x-bot.x,dy=chosen.state.y-bot.y;
+        const dx=chosen.state.x-bot.x,dy=chosen.state.y-bot.y,dist=Math.hypot(dx,dy)||1;
         const trueAim=Math.atan2(dy,dx);
         bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
-        // El bot sólo puede atacar a un enemigo que esté, como máximo, a una
-        // distancia equivalente a la ventana visible. Evita disparos desde el
-        // otro extremo del mundo antes de que los jugadores puedan encontrarse.
+
+        // Navegación táctica: acercarse si está lejos, mantener distancia de
+        // combate y bordear asteroides en vez de rebotar contra ellos.
+        let desiredX=dx/dist,desiredY=dy/dist;
+        if(dist<155){desiredX=-desiredX;desiredY=-desiredY;}
+        else if(dist<=235){
+          const side=(Number(botPlayer.slot)%2)?1:-1;
+          desiredX=(-dy/dist)*side*.82+(dx/dist)*.18;
+          desiredY=( dx/dist)*side*.82+(dy/dist)*.18;
+        }
+        // Si un asteroide corta el camino inmediato, elegir el lado libre.
+        const aheadX=bot.targetX+desiredX*70,aheadY=bot.targetY+desiredY*70;
+        const obstacle=asteroids.find(a=>Math.hypot(aheadX-a.x,aheadY-a.y)<a.r+34);
+        if(obstacle){
+          const ox=bot.targetX-obstacle.x,oy=bot.targetY-obstacle.y,olen=Math.hypot(ox,oy)||1;
+          const side=(Number(botPlayer.slot)%2)?1:-1;
+          desiredX=(-oy/olen)*side;desiredY=(ox/olen)*side;
+        }
+        // Pequeña variación individual para evitar formaciones robóticas.
+        if(!ai.nextMoveAt||now>=ai.nextMoveAt){
+          ai.nextMoveAt=now+850+Math.random()*700;
+          ai.wander=(Math.random()-.5)*.42;
+        }
+        const wa=Number(ai.wander||0),ca=Math.cos(wa),sa=Math.sin(wa);
+        ai.moveX=desiredX*ca-desiredY*sa;ai.moveY=desiredX*sa+desiredY*ca;
+        const speed=dist>250?118:100;
+        const botNextX=Math.max(45,Math.min(worldWidth-45,bot.targetX+ai.moveX*speed*dt));
+        const botNextY=Math.max(70,Math.min(worldHeight-70,bot.targetY+ai.moveY*speed*dt));
+        if(!positionBlockedByAsteroid(botNextX,bot.targetY,24))bot.targetX=botNextX;
+        else{ai.wander=(Number(ai.wander||0)>=0?-1:1)*.8;ai.nextMoveAt=0;}
+        if(!positionBlockedByAsteroid(bot.targetX,botNextY,24))bot.targetY=botNextY;
+        else{ai.wander=(Number(ai.wander||0)>=0?-1:1)*.8;ai.nextMoveAt=0;}
         const targetInAttackRange=Math.hypot(dx,dy)<=PVP_ATTACK_RANGE;
         if(targetInAttackRange&&now-ai.lastShot>850){
           ai.lastShot=now;
