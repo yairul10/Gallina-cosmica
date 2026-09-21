@@ -97,8 +97,10 @@
             <div id="pvpAimStick" class="pvp-stick pvp-stick-fire" style="position:absolute; right:22px; bottom:max(24px,env(safe-area-inset-bottom));"><div class="pvp-stick-knob"></div><small>APUNTAR + DISPARAR</small></div>
             <button id="pvpMissileBtn" class="btn" aria-label="Disparar misil rastreador" style="position:absolute; right:28px; bottom:max(145px,calc(env(safe-area-inset-bottom) + 145px)); z-index:3; width:72px; height:72px; border-radius:50%; padding:4px; background:rgba(180,83,9,.92); border:2px solid #fbbf24; font-size:1.6rem;">🎯<small id="pvpMissileCooldown" style="display:block; font-size:.58rem; color:#fff;">LISTO</small></button>
             <div id="pvpCountdown" style="display:none; position:absolute; inset:0; z-index:4; background:rgba(2,6,23,.42); align-items:center; justify-content:center; pointer-events:none;"><div id="pvpCountdownText" style="font-size:5rem; font-weight:900; color:#fff; text-shadow:0 0 22px #7c3aed,0 4px 8px #000;">3</div></div>\n            <div id="pvpResult" style="display:none; position:absolute; inset:0; z-index:5; background:rgba(2,6,23,.88); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
-                <h1 id="pvpResultText" style="color:#fff; text-align:center;">Resultado</h1>
-                <button id="pvpResultBackBtn" class="btn" style="margin-top:18px;">Volver al menú</button>
+                <div style="width:min(92%,340px); background:rgba(15,23,42,.88); border:1px solid rgba(148,163,184,.35); border-radius:18px; padding:18px 16px; box-shadow:0 12px 36px rgba(0,0,0,.38);">
+                    <div id="pvpResultText" style="color:#fff; text-align:center; white-space:pre-line; font-size:1.08rem; line-height:1.55; font-weight:800;">Resultado</div>
+                </div>
+                <button id="pvpResultBackBtn" class="btn" style="margin-top:20px; width:min(78%,240px);">Volver al menú</button>
             </div>
         </div>
         <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;"><h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1><p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p><div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;"></div><button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button></div>
