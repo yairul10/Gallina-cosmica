@@ -279,6 +279,17 @@ export class PvpRanking {
 
     if(request.method!=='POST') return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
     let body; try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
+
+    if(body.action==='claim-weekly'){
+      const playerId=safeText(body.playerId,'',128); if(!playerId)return json({ok:false,error:'PLAYER_ID_REQUIRED'},400);
+      const rewards=(await this.ctx.storage.get('rewards'))||{};
+      const pending=Object.entries(rewards).filter(([,r])=>r.playerId===playerId&&!r.claimed).sort((a,b)=>a[1].createdAt-b[1].createdAt);
+      if(!pending.length)return json({ok:true,claimed:false,reward:null});
+      const [key,reward]=pending[0];
+      reward.claimed=true; reward.claimedAt=Date.now(); rewards[key]=reward;
+      await this.ctx.storage.put('rewards',rewards);
+      return json({ok:true,claimed:true,rewardId:key,reward:{type:reward.type,period:reward.period,position:reward.position,coins:reward.coins}});
+    }
     const playerId=safeText(body.playerId,'',128); if(!playerId)return json({ok:false,error:'PLAYER_ID_REQUIRED'},400);
     const name=safeText(body.name,'Jugador',40);
     const kills=Math.max(0,Math.min(3,Math.floor(Number(body.kills)||0)));
