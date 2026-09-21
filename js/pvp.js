@@ -288,7 +288,7 @@
         const alreadyOut=eliminated.has(deadSlot);
         markEliminated(deadSlot);
         if(!alreadyOut && m.reason==='combat' && killerSlot && killerSlot!==deadSlot){
-          if(killerSlot===mySlot)matchKills++;
+          if(killerSlot===mySlot){matchKills++;const victim=players.find(p=>Number(p.slot)===deadSlot);if(victim?.bot)matchBotKills++;else matchHumanKills++;}
           killFeed.pop();
           addKillFeed((m.attackKind==='missile'?'🚀 ':'🔫 ')+playerName(killerSlot)+' eliminó a '+playerName(deadSlot)+(m.attackKind==='missile'?' con misil.':'.'));
         }
@@ -322,7 +322,7 @@
 
   function resetArena(){
     configureWorld();
-    killFeed.length=0;matchKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
+    killFeed.length=0;matchKills=0;matchBotKills=0;matchHumanKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
     botLives=20;lastBotHitAt=0;lastRegenAt=performance.now();botAiStates.clear();botHitTimes.clear();botRegenTimes.clear();
     for(const p of players.filter(p=>p.bot)){
       const ai=botAiFor(p.slot), t=performance.now();
@@ -388,7 +388,7 @@
   async function settlePvpRecord(result,forcedMatchId=''){
     const me=identity(),matchId=forcedMatchId||(currentRoom+'-'+pvpMode);
     try{
-      const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:playerId(),name:me.name||'Jugador',kills:matchKills,result,matchId})});
+      const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:playerId(),name:me.name||'Jugador',kills:matchKills,botKills:matchBotKills,humanKills:matchHumanKills,result,matchId})});
       const data=await r.json();
       if(data?.ok&&data.record){
         const cups=Number(data.record.cups||0);
@@ -398,7 +398,7 @@
     }catch{}
     const before=getPvpCups();
     const lossPenalty=before>=12000?10:before>=7000?8:before>=3000?5:before>=1000?3:0;
-    const rawDelta=result==='win'?(20+matchKills*3):-lossPenalty;
+    const rawDelta=result==='win'?(20+matchBotKills+matchHumanKills*3):-lossPenalty;
     const cups=addPvpCups(rawDelta);
     return {cups,delta:cups-before,local:true};
   }
@@ -429,7 +429,7 @@
     }
   }
   const killFeed=[];
-  let matchKills=0, matchCupsSettled=false;
+  let matchKills=0, matchBotKills=0, matchHumanKills=0, matchCupsSettled=false;
   function playerName(slot){
     const p=players.find(x=>Number(x.slot)===Number(slot));
     return p?.name||('Jugador '+slot);
@@ -477,7 +477,7 @@
     if(p.type==='defeat'){
       // En 1v1 el peer defeat cierra la partida; acredita la eliminación si este cliente fue el atacante final.
       if(pvpMode==='1v1'){
-        if(Number(p.killerSlot||0)===mySlot)matchKills++;
+        if(Number(p.killerSlot||0)===mySlot){matchKills++;const victim=players.find(x=>Number(x.slot)===fromSlot);if(victim?.bot)matchBotKills++;else matchHumanKills++;}
         endArena('🏆 ¡VICTORIA!\n⚔️ '+playerName(mySlot)+' derrotó a '+playerName(fromSlot),'win');
       }
       return;
@@ -830,7 +830,7 @@
             lastBotHitAt=now;botLives=Math.max(0,botLives-1);
             const bot=peerFor(botPlayer.slot);bot.lives=botLives;updateLives();
             if(botLives<=0){
-              eliminated.add(Number(botPlayer.slot));matchKills++;
+              eliminated.add(Number(botPlayer.slot));matchKills++;matchBotKills++;
               endArena('🏆 ¡VICTORIA!\n⚔️ '+playerName(mySlot)+' derrotó a '+playerName(botPlayer.slot),'win');
               return;
             }
@@ -932,7 +932,7 @@
             lastBotHitAt=now;botLives=Math.max(0,botLives-1);
             const bot=peerFor(botPlayer.slot);bot.lives=botLives;updateLives();
             if(botLives<=0){
-              eliminated.add(Number(botPlayer.slot));matchKills++;
+              eliminated.add(Number(botPlayer.slot));matchKills++;matchBotKills++;
               endArena('🏆 ¡VICTORIA!\n🚀 '+playerName(mySlot)+' derrotó a '+playerName(botPlayer.slot),'win');
               return;
             }
