@@ -721,14 +721,10 @@
         const targetInAttackRange=!!chosen&&Math.hypot(chosen.state.x-bot.x,chosen.state.y-bot.y)<=PVP_ATTACK_RANGE;
         if(targetInAttackRange&&now-ai.lastShot>850){
           ai.lastShot=now;
-          // 50% de tiros apuntan correctamente. El resto lleva un error amplio
-          // para que un jugador nuevo tenga una oportunidad real de esquivarlos.
-          const accurate=Math.random()<0.50;
-          // Cuando falla, el error cambia en cada ráfaga hacia cualquiera de los
-          // dos lados y con distinta amplitud. Evita el patrón visual repetitivo.
-          const missSide=Math.random()<0.5?-1:1;
-          const missAngle=0.30+Math.random()*1.15;
-          const aim=accurate?trueAim:trueAim+missAngle*missSide;
+          // Con el sistema de objetivo seleccionado, el bot apunta siempre a la
+          // posición real del objetivo. La dificultad sigue limitada por movimiento,
+          // obstáculos y el mismo tiempo de recarga del láser (850 ms).
+          const aim=trueAim;
           spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
           if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim,targetSlot:Number(chosen.p.slot)});
         }
