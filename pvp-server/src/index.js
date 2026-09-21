@@ -31,6 +31,7 @@ export class PvpRoom {
     this.finished = false;
     this.started = false;
     this.rewardStatus = new Map();
+    this.disconnectTimers = new Map();
   }
 
   async fetch(request) {
@@ -50,10 +51,21 @@ export class PvpRoom {
     const playerId = safeText(url.searchParams.get("playerId"), crypto.randomUUID(), 128);
     const name = safeText(url.searchParams.get("name"), "Jugador", 40);
     const ship = safeText(url.searchParams.get("ship"), "Gallina", 40);
-    const slot = this.players.size + 1;
-    const team = this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0;
+    let slot, team, reconnected = false;
+    const pending = Array.from(this.rewardStatus.entries()).find(([,s]) => s.playerId === playerId && s.pendingReconnect);
+    if (pending) {
+      slot = Number(pending[0]); team = Number(pending[1].team || (this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0));
+      const timer = this.disconnectTimers.get(playerId); if (timer) clearTimeout(timer);
+      this.disconnectTimers.delete(playerId);
+      this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
+      reconnected = true;
+    } else {
+      const used = new Set(Array.from(this.players.values()).map(p => p.slot));
+      slot = Array.from({length: capacity},(_,i)=>i+1).find(s => !used.has(s)) || capacity;
+      team = this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0;
+      this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
+    }
     this.players.set(server, { playerId, name, ship, slot, team });
-    this.rewardStatus.set(slot, { playerId, eligible: true, reason: null });
 
     server.addEventListener("message", event => {
       let message; try { message = JSON.parse(event.data); } catch { return; }
@@ -82,32 +94,37 @@ export class PvpRoom {
     const remove = () => {
       if (!this.players.has(server)) return;
       this.players.delete(server);
-      // Toda desconexión durante una sala iniciada queda registrada como abandono
-      // para que una futura capa de recompensas nunca premie a ese jugador.
-      if (this.started) {
-        this.forfeitedPlayers.add(playerId);
-        this.rewardStatus.set(slot, { playerId, eligible: false, reason: "disconnect" });
-        this.broadcast({ type: "reward-status", slot, team, eligible: false, reason: "disconnect" });
-        if (this.mode === "2v2" && !this.finished) {
+      if (this.started && !this.finished) {
+        this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: true });
+        this.broadcast({ type: "player-reconnecting", slot, team, seconds: 5 });
+        const timer = setTimeout(() => {
+          const state = this.rewardStatus.get(slot);
+          if (!state?.pendingReconnect) return;
+          this.forfeitedPlayers.add(playerId);
+          this.rewardStatus.set(slot, { playerId, eligible: false, reason: "disconnect", team, pendingReconnect: false });
           this.eliminatedSlots.add(slot);
+          this.broadcast({ type: "reward-status", slot, team, eligible: false, reason: "disconnect" });
           this.broadcast({ type: "player-eliminated", slot, team, reason: "disconnect" });
-          const teamSlots = Array.from(this.players.values()).filter(p => p.team === team).map(p => p.slot);
-          // El jugador que se desconecta ya fue quitado del Map, así que incluimos su slot.
-          if (!teamSlots.includes(slot)) teamSlots.push(slot);
-          const expectedTeamSlots = team === 1 ? [1, 2] : [3, 4];
-          if (expectedTeamSlots.every(s => this.eliminatedSlots.has(s))) {
-            this.finished = true;
-            const winnerTeam = team === 1 ? 2 : 1;
-            this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
+          if (this.mode === "2v2") {
+            const expectedTeamSlots = team === 1 ? [1, 2] : [3, 4];
+            if (expectedTeamSlots.every(s => this.eliminatedSlots.has(s))) {
+              this.finished = true;
+              const winnerTeam = team === 1 ? 2 : 1;
+              this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
+            }
           }
-        }
+          this.disconnectTimers.delete(playerId);
+        }, 5000);
+        this.disconnectTimers.set(playerId, timer);
+      } else {
+        this.broadcast({ type: "player-left", slot, team, playerId, forfeited: false, rewardEligible: true });
       }
-      this.broadcast({ type: "player-left", slot, team, playerId, forfeited: this.started, rewardEligible: !this.started });
     };
     server.addEventListener("close", remove);
     server.addEventListener("error", remove);
 
-    server.send(JSON.stringify({ type: "joined", slot, team, mode: this.mode, capacity, players: this.playerList() }));
+    server.send(JSON.stringify({ type: "joined", slot, team, mode: this.mode, capacity, players: this.playerList(), reconnected }));
+    if (reconnected) this.broadcast({ type: "player-reconnected", player: { playerId, name, ship, slot, team } }, server);
     this.broadcast({ type: "player-joined", player: { playerId, name, ship, slot, team } }, server);
     if (this.players.size === capacity) {
       this.started = true;
