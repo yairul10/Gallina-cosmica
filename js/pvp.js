@@ -112,6 +112,17 @@
   let selectedTargetSlot=0;
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
+  const qaCoinsBtn=$('pvpQaCoinsBtn');
+  if(qaCoinsBtn) qaCoinsBtn.addEventListener('click',()=>{
+    if(!PVP_TEST_MODE)return;
+    try{
+      gameStats.savedCoins=Number(gameStats.savedCoins||0)+5000000;
+      if(typeof coins!=='undefined') coins=gameStats.savedCoins;
+      saveStats();
+      if(typeof updateShopUI==='function') updateShopUI();
+      showStatus('🧪 +5.000.000 monedas añadidas para pruebas.');
+    }catch{ showStatus('⚠️ No se pudieron añadir las monedas de prueba.'); }
+  });
   const PVP_CUPS_KEY='gallina_pvp_cups_v1';
   function getPvpCups(){const n=Number(localStorage.getItem(PVP_CUPS_KEY)||0);return Number.isFinite(n)?Math.max(0,Math.floor(n)):0;}
   function addPvpCups(delta){const next=Math.max(0,getPvpCups()+Number(delta||0));localStorage.setItem(PVP_CUPS_KEY,String(next));return next;}
