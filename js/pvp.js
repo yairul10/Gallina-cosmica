@@ -154,6 +154,22 @@
     }catch{ showStatus('⚠️ No se pudieron añadir las monedas de prueba.'); }
   });
   const PVP_CUPS_KEY='gallina_pvp_cups_v1';
+  const qaBotRankSelect=$('pvpQaBotRank');
+  const QA_BOT_RANK_CUPS=[0,200,500,1000,3000,7000,12000];
+  function qaBotCups(){
+    if(!PVP_TEST_MODE||!qaBotRankSelect||qaBotRankSelect.value==='auto')return getPvpCups();
+    const level=Math.max(0,Math.min(6,Number(qaBotRankSelect.value)||0));
+    return QA_BOT_RANK_CUPS[level];
+  }
+  if(qaBotRankSelect){
+    qaBotRankSelect.value=sessionStorage.getItem('pvp_qa_bot_rank')||'auto';
+    qaBotRankSelect.addEventListener('change',()=>{
+      sessionStorage.setItem('pvp_qa_bot_rank',qaBotRankSelect.value);
+      const label=qaBotRankSelect.options[qaBotRankSelect.selectedIndex]?.text||'Automático';
+      showStatus('🧪 Bots QA: '+label+'. Tus copas reales no cambian.',true);
+    });
+  }
+
   function getPvpCups(){const n=Number(localStorage.getItem(PVP_CUPS_KEY)||0);return Number.isFinite(n)?Math.max(0,Math.floor(n)):0;}
   function addPvpCups(delta){const next=Math.max(0,getPvpCups()+Number(delta||0));localStorage.setItem(PVP_CUPS_KEY,String(next));return next;}
   function currentGameStats(){
@@ -256,7 +272,7 @@
     if(queueSocket){cancelMatch();return;}
     disconnect(true);
     const me=identity();
-    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(getPvpCups())});
+    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups())});
     const ws=new WebSocket(`${PVP_WS_BASE}/matchmake?${params}`);
     queueSocket=ws;
     queueStartedAt=Date.now();
@@ -295,7 +311,7 @@
     if(!isReconnect)disconnect(true);
     intentionalDisconnect=false;
     const me=identity();
-    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
+    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups())});
     if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;
