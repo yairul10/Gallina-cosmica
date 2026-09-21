@@ -744,7 +744,7 @@
       const dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
       // El disparo propio atraviesa al compañero y sólo se corta visualmente
       // cuando alcanza una nave enemiga.
-      const targets=players.filter(p=>Number(p.slot)!==mySlot && !eliminated.has(Number(p.slot)) && (pvpMode!=='2v2'||Number(p.team)!==myTeam) && !(botMatch&&(pvpMode==='2v2'||pvpMode==='arena')&&p.bot));
+      const targets=players.filter(p=>Number(p.slot)!==mySlot && !eliminated.has(Number(p.slot)) && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
       let best=null;
       for(const p of targets){
         const target=peerFor(p.slot);
