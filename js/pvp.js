@@ -81,6 +81,8 @@
   let hitFlashUntil = 0;
   let hitShakeUntil = 0;
   const moveStick = { active:false, id:null, x:0, y:0 };
+  // Mundo PvP lógico: 2× ancho × 2× alto = 4× superficie. La cámara se añade en la fase siguiente.
+  const worldWidth=arenaCanvas.width*2, worldHeight=arenaCanvas.height*2;
   let selectedTargetSlot=0;
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
@@ -302,7 +304,7 @@
       ai.nextMissileAt=t+8000+Math.random()*4000;
       const a=Math.random()*Math.PI*2;ai.moveX=Math.cos(a);ai.moveY=Math.sin(a);
     }
-    const h=arenaCanvas.height,w=arenaCanvas.width;
+    const h=worldHeight,w=worldWidth;
     peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
     const starts=[[w*.28,h-90],[w*.72,h-90],[w*.28,90],[w*.72,90]];
@@ -436,8 +438,8 @@
     if(pvpMode==='2v2' && fromTeam && fromTeam===myTeam && (p.type==='shot'||p.type==='missile')) return; // fuego amigo: ni daño ni efecto visual
     // El servidor reenvía las coordenadas en el sistema local del emisor.
     // El jugador 2 ve la arena rotada 180°, así ambos juegan desde abajo.
-    const mirrorX = x => pvpMode==='1v1' && mySlot === 2 ? arenaCanvas.width - x : x;
-    const mirrorY = y => pvpMode==='1v1' && mySlot === 2 ? arenaCanvas.height - y : y;
+    const mirrorX = x => pvpMode==='1v1' && mySlot === 2 ? worldWidth - x : x;
+    const mirrorY = y => pvpMode==='1v1' && mySlot === 2 ? worldHeight - y : y;
     const mirrorAngle = a => pvpMode==='1v1' && mySlot === 2 ? a + Math.PI : a;
     if(p.type==='defeat'){
       // En 1v1 el peer defeat cierra la partida; acredita la eliminación si este cliente fue el atacante final.
@@ -489,8 +491,8 @@
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     // Mismo láser del juego normal: 4x20 y velocidad equivalente a 14 px/frame a 60 FPS.
     [-1,1].forEach(s=>{const bx=meState.x+sideX*s,by=meState.y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,ownerSlot:mySlot,ownerTeam:myTeam,life:1.5});});
-    const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
-    const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
+    const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
+    const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
     const sa=pvpMode==='1v1'&&mySlot===2?a+Math.PI:a;
     send({type:'shot',x:sx,y:sy,angle:sa,ship:myShip});
   }
@@ -516,8 +518,8 @@
     const speed=450, initialSpeed=300;
     const targetSlot=Number(targetPlayer.slot);
     missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ownerSlot:mySlot,ownerTeam:myTeam,targetSlot,ship:myShip,missileType:info.missileType,isPro:usePro,life:6,vx:Math.cos(a)*initialSpeed,vy:Math.sin(a)*initialSpeed,speed});
-    const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
-    const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
+    const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
+    const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
     send({type:'missile',x:sx,y:sy,ship:myShip,missileType:info.missileType,isPro:usePro,targetSlot});
   }
   function spawnRemoteMissile(x,y,ship,missileType,isPro,ownerSlot=0,ownerTeam=0,targetSlot=0){
@@ -571,8 +573,8 @@
     if(keys.has('ArrowUp')||keys.has('w'))my-=1;if(keys.has('ArrowDown')||keys.has('s'))my+=1;
     const len=Math.hypot(mx,my);if(len>1){mx/=len;my/=len;}
     if(Math.hypot(mx,my)>.12) meState.visualAngle=Math.atan2(my,mx);
-    meState.x=Math.max(30,Math.min(arenaCanvas.width-30,meState.x+mx*190*dt));
-    meState.y=Math.max(55,Math.min(arenaCanvas.height-55,meState.y+my*190*dt));
+    meState.x=Math.max(30,Math.min(worldWidth-30,meState.x+mx*190*dt));
+    meState.y=Math.max(55,Math.min(worldHeight-55,meState.y+my*190*dt));
     const selectedPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     if(!selectedPlayer)selectedTargetSlot=0;
     else {const target=peerFor(selectedTargetSlot);meState.angle=Math.atan2(target.y-meState.y,target.x-meState.x);}
@@ -594,8 +596,8 @@
           const a=Math.random()*Math.PI*2;
           ai.moveX=Math.cos(a);ai.moveY=Math.sin(a);
         }
-        bot.targetX=Math.max(45,Math.min(arenaCanvas.width-45,bot.targetX+ai.moveX*105*dt));
-        bot.targetY=Math.max(70,Math.min(arenaCanvas.height-70,bot.targetY+ai.moveY*105*dt));
+        bot.targetX=Math.max(45,Math.min(worldWidth-45,bot.targetX+ai.moveX*105*dt));
+        bot.targetY=Math.max(70,Math.min(worldHeight-70,bot.targetY+ai.moveY*105*dt));
         const enemyPlayers=players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==Number(botPlayer.team)));
         const enemyTargets=enemyPlayers.map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)}));
         const chosen=enemyTargets.sort((a,b)=>Math.hypot(a.state.x-bot.x,a.state.y-bot.y)-Math.hypot(b.state.x-bot.x,b.state.y-bot.y))[0];
@@ -797,14 +799,14 @@
         }
       }
     }
-    bullets=bullets.filter(b=>b.life>0&&b.x>-20&&b.x<arenaCanvas.width+20&&b.y>-20&&b.y<arenaCanvas.height+20);
-    missiles=missiles.filter(m=>m.life>0&&m.x>-40&&m.x<arenaCanvas.width+40&&m.y>-40&&m.y<arenaCanvas.height+40);
+    bullets=bullets.filter(b=>b.life>0&&b.x>-20&&b.x<worldWidth+20&&b.y>-20&&b.y<worldHeight+20);
+    missiles=missiles.filter(m=>m.life>0&&m.x>-40&&m.x<worldWidth+40&&m.y>-40&&m.y<worldHeight+40);
     // Sincronización de red a ~12 Hz. El render y el combate siguen a la
     // frecuencia normal del dispositivo; sólo reducimos los paquetes de estado.
     if(now-lastStateSend>83){
       lastStateSend=now;
-      const sx=pvpMode==='1v1'&&mySlot===2?arenaCanvas.width-meState.x:meState.x;
-      const sy=pvpMode==='1v1'&&mySlot===2?arenaCanvas.height-meState.y:meState.y;
+      const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
+      const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
       const sa=pvpMode==='1v1'&&mySlot===2?meState.angle+Math.PI:meState.angle;
       const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
       send({type:'state',x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives});
@@ -831,9 +833,11 @@
     const w=arenaCanvas.width,h=arenaCanvas.height;
     arenaCtx.clearRect(0,0,w,h);
     arenaCtx.save();
+    // Fase 4: vista temporal del mundo completo. En Fase 5 se reemplaza por cámara de seguimiento.
+    arenaCtx.scale(w/worldWidth,h/worldHeight);
     if(performance.now()<hitShakeUntil) arenaCtx.translate((Math.random()-.5)*7,(Math.random()-.5)*7);
-    if(pvpBackground.complete&&pvpBackground.naturalWidth)arenaCtx.drawImage(pvpBackground,0,0,w,h);else{arenaCtx.fillStyle='#020617';arenaCtx.fillRect(0,0,w,h);}
-    arenaCtx.strokeStyle='rgba(167,139,250,.35)';arenaCtx.setLineDash([8,10]);arenaCtx.beginPath();arenaCtx.moveTo(0,h/2);arenaCtx.lineTo(w,h/2);arenaCtx.stroke();arenaCtx.setLineDash([]);
+    if(pvpBackground.complete&&pvpBackground.naturalWidth)arenaCtx.drawImage(pvpBackground,0,0,worldWidth,worldHeight);else{arenaCtx.fillStyle='#020617';arenaCtx.fillRect(0,0,worldWidth,worldHeight);}
+    arenaCtx.strokeStyle='rgba(167,139,250,.35)';arenaCtx.setLineDash([8,10]);arenaCtx.beginPath();arenaCtx.moveTo(0,worldHeight/2);arenaCtx.lineTo(worldWidth,worldHeight/2);arenaCtx.stroke();arenaCtx.setLineDash([]);
     const mine=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
     for(const p of players){
       if(Number(p.slot)===mySlot)continue;
@@ -921,7 +925,7 @@
   if(fireBtn){fireBtn.style.touchAction='none';fireBtn.addEventListener('pointerdown',e=>{e.preventDefault();shoot();});}
   arenaCanvas?.addEventListener('pointerdown',e=>{
     if(!running||meEliminated)return;
-    const r=arenaCanvas.getBoundingClientRect(),x=(e.clientX-r.left)*arenaCanvas.width/r.width,y=(e.clientY-r.top)*arenaCanvas.height/r.height;
+    const r=arenaCanvas.getBoundingClientRect(),x=(e.clientX-r.left)*worldWidth/r.width,y=(e.clientY-r.top)*worldHeight/r.height;
     const enemies=players.filter(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     const hit=enemies.map(p=>({p,d:Math.hypot(peerFor(p.slot).x-x,peerFor(p.slot).y-y)})).filter(v=>v.d<=48).sort((a,b)=>a.d-b.d)[0];
     if(hit){selectedTargetSlot=Number(hit.p.slot);showStatus('🎯 Objetivo: '+playerName(selectedTargetSlot),true);}
