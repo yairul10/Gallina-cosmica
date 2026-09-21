@@ -543,7 +543,11 @@
           // 50% de tiros apuntan correctamente. El resto lleva un error amplio
           // para que un jugador nuevo tenga una oportunidad real de esquivarlos.
           const accurate=Math.random()<0.50;
-          const aim=accurate?trueAim:trueAim+(.45+Math.random()*.75)*(Math.random()<.5?-1:1);
+          // Cuando falla, el error cambia en cada ráfaga hacia cualquiera de los
+          // dos lados y con distinta amplitud. Evita el patrón visual repetitivo.
+          const missSide=Math.random()<0.5?-1:1;
+          const missAngle=0.30+Math.random()*1.15;
+          const aim=accurate?trueAim:trueAim+missAngle*missSide;
           spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,0);
         }
       }
