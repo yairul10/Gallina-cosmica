@@ -127,7 +127,7 @@ export class PvpRoom {
               this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam)});
             }
           } else {
-            this.checkArenaResult();
+            if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
           }
         }
         return;
@@ -161,7 +161,7 @@ export class PvpRoom {
               this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
             }
           } else {
-            this.checkArenaResult();
+            if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
           }
         }
       }
@@ -232,6 +232,26 @@ export class PvpRoom {
   }
 
   playerList() { return [...Array.from(this.players.values()), ...(this.botPlayer ? [this.botPlayer] : []), ...this.botPlayers]; }
+  simulateArenaBotsIfNoHumans() {
+    if (this.finished || (this.mode !== "arena" && this.mode !== "arena10") || !this.started) return false;
+    const list=this.playerList();
+    const alive=list.filter(p=>!this.eliminatedSlots.has(Number(p.slot)));
+    if(alive.length<=1 || alive.some(p=>!p.bot)) return false;
+    // Si sólo quedan bots, resolver el resto inmediatamente. El orden se pondera
+    // ligeramente por las vidas reportadas cuando estén disponibles; si no, azar.
+    const shuffled=alive.slice().sort(()=>Math.random()-.5);
+    while(shuffled.length>1){
+      const dead=shuffled.shift();
+      const deadSlot=Number(dead.slot);
+      if(!this.eliminatedSlots.has(deadSlot)){
+        this.eliminationOrder.push(deadSlot); this.eliminatedSlots.add(deadSlot);
+        this.broadcast({type:"player-eliminated",slot:deadSlot,team:0,reason:"simulation",killerSlot:0,attackKind:"laser"});
+      }
+    }
+    this.broadcast({type:"arena-simulated"});
+    this.checkArenaResult();
+    return true;
+  }
   checkArenaResult() {
     if (this.finished || (this.mode !== "arena" && this.mode !== "arena10") || !this.started) return;
     // Arena 5 y Arena 10 terminan sólo cuando queda un participante vivo.
