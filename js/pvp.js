@@ -462,7 +462,8 @@
       if(Number.isFinite(Number(p.y)))st.targetY=Number(p.y);
       if(Number.isFinite(Number(p.angle)))st.targetAngle=Number(p.angle);
       if(Number.isFinite(Number(p.visualAngle)))st.targetVisualAngle=Number(p.visualAngle);
-      if(Number.isFinite(Number(p.lives)))st.lives=Number(p.lives);
+      // No sobrescribir vidas aquí: en 2H vs 2B cada humano es autoridad de
+      // sus propios impactos contra bots. La eliminación oficial la confirma el servidor.
       updateLives(); return;
     } else if(p.type==='bot-shot'&&botMatch&&pvpMode==='2v2'){
       const bp=players.find(x=>x.bot&&Number(x.slot)===Number(p.slot||0));if(!bp)return;
@@ -828,7 +829,7 @@
         if(humanSlots.length===0||mySlot===Math.min(...humanSlots)){
           for(const bp of players.filter(p=>p.bot&&!eliminated.has(Number(p.slot)))){
             const st=peerFor(bp.slot);
-            send({type:'bot-state',slot:Number(bp.slot),x:Math.round(st.x),y:Math.round(st.y),angle:st.angle,visualAngle:st.visualAngle,lives:st.lives});
+            send({type:'bot-state',slot:Number(bp.slot),x:Math.round(st.x),y:Math.round(st.y),angle:st.angle,visualAngle:st.visualAngle});
           }
         }
       }
