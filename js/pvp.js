@@ -2,6 +2,7 @@
 (() => {
   const PVP_TEST_MODE = true;
   const PVP_WS_BASE = 'wss://gallina-cosmica-pvp-test.jairog940.workers.dev';
+  const PVP_HTTP_BASE = 'https://gallina-cosmica-pvp-test.jairog940.workers.dev';
   if (!PVP_TEST_MODE) return;
 
   const $ = id => document.getElementById(id);
@@ -314,16 +315,31 @@
     const overlay=$('pvpCountdown');if(overlay)overlay.style.display='none';
     if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;aimStick.active=false;
   }
+  async function settlePvpRecord(result){
+    const me=identity(),matchId=currentRoom+'-'+pvpMode;
+    try{
+      const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:playerId(),name:me.name||'Jugador',kills:matchKills,result,matchId})});
+      const data=await r.json();
+      if(data?.ok&&data.record){
+        localStorage.setItem(PVP_CUPS_KEY,String(data.record.cups||0));
+        return {cups:Number(data.record.cups||0),delta:Number(data.delta||0),record:data.record};
+      }
+    }catch{}
+    const delta=matchKills*3+(result==='win'?20:0);
+    return {cups:addPvpCups(delta),delta,local:true};
+  }
   function endArena(text,result='none'){
     if(matchFinished)return; matchFinished=true;
     stopArena();
-    let delta=0;
-    if(!matchCupsSettled && (result==='win'||result==='loss')){
-      delta=matchKills*3+(result==='win'?20:0);
-      addPvpCups(delta);matchCupsSettled=true;
-    }
-    $('pvpResultText').textContent=text+'\n☠️ Eliminaciones: '+matchKills+(matchCupsSettled?'\n🏆 Copas: '+getPvpCups()+(delta?' (+'+delta+')':''):'');
+    const resultEl=$('pvpResultText');
+    resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+(result==='win'||result==='loss'?'\n🏆 Guardando copas…':'');
     $('pvpResult').style.display='flex';
+    if(!matchCupsSettled && (result==='win'||result==='loss')){
+      matchCupsSettled=true;
+      settlePvpRecord(result).then(saved=>{
+        resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' (+'+saved.delta+')':'');
+      });
+    }
   }
   const killFeed=[];
   let matchKills=0, matchCupsSettled=false;
