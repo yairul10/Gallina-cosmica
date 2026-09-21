@@ -312,6 +312,7 @@
   function handlePeer(p,fromSlot=0,fromTeam=0){
     if(!fromSlot || fromSlot===mySlot)return;
     const remote=peerFor(fromSlot);
+    if(eliminated.has(Number(fromSlot)) && (p.type==='state'||p.type==='shot'||p.type==='missile')) return;
     if(pvpMode==='2v2' && fromTeam && fromTeam===myTeam && (p.type==='shot'||p.type==='missile')) return; // fuego amigo: ni daño ni efecto visual
     // El servidor reenvía las coordenadas en el sistema local del emisor.
     // El jugador 2 ve la arena rotada 180°, así ambos juegan desde abajo.
@@ -396,8 +397,12 @@
     if(!meEliminated&&aimStick.active&&Math.hypot(aimStick.x,aimStick.y)>.25){meState.angle=Math.atan2(aimStick.y,aimStick.x);shoot();}
     if(!meEliminated&&keys.has(' '))shoot();
 
-    for(const b of bullets){b.prevX=b.x;b.prevY=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;}
+    for(const b of bullets){
+      if(b.ownerSlot && eliminated.has(Number(b.ownerSlot))){b.life=0;continue;}
+      b.prevX=b.x;b.prevY=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+    }
     for(const m of missiles){
+      if(m.ownerSlot && eliminated.has(Number(m.ownerSlot))){m.life=0;continue;}
       m.prevX=m.x;m.prevY=m.y;
       let target;
       if(m.own){
