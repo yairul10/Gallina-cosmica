@@ -203,7 +203,7 @@
     disconnect(true);
     const me=identity();
     const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode});
-    if(useBot&&pvpMode==='1v1')params.set('bot','1');
+    if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'))params.set('bot','1');
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;
     showStatus((creating?'Creando':'Entrando a')+' sala '+code+'…');
@@ -536,10 +536,11 @@
     if(!meEliminated&&aimStick.active&&Math.hypot(aimStick.x,aimStick.y)>.25){meState.angle=Math.atan2(aimStick.y,aimStick.x);shoot();}
     if(!meEliminated&&keys.has(' '))shoot();
 
-    // IA básica del Bot Cósmico (sólo 1v1 de prueba).
-    if(botMatch&&pvpMode==='1v1'&&running&&!matchFinished){
-      const botPlayer=players.find(p=>p.bot);
-      if(botPlayer){
+    // IA básica de bots. En 2v2 esta primera prueba mueve y hace disparar
+    // a los tres bots; cada uno sólo apunta a integrantes del equipo contrario.
+    if(botMatch&&(pvpMode==='1v1'||pvpMode==='2v2')&&running&&!matchFinished){
+      const activeBots=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot)));
+      for(const botPlayer of activeBots){
         const bot=peerFor(botPlayer.slot);
         // Cambia de dirección al azar: horizontal, vertical o diagonal.
         if(now-botLastMove>700+Math.random()*900){
@@ -549,7 +550,11 @@
         }
         bot.targetX=Math.max(45,Math.min(arenaCanvas.width-45,bot.targetX+botMoveX*105*dt));
         bot.targetY=Math.max(70,Math.min(arenaCanvas.height-70,bot.targetY+botMoveY*105*dt));
-        const trueAim=Math.atan2(meState.y-bot.y,meState.x-bot.x);
+        const enemyPlayers=players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==Number(botPlayer.team)));
+        const enemyTargets=enemyPlayers.map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)}));
+        const chosen=enemyTargets.sort((a,b)=>Math.hypot(a.state.x-bot.x,a.state.y-bot.y)-Math.hypot(b.state.x-bot.x,b.state.y-bot.y))[0];
+        if(!chosen)continue;
+        const trueAim=Math.atan2(chosen.state.y-bot.y,chosen.state.x-bot.x);
         bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
         if(now-botLastShot>850){
           botLastShot=now;
@@ -561,13 +566,13 @@
           const missSide=Math.random()<0.5?-1:1;
           const missAngle=0.30+Math.random()*1.15;
           const aim=accurate?trueAim:trueAim+missAngle*missSide;
-          spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,0);
+          spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,Number(botPlayer.team||0));
         }
         // Misil con cadencia humana: espera aleatoriamente entre 8 y 12 s.
         if(now>=botNextMissileAt){
           botNextMissileAt=now+8000+Math.random()*4000;
           const info=shipCombatInfo(botPlayer.ship||'Gallina');
-          spawnRemoteMissile(bot.x,bot.y,botPlayer.ship,info.missileType,false,botPlayer.slot,0,mySlot);
+          spawnRemoteMissile(bot.x,bot.y,botPlayer.ship,info.missileType,false,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
         }
       }
     }
