@@ -638,10 +638,25 @@
         const ai=botAiFor(botPlayer.slot);
         const enemyPlayers=players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==Number(botPlayer.team)));
         const enemyTargets=enemyPlayers.map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)}));
-        const chosen=enemyTargets.sort((a,b)=>Math.hypot(a.state.x-bot.x,a.state.y-bot.y)-Math.hypot(b.state.x-bot.x,b.state.y-bot.y))[0];
-        if(!chosen)continue;
-        const dx=chosen.state.x-bot.x,dy=chosen.state.y-bot.y,dist=Math.hypot(dx,dy)||1;
-        const trueAim=Math.atan2(dy,dx);
+        const nearest=enemyTargets.sort((a,b)=>Math.hypot(a.state.x-bot.x,a.state.y-bot.y)-Math.hypot(b.state.x-bot.x,b.state.y-bot.y))[0];
+        if(!nearest)continue;
+        const nearestDist=Math.hypot(nearest.state.x-bot.x,nearest.state.y-bot.y);
+        // Fuera del radio de búsqueda el bot patrulla su propio sector en vez de
+        // conocer mágicamente la posición de todos. Así los bots se dispersan,
+        // exploran el mapa y sólo persiguen cuando encuentran a alguien cerca.
+        const searchRadius=390;
+        if(!ai.patrolX||!ai.patrolY||Math.hypot(ai.patrolX-bot.x,ai.patrolY-bot.y)<65||now>=Number(ai.nextPatrolAt||0)){
+          const sector=(Number(botPlayer.slot)-1)%5;
+          const a=(sector/5)*Math.PI*2+(Math.random()-.5)*1.05;
+          const radius=180+Math.random()*260;
+          ai.patrolX=Math.max(65,Math.min(worldWidth-65,worldWidth/2+Math.cos(a)*radius));
+          ai.patrolY=Math.max(85,Math.min(worldHeight-85,worldHeight/2+Math.sin(a)*radius));
+          ai.nextPatrolAt=now+2800+Math.random()*3200;
+        }
+        const chosen=nearestDist<=searchRadius?nearest:null;
+        const navTarget=chosen?chosen.state:{x:ai.patrolX,y:ai.patrolY};
+        const dx=navTarget.x-bot.x,dy=navTarget.y-bot.y,dist=Math.hypot(dx,dy)||1;
+        const trueAim=chosen?Math.atan2(chosen.state.y-bot.y,chosen.state.x-bot.x):Math.atan2(dy,dx);
         bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
 
         // Navegación táctica imperfecta: perseguir, orbitar, retirarse con
@@ -696,7 +711,7 @@
         else{ai.wander=(Number(ai.wander||0)>=0?-1:1)*.8;ai.nextMoveAt=0;}
         if(!positionBlockedByAsteroid(bot.targetX,botNextY,24))bot.targetY=botNextY;
         else{ai.wander=(Number(ai.wander||0)>=0?-1:1)*.8;ai.nextMoveAt=0;}
-        const targetInAttackRange=Math.hypot(dx,dy)<=PVP_ATTACK_RANGE;
+        const targetInAttackRange=!!chosen&&Math.hypot(chosen.state.x-bot.x,chosen.state.y-bot.y)<=PVP_ATTACK_RANGE;
         if(targetInAttackRange&&now-ai.lastShot>850){
           ai.lastShot=now;
           // 50% de tiros apuntan correctamente. El resto lleva un error amplio
