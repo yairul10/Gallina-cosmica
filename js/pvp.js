@@ -484,7 +484,8 @@
     const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     if(!targetPlayer){showStatus('🎯 Toca una nave enemiga para seleccionarla.');return;}
     const target=peerFor(targetPlayer.slot);
-    const a=Math.atan2(target.y-meState.y,target.x-meState.x);meState.angle=a;lastShot=now,sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
+    const a=Math.atan2(target.y-meState.y,target.x-meState.x), sideX=Math.cos(a+Math.PI/2)*9, sideY=Math.sin(a+Math.PI/2)*9;
+    meState.angle=a;lastShot=now;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     // Mismo láser del juego normal: 4x20 y velocidad equivalente a 14 px/frame a 60 FPS.
     [-1,1].forEach(s=>{const bx=meState.x+sideX*s,by=meState.y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,ownerSlot:mySlot,ownerTeam:myTeam,life:1.5});});
