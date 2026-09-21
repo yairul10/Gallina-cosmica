@@ -172,8 +172,9 @@
     if(!queueSocket||!queueStartedAt)return;
     const sec=Math.max(0,Math.floor((Date.now()-queueStartedAt)/1000));
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
-    const needed=pvpMode==='1v1'?2:(pvpMode==='arena'||pvpMode==='arena10')?5:pvpMode==='arena10'?10:4;
-    showStatus('🔎 Buscando '+(pvpMode==='2v2'?'jugadores para 2v2':(pvpMode==='arena'||pvpMode==='arena10')?'jugadores para Arena 5':pvpMode==='arena10'?'jugadores para Arena 10':'rival')+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. 60 s',true);
+    const needed=pvpMode==='1v1'?2:pvpMode==='arena10'?10:pvpMode==='arena'?5:4;
+    const searchLabel=pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena10'?'jugadores para Arena 10':pvpMode==='arena'?'jugadores para Arena 5':'rival';
+    showStatus('🔎 Buscando '+searchLabel+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. 60 s',true);
   }
   function cancelMatch(){
     if(!queueSocket)return;
