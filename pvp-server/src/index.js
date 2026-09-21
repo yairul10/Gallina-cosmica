@@ -356,11 +356,19 @@ export class PvpMatchmaker {
     current.push({ socket: server, playerId, name, ship });
     this.waitingByMode.set(mode, current);
 
-    server.send(JSON.stringify({ type: "queue-waiting", mode, waiting: current.length, needed }));
+    // Actualiza a todos los jugadores de la cola para que vean cuántos
+    // participantes humanos están esperando en este momento.
+    const sendQueueCount = list => {
+      const msg=JSON.stringify({ type:"queue-waiting", mode, waiting:list.length, needed });
+      for(const entry of list){ try{ entry.socket.send(msg); }catch{} }
+    };
+    sendQueueCount(current);
 
     const clear = () => {
       const list = this.waitingByMode?.get(mode) || [];
-      this.waitingByMode?.set(mode, list.filter(entry => entry.socket !== server));
+      const remaining=list.filter(entry => entry.socket !== server);
+      this.waitingByMode?.set(mode, remaining);
+      sendQueueCount(remaining);
     };
     server.addEventListener("close", clear);
     server.addEventListener("error", clear);
