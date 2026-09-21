@@ -227,8 +227,10 @@
       } else if(m.type==='player-left') {
         const leftSlot=Number(m.slot);
         if((running||countdownActive)&&(pvpMode==='2v2'||pvpMode==='arena')){
+          const alreadyOut=eliminated.has(leftSlot);
           markEliminated(leftSlot);
           const leftPlayer=players.find(p=>Number(p.slot)===leftSlot);
+          if(!alreadyOut){killFeed.pop();addKillFeed('🚪 '+(leftPlayer?.name||('Jugador '+leftSlot))+' abandonó la partida.');}
           showStatus('⚠️ '+(leftPlayer?.name||'Un jugador')+' abandonó y cuenta como eliminado.');
         } else {
           players=players.filter(p=>Number(p.slot)!==leftSlot); peerStates.delete(leftSlot);
@@ -263,6 +265,7 @@
   }
 
   function resetArena(){
+    killFeed.length=0;
     const h=arenaCanvas.height,w=arenaCanvas.width;
     peerState.x=w/2;peerState.y=90;peerState.lives=10;peerState.angle=Math.PI/2;peerState.visualAngle=Math.PI/2;
     peerStates.clear(); syncPeerPlayers();
@@ -304,9 +307,20 @@
     if(matchFinished)return; matchFinished=true;
     stopArena(); $('pvpResultText').textContent=text; $('pvpResult').style.display='flex';
   }
+  const killFeed=[];
+  function playerName(slot){
+    const p=players.find(x=>Number(x.slot)===Number(slot));
+    return p?.name||('Jugador '+slot);
+  }
+  function addKillFeed(text){
+    killFeed.push({text:String(text||''),until:performance.now()+4200});
+    while(killFeed.length>4)killFeed.shift();
+  }
   function markEliminated(slot){
     slot=Number(slot||0); if(!slot)return;
+    const wasEliminated=eliminated.has(slot);
     eliminated.add(slot);
+    if(!wasEliminated)addKillFeed('💥 '+playerName(slot)+' fue eliminado.');
     if(slot===mySlot)meEliminated=true;
     const s=peerStates.get(slot);if(s)s.lives=0;
     updateLives();
@@ -626,6 +640,21 @@
       arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,7*t+3,0,Math.PI*2);arenaCtx.fill();
       arenaCtx.strokeStyle='#fff';arenaCtx.lineWidth=4;arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,r,0,Math.PI*2);arenaCtx.stroke();
       for(let i=0;i<8;i++){const a=i*Math.PI/4,len=10+(1-t)*24;arenaCtx.beginPath();arenaCtx.moveTo(fx.x+Math.cos(a)*8,fx.y+Math.sin(a)*8);arenaCtx.lineTo(fx.x+Math.cos(a)*len,fx.y+Math.sin(a)*len);arenaCtx.stroke();}
+      arenaCtx.restore();
+    }
+    // Kill Feed visual: sólo informa eventos confirmados; no modifica combate ni resultados.
+    const feedNow=performance.now();
+    while(killFeed.length&&killFeed[0].until<=feedNow)killFeed.shift();
+    if(killFeed.length){
+      arenaCtx.save();
+      arenaCtx.font='bold 11px sans-serif';
+      arenaCtx.textAlign='left';arenaCtx.textBaseline='middle';
+      killFeed.forEach((item,i)=>{
+        const y=58+i*27,wBox=Math.min(w-24,Math.max(180,arenaCtx.measureText(item.text).width+24));
+        arenaCtx.fillStyle='rgba(2,6,23,.78)';arenaCtx.fillRect(10,y-11,wBox,22);
+        arenaCtx.strokeStyle='rgba(125,211,252,.45)';arenaCtx.strokeRect(10,y-11,wBox,22);
+        arenaCtx.fillStyle='#fff';arenaCtx.fillText(item.text,20,y);
+      });
       arenaCtx.restore();
     }
     arenaCtx.restore();
