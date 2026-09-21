@@ -362,7 +362,7 @@
     // Igual que el modo normal: el misil Pro sólo se usa si la nave es Pro y ese misil fue desbloqueado.
     const usePro=info.isPro && !!stats.proMissiles?.[info.index];
     const speed=450, initialSpeed=300, a=meState.angle;
-    const enemies=players.filter(p=>Number(p.slot)!==mySlot && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    const enemies=players.filter(p=>Number(p.slot)!==mySlot && !eliminated.has(Number(p.slot)) && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
     const targetPlayer=enemies.map(p=>({p,state:peerFor(p.slot)})).sort((a,b)=>Math.hypot(a.state.x-meState.x,a.state.y-meState.y)-Math.hypot(b.state.x-meState.x,b.state.y-meState.y))[0];
     const targetSlot=Number(targetPlayer?.p?.slot||0);
     missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ownerSlot:mySlot,ownerTeam:myTeam,targetSlot,ship:myShip,missileType:info.missileType,isPro:usePro,life:6,vx:Math.cos(a)*initialSpeed,vy:Math.sin(a)*initialSpeed,speed});
@@ -401,16 +401,21 @@
       m.prevX=m.x;m.prevY=m.y;
       let target;
       if(m.own){
-        target=m.targetSlot?peerStates.get(Number(m.targetSlot)):null;
+        let targetSlot=Number(m.targetSlot||0);
+        if(targetSlot && eliminated.has(targetSlot)){ m.targetSlot=0; targetSlot=0; }
+        target=targetSlot?peerStates.get(targetSlot):null;
         if(!target){
           const candidates=players.filter(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
-          const nearest=candidates.map(p=>peerFor(p.slot)).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];
-          target=nearest||peerState;
+          const nearest=candidates.map(p=>({slot:Number(p.slot),state:peerFor(p.slot)})).sort((a,b)=>Math.hypot(a.state.x-m.x,a.state.y-m.y)-Math.hypot(b.state.x-m.x,b.state.y-m.y))[0];
+          if(nearest){ m.targetSlot=nearest.slot; target=nearest.state; }
+          else { m.life=0; continue; }
         }
       }else{
-        // Todos los clientes dibujan el misil hacia su objetivo real. El daño
-        // sigue siendo autoritativo sólo en el dispositivo del jugador objetivo.
+        // Si el objetivo ya fue eliminado, el misil deja de perseguir su última
+        // posición. Los misiles propios se redirigen; los remotos desaparecen
+        // hasta recibir el nuevo objetivo del dueño.
         const targetSlot=Number(m.targetSlot||0);
+        if(targetSlot && eliminated.has(targetSlot)){m.life=0;continue;}
         target=targetSlot===mySlot?meState:(targetSlot?peerStates.get(targetSlot):meState);
         if(!target){m.life=0;continue;}
       }
@@ -434,7 +439,7 @@
       const dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
       // El disparo propio atraviesa al compañero y sólo se corta visualmente
       // cuando alcanza una nave enemiga.
-      const targets=players.filter(p=>Number(p.slot)!==mySlot && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
+      const targets=players.filter(p=>Number(p.slot)!==mySlot && !eliminated.has(Number(p.slot)) && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
       let best=null;
       for(const p of targets){
         const target=peerFor(p.slot);
