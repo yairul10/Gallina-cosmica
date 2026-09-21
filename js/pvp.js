@@ -54,6 +54,7 @@
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
   let botMatch=false, botLives=10, lastBotHitAt=0;
   const botAiStates=new Map();
+  const botHitTimes=new Map();
   function botAiFor(slot){
     slot=Number(slot||0);
     if(!botAiStates.has(slot))botAiStates.set(slot,{lastShot:0,lastMove:0,moveX:0,moveY:0,nextMoveAt:0,nextMissileAt:0});
@@ -294,7 +295,7 @@
 
   function resetArena(){
     killFeed.length=0;matchKills=0;matchCupsSettled=false;lastAttackerSlot=0;lastAttackKind='laser';
-    botLives=10;lastBotHitAt=0;botAiStates.clear();
+    botLives=10;lastBotHitAt=0;botAiStates.clear();botHitTimes.clear();
     for(const p of players.filter(p=>p.bot)){
       const ai=botAiFor(p.slot), t=performance.now();
       ai.nextMoveAt=t+300+Math.random()*900;
@@ -664,6 +665,46 @@
               return;
             }
           }
+        }
+      }
+    }
+
+    // En partidas 2v2 con bots, este cliente simula las vidas de las naves
+    // sintéticas. Sólo el cliente del humano con slot más bajo procesa este daño,
+    // evitando que dos dispositivos descuenten el mismo impacto.
+    if(botMatch&&pvpMode==='2v2'){
+      const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
+      const botAuthority=humanSlots.length===0||mySlot===Math.min(...humanSlots);
+      if(botAuthority){
+        const damageBot=(targetPlayer,kind,killerSlot,hitX,hitY)=>{
+          const slot=Number(targetPlayer.slot), last=Number(botHitTimes.get(slot)||0);
+          if(now-last<=180)return false;
+          botHitTimes.set(slot,now);
+          const st=peerFor(slot);st.lives=Math.max(0,Number(st.lives??10)-1);
+          impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});updateLives();
+          if(st.lives<=0&&!eliminated.has(slot)){
+            eliminated.add(slot);
+            send({type:'bot-defeat',slot,team:Number(targetPlayer.team||0),killerSlot:Number(killerSlot||0),attackKind:kind});
+          }
+          return true;
+        };
+        for(const b of bullets){
+          if(b.life<=0)continue;
+          const owner=players.find(p=>Number(p.slot)===Number(b.ownerSlot));
+          if(!owner)continue;
+          const targets=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))&&Number(p.slot)!==Number(b.ownerSlot)&&Number(p.team)!==Number(owner.team));
+          const ax=Number.isFinite(b.prevX)?b.prevX:b.x,ay=Number.isFinite(b.prevY)?b.prevY:b.y,dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
+          let best=null;
+          for(const p of targets){const st=peerFor(p.slot),t=den>0?Math.max(0,Math.min(1,((st.x-ax)*dx+(st.y-ay)*dy)/den)):0,hx=ax+dx*t,hy=ay+dy*t;if(Math.hypot(hx-st.x,hy-st.y)<30&&(!best||t<best.t))best={p,t,hx,hy};}
+          if(best){b.life=0;b.x=best.hx;b.y=best.hy;damageBot(best.p,'laser',b.ownerSlot,best.hx,best.hy);}
+        }
+        for(const m of missiles){
+          if(m.life<=0)continue;
+          const targetPlayer=players.find(p=>p.bot&&Number(p.slot)===Number(m.targetSlot)&&!eliminated.has(Number(p.slot)));
+          const owner=players.find(p=>Number(p.slot)===Number(m.ownerSlot));
+          if(!targetPlayer||!owner||Number(targetPlayer.team)===Number(owner.team))continue;
+          const st=peerFor(targetPlayer.slot);
+          if(Math.hypot(m.x-st.x,m.y-st.y)<31){m.life=0;damageBot(targetPlayer,'missile',m.ownerSlot,m.x,m.y);}
         }
       }
     }
