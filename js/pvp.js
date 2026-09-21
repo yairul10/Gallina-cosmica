@@ -746,10 +746,11 @@
     if(!panel||!list||!mine)return;
     panel.style.display='block';list.textContent='Cargando…';mine.textContent='Cargando tu récord…';
     try{
-      const r=await fetch(PVP_HTTP_BASE+'/ranking',{cache:'no-store'}),data=await r.json();
+      const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId()),{cache:'no-store'}),data=await r.json();
       if(!data?.ok||!Array.isArray(data.ranking))throw new Error('ranking');
       const ranking=data.ranking,meId=playerId(),myIndex=ranking.findIndex(x=>String(x.playerId)===meId),my=myIndex>=0?ranking[myIndex]:null;
-      mine.textContent=my?'Tu récord · #'+(myIndex+1)+' · 🏆 '+my.cups+' · ☠️ '+my.kills+' · ✅ '+my.wins+' / ❌ '+my.losses:'Aún no tienes partidas registradas.';
+      const lifetime=data.record||null, weekLabel=data.period?'Semana '+data.period:'Ranking semanal';
+      mine.textContent=my?'🏆 '+weekLabel+' · #'+(myIndex+1)+' · '+my.cups+' copas · ☠️ '+my.kills+(lifetime?'\nHistórico · ✅ '+lifetime.wins+' / ❌ '+lifetime.losses:''):'🏆 '+weekLabel+' · Aún no tienes partidas esta semana.';
       list.replaceChildren();
       if(!ranking.length){list.textContent='Todavía no hay jugadores en el ranking.';return;}
       ranking.slice(0,100).forEach((p,i)=>{
