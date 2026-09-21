@@ -82,6 +82,12 @@
             <details style="width:min(88%,340px); margin-top:8px; color:#94a3b8; font-size:.75rem;">
                 <summary style="cursor:pointer; padding:6px;">🔧 Sala privada / QA</summary>
                 <button class="btn" id="pvpQaCoinsBtn" style="margin-top:8px; background:#047857;">🧪 +5.000.000 monedas de prueba</button>
+                <label for="pvpQaBotRank" style="display:block; margin-top:9px; color:#cbd5e1;">🤖 Dificultad de bots (QA)</label>
+                <select id="pvpQaBotRank" style="width:100%; margin-top:5px; padding:9px; border-radius:8px; border:1px solid #64748b; background:#0f172a; color:#fff;">
+                    <option value="auto">Automático (tu rango)</option>
+                    <option value="0">🥚 Novato</option><option value="1">🥉 Bronce</option><option value="2">🥈 Plata</option>
+                    <option value="3">🥇 Oro</option><option value="4">💎 Diamante</option><option value="5">🚀 Maestro Cósmico</option><option value="6">🌌 Leyenda Galáctica</option>
+                </select>
                 <button class="btn" id="pvpCreateRoomBtn" style="margin-top:8px; background:#475569;">➕ Crear sala privada</button>
                 <div style="display:flex; gap:8px; width:100%; margin-top:6px;">
                     <input id="pvpRoomCode" inputmode="numeric" maxlength="6" placeholder="Código de 6 dígitos" style="min-width:0; flex:1; padding:11px; border-radius:9px; border:1px solid #64748b; background:#0f172a; color:#fff; text-align:center; font-size:1rem;">
