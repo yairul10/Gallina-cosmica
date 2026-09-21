@@ -110,7 +110,7 @@ export class PvpRoom {
     server.addEventListener("message", event => {
       let message; try { message = JSON.parse(event.data); } catch { return; }
       if (!message || typeof message !== "object") return;
-      if (message.type === "bot-defeat" && this.mode === "2v2" && !this.finished) {
+      if (message.type === "bot-defeat" && (this.mode === "2v2" || this.mode === "arena") && !this.finished) {
         const deadSlot=Number(message.slot||0);
         const bot=this.botPlayers.find(p=>Number(p.slot)===deadSlot);
         if(bot && !this.eliminatedSlots.has(deadSlot)){
@@ -119,11 +119,15 @@ export class PvpRoom {
           const killerSlot=Number(message.killerSlot||0);
           const attackKind=message.attackKind==="missile"?"missile":"laser";
           this.broadcast({type:"player-eliminated",slot:deadSlot,team:Number(bot.team||0),reason:"combat",killerSlot,attackKind});
-          const teamSlots=this.playerList().filter(p=>Number(p.team)===Number(bot.team)).map(p=>Number(p.slot));
-          if(teamSlots.length===2 && teamSlots.every(s=>this.eliminatedSlots.has(s))){
-            this.finished=true;
-            const winnerTeam=Number(bot.team)===1?2:1;
-            this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam)});
+          if(this.mode==="2v2"){
+            const teamSlots=this.playerList().filter(p=>Number(p.team)===Number(bot.team)).map(p=>Number(p.slot));
+            if(teamSlots.length===2 && teamSlots.every(s=>this.eliminatedSlots.has(s))){
+              this.finished=true;
+              const winnerTeam=Number(bot.team)===1?2:1;
+              this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam)});
+            }
+          } else {
+            this.checkArenaResult();
           }
         }
         return;
