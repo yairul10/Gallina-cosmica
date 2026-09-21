@@ -52,7 +52,7 @@ export class PvpRoom {
     if (!this.mode) this.mode = requestedMode;
     if (requestedMode !== this.mode) return json({ ok: false, error: "MODE_MISMATCH" }, 409);
     const capacity = roomCapacity(this.mode);
-    const wantsBot = (this.mode === "1v1" || this.mode === "2v2") && url.searchParams.get("bot") === "1";
+    const wantsBot = (this.mode === "1v1" || this.mode === "2v2" || this.mode === "arena") && url.searchParams.get("bot") === "1";
     const requestedHumanCount = Math.max(1, Math.min(capacity, Number(url.searchParams.get("humanCount") || 1)));
     if (this.players.size >= capacity) return json({ ok: false, error: "ROOM_FULL" }, 409);
 
@@ -74,8 +74,8 @@ export class PvpRoom {
       if(wantsBot&&this.mode==="2v2"&&requestedHumanCount===2&&!this.humanSlotPlan){
         this.humanSlotPlan=Math.random()<0.5?[1,2]:[1,3];
       }
-      const humanSlots = wantsBot && this.mode==="2v2"
-        ? (requestedHumanCount===2 ? this.humanSlotPlan : Array.from({length:requestedHumanCount},(_,i)=>i+1))
+      const humanSlots = wantsBot && (this.mode==="2v2"||this.mode==="arena")
+        ? (this.mode==="2v2"&&requestedHumanCount===2 ? this.humanSlotPlan : Array.from({length:requestedHumanCount},(_,i)=>i+1))
         : Array.from({length:capacity},(_,i)=>i+1);
       slot = humanSlots.find(s => !used.has(s)) || Array.from({length:capacity},(_,i)=>i+1).find(s => !used.has(s)) || capacity;
       team = this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0;
@@ -95,6 +95,14 @@ export class PvpRoom {
           playerId:"bot-cosmico-"+botSlot,
           name:botSlot<=2?"🤖 Bot Aliado":"🤖 Bot Cósmico "+botSlot,
           ship:"Gallina", slot:botSlot, team:botSlot<=2?1:2, bot:true
+        }));
+      } else if (this.mode === "arena") {
+        const plannedHumanSlots=Array.from({length:requestedHumanCount},(_,i)=>i+1);
+        const botSlots=Array.from({length:capacity},(_,i)=>i+1).filter(s=>!plannedHumanSlots.includes(s));
+        this.botPlayers=botSlots.map(botSlot=>({
+          playerId:"bot-arena-"+botSlot,
+          name:"🤖 Bot Cósmico "+botSlot,
+          ship:"Gallina",slot:botSlot,team:0,bot:true
         }));
       }
     }
@@ -402,13 +410,13 @@ export class PvpMatchmaker {
 
     // Prueba: en 1v1 o 2v2, si no se completa la cola en 5 s, crear
     // una partida con bots. Al terminar las pruebas cambiaremos 5000 por 60000.
-    if (mode === "1v1" || mode === "2v2") {
+    if (mode === "1v1" || mode === "2v2" || mode === "arena") {
       setTimeout(() => {
         const list = this.waitingByMode?.get(mode) || [];
         const index = list.findIndex(entry => entry.socket === server);
         if (index < 0) return;
 
-        if (mode === "2v2") {
+        if (mode === "2v2" || mode === "arena") {
           // Al vencer el tiempo, todos los humanos que siguen esperando entran
           // juntos en UNA misma sala; los puestos restantes se completan con bots.
           // Sólo el jugador más antiguo de la cola ejecuta esta agrupación.
