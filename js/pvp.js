@@ -83,6 +83,9 @@
   const moveStick = { active:false, id:null, x:0, y:0 };
   // Mundo PvP lógico: 2× ancho × 2× alto = 4× superficie. La cámara se añade en la fase siguiente.
   const worldWidth=arenaCanvas.width*2, worldHeight=arenaCanvas.height*2;
+  // Alcance universal medido en coordenadas del mundo, idéntico en todos los dispositivos.
+  const PVP_ATTACK_RANGE=600;
+  const inAttackRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_ATTACK_RANGE;
   let selectedTargetSlot=0;
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
@@ -486,6 +489,7 @@
     const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     if(!targetPlayer){showStatus('🎯 Toca una nave enemiga para seleccionarla.');return;}
     const target=peerFor(targetPlayer.slot);
+    if(!inAttackRange(meState,target)){showStatus('📡 Objetivo fuera de alcance.');return;}
     const a=Math.atan2(target.y-meState.y,target.x-meState.x), sideX=Math.cos(a+Math.PI/2)*9, sideY=Math.sin(a+Math.PI/2)*9;
     meState.angle=a;lastShot=now;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
@@ -506,14 +510,16 @@
     if(!running||meEliminated)return;
     // La misma constante controla tanto el HUD como el disparo para que LISTO siempre signifique que puede disparar.
     if(now-lastMissile<PVP_MISSILE_COOLDOWN)return;
-    lastMissile=now;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     const info=shipCombatInfo(myShip), stats=currentGameStats();
     // Igual que el modo normal: el misil Pro sólo se usa si la nave es Pro y ese misil fue desbloqueado.
     const usePro=info.isPro && !!stats.proMissiles?.[info.index];
     const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     if(!targetPlayer){showStatus('🎯 Selecciona un enemigo antes de lanzar el misil.');return;}
-    const targetState=peerFor(targetPlayer.slot), a=Math.atan2(targetState.y-meState.y,targetState.x-meState.x);
+    const targetState=peerFor(targetPlayer.slot);
+    if(!inAttackRange(meState,targetState)){showStatus('📡 Objetivo fuera de alcance para misil.');return;}
+    lastMissile=now;
+    const a=Math.atan2(targetState.y-meState.y,targetState.x-meState.x);
     meState.angle=a;
     const speed=450, initialSpeed=300;
     const targetSlot=Number(targetPlayer.slot);
@@ -577,7 +583,7 @@
     meState.y=Math.max(55,Math.min(worldHeight-55,meState.y+my*190*dt));
     const selectedPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     if(!selectedPlayer)selectedTargetSlot=0;
-    else {const target=peerFor(selectedTargetSlot);meState.angle=Math.atan2(target.y-meState.y,target.x-meState.x);}
+    else {const target=peerFor(selectedTargetSlot);if(!inAttackRange(meState,target))selectedTargetSlot=0;else meState.angle=Math.atan2(target.y-meState.y,target.x-meState.x);}
     if(!meEliminated&&keys.has(' '))shoot();
 
     // IA básica de bots. En 2v2 esta primera prueba mueve y hace disparar
@@ -608,7 +614,7 @@
         // El bot sólo puede atacar a un enemigo que esté, como máximo, a una
         // distancia equivalente a la ventana visible. Evita disparos desde el
         // otro extremo del mundo antes de que los jugadores puedan encontrarse.
-        const targetInAttackRange=Math.abs(dx)<=arenaCanvas.width&&Math.abs(dy)<=arenaCanvas.height;
+        const targetInAttackRange=Math.hypot(dx,dy)<=PVP_ATTACK_RANGE;
         if(targetInAttackRange&&now-ai.lastShot>850){
           ai.lastShot=now;
           // 50% de tiros apuntan correctamente. El resto lleva un error amplio
@@ -940,8 +946,11 @@
     const r=arenaCanvas.getBoundingClientRect(),cam=cameraPosition();
     const x=cam.x+(e.clientX-r.left)*arenaCanvas.width/r.width,y=cam.y+(e.clientY-r.top)*arenaCanvas.height/r.height;
     const enemies=players.filter(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
-    const hit=enemies.map(p=>({p,d:Math.hypot(peerFor(p.slot).x-x,peerFor(p.slot).y-y)})).filter(v=>v.d<=48).sort((a,b)=>a.d-b.d)[0];
-    if(hit){selectedTargetSlot=Number(hit.p.slot);showStatus('🎯 Objetivo: '+playerName(selectedTargetSlot),true);}
+    const hit=enemies.map(p=>({p,state:peerFor(p.slot),d:Math.hypot(peerFor(p.slot).x-x,peerFor(p.slot).y-y)})).filter(v=>v.d<=48).sort((a,b)=>a.d-b.d)[0];
+    if(hit){
+      if(!inAttackRange(meState,hit.state)){showStatus('📡 Enemigo fuera del alcance de fijación.');return;}
+      selectedTargetSlot=Number(hit.p.slot);showStatus('🎯 Objetivo: '+playerName(selectedTargetSlot),true);
+    }
   });
   const missileBtn=$('pvpMissileBtn');
   if(missileBtn){
