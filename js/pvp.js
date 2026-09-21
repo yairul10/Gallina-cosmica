@@ -257,16 +257,19 @@
         }
       } else if(m.type==='team-result') {
         if(pvpMode==='2v2'){
-          if(Number(m.winnerTeam)===myTeam) endArena('🏆 ¡Victoria de tu equipo!','win');
-          else endArena('💥 Tu equipo fue eliminado.','loss');
+          const winnerTeam=Number(m.winnerTeam);
+          const winners=players.filter(p=>Number(p.team)===winnerTeam).map(p=>p.name||('Jugador '+p.slot)).join(' + ');
+          if(winnerTeam===myTeam) endArena('🏆 ¡VICTORIA!\n🤝 Equipo '+winnerTeam+' ganador'+(winners?'\n'+winners:''),'win');
+          else endArena('💥 DERROTA\n🏆 Equipo '+winnerTeam+' ganador'+(winners?'\n'+winners:''),'loss');
         }
       } else if(m.type==='arena-result') {
         if(pvpMode==='arena'){
-          if(Number(m.winnerSlot)===mySlot) endArena('🏆 ¡Victoria! Eres el último sobreviviente.','win');
-          else if(Number(m.winnerSlot)>0){
-            const winner=players.find(p=>Number(p.slot)===Number(m.winnerSlot));
-            endArena('💥 Eliminado · ganó '+(winner?.name||('Jugador '+m.winnerSlot))+'.','loss');
-          } else endArena('⚔️ Arena terminada sin sobrevivientes.');
+          const podium=Array.isArray(m.podiumSlots)?m.podiumSlots.map(Number).filter(Boolean):[Number(m.winnerSlot||0)].filter(Boolean);
+          const medals=['🥇','🥈','🥉','4️⃣'];
+          const podiumText=podium.map((slot,i)=>medals[i]+' '+playerName(slot)).join('\n');
+          const myPlace=podium.indexOf(mySlot)+1;
+          const title=Number(m.winnerSlot)===mySlot?'🏆 ¡VICTORIA EN ARENA!':(myPlace>0?'🌌 ARENA FINALIZADA · Puesto #'+myPlace:'🌌 ARENA FINALIZADA');
+          endArena(title+(podiumText?'\n\n'+podiumText:''),Number(m.winnerSlot)===mySlot?'win':'loss');
         }
       } else if(m.type==='peer-message') {
         handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
@@ -392,7 +395,7 @@
       // En 1v1 el peer defeat cierra la partida; acredita la eliminación si este cliente fue el atacante final.
       if(pvpMode==='1v1'){
         if(Number(p.killerSlot||0)===mySlot)matchKills++;
-        endArena('🏆 ¡Victoria! Destruiste la nave rival.','win');
+        endArena('🏆 ¡VICTORIA!\n⚔️ '+playerName(mySlot)+' derrotó a '+playerName(fromSlot),'win');
       }
       return;
     }
