@@ -239,7 +239,13 @@
           else showStatus('Un jugador salió. Esperando otro jugador…');
         }
       } else if(m.type==='player-eliminated') {
-        markEliminated(Number(m.slot||0));
+        const deadSlot=Number(m.slot||0),killerSlot=Number(m.killerSlot||0);
+        const alreadyOut=eliminated.has(deadSlot);
+        markEliminated(deadSlot);
+        if(!alreadyOut && m.reason==='combat' && killerSlot && killerSlot!==deadSlot){
+          killFeed.pop();
+          addKillFeed((m.attackKind==='missile'?'🚀 ':'🔫 ')+playerName(killerSlot)+' eliminó a '+playerName(deadSlot)+(m.attackKind==='missile'?' con misil.':'.'));
+        }
         if(pvpMode==='arena' && Number(m.slot)!==mySlot && !meEliminated){
           const alive=players.filter(p=>!eliminated.has(Number(p.slot)));
           showStatus('🌌 Arena · quedan '+alive.length+' jugadores.',true);
