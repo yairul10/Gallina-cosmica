@@ -602,9 +602,14 @@
         const enemyTargets=enemyPlayers.map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)}));
         const chosen=enemyTargets.sort((a,b)=>Math.hypot(a.state.x-bot.x,a.state.y-bot.y)-Math.hypot(b.state.x-bot.x,b.state.y-bot.y))[0];
         if(!chosen)continue;
-        const trueAim=Math.atan2(chosen.state.y-bot.y,chosen.state.x-bot.x);
+        const dx=chosen.state.x-bot.x,dy=chosen.state.y-bot.y;
+        const trueAim=Math.atan2(dy,dx);
         bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
-        if(now-ai.lastShot>850){
+        // El bot sólo puede atacar a un enemigo que esté, como máximo, a una
+        // distancia equivalente a la ventana visible. Evita disparos desde el
+        // otro extremo del mundo antes de que los jugadores puedan encontrarse.
+        const targetInAttackRange=Math.abs(dx)<=arenaCanvas.width&&Math.abs(dy)<=arenaCanvas.height;
+        if(targetInAttackRange&&now-ai.lastShot>850){
           ai.lastShot=now;
           // 50% de tiros apuntan correctamente. El resto lleva un error amplio
           // para que un jugador nuevo tenga una oportunidad real de esquivarlos.
@@ -618,7 +623,7 @@
           if(pvpMode==='2v2')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim});
         }
         // Misil con cadencia humana: espera aleatoriamente entre 8 y 12 s.
-        if(now>=ai.nextMissileAt){
+        if(targetInAttackRange&&now>=ai.nextMissileAt){
           ai.nextMissileAt=now+8000+Math.random()*4000;
           const info=shipCombatInfo(botPlayer.ship||'Gallina');
           spawnRemoteMissile(bot.x,bot.y,botPlayer.ship,info.missileType,false,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
