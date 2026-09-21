@@ -85,7 +85,9 @@
   const worldWidth=arenaCanvas.width*2, worldHeight=arenaCanvas.height*2;
   // Alcance universal medido en coordenadas del mundo, idéntico en todos los dispositivos.
   const PVP_ATTACK_RANGE=250;
+  const PVP_LOCK_RANGE=300;
   const inAttackRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_ATTACK_RANGE;
+  const inLockRange=(a,b)=>!!a&&!!b&&Math.hypot(b.x-a.x,b.y-a.y)<=PVP_LOCK_RANGE;
   let selectedTargetSlot=0;
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
@@ -583,7 +585,7 @@
     meState.y=Math.max(55,Math.min(worldHeight-55,meState.y+my*190*dt));
     const selectedPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     if(!selectedPlayer)selectedTargetSlot=0;
-    else {const target=peerFor(selectedTargetSlot);if(!inAttackRange(meState,target))selectedTargetSlot=0;else meState.angle=Math.atan2(target.y-meState.y,target.x-meState.x);}
+    else {const target=peerFor(selectedTargetSlot);if(!inLockRange(meState,target))selectedTargetSlot=0;else meState.angle=Math.atan2(target.y-meState.y,target.x-meState.x);}
     if(!meEliminated&&keys.has(' '))shoot();
 
     // IA básica de bots. En 2v2 esta primera prueba mueve y hace disparar
@@ -948,7 +950,7 @@
     const enemies=players.filter(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
     const hit=enemies.map(p=>({p,state:peerFor(p.slot),d:Math.hypot(peerFor(p.slot).x-x,peerFor(p.slot).y-y)})).filter(v=>v.d<=48).sort((a,b)=>a.d-b.d)[0];
     if(hit){
-      if(!inAttackRange(meState,hit.state)){showStatus('📡 Enemigo fuera del alcance de fijación.');return;}
+      if(!inLockRange(meState,hit.state)){showStatus('📡 Enemigo fuera del alcance de fijación.');return;}
       selectedTargetSlot=Number(hit.p.slot);showStatus('🎯 Objetivo: '+playerName(selectedTargetSlot),true);
     }
   });
