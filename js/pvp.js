@@ -238,7 +238,7 @@
   }
   let queueWaitingCount=1;
   function updateQueueStatus(){
-    if(!queueSocket||!queueStartedAt)return;
+    if(!queueStartedAt)return;
     const sec=Math.max(0,Math.floor((Date.now()-queueStartedAt)/1000));
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
     const needed=pvpMode==='1v1'?2:pvpMode==='arena10'?10:pvpMode==='arena'?5:4;
