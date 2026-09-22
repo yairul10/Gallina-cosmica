@@ -136,6 +136,7 @@ async function bootQaMode() {
             `Puntaje: prom. <b>${Math.round(average(scores)).toLocaleString()}</b> · máx. <b>${Math.max(...scores).toLocaleString()}</b> · mín. <b>${Math.min(...scores).toLocaleString()}</b><br>` +
             `Ronda máxima: <b>${Math.max(...qaResults.map((result) => result.maxRound))}</b> · duración prom.: <b>${formatDuration(average(qaResults.map((result) => result.duration)))}</b><br>` +
             `Vidas compradas prom.: <b>${average(qaResults.map((result) => result.livesBought)).toFixed(1)}</b> · evoluciones prom.: <b>${average(qaResults.map((result) => result.evolutions)).toFixed(1)}</b><br>` +
+            `Monedas: ganadas prom. <b>${Math.round(average(qaResults.map((result) => result.coinsEarned || 0))).toLocaleString()}</b> · gastadas prom. <b>${Math.round(average(qaResults.map((result) => result.coinsSpent || 0))).toLocaleString()}</b><br>` +
             `Llegaron a rondas: R1 ${rounds[0]} · R2 ${rounds[1]} · R3 ${rounds[2]} · R4 ${rounds[3]}`;
         resultList.innerHTML = qaResults.slice(-5).map((result, index) => {
             const number = completed - Math.min(5, completed) + index + 1;
@@ -241,7 +242,7 @@ async function bootQaMode() {
         qaOutsideSince.clear();
         qaSimulationElapsedMs = 0;
         qaGameTimeFrames = 0;
-        qaCurrentMatch = { mode, maxWave: 0, speed: qaSpeedMultiplier, upgradeSpent: 0, missiles: 0, anomalies: [], anomalyKeys: new Set(), lastProgress: null, lastProgressAt: 0, stateSince: null, stateSinceAt: 0 };
+        qaCurrentMatch = { mode, maxWave: 0, speed: qaSpeedMultiplier, coinsStart: Number(coins) || 0, coinsSpent: 0, upgradeSpent: 0, missiles: 0, anomalies: [], anomalyKeys: new Set(), lastProgress: null, lastProgressAt: 0, stateSince: null, stateSinceAt: 0 };
     };
     const startQaMatch = () => {
         if (!qaSeriesRunning) return;
@@ -414,7 +415,10 @@ async function bootQaMode() {
         const coinsBefore = coins;
         originalBuyUpgrade(type);
         const spent = Math.max(0, coinsBefore - coins);
-        if (qaBotActive && qaCurrentMatch && type !== 'life') qaCurrentMatch.upgradeSpent += spent;
+        if (qaBotActive && qaCurrentMatch && spent > 0) {
+            qaCurrentMatch.coinsSpent += spent;
+            if (type !== 'life') qaCurrentMatch.upgradeSpent += spent;
+        }
     };
     const originalShootMissile = window.shootMissile;
     window.shootMissile = function () {
@@ -434,6 +438,9 @@ async function bootQaMode() {
             livesBought: sessionLivesBought,
             evolutions: evolutionStage,
             upgradeSpent: qaCurrentMatch.upgradeSpent,
+            coinsSpent: qaCurrentMatch.coinsSpent,
+            coinsEarned: Math.max(0, (Number(coins) || 0) - qaCurrentMatch.coinsStart + qaCurrentMatch.coinsSpent),
+            coinsNet: (Number(coins) || 0) - qaCurrentMatch.coinsStart,
             survival: gameRound >= 4 || goingToRound >= 4,
             missiles: qaCurrentMatch.missiles,
             completedSuperBoss
