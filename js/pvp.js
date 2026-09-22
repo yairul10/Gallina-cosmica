@@ -497,32 +497,22 @@
     if(raf)cancelAnimationFrame(raf);raf=0;moveStick.active=false;
   }
   async function settlePvpRecord(result,forcedMatchId='',placement=0){
-    const me=identity(),matchId=forcedMatchId||(currentRoom+'-'+pvpMode);
-    try{
-      const r=await fetch(PVP_HTTP_BASE+'/ranking',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:playerId(),name:me.name||'Jugador',kills:matchKills,botKills:matchBotKills,humanKills:matchHumanKills,result,mode:pvpMode,placement,matchId})});
-      const data=await r.json();
-      if(data?.ok&&data.record){
-        const cups=Number(data.record.cups||0);
-        localStorage.setItem(PVP_CUPS_KEY,String(cups));
-        return {cups,delta:Number(data.delta||0),record:data.record};
-      }
-    }catch{}
     const before=getPvpCups();
-    const killCups=matchBotKills+matchHumanKills*3;
-    const lossPenalty=before>=12000?10:before>=7000?8:before>=3000?5:before>=1000?3:0;
-    let rawDelta;
-    if(pvpMode==='arena'||pvpMode==='arena10'){
-      const table=pvpMode==='arena'?{1:10,2:5,3:0,4:-5,5:-10}:{1:10,2:8,3:5,4:0,5:-2,6:-4,7:-6,8:-8,9:-9,10:-10};
-      let posDelta=Number(table[Number(placement)||0]||0);
-      const mult=before>=12000?2:before>=7000?1.5:before>=3000?1.25:before>=1000?1:0;
-      if(posDelta<0)posDelta=-Math.round(Math.abs(posDelta)*mult);
-      rawDelta=posDelta+killCups;
-    }else {
-      const winCups=pvpMode==='2v2'?8:5;
-      rawDelta=result==='win'?winCups:-lossPenalty;
+    // Las copas ya las liquida PvpRoom en el Worker. El cliente sólo consulta
+    // el registro oficial; nunca calcula ni aplica copas localmente.
+    for(let attempt=0;attempt<6;attempt++){
+      try{
+        const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId())+'&t='+Date.now(),{cache:'no-store'});
+        const data=await r.json();
+        if(data?.ok&&data.record){
+          const cups=Number(data.record.cups||0);
+          localStorage.setItem(PVP_CUPS_KEY,String(cups));
+          return {cups,delta:cups-before,record:data.record,authoritative:true};
+        }
+      }catch{}
+      await new Promise(resolve=>setTimeout(resolve,250));
     }
-    const cups=addPvpCups(rawDelta);
-    return {cups,delta:cups-before,local:true};
+    return {cups:getPvpCups(),delta:0,pending:true,authoritative:true};
   }
   function pvpRankName(cups){
     cups=Number(cups||0);
