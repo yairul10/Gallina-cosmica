@@ -1417,6 +1417,23 @@
     const end=e=>{if(e.pointerId!==stick.id)return;stick.active=false;stick.id=null;stick.x=stick.y=0;knob.style.transform='translate(0,0)';};
     el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
   }
+  const PVP_CONTROL_IDS=['pvpMoveStick','pvpFireBtn','pvpMissileBtn','pvpEvadeBtn'];
+  const PVP_CONTROLS_KEY='gallina_pvp_controls_v1';
+  const defaultControlStyle={
+    pvpMoveStick:{left:'22px',right:'auto',top:'auto',bottom:'max(24px,env(safe-area-inset-bottom))'},
+    pvpFireBtn:{left:'auto',right:'22px',top:'auto',bottom:'max(24px,env(safe-area-inset-bottom))'},
+    pvpMissileBtn:{left:'auto',right:'28px',top:'auto',bottom:'max(145px,calc(env(safe-area-inset-bottom) + 145px))'},
+    pvpEvadeBtn:{left:'auto',right:'31px',top:'auto',bottom:'max(225px,calc(env(safe-area-inset-bottom) + 225px))'}
+  };
+  function applyPvpControlLayout(layout){PVP_CONTROL_IDS.forEach(id=>{const el=$(id),p=layout?.[id];if(!el||!p)return;el.style.left=p.left;el.style.top=p.top;el.style.right='auto';el.style.bottom='auto';});}
+  function loadPvpControlLayout(){try{const v=JSON.parse(localStorage.getItem(PVP_CONTROLS_KEY)||'null');if(v)applyPvpControlLayout(v);}catch{}}
+  function savePvpControlLayout(){const a=arena.getBoundingClientRect(),layout={};PVP_CONTROL_IDS.forEach(id=>{const el=$(id);if(!el)return;const r=el.getBoundingClientRect();layout[id]={left:Math.max(0,r.left-a.left)+'px',top:Math.max(0,r.top-a.top)+'px'};});localStorage.setItem(PVP_CONTROLS_KEY,JSON.stringify(layout));applyPvpControlLayout(layout);}
+  function resetPvpControlLayout(){localStorage.removeItem(PVP_CONTROLS_KEY);PVP_CONTROL_IDS.forEach(id=>{const el=$(id),p=defaultControlStyle[id];if(el)Object.assign(el.style,p);});}
+  let controlsEditing=false,controlDrag=null;
+  function openControlsEditor(){disconnect(true);lobby.style.display='none';arena.style.display='flex';controlsEditing=true;$('pvpControlsEditor').style.display='block';$('pvpLeaveArenaBtn').style.display='none';$('pvpEvadeBtn').style.display=gameStats?.pvpEvade?'block':'none';loadPvpControlLayout();}
+  function closeControlsEditor(save=true){if(save)savePvpControlLayout();controlsEditing=false;controlDrag=null;$('pvpControlsEditor').style.display='none';$('pvpLeaveArenaBtn').style.display='block';arena.style.display='none';lobby.style.display='flex';}
+  PVP_CONTROL_IDS.forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('pointerdown',e=>{if(!controlsEditing)return;e.preventDefault();e.stopImmediatePropagation();const a=arena.getBoundingClientRect(),r=el.getBoundingClientRect();controlDrag={el,id:e.pointerId,dx:e.clientX-r.left,dy:e.clientY-r.top,a};try{el.setPointerCapture(e.pointerId);}catch{};},{capture:true});el.addEventListener('pointermove',e=>{if(!controlsEditing||!controlDrag||controlDrag.el!==el||controlDrag.id!==e.pointerId)return;e.preventDefault();const a=arena.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight;const left=Math.max(0,Math.min(a.width-w,e.clientX-a.left-controlDrag.dx)),top=Math.max(0,Math.min(a.height-h,e.clientY-a.top-controlDrag.dy));el.style.left=left+'px';el.style.top=top+'px';el.style.right='auto';el.style.bottom='auto';},{capture:true});const end=e=>{if(controlDrag?.el===el&&controlDrag.id===e.pointerId)controlDrag=null;};el.addEventListener('pointerup',end,{capture:true});el.addEventListener('pointercancel',end,{capture:true});});
+  loadPvpControlLayout();
   stickSetup($('pvpMoveStick'),moveStick,false);
   const fireBtn=$('pvpFireBtn');
   if(fireBtn){fireBtn.style.touchAction='none';fireBtn.addEventListener('pointerdown',e=>{e.preventDefault();shoot();});}
@@ -1516,6 +1533,9 @@
   window.openPvpRankingMenu = showPvpRanking;
   $('pvpRankingBtn')?.addEventListener('click',showPvpRanking);
   $('pvpRankingCloseBtn')?.addEventListener('click',()=>{const p=$('pvpRankingPanel');if(p)p.style.display='none';});
+  $('pvpControlsBtn')?.addEventListener('click',openControlsEditor);
+  $('pvpControlsSaveBtn')?.addEventListener('click',()=>closeControlsEditor(true));
+  $('pvpControlsResetBtn')?.addEventListener('click',()=>{resetPvpControlLayout();});
   $('pvpFindMatchBtn')?.addEventListener('click',()=>{unlockPvpMusic();findMatch();});
   $('pvpCreateRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();const c=randomCode();roomInput.value=c;connect(c,true);});
   $('pvpJoinRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();connect(roomInput.value,false);});
