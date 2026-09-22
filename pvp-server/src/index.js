@@ -222,8 +222,8 @@ export class PvpRoom {
             const disconnectedName=safeText(state.name || name, name || "Jugador", 40);
             rankingStub.fetch("https://ranking.internal/ranking", {
               method:"POST",
-              headers:{"content-type":"application/json"},
-              body:JSON.stringify({playerId,name:disconnectedName,kills:0,result:"disconnect",matchId:"disconnect-"+url.pathname+"-"+this.mode})
+              headers:{"content-type":"application/json","x-pvp-internal":"room"},
+              body:JSON.stringify({official:true,playerId,name:disconnectedName,kills:0,botKills:0,humanKills:0,result:"disconnect",mode:this.mode,placement:0,matchId:"disconnect-"+url.pathname+"-"+this.mode})
             }).catch(()=>{});
           } catch {}
           if (this.mode === "1v1") {
@@ -619,6 +619,9 @@ export default {
       return json({ ok: true, service: "gallina-cosmica-pvp", version: 3, matchmaking: true, modes: ["1v1", "2v2", "arena", "arena10"] });
     }
     if (url.pathname === "/ranking") {
+      // El ranking público es SOLO lectura. Las liquidaciones oficiales llegan
+      // directamente desde PvpRoom al Durable Object PvpRanking y no pasan por aquí.
+      if (request.method !== "GET") return json({ ok:false, error:"RANKING_READ_ONLY" }, 405);
       const id = env.PVP_RANKING.idFromName("global");
       return env.PVP_RANKING.get(id).fetch(request);
     }
