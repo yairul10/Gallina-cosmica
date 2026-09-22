@@ -1399,10 +1399,17 @@
     const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
   });
   document.querySelectorAll('.pvp-mode-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    // No permitir cambiar de modo mientras la cola está activa: antes este click
+    // reemplazaba el contador de matchmaking por "Modo 2v2..." aunque la búsqueda
+    // seguía corriendo (botón todavía decía Cancelar búsqueda).
+    if(queueStartedAt){
+      updateQueueStatus();
+      return;
+    }
     pvpMode=btn.dataset.mode||'1v1';
     document.querySelectorAll('.pvp-mode-btn').forEach(b=>b.style.background=b===btn?'#7c3aed':'#475569');
     const find=$('pvpFindMatchBtn');
-    if(find) find.textContent=pvpMode==='2v2'?'🤝 Buscar equipo 2v2':pvpMode==='arena10'?'🌠 Buscar Arena 10':pvpMode==='arena'?'🌌 Buscar Arena 5':'⚔️ Buscar rival';
+    if(find) find.textContent=queueButtonLabel();
     showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':pvpMode==='arena10'?'Modo Arena 10 · mapa 5×5, todos contra todos.':pvpMode==='arena'?'Modo Arena 5 · todos contra todos.':'Modo 1v1.');
   }));
   function pvpRank(cups){
