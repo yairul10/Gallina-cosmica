@@ -3,11 +3,13 @@
 (() => {
     // Respaldo QA conservado temporalmente para la transición a Play Games.
     // Debe permanecer false en cualquier build distribuida por Google Play.
-    const PLAYER_IDENTITY_QA_ENABLED = false;
+    const PLAYER_IDENTITY_QA_ENABLED = true;
     if (!PLAYER_IDENTITY_QA_ENABLED) return;
 
     const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() !== 'web');
-    if (isNativeApp) return;
+    // QA temporal habilitado también en Android para esta ronda de pruebas.
+    // Antes de distribuir la beta pública debe volver a false.
+    // if (isNativeApp) return;
 
     // Este archivo se usa solo en GitHub Pages. Si una versión antigua del
     // perfil quedó guardada, el premio se reconcilia en cada carga para QA.
