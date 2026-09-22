@@ -139,6 +139,14 @@ export class PvpRoom {
     server.addEventListener("message", event => {
       let message; try { message = JSON.parse(event.data); } catch { return; }
       if (!message || typeof message !== "object") return;
+
+      // Un participante eliminado, rendido o una sala ya finalizada no puede
+      // seguir alterando el combate. Permitimos únicamente mensajes inocuos de
+      // sincronización/salida; disparos, misiles, estado y derrotas se descartan.
+      const senderOut=this.eliminatedSlots.has(slot)||this.forfeitedPlayers.has(playerId);
+      const gameplayTypes=new Set(["state","shot","missile","defeat","bot-defeat"]);
+      if((this.finished||senderOut)&&gameplayTypes.has(String(message.type||""))) return;
+
       if (message.type === "bot-defeat" && (this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && !this.finished) {
         const deadSlot=Number(message.slot||0);
         const bot=this.botPlayers.find(p=>Number(p.slot)===deadSlot);
