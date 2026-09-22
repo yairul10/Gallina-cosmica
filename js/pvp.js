@@ -676,7 +676,7 @@
     if(p.type==='defeat'){
       // En 1v1 el peer defeat cierra la partida; acredita la eliminación si este cliente fue el atacante final.
       if(pvpMode==='1v1'){
-        if(Number(p.killerSlot||0)===mySlot){matchKills++;const victim=players.find(x=>Number(x.slot)===fromSlot);if(victim?.bot)matchBotKills++;else matchHumanKills++;}
+        if(Number(p.killerSlot||0)===mySlot && !eliminated.has(Number(fromSlot))){matchKills++;const victim=players.find(x=>Number(x.slot)===fromSlot);if(victim?.bot)matchBotKills++;else matchHumanKills++;}
         endArena('🏆 ¡VICTORIA!\n⚔️ '+playerName(mySlot)+' derrotó a '+playerName(fromSlot),'win');
       }
       return;
@@ -1466,7 +1466,15 @@
   function savePvpControlLayout(){const a=arena.getBoundingClientRect(),layout={};PVP_CONTROL_IDS.forEach(id=>{const el=$(id);if(!el)return;const r=el.getBoundingClientRect();layout[id]={left:Math.max(0,r.left-a.left)+'px',top:Math.max(0,r.top-a.top)+'px'};});localStorage.setItem(PVP_CONTROLS_KEY,JSON.stringify(layout));applyPvpControlLayout(layout);}
   function resetPvpControlLayout(){localStorage.removeItem(PVP_CONTROLS_KEY);PVP_CONTROL_IDS.forEach(id=>{const el=$(id),p=defaultControlStyle[id];if(el)Object.assign(el.style,p);});}
   let controlsEditing=false,controlDrag=null;
-  function openControlsEditor(){disconnect(true);lobby.style.display='none';arena.style.display='flex';controlsEditing=true;$('pvpControlsEditor').style.display='block';$('pvpLeaveArenaBtn').style.display='none';$('pvpEvadeBtn').style.display=gameStats?.pvpEvade?'block':'none';loadPvpControlLayout();}
+  function openControlsEditor(){
+    // No abrir el editor mientras matchmaking está activo. Desconectarlo aquí
+    // podía dejar al jugador dentro de una sala sin forma de volver a la partida.
+    if(queueStartedAt || socket?.readyState===WebSocket.OPEN){
+      showStatus(queueStartedAt?'🔒 Cancela la búsqueda antes de ajustar los controles.':'🔒 No puedes ajustar controles mientras estás conectado a una partida.');
+      return;
+    }
+    disconnect(true);lobby.style.display='none';arena.style.display='flex';controlsEditing=true;$('pvpControlsEditor').style.display='block';$('pvpLeaveArenaBtn').style.display='none';$('pvpEvadeBtn').style.display=gameStats?.pvpEvade?'block':'none';loadPvpControlLayout();
+  }
   function closeControlsEditor(save=true){if(save)savePvpControlLayout();controlsEditing=false;controlDrag=null;$('pvpControlsEditor').style.display='none';$('pvpLeaveArenaBtn').style.display='block';arena.style.display='none';lobby.style.display='flex';}
   PVP_CONTROL_IDS.forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('pointerdown',e=>{if(!controlsEditing)return;e.preventDefault();e.stopImmediatePropagation();const a=arena.getBoundingClientRect(),r=el.getBoundingClientRect();controlDrag={el,id:e.pointerId,dx:e.clientX-r.left,dy:e.clientY-r.top,a};try{el.setPointerCapture(e.pointerId);}catch{};},{capture:true});el.addEventListener('pointermove',e=>{if(!controlsEditing||!controlDrag||controlDrag.el!==el||controlDrag.id!==e.pointerId)return;e.preventDefault();const a=arena.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight;const left=Math.max(0,Math.min(a.width-w,e.clientX-a.left-controlDrag.dx)),top=Math.max(0,Math.min(a.height-h,e.clientY-a.top-controlDrag.dy));el.style.left=left+'px';el.style.top=top+'px';el.style.right='auto';el.style.bottom='auto';},{capture:true});const end=e=>{if(controlDrag?.el===el&&controlDrag.id===e.pointerId)controlDrag=null;};el.addEventListener('pointerup',end,{capture:true});el.addEventListener('pointercancel',end,{capture:true});});
   loadPvpControlLayout();
