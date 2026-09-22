@@ -1464,7 +1464,11 @@
   }
   function activateEvade(){
     const now=performance.now();if(!gameStats?.pvpEvade||!running||meEliminated||now-lastEvade<PVP_EVADE_COOLDOWN)return;
-    lastEvade=now;evadeUntil=now+PVP_EVADE_DURATION;send({type:'evade'});showStatus('🌀 Campo de interferencia activo · 2 s sin fijación.',true);updateEvadeButton(now);
+    lastEvade=now;evadeUntil=now+PVP_EVADE_DURATION;
+    // El campo corta inmediatamente cualquier ataque de bot que ya estuviera fijado.
+    for(const b of bullets){if(!b.own&&Number(b.targetSlot||0)===mySlot)b.life=0;}
+    for(const m of missiles){if(!m.own&&(!Number(m.targetSlot||0)||Number(m.targetSlot)===mySlot))m.life=0;}
+    send({type:'evade'});showStatus('🌀 Campo de interferencia activo · 2 s sin fijación.',true);updateEvadeButton(now);
   }
   const evadeBtn=$('pvpEvadeBtn');if(evadeBtn){evadeBtn.style.touchAction='none';evadeBtn.addEventListener('pointerdown',e=>{e.preventDefault();activateEvade();});}
   const missileBtn=$('pvpMissileBtn');
