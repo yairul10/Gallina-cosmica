@@ -214,6 +214,19 @@
         return session;
     };
 
+    // Consulta remota de QA. El servidor decide por Player ID verificado;
+    // el cliente nunca contiene una lista de cuentas autorizadas.
+    window.getRemoteQaAccess = async ({ forceSession = false } = {}) => {
+        try {
+            const session = await window.getPlayGamesPvpSession({ force: forceSession });
+            const response = await fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/qa/access?session=' + encodeURIComponent(session.token), { cache: 'no-store' });
+            const data = await response.json().catch(() => ({}));
+            return !!(response.ok && data?.ok && data?.qaEnabled);
+        } catch (_) {
+            return false;
+        }
+    };
+
     // Diagnóstico seguro para builds instaladas desde Google Play.
     // El código OAuth de un solo uso sólo existe en memoria durante esta llamada:
     // nunca se muestra, registra ni guarda.
