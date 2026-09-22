@@ -850,10 +850,25 @@
         }else if(dist<135){
           desiredX=-dx/dist;desiredY=-dy/dist;
         }else if(dist<=250){
-          // En combate gira alrededor del objetivo para no quedarse quieto.
-          const side=(Number(botPlayer.slot)%2)?1:-1;
-          desiredX=(-dy/dist)*side*.90+(dx/dist)*.12;
-          desiredY=( dx/dist)*side*.90+(dy/dist)*.12;
+          // Desde Diamante entra en órbita táctica cerca del límite de disparo:
+          // corre lateralmente alrededor del rival mientras corrige suavemente
+          // hacia ~235 px. Maestro/Leyenda cambian de sentido ocasionalmente.
+          if(rankLevel>=4&&chosen){
+            if(!ai.orbitSide)ai.orbitSide=(Number(botPlayer.slot)%2)?1:-1;
+            if(rankLevel>=5&&(!ai.nextOrbitFlipAt||now>=ai.nextOrbitFlipAt)){
+              ai.nextOrbitFlipAt=now+(rankLevel>=6?1800:2800)+Math.random()*(rankLevel>=6?1700:2400);
+              if(Math.random()<(rankLevel>=6?.70:.45))ai.orbitSide*=-1;
+            }
+            const side=Number(ai.orbitSide||1);
+            const targetRadius=rankLevel>=6?232:rankLevel===5?235:240;
+            const radial=Math.max(-.38,Math.min(.38,(dist-targetRadius)/55));
+            desiredX=(-dy/dist)*side*.96+(dx/dist)*radial;
+            desiredY=( dx/dist)*side*.96+(dy/dist)*radial;
+          }else{
+            const side=(Number(botPlayer.slot)%2)?1:-1;
+            desiredX=(-dy/dist)*side*.90+(dx/dist)*.12;
+            desiredY=( dx/dist)*side*.90+(dy/dist)*.12;
+          }
         }
         if(dodging){
           const side=Number(ai.dodgeSide||1);
