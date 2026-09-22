@@ -128,6 +128,9 @@ function updateHangarUI() {
         if(btn){const equipped=gameStats.selectedPvpShip===id;btn.textContent=equipped?'Equipado':'Equipar';btn.style.background=equipped?'#f59e0b':'#334155';}
     });
 
+    const evadeCard=document.getElementById('hangar-pvp-evade');
+    if(evadeCard) evadeCard.style.display=gameStats.pvpEvade?'flex':'none';
+
     let btnExtra = document.getElementById('btn-equip-autolife');
     if (btnExtra) {
         if (!gameStats.extraModule) { btnExtra.textContent = 'Bloqueado'; btnExtra.style.background = '#1e293b'; btnExtra.disabled = true; }
