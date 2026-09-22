@@ -503,7 +503,7 @@
   }
   function startArena(){
     if(!arenaCanvas||!arenaCtx||running||countdownActive)return;
-    lobby.style.display='none'; arena.style.display='flex'; resetArena(); startPvpMusic();
+    lobby.style.display='none'; arena.style.display='flex'; loadPvpControlLayout(); resetArena(); startPvpMusic();
     const overlay=$('pvpCountdown'), label=$('pvpCountdownText');
     countdownActive=true; let count=3;
     // Pintar inmediatamente el estado inicial de la nueva partida.
