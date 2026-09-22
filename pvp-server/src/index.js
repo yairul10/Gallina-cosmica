@@ -92,15 +92,39 @@ async function authorizePvpRequest(request, env) {
   return new Request(url.toString(),request);
 }
 
-function qaPlayerIds(env) {
-  return new Set(String(env.QA_PLAYER_IDS || "").split(",").map(v=>v.trim()).filter(Boolean));
+function idSet(value) {
+  return new Set(String(value || "").split(",").map(v=>v.trim()).filter(Boolean));
+}
+function qaPlayerIds(env) { return idSet(env.QA_PLAYER_IDS); }
+function qaAdminIds(env) { return idSet(env.QA_ADMIN_PLAYER_IDS); }
+async function qaRegistry(env, action, playerId="") {
+  const id=env.PVP_RANKING.idFromName("global");
+  return env.PVP_RANKING.get(id).fetch("https://ranking.internal/qa-registry",{
+    method:"POST",headers:{"content-type":"application/json","x-pvp-internal":"qa-admin"},
+    body:JSON.stringify({action,playerId})
+  });
 }
 async function qaAccess(request, env) {
   const url=new URL(request.url);
   const session=await verifySessionToken(env,url.searchParams.get("session"));
-  if(!session)return json({ok:false,qaEnabled:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
-  const enabled=qaPlayerIds(env).has(String(session.playerId));
-  return json({ok:true,qaEnabled:enabled});
+  if(!session)return json({ok:false,qaEnabled:false,isAdmin:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
+  const isAdmin=qaAdminIds(env).has(String(session.playerId));
+  const response=await qaRegistry(env,"check",session.playerId);
+  const data=await response.json().catch(()=>({}));
+  const enabled=isAdmin || qaPlayerIds(env).has(String(session.playerId)) || data?.enabled===true;
+  return json({ok:true,qaEnabled:enabled,isAdmin});
+}
+async function qaAdmin(request, env) {
+  const url=new URL(request.url);
+  const session=await verifySessionToken(env,url.searchParams.get("session"));
+  if(!session)return json({ok:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
+  if(!qaAdminIds(env).has(String(session.playerId)))return json({ok:false,error:"QA_ADMIN_REQUIRED"},403);
+  let body={}; if(request.method==="POST"){try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}}
+  const action=request.method==="GET"?"list":safeText(body.action,"",16);
+  if(!["list","add","remove"].includes(action))return json({ok:false,error:"BAD_ACTION"},400);
+  const playerId=safeText(body.playerId,"",128);
+  if((action==="add"||action==="remove")&&!playerId)return json({ok:false,error:"PLAYER_ID_REQUIRED"},400);
+  return qaRegistry(env,action,playerId);
 }
 
 function json(data, status = 200) {
@@ -559,8 +583,19 @@ export class PvpRanking {
   }
 
   async fetch(request) {
-    const state=await this.rollover();
     const url=new URL(request.url);
+    if(url.pathname==="/qa-registry" && request.headers.get("x-pvp-internal")==="qa-admin"){
+      let body; try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}
+      const action=safeText(body?.action,"",16), playerId=safeText(body?.playerId,"",128);
+      const ids=new Set((await this.ctx.storage.get("qaPlayerIds"))||[]);
+      if(action==="add")ids.add(playerId);
+      else if(action==="remove")ids.delete(playerId);
+      else if(action==="check")return json({ok:true,enabled:ids.has(playerId)});
+      else if(action!=="list")return json({ok:false,error:"BAD_ACTION"},400);
+      if(action==="add"||action==="remove")await this.ctx.storage.put("qaPlayerIds",[...ids]);
+      return json({ok:true,playerIds:[...ids].sort()});
+    }
+    const state=await this.rollover();
 
     if(request.method==='GET'){
       const ranking=this.sort(state.players).slice(0,100).map(p=>({...p,rank:this.rankFor(p.cups)}));
@@ -775,6 +810,10 @@ export default {
     if (url.pathname === "/qa/access") {
       if (request.method !== "GET") return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
       return qaAccess(request,env);
+    }
+    if (url.pathname === "/qa/admin") {
+      if (!["GET","POST"].includes(request.method)) return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
+      return qaAdmin(request,env);
     }
     if (url.pathname === "/ranking") {
       // El ranking público es SOLO lectura. Las liquidaciones oficiales llegan
