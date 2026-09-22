@@ -227,6 +227,24 @@
         }
     };
 
+    window.getQaAdminStatus = async () => {
+        try {
+            const session=await window.getPlayGamesPvpSession();
+            const response=await fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/qa/access?session='+encodeURIComponent(session.token),{cache:'no-store'});
+            const data=await response.json().catch(()=>({}));
+            return {ok:response.ok&&!!data?.ok,isAdmin:!!data?.isAdmin,qaEnabled:!!data?.qaEnabled,playerId:session.playerId};
+        } catch (_) { return {ok:false,isAdmin:false,qaEnabled:false}; }
+    };
+    window.qaAdminRequest = async (action, playerId='') => {
+        const session=await window.getPlayGamesPvpSession();
+        const base='https://gallina-cosmica-pvp-test.jairog940.workers.dev/qa/admin?session='+encodeURIComponent(session.token);
+        const options=action==='list'?{cache:'no-store'}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action,playerId:String(playerId).trim()})};
+        const response=await fetch(base,options);
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok||!data?.ok)throw new Error(data?.error||'No se pudo administrar QA');
+        return data;
+    };
+
     // Diagnóstico seguro para builds instaladas desde Google Play.
     // El código OAuth de un solo uso sólo existe en memoria durante esta llamada:
     // nunca se muestra, registra ni guarda.
@@ -234,7 +252,7 @@
     const runSafePlayGamesDiagnostic = async ({ visible = false } = {}) => {
         if (serverAuthDiagnosticRan && !visible) return window.GallinaPlayGamesDiagnostic || null;
         serverAuthDiagnosticRan = true;
-        const report = { playGames: false, identity: false, identityConsistent: false, serverAuth: false };
+        const report = { playGames: false, identity: false, identityConsistent: false, serverAuth: false, playerId: '' };
         try {
             const playGames = getPlayGames();
             if (!playGames) throw new Error('Play Games no disponible');
@@ -243,6 +261,7 @@
             if (!report.playGames) throw new Error('Play Games no autenticado');
             const player = await playGames.getPlayerStatus();
             const nativeId = player?.playerAvailable && player?.playerId ? String(player.playerId) : '';
+            report.playerId = nativeId;
             report.identity = !!nativeId;
             const published = nativeId ? publishPlayGamesIdentity(player) : null;
             report.identityConsistent = !!(nativeId && published?.id === nativeId && window.GallinaPlayerIdentity?.getId?.() === nativeId);
@@ -259,6 +278,7 @@
                 'Diagnóstico Play Games',
                 '🎮 Conexión: ' + (report.playGames ? 'OK ✓' : 'ERROR'),
                 '🆔 Identidad: ' + (report.identity ? 'OK ✓' : 'ERROR'),
+                ...(report.playerId ? ['🪪 Player ID: ' + report.playerId, 'Mantén presionado el ID para copiarlo.'] : []),
                 '🔗 Coherencia de identidad: ' + (report.identityConsistent ? 'OK ✓' : 'ERROR'),
                 '🔐 Autorización de servidor: ' + (report.serverAuth ? 'OK ✓' : 'ERROR')
             ];
