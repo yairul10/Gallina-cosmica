@@ -433,7 +433,7 @@
           const officialMe=official?.players.find(p=>Number(p.slot)===mySlot);
           const officialOrder=Array.isArray(official?.finalOrder)?official.finalOrder.map(Number):[];
           const officialPlace=officialOrder.indexOf(mySlot)+1;
-          const serverQa=officialMe?'\n\n🔐 QA servidor: puesto '+(officialPlace||'—')+' · bots '+Number(officialMe.kills?.botKills||0)+' · humanos '+Number(officialMe.kills?.humanKills||0):'\n\n⚠️ QA servidor: sin registro oficial';
+          const serverQa=officialMe?'\n\n🔐 Resultado oficial: puesto '+(officialPlace||'—')+' · bots '+Number(officialMe.kills?.botKills||0)+' · humanos '+Number(officialMe.kills?.humanKills||0):'\n\n⚠️ Resultado oficial: sin registro del servidor';
           endArena(title+(podiumText?'\n\n'+podiumText:'')+serverQa,Number(m.winnerSlot)===mySlot?'win':'loss',myPlace);
         }
       } else if(m.type==='peer-message') {
