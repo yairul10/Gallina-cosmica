@@ -1,6 +1,11 @@
 /* Identidad simulada para probar torneos desde GitHub Pages.
    No se activa dentro de la app Android. */
 (() => {
+    // Respaldo QA conservado temporalmente para la transición a Play Games.
+    // Debe permanecer false en cualquier build distribuida por Google Play.
+    const PLAYER_IDENTITY_QA_ENABLED = false;
+    if (!PLAYER_IDENTITY_QA_ENABLED) return;
+
     const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() !== 'web');
     if (isNativeApp) return;
 
