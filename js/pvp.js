@@ -1425,7 +1425,8 @@
       });
     }catch{mine.textContent='No se pudo cargar el récord.';list.textContent='Intenta nuevamente en unos segundos.';}
   }
-    $('pvpRankingBtn')?.addEventListener('click',showPvpRanking);
+  window.openPvpRankingMenu = showPvpRanking;
+  $('pvpRankingBtn')?.addEventListener('click',showPvpRanking);
   $('pvpRankingCloseBtn')?.addEventListener('click',()=>{const p=$('pvpRankingPanel');if(p)p.style.display='none';});
   $('pvpFindMatchBtn')?.addEventListener('click',()=>{unlockPvpMusic();findMatch();});
   $('pvpCreateRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();const c=randomCode();roomInput.value=c;connect(c,true);});
