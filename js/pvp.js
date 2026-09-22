@@ -847,18 +847,22 @@
           ai.dodgeSide=Math.random()<.5?-1:1;
         }
         const dodging=now<Number(ai.dodgeUntil||0);
-        if(lifeRatio<=.30&&dist<330){
-          // Herido: intenta abrir distancia, pero no huye en línea recta.
-          const side=Number(ai.dodgeSide||((Number(botPlayer.slot)%2)?1:-1));
-          desiredX=(-dx/dist)*.78+(-dy/dist)*side*.42;
-          desiredY=(-dy/dist)*.78+( dx/dist)*side*.42;
+        const retreating=rankLevel>=4&&lifeRatio<=(rankLevel>=6?.35:.30);
+        if(retreating&&chosen){
+          // Con poca vida corta el duelo, abre distancia a máxima velocidad y
+          // sigue derivando lateralmente para no convertirse en un blanco recto.
+          const side=Number(ai.dodgeSide||ai.orbitSide||((Number(botPlayer.slot)%2)?1:-1));
+          desiredX=(-dx/dist)*1.18+(-dy/dist)*side*.58;
+          desiredY=(-dy/dist)*1.18+( dx/dist)*side*.58;
         }else if(dist<135){
           desiredX=-dx/dist;desiredY=-dy/dist;
-        }else if(dist<=250){
-          // Desde Diamante entra en órbita táctica cerca del límite de disparo:
+        }else if(rankLevel>=4&&chosen&&dist<=PVP_LOCK_RANGE){
+          // Desde Diamante la persecución ya es una órbita continua: incluso cuando
+          // sale momentáneamente de los 250 px sigue avanzando de forma tangencial
+          // mientras recupera la distancia de disparo.
           // corre lateralmente alrededor del rival mientras corrige suavemente
           // hacia ~235 px. Maestro/Leyenda cambian de sentido ocasionalmente.
-          if(rankLevel>=4&&chosen){
+          {
             if(!ai.orbitSide)ai.orbitSide=(Number(botPlayer.slot)%2)?1:-1;
             if(rankLevel>=5&&(!ai.nextOrbitFlipAt||now>=ai.nextOrbitFlipAt)){
               ai.nextOrbitFlipAt=now+(rankLevel>=6?1800:2800)+Math.random()*(rankLevel>=6?1700:2400);
@@ -872,11 +876,11 @@
             const tangent=rankLevel>=6?1.28:rankLevel===5?1.16:1.04;
             desiredX=(-dy/dist)*side*tangent+(dx/dist)*radial;
             desiredY=( dx/dist)*side*tangent+(dy/dist)*radial;
-          }else{
-            const side=(Number(botPlayer.slot)%2)?1:-1;
-            desiredX=(-dy/dist)*side*.90+(dx/dist)*.12;
-            desiredY=( dx/dist)*side*.90+(dy/dist)*.12;
           }
+        }else if(dist<=250){
+          const side=(Number(botPlayer.slot)%2)?1:-1;
+          desiredX=(-dy/dist)*side*.90+(dx/dist)*.12;
+          desiredY=( dx/dist)*side*.90+(dy/dist)*.12;
         }
         if(dodging){
           const side=Number(ai.dodgeSide||1);
@@ -902,7 +906,7 @@
         // El jugador se mueve a 190 px/s: Maestro/Leyenda ya usan prácticamente
         // toda esa velocidad en combate en vez de quedar artificialmente lentos.
         const baseSpeed=[108,116,124,150,170,185,190][rankLevel];
-        const speed=lifeRatio<=.30?Math.min(190,baseSpeed+8):dist>250?baseSpeed:(dodging?190:(rankLevel>=5?baseSpeed:Math.max(104,baseSpeed-6)));
+        const speed=retreating?190:(dist>250?baseSpeed:(dodging?190:(rankLevel>=5?baseSpeed:Math.max(104,baseSpeed-6))));
         const botNextX=Math.max(45,Math.min(worldWidth-45,bot.targetX+ai.moveX*speed*dt));
         const botNextY=Math.max(70,Math.min(worldHeight-70,bot.targetY+ai.moveY*speed*dt));
         if(!positionBlockedByAsteroid(botNextX,bot.targetY,24))bot.targetX=botNextX;
