@@ -234,9 +234,11 @@ export class PvpRoom {
       const gameplayTypes=new Set(["state","shot","missile","evade","defeat","bot-defeat"]);
       if((this.finished||senderOut)&&gameplayTypes.has(String(message.type||""))) return;
 
-      if (message.type === "bot-defeat" && (this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && !this.finished) {
+      if (message.type === "bot-defeat" && (this.mode === "1v1" || this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && !this.finished) {
         const deadSlot=Number(message.slot||0);
-        const bot=this.botPlayers.find(p=>Number(p.slot)===deadSlot);
+        const bot=this.mode==="1v1"
+          ? (this.botPlayer && Number(this.botPlayer.slot)===deadSlot ? this.botPlayer : null)
+          : this.botPlayers.find(p=>Number(p.slot)===deadSlot);
         const reportedKiller=Number(message.killerSlot||0);
         const killer=this.playerList().find(p=>Number(p.slot)===reportedKiller);
         const humanSlots=this.playerList().filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
@@ -255,7 +257,16 @@ export class PvpRoom {
           const attackKind=message.attackKind==="missile"?"missile":message.attackKind==="zone"?"zone":"laser";
           this.recordServerKill(killerSlot,deadSlot);
           this.broadcast({type:"player-eliminated",slot:deadSlot,team:Number(bot.team||0),reason:"combat",killerSlot,attackKind});
-          if(this.mode==="2v2"){
+          if(this.mode==="1v1"){
+            this.finished=true;
+            const winner=this.playerList().find(p=>!p.bot&&Number(p.slot)!==deadSlot)||null;
+            const winnerSlot=Number(winner?.slot||0);
+            if(winnerSlot){
+              this.officialResult=this.officialSnapshot({winnerSlot,winnerPlayerId:winner?.playerId||null});
+              this.settleOfficialResults({winnerSlot,winnerPlayerId:winner?.playerId||null});
+              this.broadcast({type:"peer-message",from:deadSlot,team:0,payload:{type:"defeat",killerSlot:winnerSlot,attackKind}});
+            }
+          } else if(this.mode==="2v2"){
             const teamSlots=this.playerList().filter(p=>Number(p.team)===Number(bot.team)).map(p=>Number(p.slot));
             if(teamSlots.length===2 && teamSlots.every(s=>this.eliminatedSlots.has(s))){
               this.finished=true;
