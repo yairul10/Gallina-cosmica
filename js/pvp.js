@@ -55,7 +55,7 @@
     }catch{}
     resumeBgMusicAfterPvp = false;
   }
-  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastSentState = null, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
+  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastSentState = null, stateSeq = 0, localVx = 0, localVy = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
   let botMatch=false, botLives=20, lastBotHitAt=0, lastRegenAt=0;
   const botAiStates=new Map();
   const botHitTimes=new Map();
@@ -90,7 +90,7 @@
   }
   function peerFor(slot){
     slot=Number(slot||0);
-    if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,targetX:210,targetY:80,lives:20,angle:Math.PI/2,targetAngle:Math.PI/2,visualAngle:Math.PI/2,targetVisualAngle:Math.PI/2,slot});
+    if(!peerStates.has(slot)) peerStates.set(slot,{x:210,y:80,targetX:210,targetY:80,vx:0,vy:0,lastSeq:-1,lastNetAt:0,lives:20,angle:Math.PI/2,targetAngle:Math.PI/2,visualAngle:Math.PI/2,targetVisualAngle:Math.PI/2,slot});
     return peerStates.get(slot);
   }
   function syncPeerPlayers(){
@@ -483,7 +483,7 @@
     configureWorld();
     configureAsteroids();
     killFeed.length=0;matchKills=0;matchBotKills=0;matchHumanKills=0;matchCupsSettled=false;pendingBotDefeats.clear();lastAttackerSlot=0;lastAttackKind='laser';
-    botLives=20;lastBotHitAt=0;lastRegenAt=performance.now();botAiStates.clear();botHitTimes.clear();botRegenTimes.clear();
+    botLives=20;lastBotHitAt=0;lastRegenAt=performance.now();lastStateSend=0;lastSentState=null;stateSeq=0;localVx=0;localVy=0;botAiStates.clear();botHitTimes.clear();botRegenTimes.clear();
     for(const p of players.filter(p=>p.bot)){
       const ai=botAiFor(p.slot), t=performance.now();
       ai.nextMoveAt=t+300+Math.random()*900;
@@ -713,8 +713,15 @@
     }
     if(p.type==='state'){
       const px=Number(p.x), py=Number(p.y), pa=Number(p.angle);
+      const seq=Number(p.seq);
+      if(Number.isFinite(seq)&&seq<=Number(remote.lastSeq??-1))return;
+      if(Number.isFinite(seq))remote.lastSeq=seq;
       if(Number.isFinite(px)) remote.targetX=mirrorX(px);
       if(Number.isFinite(py)) remote.targetY=mirrorY(py);
+      const pvx=Number(p.vx),pvy=Number(p.vy);
+      if(Number.isFinite(pvx))remote.vx=pvpMode==='1v1'&&mySlot===2?-pvx:pvx;
+      if(Number.isFinite(pvy))remote.vy=pvpMode==='1v1'&&mySlot===2?-pvy:pvy;
+      remote.lastNetAt=performance.now();
       if(Number.isFinite(pa)) remote.targetAngle=mirrorAngle(pa);
       const pva=Number(p.visualAngle);
       if(Number.isFinite(pva)) remote.targetVisualAngle=mirrorAngle(pva);
@@ -841,8 +848,14 @@
     const smooth=1-Math.pow(0.000001,dt);
     const angleLerp=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;
     for(const state of peerStates.values()){
-      if(Number.isFinite(state.targetX)) state.x+=(state.targetX-state.x)*smooth;
-      if(Number.isFinite(state.targetY)) state.y+=(state.targetY-state.y)*smooth;
+      // Predicción corta (máx. 100 ms) usando la velocidad informada por el rival.
+      // Reduce la posición visual atrasada sin permitir que una predicción antigua
+      // siga alejando la nave si se pierde temporalmente la conexión.
+      const age=Math.min(.10,Math.max(0,(performance.now()-Number(state.lastNetAt||performance.now()))/1000));
+      const predictedX=Number(state.targetX)+(Number(state.vx)||0)*age;
+      const predictedY=Number(state.targetY)+(Number(state.vy)||0)*age;
+      if(Number.isFinite(predictedX)) state.x+=(predictedX-state.x)*smooth;
+      if(Number.isFinite(predictedY)) state.y+=(predictedY-state.y)*smooth;
       if(Number.isFinite(state.targetAngle)) state.angle=angleLerp(state.angle,state.targetAngle,smooth);
       if(Number.isFinite(state.targetVisualAngle)) state.visualAngle=angleLerp(state.visualAngle,state.targetVisualAngle,smooth);
     }
@@ -851,10 +864,12 @@
     if(keys.has('ArrowUp')||keys.has('w'))my-=1;if(keys.has('ArrowDown')||keys.has('s'))my+=1;
     const len=Math.hypot(mx,my);if(len>1){mx/=len;my/=len;}
     if(Math.hypot(mx,my)>.12) meState.visualAngle=Math.atan2(my,mx);
+    const beforeX=meState.x,beforeY=meState.y;
     const nextX=Math.max(30,Math.min(worldWidth-30,meState.x+mx*190*dt));
     const nextY=Math.max(55,Math.min(worldHeight-55,meState.y+my*190*dt));
     if(!positionBlockedByAsteroid(nextX,meState.y,24))meState.x=nextX;
     if(!positionBlockedByAsteroid(meState.x,nextY,24))meState.y=nextY;
+    localVx=dt>0?(meState.x-beforeX)/dt:0;localVy=dt>0?(meState.y-beforeY)/dt:0;
     const selectedPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam)&&performance.now()>=Number(remoteEvadeUntil.get(Number(p.slot))||0));
     if(!selectedPlayer)selectedTargetSlot=0;
     else {const target=peerFor(selectedTargetSlot);if(!inLockRange(meState,target))selectedTargetSlot=0;else meState.angle=Math.atan2(target.y-meState.y,target.x-meState.x);}
@@ -1282,13 +1297,18 @@
     const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
     const sa=pvpMode==='1v1'&&mySlot===2?meState.angle+Math.PI:meState.angle;
     const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
-    const stateNow={x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives};
+    const svx=pvpMode==='1v1'&&mySlot===2?-localVx:localVx;
+    const svy=pvpMode==='1v1'&&mySlot===2?-localVy:localVy;
+    const stateNow={x:Math.round(sx),y:Math.round(sy),vx:Math.round(svx),vy:Math.round(svy),angle:sa,visualAngle:sva,lives:meState.lives};
     const angleDiff=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
-    const stateChanged=!lastSentState||Math.abs(stateNow.x-lastSentState.x)>=1||Math.abs(stateNow.y-lastSentState.y)>=1||angleDiff(stateNow.angle,lastSentState.angle)>.015||angleDiff(stateNow.visualAngle,lastSentState.visualAngle)>.015||stateNow.lives!==lastSentState.lives;
+    const stateChanged=!lastSentState||Math.abs(stateNow.x-lastSentState.x)>=1||Math.abs(stateNow.y-lastSentState.y)>=1||Math.abs(stateNow.vx-lastSentState.vx)>=1||Math.abs(stateNow.vy-lastSentState.vy)>=1||angleDiff(stateNow.angle,lastSentState.angle)>.015||angleDiff(stateNow.visualAngle,lastSentState.visualAngle)>.015||stateNow.lives!==lastSentState.lives;
+    const wasIdle=!!lastSentState&&Math.abs(Number(lastSentState.vx)||0)<1&&Math.abs(Number(lastSentState.vy)||0)<1;
+    const moving=Math.abs(stateNow.vx)>=1||Math.abs(stateNow.vy)>=1;
+    const resumed=wasIdle&&moving;
     const sendInterval=stateChanged?50:500;
-    if((stateChanged&&now-lastStateSend>=16)||now-lastStateSend>=sendInterval){
+    if(resumed||now-lastStateSend>=sendInterval){
       lastStateSend=now;lastSentState=stateNow;
-      send({type:'state',...stateNow});
+      send({type:'state',seq:++stateSeq,...stateNow});
       if(botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
         const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
         if(humanSlots.length===0||mySlot===Math.min(...humanSlots)){
