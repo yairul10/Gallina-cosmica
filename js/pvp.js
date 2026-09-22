@@ -57,6 +57,7 @@
   }
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastSentState = null, stateSeq = 0, localVx = 0, localVy = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
   let botMatch=false, botLives=20, lastBotHitAt=0, lastRegenAt=0;
+  let qaPvpActive=false, qaPvpSpeed=1, qaPvpStartedAt=0, qaPvpSimMs=0, qaPvpLastErrorCount=0;
   const botAiStates=new Map();
   const botHitTimes=new Map();
   const botRegenTimes=new Map();
@@ -614,10 +615,15 @@
   function endArena(text,result='none',placement=0){
     if(matchFinished)return; matchFinished=true;
     stopArena();
+    if(qaPvpActive){
+      const report={mode:pvpMode,result,placement,kills:matchKills,botKills:matchBotKills,humanKills:matchHumanKills,realDurationMs:performance.now()-qaPvpStartedAt,simulatedDurationMs:qaPvpSimMs,lives:meState.lives,eliminated:[...eliminated],text};
+      qaPvpActive=false;qaPvpSpeed=1;
+      window.dispatchEvent(new CustomEvent('gallina-qa-pvp-result',{detail:report}));
+    }
     const resultEl=$('pvpResultText');
     resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+(result==='win'||result==='loss'?'\n🏆 Guardando copas…':'');
     $('pvpResult').style.display='flex';
-    if(!matchCupsSettled && (result==='win'||result==='loss')){
+    if(!qaPvpActive && !matchCupsSettled && (result==='win'||result==='loss')){
       matchCupsSettled=true;
       const cupsBefore=getPvpCups();
       settlePvpRecord(result,'',placement).then(saved=>{
@@ -794,7 +800,12 @@
     btn.style.opacity=left>0?'.55':'1';
   }
   function loop(now){
-    if(!running)return; const dt=Math.min(.04,(now-lastFrame)/1000);lastFrame=now; update(dt,now);draw();raf=requestAnimationFrame(loop);
+    if(!running)return;
+    const dt=Math.min(.04,(now-lastFrame)/1000);lastFrame=now;
+    const steps=qaPvpActive?Math.max(1,Math.min(8,Number(qaPvpSpeed)||1)):1;
+    // QA PvP acelera únicamente la simulación. La red real nunca se acelera.
+    for(let i=0;i<steps&&running;i++){update(dt,now+i*dt*1000);if(qaPvpActive)qaPvpSimMs+=dt*1000;}
+    draw();raf=requestAnimationFrame(loop);
   }
   // requestAnimationFrame se pausa cuando la pestaña/app queda en segundo plano.
   // Un pulso liviano mantiene el combate local avanzando para que la nave siga
@@ -1643,5 +1654,28 @@
   });
   $('pvpResultBackBtn')?.addEventListener('click',()=>{disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';});
 
-  window.GallinaPvp={get connected(){return socket?.readyState===WebSocket.OPEN;},get roomCode(){return currentRoom;},get slot(){return mySlot;},send,disconnect};
+  window.GallinaPvp={
+    get connected(){return socket?.readyState===WebSocket.OPEN;},get roomCode(){return currentRoom;},get slot(){return mySlot;},send,disconnect,
+    startQaMatch(mode='1v1',speed=1){
+      if(!window.QA_MODE)throw new Error('QA_MODE_DISABLED');
+      if(running||countdownActive)stopArena();
+      disconnect(true);
+      pvpMode=['1v1','2v2','arena','arena10'].includes(mode)?mode:'1v1';
+      qaPvpActive=true;qaPvpSpeed=Math.max(1,Math.min(8,Number(speed)||1));qaPvpStartedAt=performance.now();qaPvpSimMs=0;
+      currentRoom='QA-'+Date.now();mySlot=1;myTeam=pvpMode==='2v2'?1:0;botMatch=true;
+      const capacity=pvpMode==='1v1'?2:pvpMode==='2v2'?4:pvpMode==='arena'?5:10;
+      players=[{slot:1,team:myTeam,name:'QA Jugador',ship:shipLabel(),bot:false}];
+      for(let slot=2;slot<=capacity;slot++)players.push({slot,team:pvpMode==='2v2'?(slot<=2?1:2):0,name:'🤖 QA Bot '+slot,ship:'Gallina',bot:true});
+      lobby.style.display='none';arena.style.display='flex';loadPvpControlLayout();resetArena();startPvpMusic();
+      const overlay=$('pvpCountdown');if(overlay)overlay.style.display='none';
+      running=true;countdownActive=false;lastFrame=performance.now();raf=requestAnimationFrame(loop);
+      return {mode:pvpMode,speed:qaPvpSpeed,bots:capacity-1};
+    },
+    stopQaMatch(){
+      if(!qaPvpActive)return false;
+      const report={mode:pvpMode,result:'cancelled',kills:matchKills,botKills:matchBotKills,realDurationMs:performance.now()-qaPvpStartedAt,simulatedDurationMs:qaPvpSimMs,lives:meState.lives,eliminated:[...eliminated]};
+      qaPvpActive=false;qaPvpSpeed=1;stopArena();window.dispatchEvent(new CustomEvent('gallina-qa-pvp-result',{detail:report}));return true;
+    },
+    getQaSnapshot(){return {active:qaPvpActive,mode:pvpMode,speed:qaPvpSpeed,simulatedMs:qaPvpSimMs,lives:meState.lives,kills:matchKills,botKills:matchBotKills,bullets:bullets.length,missiles:missiles.length,eliminated:[...eliminated],players:players.length};}
+  };
 })();
