@@ -66,7 +66,14 @@
 
         <div id="pvpLobbyScreen" class="screen-overlay" style="display:none; background:rgba(9,13,22,.98); z-index:210;">
             <h1 style="color:#c4b5fd; margin-bottom:6px;">⚔️ Arena PvP</h1>
-            <p style="font-size:.82rem; color:#94a3b8; margin-bottom:14px;">Prueba experimental · 1 vs 1</p>
+            <p style="font-size:.82rem; color:#94a3b8; margin-bottom:8px;">Prueba experimental · 1 vs 1</p>
+            <div id="pvpRankSummary" style="width:min(88%,340px); margin:0 auto 10px; text-align:center;">
+                <div id="pvpRankSummaryText" style="font-size:.86rem; font-weight:800; color:#fde68a;">🏆 Cargando rango…</div>
+                <div style="height:5px; margin-top:6px; background:#1e293b; border-radius:999px; overflow:hidden;">
+                    <div id="pvpRankProgress" style="width:0%; height:100%; background:linear-gradient(90deg,#fbbf24,#a855f7); transition:width .3s ease;"></div>
+                </div>
+                <div id="pvpRankNext" style="margin-top:4px; font-size:.68rem; color:#94a3b8;"></div>
+            </div>
             <div class="leaderboard-box" style="width:min(88%,340px); text-align:left;">
                 <p><b>Jugador:</b> <span id="pvpPlayerName">Jugador</span></p>
                 <p><b>Nave:</b> <span id="pvpShipName">Gallina</span></p>
