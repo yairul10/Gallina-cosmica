@@ -68,6 +68,7 @@
                 : null);
     };
 
+    const PLAY_GAMES_SERVER_CLIENT_ID = '672762312251-iub1fld742850kn1v637dvhle7e0mdv4.apps.googleusercontent.com';
     const PLAY_GAMES_IDENTITY_KEY = 'gallina_play_games_identity';
     const PROFILE_KEYS = new Set([
         'farm_space_stats',
@@ -158,6 +159,20 @@
 
     if (!isAndroidApp()) return;
     setStatus(false);
+
+    // Solicita un código OAuth de un solo uso para que el backend pueda
+    // verificar la identidad con Google. No se guarda en localStorage.
+    window.requestPlayGamesServerAuthCode = async () => {
+        const playGames = getPlayGames();
+        if (!playGames) throw new Error('Google Play Games no está disponible');
+        const status = await playGames.getAuthStatus();
+        if (!status?.authenticated) throw new Error('Google Play Games no está autenticado');
+        const result = await playGames.requestServerSideAccess({
+            serverClientId: PLAY_GAMES_SERVER_CLIENT_ID
+        });
+        if (!result?.authCode) throw new Error('Google Play Games no entregó autorización de servidor');
+        return result.authCode;
+    };
 
     window.unlockPlayGamesAchievement = async (achievementId) => {
         const playGames = getPlayGames();
