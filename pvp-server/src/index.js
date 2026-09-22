@@ -84,7 +84,8 @@ export class PvpRoom {
     server.accept();
     const playerId = safeText(url.searchParams.get("playerId"), crypto.randomUUID(), 128);
     const name = safeText(url.searchParams.get("name"), "Jugador", 40);
-    const ship = safeText(url.searchParams.get("ship"), "Gallina", 40);\n    const cups = Math.max(0, Math.min(9999999, Number(url.searchParams.get("cups") || 0)));
+    const ship = safeText(url.searchParams.get("ship"), "Gallina", 40);
+    const cups = Math.max(0, Math.min(9999999, Number(url.searchParams.get("cups") || 0)));
     let slot, team, reconnected = false;
     const pending = Array.from(this.rewardStatus.entries()).find(([,s]) => s.playerId === playerId && s.pendingReconnect);
     if (pending) {
