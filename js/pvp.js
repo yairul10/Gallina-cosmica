@@ -498,21 +498,29 @@
   }
   async function settlePvpRecord(result,forcedMatchId='',placement=0){
     const before=getPvpCups();
-    // Las copas ya las liquida PvpRoom en el Worker. El cliente sólo consulta
-    // el registro oficial; nunca calcula ni aplica copas localmente.
-    for(let attempt=0;attempt<6;attempt++){
+    const officialMatchId=forcedMatchId||('room-'+currentRoom+'-'+pvpMode);
+    // Espera la liquidación exacta de ESTA partida. Así una escritura retrasada de
+    // una partida anterior no se muestra como si fueran copas ganadas ahora.
+    for(let attempt=0;attempt<20;attempt++){
       try{
-        const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId())+'&t='+Date.now(),{cache:'no-store'});
+        const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId())+'&matchId='+encodeURIComponent(officialMatchId)+'&t='+Date.now(),{cache:'no-store'});
         const data=await r.json();
-        if(data?.ok&&data.record){
-          const cups=Number(data.record.cups||0);
+        if(data?.ok&&data.record&&data.settlement){
+          const cups=Number(data.record.cups||0), delta=Number(data.settlement.delta||0);
           localStorage.setItem(PVP_CUPS_KEY,String(cups));
-          return {cups,delta:cups-before,record:data.record,authoritative:true};
+          return {cups,delta,record:data.record,settlement:data.settlement,authoritative:true};
         }
       }catch{}
-      await new Promise(resolve=>setTimeout(resolve,250));
+      await new Promise(resolve=>setTimeout(resolve,300));
     }
-    return {cups:getPvpCups(),delta:0,pending:true,authoritative:true};
+    // Si Cloudflare tarda excepcionalmente, sincronizamos el total oficial pero no
+    // inventamos el delta de la partida.
+    try{
+      const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId())+'&t='+Date.now(),{cache:'no-store'});
+      const data=await r.json();
+      if(data?.record){const cups=Number(data.record.cups||0);localStorage.setItem(PVP_CUPS_KEY,String(cups));return {cups,delta:0,record:data.record,pending:true,authoritative:true};}
+    }catch{}
+    return {cups:before,delta:0,pending:true,authoritative:true};
   }
   function pvpRankName(cups){
     cups=Number(cups||0);
