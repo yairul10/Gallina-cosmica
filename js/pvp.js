@@ -614,8 +614,9 @@
   }
   function endArena(text,result='none',placement=0){
     if(matchFinished)return; matchFinished=true;
+    const wasQaPvp=qaPvpActive;
     stopArena();
-    if(qaPvpActive){
+    if(wasQaPvp){
       const report={mode:pvpMode,result,placement,kills:matchKills,botKills:matchBotKills,humanKills:matchHumanKills,realDurationMs:performance.now()-qaPvpStartedAt,simulatedDurationMs:qaPvpSimMs,lives:meState.lives,eliminated:[...eliminated],text};
       qaPvpActive=false;qaPvpSpeed=1;
       window.dispatchEvent(new CustomEvent('gallina-qa-pvp-result',{detail:report}));
@@ -623,7 +624,7 @@
     const resultEl=$('pvpResultText');
     resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+(result==='win'||result==='loss'?'\n🏆 Guardando copas…':'');
     $('pvpResult').style.display='flex';
-    if(!qaPvpActive && !matchCupsSettled && (result==='win'||result==='loss')){
+    if(!wasQaPvp && !matchCupsSettled && (result==='win'||result==='loss')){
       matchCupsSettled=true;
       const cupsBefore=getPvpCups();
       settlePvpRecord(result,'',placement).then(saved=>{
