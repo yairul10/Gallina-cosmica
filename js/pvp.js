@@ -142,6 +142,9 @@
     asteroidFx.push(...pieces);
   }
   let selectedTargetSlot=0;
+  const PVP_EVADE_DURATION=2000, PVP_EVADE_COOLDOWN=12000;
+  let evadeUntil=0,lastEvade=-Infinity;
+  const remoteEvadeUntil=new Map();
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
   const PVP_CUPS_KEY='gallina_pvp_cups_v1';
@@ -494,7 +497,7 @@
     if(pvpMode==='1v1'){
       for(const [slot,state] of peerStates){state.x=state.targetX=w/2;state.y=state.targetY=90;state.angle=state.targetAngle=Math.PI/2;state.visualAngle=state.targetVisualAngle=Math.PI/2;}
     }
-    bullets=[]; missiles=[]; selectedTargetSlot=0; eliminated.clear(); meEliminated=false; matchFinished=false; cosmicZoneElapsed=0;cosmicZoneProgress=0;lastZoneDamageAt=0;lastMissile=-Infinity; impactFx=[]; asteroidFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
+    bullets=[]; missiles=[]; selectedTargetSlot=0; evadeUntil=0; lastEvade=-Infinity; remoteEvadeUntil.clear(); eliminated.clear(); meEliminated=false; matchFinished=false; cosmicZoneElapsed=0;cosmicZoneProgress=0;lastZoneDamageAt=0;lastMissile=-Infinity; impactFx=[]; asteroidFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
   }
@@ -686,6 +689,10 @@
       const pva=Number(p.visualAngle);
       if(Number.isFinite(pva)) remote.targetVisualAngle=mirrorAngle(pva);
       remote.lives=Number.isFinite(Number(p.lives))?Number(p.lives):remote.lives;updateLives();
+    } else if(p.type==='evade'){
+      remoteEvadeUntil.set(Number(fromSlot),performance.now()+PVP_EVADE_DURATION);
+      if(selectedTargetSlot===Number(fromSlot))selectedTargetSlot=0;
+      return;
     } else if(p.type==='shot'){
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam);
     } else if(p.type==='missile'){
@@ -695,7 +702,7 @@
 
   function shoot(){
     const now=performance.now(), myStats=pvpShipStats((players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship);if(!running||meEliminated||now-lastShot<myStats.shotCooldown)return;
-    const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam)&&performance.now()>=Number(remoteEvadeUntil.get(Number(p.slot))||0));
     if(!targetPlayer){showStatus('🎯 Toca una nave enemiga para seleccionarla.');return;}
     const target=peerFor(targetPlayer.slot);
     if(!inAttackRange(meState,target)){showStatus('📡 Objetivo fuera de alcance.');return;}
@@ -723,7 +730,7 @@
     const info=shipCombatInfo(myShip), stats=currentGameStats();
     // Igual que el modo normal: el misil Pro sólo se usa si la nave es Pro y ese misil fue desbloqueado.
     const usePro=info.isPro && !!stats.proMissiles?.[info.index];
-    const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam)&&performance.now()>=Number(remoteEvadeUntil.get(Number(p.slot))||0));
     if(!targetPlayer){showStatus('🎯 Selecciona un enemigo antes de lanzar el misil.');return;}
     const targetState=peerFor(targetPlayer.slot);
     if(!inAttackRange(meState,targetState)){showStatus('📡 Objetivo fuera de alcance para misil.');return;}
@@ -818,7 +825,7 @@
     const nextY=Math.max(55,Math.min(worldHeight-55,meState.y+my*190*dt));
     if(!positionBlockedByAsteroid(nextX,meState.y,24))meState.x=nextX;
     if(!positionBlockedByAsteroid(meState.x,nextY,24))meState.y=nextY;
-    const selectedPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+    const selectedPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam)&&performance.now()>=Number(remoteEvadeUntil.get(Number(p.slot))||0));
     if(!selectedPlayer)selectedTargetSlot=0;
     else {const target=peerFor(selectedTargetSlot);if(!inLockRange(meState,target))selectedTargetSlot=0;else meState.angle=Math.atan2(target.y-meState.y,target.x-meState.x);}
     if(!meEliminated&&keys.has(' '))shoot();
@@ -1067,7 +1074,7 @@
         m.life=0;addAsteroidImpact(m.x,m.y);
       }
     }
-    updateMissileButton(now);
+    updateMissileButton(now);updateEvadeButton(now);
     for(const fx of impactFx)fx.life-=dt;
     for(const fx of asteroidFx){fx.x+=fx.vx*dt;fx.y+=fx.vy*dt;fx.vx*=Math.pow(.92,dt*60);fx.vy*=Math.pow(.92,dt*60);fx.life-=dt;}
     asteroidFx=asteroidFx.filter(fx=>fx.life>0);
@@ -1418,12 +1425,23 @@
     const r=arenaCanvas.getBoundingClientRect(),cam=cameraPosition();
     const x=cam.x+(e.clientX-r.left)*arenaCanvas.width/r.width,y=cam.y+(e.clientY-r.top)*arenaCanvas.height/r.height;
     const enemies=players.filter(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
-    const hit=enemies.map(p=>({p,state:peerFor(p.slot),d:Math.hypot(peerFor(p.slot).x-x,peerFor(p.slot).y-y)})).filter(v=>v.d<=48).sort((a,b)=>a.d-b.d)[0];
+    const hit=enemies.map(p=>({p,state:peerFor(p.slot),d:Math.hypot(peerFor(p.slot).x-x,peerFor(p.slot).y-y)})).filter(v=>v.d<=48&&performance.now()>=Number(remoteEvadeUntil.get(Number(v.p.slot))||0)).sort((a,b)=>a.d-b.d)[0];
     if(hit){
       if(!inLockRange(meState,hit.state)){showStatus('📡 Enemigo fuera del alcance de fijación.');return;}
       selectedTargetSlot=Number(hit.p.slot);showStatus('🎯 Objetivo: '+playerName(selectedTargetSlot),true);
     }
   });
+  function updateEvadeButton(now=performance.now()){
+    const btn=$('pvpEvadeBtn'),label=$('pvpEvadeCooldown');if(!btn||!label)return;
+    const owned=!!gameStats?.pvpEvade;btn.style.display=owned?'block':'none';if(!owned)return;
+    const left=Math.max(0,PVP_EVADE_COOLDOWN-(now-lastEvade));btn.disabled=!running||meEliminated||left>0;
+    label.textContent=left>0?Math.ceil(left/1000)+'s':'EVADIR';
+  }
+  function activateEvade(){
+    const now=performance.now();if(!gameStats?.pvpEvade||!running||meEliminated||now-lastEvade<PVP_EVADE_COOLDOWN)return;
+    lastEvade=now;evadeUntil=now+PVP_EVADE_DURATION;send({type:'evade'});showStatus('💨 Interferencia activa · 2 s sin fijación.',true);updateEvadeButton(now);
+  }
+  const evadeBtn=$('pvpEvadeBtn');if(evadeBtn){evadeBtn.style.touchAction='none';evadeBtn.addEventListener('pointerdown',e=>{e.preventDefault();activateEvade();});}
   const missileBtn=$('pvpMissileBtn');
   if(missileBtn){
     // En móvil pointerdown responde inmediatamente y evita que un pequeño arrastre cancele el click.
