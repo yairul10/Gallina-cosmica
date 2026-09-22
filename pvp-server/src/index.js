@@ -231,7 +231,7 @@ export class PvpRoom {
       // seguir alterando el combate. Permitimos únicamente mensajes inocuos de
       // sincronización/salida; disparos, misiles, estado y derrotas se descartan.
       const senderOut=this.eliminatedSlots.has(slot)||this.forfeitedPlayers.has(playerId);
-      const gameplayTypes=new Set(["state","shot","missile","evade","defeat","bot-defeat"]);
+      const gameplayTypes=new Set(["state","shot","missile","evade","hit-confirm","defeat","bot-defeat"]);
       if((this.finished||senderOut)&&gameplayTypes.has(String(message.type||""))) return;
 
       if (message.type === "bot-defeat" && (this.mode === "1v1" || this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && !this.finished) {
