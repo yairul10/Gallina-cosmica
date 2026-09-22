@@ -466,9 +466,13 @@ export class PvpRanking {
 
     const seen=(await this.ctx.storage.get('seen'))||{}, dedupe=playerId+'|'+matchId;
     const players=state.players;
-    if(seen[dedupe]){
+    // "seen" se recorta para mantener pequeño el estado, pero las liquidaciones
+    // individuales persisten. Consultarlas también evita volver a otorgar copas
+    // si una partida antigua sale del mapa seen y se intenta liquidar otra vez.
+    const previousSettlement=await this.ctx.storage.get('settlement:'+dedupe);
+    if(seen[dedupe]||previousSettlement){
       const record=players[playerId]||null;
-      return json({ok:true,duplicate:true,record:record?{...record,rank:this.rankFor(record.cups)}:null,month:state.activeMonth});
+      return json({ok:true,duplicate:true,settlement:previousSettlement||null,record:record?{...record,rank:this.rankFor(record.cups)}:null,month:state.activeMonth});
     }
 
     const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0};
