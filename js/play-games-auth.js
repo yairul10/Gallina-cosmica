@@ -174,6 +174,46 @@
         return result.authCode;
     };
 
+    // Crea una sesión PvP respaldada por una identidad verificada por Google.
+    // El authCode es de un solo uso: se envía inmediatamente al Worker y nunca
+    // se guarda. La sesión resultante sí puede vivir durante la partida.
+    window.getPlayGamesPvpSession = async ({ force = false } = {}) => {
+        const cacheKey = 'gallina_pvp_server_session';
+        if (!force) {
+            try {
+                const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
+                if (cached?.token && cached?.playerId && Number(cached.expiresAt || 0) > Date.now() + 60000) {
+                    const currentId = window.GallinaPlayerIdentity?.getId?.();
+                    if (!currentId || String(currentId) === String(cached.playerId)) return cached;
+                }
+            } catch (_) {}
+        }
+
+        const identity = await refreshPlayerIdentity();
+        if (!identity?.id) throw new Error('No se pudo confirmar la identidad de Play Games');
+        const authCode = await window.requestPlayGamesServerAuthCode();
+        const response = await fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/auth/play-games', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ authCode })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data?.ok || !data?.sessionToken || !data?.playerId) {
+            throw new Error(data?.error || 'El servidor no pudo verificar Play Games');
+        }
+        if (String(data.playerId) !== String(identity.id)) {
+            try { sessionStorage.removeItem(cacheKey); } catch (_) {}
+            throw new Error('La identidad verificada por el servidor no coincide con Play Games');
+        }
+        const session = {
+            token: String(data.sessionToken),
+            playerId: String(data.playerId),
+            expiresAt: Number(data.expiresAt || 0)
+        };
+        try { sessionStorage.setItem(cacheKey, JSON.stringify(session)); } catch (_) {}
+        return session;
+    };
+
     // Diagnóstico seguro para builds instaladas desde Google Play.
     // El código OAuth de un solo uso sólo existe en memoria durante esta llamada:
     // nunca se muestra, registra ni guarda.
@@ -210,7 +250,7 @@
                 '🔐 Autorización de servidor: ' + (report.serverAuth ? 'OK ✓' : 'ERROR')
             ];
             if (report.error) lines.push('Detalle: ' + report.error);
-            showNotice(lines.join('\\n'), report.playGames && report.identity && report.identityConsistent && report.serverAuth);
+            showNotice(lines.join('\n'), report.playGames && report.identity && report.identityConsistent && report.serverAuth);
         }
         window.dispatchEvent(new CustomEvent('gallina-play-games-diagnostic', { detail: { ...report } }));
         return report;
