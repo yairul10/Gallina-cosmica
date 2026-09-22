@@ -824,9 +824,9 @@
       }
     }
     // Suaviza únicamente la representación de las naves remotas entre los
-    // paquetes de red (~15 Hz). La nave local y la lógica de combate conservan
+    // paquetes de red (~20 Hz). La nave local y la lógica de combate conservan
     // su respuesta inmediata.
-    const smooth=1-Math.pow(0.001,dt);
+    const smooth=1-Math.pow(0.000001,dt);
     const angleLerp=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;
     for(const state of peerStates.values()){
       if(Number.isFinite(state.targetX)) state.x+=(state.targetX-state.x)*smooth;
@@ -1116,10 +1116,15 @@
         if(Math.hypot(hitX-target.x,hitY-target.y)<30 && (!best||t<best.t))best={t,hitX,hitY};
       }
       if(best){
+        // Contra otro humano no fingimos un impacto en la pantalla del atacante:
+        // el defensor sigue siendo autoridad del daño. El proyectil continúa
+        // hasta recibir su trayectoria normal, reduciendo los falsos impactos
+        // causados por una posición remota ligeramente atrasada.
+        const bestPlayer=players.find(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&Math.hypot(peerFor(p.slot).x-best.hitX,peerFor(p.slot).y-best.hitY)<31);
+        if(bestPlayer && !bestPlayer.bot) continue;
         // En partidas con bots 2v2/Arena, el bloque específico de daño que
         // viene a continuación debe consumir el proyectil y descontar la vida.
         // Si lo anulamos aquí, sólo queda el efecto visual y nunca llega daño.
-        const bestPlayer=players.find(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&Math.hypot(peerFor(p.slot).x-best.hitX,peerFor(p.slot).y-best.hitY)<31);
         const deferBotDamage=!!(botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')&&bestPlayer?.bot);
         if(!deferBotDamage){
           b.life=0;b.x=best.hitX;b.y=best.hitY;
@@ -1255,9 +1260,9 @@
     }
     bullets=bullets.filter(b=>b.life>0&&b.x>-20&&b.x<worldWidth+20&&b.y>-20&&b.y<worldHeight+20);
     missiles=missiles.filter(m=>m.life>0&&m.x>-40&&m.x<worldWidth+40&&m.y>-40&&m.y<worldHeight+40);
-    // Sincronización de red a ~12 Hz. El render y el combate siguen a la
-    // frecuencia normal del dispositivo; sólo reducimos los paquetes de estado.
-    if(now-lastStateSend>83){
+    // Sincronización de red a ~20 Hz. En PvP humano reduce la posición atrasada
+    // que veía el atacante sin cambiar quién tiene autoridad sobre el daño.
+    if(now-lastStateSend>50){
       lastStateSend=now;
       const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
       const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
