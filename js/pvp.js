@@ -861,8 +861,11 @@
         // Fuera del radio de búsqueda el bot patrulla su propio sector en vez de
         // conocer mágicamente la posición de todos. Así los bots se dispersan,
         // exploran el mapa y sólo persiguen cuando encuentran a alguien cerca.
+        // Todos los modos PvP usan ahora la misma base de percepción táctica de
+        // Arena 10. El tamaño del mapa sigue definiendo cómo patrullan, pero 1v1,
+        // 2v2 y Arena 5 ya no quedan limitados al antiguo radio corto de 390 px.
         const arena10Patrol=pvpMode==='arena10';
-        const searchRadius=arena10Patrol?700:390;
+        const searchRadius=Math.min(700,Math.hypot(worldWidth,worldHeight));
         if(!ai.patrolX||!ai.patrolY||Math.hypot(ai.patrolX-bot.x,ai.patrolY-bot.y)<65||now>=Number(ai.nextPatrolAt||0)){
           if(arena10Patrol){
             // Arena 10: divide el mundo 5×5 en zonas. Cada bot explora primero
@@ -893,7 +896,9 @@
           }
         }
         const chosen=nearestDist<=searchRadius?nearest:null;
-        const botZone=pvpMode==='arena10'?cosmicZoneState(0):null;
+        // Arena 5 y Arena 10 comparten también la conciencia de Zona Cósmica.
+        // 1v1/2v2 mantienen la misma IA de combate sin inventar una zona donde no existe.
+        const botZone=(pvpMode==='arena'||pvpMode==='arena10')?cosmicZoneState(0):null;
         const botOutsideZone=!!botZone?.active&&Math.hypot(bot.x-botZone.cx,bot.y-botZone.cy)>Math.max(80,botZone.radius-70);
         const navTarget=botOutsideZone?{x:botZone.cx,y:botZone.cy}:(chosen?chosen.state:{x:ai.patrolX,y:ai.patrolY});
         const dx=navTarget.x-bot.x,dy=navTarget.y-bot.y,dist=Math.hypot(dx,dy)||1;
