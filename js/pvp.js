@@ -230,7 +230,12 @@
     }
     return {outer,inner};
   }
-  function showStatus(text,ok=false){ if(status){status.textContent=text;status.style.color=ok?'#86efac':'#cbd5e1';} }
+  function showStatus(text,ok=false,force=false){
+    // Mientras el matchmaking está activo, su contador es el estado principal
+    // del lobby. Evita que clicks de modo u otros mensajes secundarios lo pisen.
+    if(queueStartedAt && !force && !String(text).startsWith('🔎 Buscando ')) return;
+    if(status){status.textContent=text;status.style.color=ok?'#86efac':'#cbd5e1';}
+  }
   function queueButtonLabel(){
     return pvpMode==='2v2'?'🤝 Buscar equipo 2v2':pvpMode==='arena10'?'🌠 Buscar Arena 10':pvpMode==='arena'?'🌌 Buscar Arena 5':'⚔️ Buscar rival';
   }
@@ -316,7 +321,7 @@
         }
       }
     });
-    ws.addEventListener('error',()=>{if(queueSocket===ws)showStatus('No se pudo conectar a la cola PvP.');});
+    ws.addEventListener('error',()=>{if(queueSocket===ws){stopQueueTimer();showStatus('No se pudo conectar a la cola PvP.',false,true);}});
   }
 
   function connect(code,creating=false,useBot=false,humanCount=1,isReconnect=false){
