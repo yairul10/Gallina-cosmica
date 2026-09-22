@@ -440,94 +440,115 @@ export class PvpMatchmaker {
   constructor(ctx, env) {
     this.ctx = ctx;
     this.env = env;
-    this.waiting = null;
+    this.waitingByMode = new Map();
+  }
+
+  fallbackMsForRank(level){
+    return [20000,25000,30000,40000,50000,60000,75000][Math.max(0,Math.min(6,Number(level)||0))];
+  }
+
+  allowedRankGap(waitMs, fallbackMs){
+    const ratio=Math.max(0,Math.min(1,waitMs/Math.max(1,fallbackMs)));
+    if(ratio<0.35)return 0;
+    if(ratio<0.65)return 1;
+    if(ratio<0.85)return 2;
+    return 6;
   }
 
   async fetch(request) {
-    const upgrade = request.headers.get("Upgrade");
-    if (!upgrade || upgrade.toLowerCase() !== "websocket") {
-      return json({ ok: true, service: "gallina-cosmica-pvp-matchmaker", waiting: !!this.waiting });
+    const upgrade=request.headers.get("Upgrade");
+    if(!upgrade||upgrade.toLowerCase()!=="websocket"){
+      const total=Array.from(this.waitingByMode.values()).reduce((n,list)=>n+list.length,0);
+      return json({ok:true,service:"gallina-cosmica-pvp-matchmaker",waiting:total});
     }
 
-    const pair = new WebSocketPair(), client = pair[0], server = pair[1];
+    const pair=new WebSocketPair(),client=pair[0],server=pair[1];
     server.accept();
-    const url = new URL(request.url);
-    const playerId = safeText(url.searchParams.get("playerId"), crypto.randomUUID(), 128);
-    const name = safeText(url.searchParams.get("name"), "Jugador", 40);
-    const ship = safeText(url.searchParams.get("ship"), "Gallina", 40);
-    const mode = gameMode(url);
-    const needed = roomCapacity(mode);
-    if (!this.waitingByMode) this.waitingByMode = new Map();
-    const queue = this.waitingByMode.get(mode) || [];
-    const cleanQueue = queue.filter(entry => entry.playerId !== playerId);
-    this.waitingByMode.set(mode, cleanQueue);
+    const url=new URL(request.url);
+    const playerId=safeText(url.searchParams.get("playerId"),crypto.randomUUID(),128);
+    const name=safeText(url.searchParams.get("name"),"Jugador",40);
+    const ship=safeText(url.searchParams.get("ship"),"Gallina",40);
+    const cups=Math.max(0,Math.min(9999999,Number(url.searchParams.get("cups")||0)));
+    const rank=pvpRankFromCups(cups);
+    const mode=gameMode(url),needed=roomCapacity(mode),joinedAt=Date.now();
+    const entry={socket:server,playerId,name,ship,cups,rankLevel:rank.level,joinedAt};
+    const queue=(this.waitingByMode.get(mode)||[]).filter(e=>e.playerId!==playerId);
+    queue.push(entry);this.waitingByMode.set(mode,queue);
 
-    const current = this.waitingByMode.get(mode) || [];
-    current.push({ socket: server, playerId, name, ship });
-    this.waitingByMode.set(mode, current);
-
-    // Actualiza a todos los jugadores de la cola para que vean cuántos
-    // participantes humanos están esperando en este momento.
-    const sendQueueCount = list => {
-      const msg=JSON.stringify({ type:"queue-waiting", mode, waiting:list.length, needed });
-      for(const entry of list){ try{ entry.socket.send(msg); }catch{} }
-    };
-    sendQueueCount(current);
-
-    const clear = () => {
-      const list = this.waitingByMode?.get(mode) || [];
-      const remaining=list.filter(entry => entry.socket !== server);
-      this.waitingByMode?.set(mode, remaining);
-      sendQueueCount(remaining);
-    };
-    server.addEventListener("close", clear);
-    server.addEventListener("error", clear);
-
-    // Prueba: en 1v1 o 2v2, si no se completa la cola en 5 s, crear
-    // una partida con bots. Al terminar las pruebas cambiaremos 5000 por 60000.
-    if (mode === "1v1" || mode === "2v2" || mode === "arena" || mode === "arena10") {
-      setTimeout(() => {
-        const list = this.waitingByMode?.get(mode) || [];
-        const index = list.findIndex(entry => entry.socket === server);
-        if (index < 0) return;
-
-        if (mode === "2v2" || mode === "arena" || mode === "arena10") {
-          // Al vencer el tiempo, todos los humanos que siguen esperando entran
-          // juntos en UNA misma sala; los puestos restantes se completan con bots.
-          // Sólo el jugador más antiguo de la cola ejecuta esta agrupación.
-          if (index !== 0) return;
-          const group = list.splice(0, Math.min(needed, list.length));
-          this.waitingByMode.set(mode, list);
-          const roomCode = queueRoomCode();
-          const humanCount = group.length;
-          const match = { type:"match-found", roomCode, mode, players:needed, bot:true, humanCount };
-          for (const queued of group) {
-            try { queued.socket.send(JSON.stringify(match)); } catch {}
-            try { queued.socket.close(1000, "matched-bots"); } catch {}
-          }
-          return;
-        }
-
-        const [entry] = list.splice(index, 1);
-        this.waitingByMode.set(mode, list);
-        const roomCode = queueRoomCode();
-        try { entry.socket.send(JSON.stringify({ type:"match-found", roomCode, mode, players:needed, bot:true })); } catch {}
-        try { entry.socket.close(1000, "matched-bot"); } catch {}
-      }, 5000);
-    }
-
-    if (current.length >= needed) {
-      const group = current.splice(0, needed);
-      this.waitingByMode.set(mode, current);
-      const roomCode = queueRoomCode();
-      const match = { type: "match-found", roomCode, mode, players: needed };
-      for (const entry of group) {
-        try { entry.socket.send(JSON.stringify(match)); } catch {}
-        try { entry.socket.close(1000, "matched"); } catch {}
+    const sendQueueCount=list=>{
+      for(const e of list){
+        try{e.socket.send(JSON.stringify({type:"queue-waiting",mode,waiting:list.length,needed}));}catch{}
       }
-    }
+    };
+    const removeEntries=group=>{
+      const sockets=new Set(group.map(e=>e.socket));
+      const left=(this.waitingByMode.get(mode)||[]).filter(e=>!sockets.has(e.socket));
+      this.waitingByMode.set(mode,left);sendQueueCount(left);return left;
+    };
+    const launch=(group,withBots=false)=>{
+      if(!group.length)return;
+      removeEntries(group);
+      const roomCode=queueRoomCode(),humanCount=group.length;
+      const match={type:"match-found",roomCode,mode,players:needed};
+      if(withBots){match.bot=true;match.humanCount=humanCount;}
+      for(const e of group){
+        try{e.socket.send(JSON.stringify(match));}catch{}
+        try{e.socket.close(1000,withBots?"matched-bots":"matched");}catch{}
+      }
+    };
+    const compatibleGroup=()=>{
+      const list=this.waitingByMode.get(mode)||[];
+      if(!list.includes(entry))return null;
+      const now=Date.now(),myFallback=this.fallbackMsForRank(entry.rankLevel);
+      const myGap=this.allowedRankGap(now-entry.joinedAt,myFallback);
+      const compatible=list.filter(e=>{
+        const theirFallback=this.fallbackMsForRank(e.rankLevel);
+        const theirGap=this.allowedRankGap(now-e.joinedAt,theirFallback);
+        return Math.abs(e.rankLevel-entry.rankLevel)<=Math.max(myGap,theirGap);
+      });
+      if(compatible.length<needed)return null;
+      // 2v2 se ordena por copas para que la sala pueda repartir alternadamente
+      // jugadores fuertes/débiles; FFA y 1v1 priorizan antigüedad.
+      return compatible.sort((a,b)=>a.joinedAt-b.joinedAt).slice(0,needed);
+    };
 
-    return new Response(null, { status: 101, webSocket: client });
+    const clear=()=>{
+      const list=this.waitingByMode.get(mode)||[];
+      const left=list.filter(e=>e.socket!==server);
+      this.waitingByMode.set(mode,left);sendQueueCount(left);
+    };
+    server.addEventListener("close",clear);server.addEventListener("error",clear);
+    sendQueueCount(queue);
+
+    // Intento inmediato: sólo empareja rangos compatibles según cuánto haya
+    // esperado cada jugador. La búsqueda se amplía gradualmente con el tiempo.
+    const immediate=compatibleGroup();
+    if(immediate)launch(immediate,false);
+
+    const tick=setInterval(()=>{
+      const list=this.waitingByMode.get(mode)||[];
+      if(!list.includes(entry)){clearInterval(tick);return;}
+      const group=compatibleGroup();
+      if(group){clearInterval(tick);launch(group,false);return;}
+      const waited=Date.now()-entry.joinedAt;
+      const fallback=this.fallbackMsForRank(entry.rankLevel);
+      if(waited>=fallback){
+        clearInterval(tick);
+        const live=this.waitingByMode.get(mode)||[];
+        if(!live.includes(entry))return;
+        // El más antiguo compatible con su propia ventana reúne a los humanos
+        // disponibles y completa únicamente los puestos restantes con bots.
+        const candidates=live.filter(e=>{
+          const ef=this.fallbackMsForRank(e.rankLevel);
+          const gap=Math.max(this.allowedRankGap(waited,fallback),this.allowedRankGap(Date.now()-e.joinedAt,ef));
+          return Math.abs(e.rankLevel-entry.rankLevel)<=gap;
+        }).sort((a,b)=>a.joinedAt-b.joinedAt);
+        if(candidates[0]!==entry)return;
+        launch(candidates.slice(0,needed),true);
+      }
+    },1000);
+
+    return new Response(null,{status:101,webSocket:client});
   }
 }
 
