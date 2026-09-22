@@ -373,8 +373,10 @@
           // esperando el arena-result del Worker. El POST de ranking se deduplica
           // por partida, así que el resultado oficial posterior no duplica copas.
           if(alive.length===1&&Number(alive[0]?.slot)===mySlot){
-            const capacity=pvpMode==='arena10'?10:5;
-            endArena('🏆 ¡VICTORIA EN ARENA!','win',1);
+            // El Worker es quien debe cerrar oficialmente la Arena. Antes el cliente
+            // mostraba la victoria inmediatamente y descartaba el arena-result oficial,
+            // ocultando el diagnóstico y pudiendo liquidar copas antes del servidor.
+            showStatus('🔐 Confirmando resultado con el servidor…',true);
             return;
           }
           showStatus('🌌 Arena · quedan '+alive.length+' jugadores.',true);
