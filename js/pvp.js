@@ -243,7 +243,7 @@
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
     const needed=pvpMode==='1v1'?2:pvpMode==='arena10'?10:pvpMode==='arena'?5:4;
     const searchLabel=pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena10'?'jugadores para Arena 10':pvpMode==='arena'?'jugadores para Arena 5':'rival';
-    showStatus('🔎 Buscando '+searchLabel+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. 60 s',true);
+    showStatus('🔎 Buscando '+searchLabel+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. '+([20,25,30,40,50,60,75][Math.max(0,Math.min(6,Number(document.getElementById('pvpQaBotRank')?.value===''?pvpRankFromCups(Number(loadStats().pvpCups||0)).level:document.getElementById('pvpQaBotRank')?.value||0)))]||20)+' s',true);
   }
   function cancelMatch(){
     if(!queueSocket)return;
