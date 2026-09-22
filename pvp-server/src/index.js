@@ -64,6 +64,8 @@ export class PvpRoom {
     this.disconnectTimers = new Map();
     this.botPlayer = null;
     this.botPlayers = [];
+    this.serverKills = new Map();
+    this.officialResult = null;
   }
 
   async fetch(request) {
@@ -143,13 +145,14 @@ export class PvpRoom {
           this.eliminatedSlots.add(deadSlot);
           const killerSlot=Number(message.killerSlot||0);
           const attackKind=message.attackKind==="missile"?"missile":"laser";
+          this.recordServerKill(killerSlot,deadSlot);
           this.broadcast({type:"player-eliminated",slot:deadSlot,team:Number(bot.team||0),reason:"combat",killerSlot,attackKind});
           if(this.mode==="2v2"){
             const teamSlots=this.playerList().filter(p=>Number(p.team)===Number(bot.team)).map(p=>Number(p.slot));
             if(teamSlots.length===2 && teamSlots.every(s=>this.eliminatedSlots.has(s))){
               this.finished=true;
               const winnerTeam=Number(bot.team)===1?2:1;
-              this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam)});
+              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:Number(bot.team)}); this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam),official:this.officialResult});
             }
           } else {
             if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
@@ -177,13 +180,14 @@ export class PvpRoom {
           this.eliminatedSlots.add(slot);
           const killerSlot = Number(message.killerSlot || 0);
           const attackKind = message.attackKind === "missile" ? "missile" : "laser";
+          this.recordServerKill(killerSlot,slot);
           this.broadcast({ type: "player-eliminated", slot, team, reason: message.reason || "combat", killerSlot, attackKind });
           if (this.mode === "2v2") {
             const teamSlots = this.playerList().filter(p => Number(p.team) === Number(team)).map(p => Number(p.slot));
             if (teamSlots.length === 2 && teamSlots.every(s => this.eliminatedSlots.has(s))) {
               this.finished = true;
               const winnerTeam = team === 1 ? 2 : 1;
-              this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam) });
+              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:team}); this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam), official:this.officialResult });
             }
           } else {
             if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
@@ -293,7 +297,26 @@ export class PvpRoom {
     const winner = this.playerList().find(p => p.slot === winnerSlot) || null;
     const finalOrder = [winnerSlot, ...this.eliminationOrder.slice().reverse()].filter((slot,i,a)=>slot&&a.indexOf(slot)===i).slice(0,capacity);
     const podiumSlots = finalOrder.slice(0, 4);
-    this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, podiumSlots, finalOrder, rewards: this.rewardListBySlot(winnerSlot) });
+    this.officialResult=this.officialSnapshot({winnerSlot,winnerPlayerId:winner?.playerId||null,finalOrder});
+    this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, podiumSlots, finalOrder, rewards: this.rewardListBySlot(winnerSlot), official:this.officialResult });
+  }
+  recordServerKill(killerSlot, deadSlot) {
+    killerSlot=Number(killerSlot||0); deadSlot=Number(deadSlot||0);
+    if(!killerSlot||killerSlot===deadSlot)return;
+    const killer=this.playerList().find(p=>Number(p.slot)===killerSlot);
+    if(!killer||killer.bot)return;
+    const dead=this.playerList().find(p=>Number(p.slot)===deadSlot);
+    if(!dead)return;
+    const row=this.serverKills.get(killerSlot)||{botKills:0,humanKills:0};
+    if(dead.bot)row.botKills++;else row.humanKills++;
+    this.serverKills.set(killerSlot,row);
+  }
+  officialSnapshot(extra={}) {
+    const players=this.playerList().map(p=>({
+      slot:Number(p.slot),playerId:p.playerId,team:Number(p.team||0),bot:!!p.bot,
+      kills:this.serverKills.get(Number(p.slot))||{botKills:0,humanKills:0}
+    }));
+    return {mode:this.mode,players,eliminationOrder:this.eliminationOrder.slice(),...extra};
   }
   rewardListBySlot(winnerSlot) {
     const p = this.playerList().find(p => p.slot === winnerSlot);
