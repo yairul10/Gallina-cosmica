@@ -55,7 +55,7 @@
     }catch{}
     resumeBgMusicAfterPvp = false;
   }
-  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
+  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastSentState = null, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
   let botMatch=false, botLives=20, lastBotHitAt=0, lastRegenAt=0;
   const botAiStates=new Map();
   const botHitTimes=new Map();
@@ -1260,15 +1260,20 @@
     }
     bullets=bullets.filter(b=>b.life>0&&b.x>-20&&b.x<worldWidth+20&&b.y>-20&&b.y<worldHeight+20);
     missiles=missiles.filter(m=>m.life>0&&m.x>-40&&m.x<worldWidth+40&&m.y>-40&&m.y<worldHeight+40);
-    // Sincronización de red a ~20 Hz. En PvP humano reduce la posición atrasada
-    // que veía el atacante sin cambiar quién tiene autoridad sobre el daño.
-    if(now-lastStateSend>50){
-      lastStateSend=now;
-      const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
-      const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
-      const sa=pvpMode==='1v1'&&mySlot===2?meState.angle+Math.PI:meState.angle;
-      const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
-      send({type:'state',x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives});
+    // Frecuencia adaptativa: 20 Hz mientras la nave cambia de posición/ángulo
+    // y 2 Hz cuando está quieta. Un cambio desde reposo se envía inmediatamente,
+    // para conservar la respuesta de las esquivas sin gastar mensajes innecesarios.
+    const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
+    const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
+    const sa=pvpMode==='1v1'&&mySlot===2?meState.angle+Math.PI:meState.angle;
+    const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
+    const stateNow={x:Math.round(sx),y:Math.round(sy),angle:sa,visualAngle:sva,lives:meState.lives};
+    const angleDiff=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
+    const stateChanged=!lastSentState||Math.abs(stateNow.x-lastSentState.x)>=1||Math.abs(stateNow.y-lastSentState.y)>=1||angleDiff(stateNow.angle,lastSentState.angle)>.015||angleDiff(stateNow.visualAngle,lastSentState.visualAngle)>.015||stateNow.lives!==lastSentState.lives;
+    const sendInterval=stateChanged?50:500;
+    if((stateChanged&&now-lastStateSend>=16)||now-lastStateSend>=sendInterval){
+      lastStateSend=now;lastSentState=stateNow;
+      send({type:'state',...stateNow});
       if(botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
         const humanSlots=players.filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
         if(humanSlots.length===0||mySlot===Math.min(...humanSlots)){
