@@ -173,6 +173,13 @@
   }
 
   function getPvpCups(){const n=Number(localStorage.getItem(PVP_CUPS_KEY)||0);return Number.isFinite(n)?Math.max(0,Math.floor(n)):0;}
+  function pvpRankFromCups(cups){
+    const n=Math.max(0,Number(cups)||0);
+    const thresholds=[0,200,500,1000,3000,7000,12000];
+    let level=0;
+    for(let i=1;i<thresholds.length;i++){if(n>=thresholds[i])level=i;else break;}
+    return {level};
+  }
   function addPvpCups(delta){const next=Math.max(0,getPvpCups()+Number(delta||0));localStorage.setItem(PVP_CUPS_KEY,String(next));return next;}
   function currentGameStats(){
     // gameStats se declara con let en estado.js y no es propiedad de window.
