@@ -903,10 +903,13 @@
         }
         const wa=Number(ai.wander||0),ca=Math.cos(wa),sa=Math.sin(wa);
         ai.moveX=desiredX*ca-desiredY*sa;ai.moveY=desiredX*sa+desiredY*ca;
-        // El jugador se mueve a 190 px/s: Maestro/Leyenda ya usan prácticamente
-        // toda esa velocidad en combate en vez de quedar artificialmente lentos.
+        // Normalizar evita que la mezcla radial+tangencial cambie accidentalmente
+        // la velocidad. Leyenda mantiene 190 px/s durante órbita, esquiva y retirada.
+        const moveLen=Math.hypot(ai.moveX,ai.moveY)||1;
+        ai.moveX/=moveLen;ai.moveY/=moveLen;
         const baseSpeed=[108,116,124,150,170,185,190][rankLevel];
-        const speed=retreating?190:(dist>250?baseSpeed:(dodging?190:(rankLevel>=5?baseSpeed:Math.max(104,baseSpeed-6))));
+        const highRankCombat=rankLevel>=6&&!!chosen;
+        const speed=highRankCombat?190:(retreating?190:(dist>250?baseSpeed:(dodging?190:(rankLevel>=5?baseSpeed:Math.max(104,baseSpeed-6)))));
         const botNextX=Math.max(45,Math.min(worldWidth-45,bot.targetX+ai.moveX*speed*dt));
         const botNextY=Math.max(70,Math.min(worldHeight-70,bot.targetY+ai.moveY*speed*dt));
         if(!positionBlockedByAsteroid(botNextX,bot.targetY,24))bot.targetX=botNextX;
