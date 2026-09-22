@@ -839,7 +839,7 @@
       for(const botPlayer of activeBots){
         const bot=peerFor(botPlayer.slot);
         const ai=botAiFor(botPlayer.slot);
-        const enemyPlayers=players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==Number(botPlayer.team)));
+        const enemyPlayers=players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==Number(botPlayer.team))&&(Number(p.slot)!==mySlot||now>=evadeUntil)&&now>=Number(remoteEvadeUntil.get(Number(p.slot))||0));
         const enemyTargets=enemyPlayers.map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)}));
         const rankLevel=Math.max(0,Math.min(6,Number(botPlayer.rankLevel||0)));
         // Rangos altos eligen mejor sus objetivos: desde Diamante ponderan vida además de distancia.
@@ -1189,6 +1189,7 @@
       const t=den>0?Math.max(0,Math.min(1,((meState.x-ax)*dx+(meState.y-ay)*dy)/den)):0;
       const hitX=ax+dx*t,hitY=ay+dy*t;
       if(Math.hypot(hitX-meState.x,hitY-meState.y)<30){
+        if(now<evadeUntil){b.life=0;continue;}
         b.life=0;b.x=hitX;b.y=hitY;
         impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});
         hitFlashUntil=performance.now()+220;
@@ -1224,6 +1225,7 @@
             }
           }
         }
+        if(!m.own && (!targetSlot||targetSlot===mySlot) && now<evadeUntil){m.life=0;continue;}
         if(!m.own && (!targetSlot||targetSlot===mySlot) && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
           lastHitAt=now;lastRegenAt=now;lastAttackerSlot=Number(m.ownerSlot||0);lastAttackKind='missile';meState.lives=Math.max(0,meState.lives-1);updateLives();
           hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
@@ -1310,6 +1312,12 @@
     }
     if(performance.now()<hitFlashUntil){arenaCtx.save();arenaCtx.globalAlpha=.42;arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
     if(!meEliminated) drawShip(meState,mine.ship);
+    if(!meEliminated&&performance.now()<evadeUntil){
+      const phase=(performance.now()%700)/700;
+      arenaCtx.save();
+      for(let i=0;i<3;i++){const q=(phase+i/3)%1;arenaCtx.globalAlpha=.75*(1-q);arenaCtx.strokeStyle='#67e8f9';arenaCtx.lineWidth=3;arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30+q*34,0,Math.PI*2);arenaCtx.stroke();}
+      arenaCtx.restore();
+    }
     if(meEliminated && !matchFinished && (pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       arenaCtx.save();arenaCtx.translate(cam.x,cam.y);
       arenaCtx.fillStyle='rgba(2,6,23,.72)';
@@ -1456,7 +1464,7 @@
   }
   function activateEvade(){
     const now=performance.now();if(!gameStats?.pvpEvade||!running||meEliminated||now-lastEvade<PVP_EVADE_COOLDOWN)return;
-    lastEvade=now;evadeUntil=now+PVP_EVADE_DURATION;send({type:'evade'});showStatus('💨 Interferencia activa · 2 s sin fijación.',true);updateEvadeButton(now);
+    lastEvade=now;evadeUntil=now+PVP_EVADE_DURATION;send({type:'evade'});showStatus('🌀 Campo de interferencia activo · 2 s sin fijación.',true);updateEvadeButton(now);
   }
   const evadeBtn=$('pvpEvadeBtn');if(evadeBtn){evadeBtn.style.touchAction='none';evadeBtn.addEventListener('pointerdown',e=>{e.preventDefault();activateEvade();});}
   const missileBtn=$('pvpMissileBtn');
