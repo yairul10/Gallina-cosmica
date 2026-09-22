@@ -57,8 +57,16 @@ async function bootQaMode() {
     panel.id = 'qaModePanel';
     panel.style.cssText = 'position:absolute;right:8px;top:76px;z-index:150;pointer-events:auto;width:min(230px,calc(100vw - 16px));max-height:calc(100vh - 92px);overflow:auto;background:rgba(2,11,39,.92);border:1px solid #fbbf24;border-radius:10px;padding:7px;box-shadow:0 3px 10px rgba(0,0,0,.45);color:#e2e8f0;font:700 11px/1.25 sans-serif';
     const title = document.createElement('div');
-    title.textContent = '🤖 QA interno';
-    title.style.cssText = 'color:#fbbf24;font-size:12px;margin-bottom:5px';
+    title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:6px;color:#fbbf24;font-size:12px;margin-bottom:5px';
+    const titleText = document.createElement('span');
+    titleText.textContent = '🤖 QA interno';
+    const collapseButton = document.createElement('button');
+    collapseButton.type = 'button';
+    collapseButton.textContent = '−';
+    collapseButton.title = 'Minimizar QA';
+    collapseButton.style.cssText = 'border:1px solid #64748b;border-radius:6px;background:#0f172a;color:#fbbf24;min-width:27px;height:24px;padding:0;font:900 16px/1 sans-serif;cursor:pointer';
+    title.append(titleText, collapseButton);
+    const panelBody = document.createElement('div');
     const controls = document.createElement('div');
     controls.style.cssText = 'display:flex;gap:4px;align-items:center;margin-bottom:5px';
     const seriesSelect = document.createElement('select');
@@ -102,10 +110,24 @@ async function bootQaMode() {
     const anomalyList = document.createElement('div');
     anomalyList.style.cssText = 'margin-top:6px;padding-top:5px;border-top:1px solid #334155;font-size:10px;color:#fca5a5';
     controls.append(seriesSelect, startButton, cancelButton);
-    panel.append(title, controls, status, summary, resultList, anomalyList);
-    panel.insertBefore(modeSelect, status);
-    panel.insertBefore(speedSelect, status);
+    panelBody.append(controls, modeSelect, speedSelect, status, summary, resultList, anomalyList);
+    panel.append(title, panelBody);
     document.getElementById('game-container').appendChild(panel);
+
+    let qaPanelCollapsed = false;
+    const setQaPanelCollapsed = (collapsed) => {
+        qaPanelCollapsed = !!collapsed;
+        panelBody.style.display = qaPanelCollapsed ? 'none' : '';
+        collapseButton.textContent = qaPanelCollapsed ? '🤖 QA' : '−';
+        collapseButton.title = qaPanelCollapsed ? 'Abrir QA' : 'Minimizar QA';
+        collapseButton.style.fontSize = qaPanelCollapsed ? '11px' : '16px';
+        panel.style.width = qaPanelCollapsed ? 'auto' : 'min(230px,calc(100vw - 16px))';
+        panel.style.maxHeight = qaPanelCollapsed ? 'none' : 'calc(100vh - 92px)';
+        panel.style.overflow = qaPanelCollapsed ? 'hidden' : 'auto';
+        titleText.style.display = qaPanelCollapsed ? 'none' : '';
+        title.style.marginBottom = qaPanelCollapsed ? '0' : '5px';
+    };
+    collapseButton.addEventListener('click', () => setQaPanelCollapsed(!qaPanelCollapsed));
 
     const renderSummary = () => {
         const completed = qaResults.length;
