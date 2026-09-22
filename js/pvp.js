@@ -1306,6 +1306,14 @@
         arenaCtx.save();arenaCtx.strokeStyle='#ef4444';arenaCtx.lineWidth=3;arenaCtx.setLineDash([7,5]);arenaCtx.beginPath();arenaCtx.arc(state.x,state.y,36,0,Math.PI*2);arenaCtx.stroke();arenaCtx.setLineDash([]);arenaCtx.fillStyle='#fecaca';arenaCtx.font='bold 10px sans-serif';arenaCtx.textAlign='center';arenaCtx.fillText('OBJETIVO',state.x,state.y-43);arenaCtx.restore();
       }
       drawShip(state,p.ship||'Gallina');
+      // Mostrar también a los rivales el campo de interferencia mientras está activo.
+      const remoteEvadeEnd=Number(remoteEvadeUntil.get(Number(p.slot))||0);
+      if(performance.now()<remoteEvadeEnd){
+        const phase=(performance.now()%700)/700;
+        arenaCtx.save();
+        for(let i=0;i<3;i++){const q=(phase+i/3)%1;arenaCtx.globalAlpha=.75*(1-q);arenaCtx.strokeStyle='#67e8f9';arenaCtx.lineWidth=3;arenaCtx.beginPath();arenaCtx.arc(state.x,state.y,30+q*34,0,Math.PI*2);arenaCtx.stroke();}
+        arenaCtx.restore();
+      }
       arenaCtx.save();arenaCtx.font='bold 10px sans-serif';arenaCtx.textAlign='center';
       arenaCtx.fillStyle=pvpMode==='2v2'&&Number(p.team)===myTeam?'#86efac':'#fca5a5';
       arenaCtx.fillText((pvpMode==='2v2'&&Number(p.team)===myTeam?'🤝 ':'⚔️ ')+(p.name||('J'+p.slot)),state.x,state.y-34);arenaCtx.restore();
