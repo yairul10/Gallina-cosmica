@@ -11,6 +11,7 @@
   const arenaCanvas = $('pvpCanvas');
   const arenaCtx = arenaCanvas?.getContext('2d');
   const status = $('pvpLobbyStatus');
+  const queueStatus = $('pvpQueueStatus');
   const roomInput = $('pvpRoomCode');
 
   let socket = null, queueSocket = null, currentRoom = '', mySlot = 0, myTeam = 0, players = [];
@@ -241,7 +242,7 @@
   }
   function stopQueueTimer(resetStartedAt=true){
     if(queueTimer){clearInterval(queueTimer);queueTimer=0;}
-    if(resetStartedAt)queueStartedAt=0;
+    if(resetStartedAt){queueStartedAt=0;if(queueStatus){queueStatus.textContent='';queueStatus.style.display='none';}}
     const btn=$('pvpFindMatchBtn'); if(btn)btn.textContent=queueButtonLabel();
   }
   let queueWaitingCount=1;
@@ -251,7 +252,9 @@
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
     const needed=pvpMode==='1v1'?2:pvpMode==='arena10'?10:pvpMode==='arena'?5:4;
     const searchLabel=pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena10'?'jugadores para Arena 10':pvpMode==='arena'?'jugadores para Arena 5':'rival';
-    showStatus('🔎 Buscando '+searchLabel+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. '+([20,25,30,40,50,60,75][pvpRankFromCups(getPvpCups()).level]||20)+' s',true);
+    const text='🔎 Buscando '+searchLabel+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. '+([20,25,30,40,50,60,75][pvpRankFromCups(getPvpCups()).level]||20)+' s';
+    if(queueStatus){queueStatus.textContent=text;queueStatus.style.display='block';}
+    showStatus(text,true);
   }
   function cancelMatch(){
     if(!queueSocket)return;
