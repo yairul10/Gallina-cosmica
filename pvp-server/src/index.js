@@ -92,6 +92,17 @@ async function authorizePvpRequest(request, env) {
   return new Request(url.toString(),request);
 }
 
+function qaPlayerIds(env) {
+  return new Set(String(env.QA_PLAYER_IDS || "").split(",").map(v=>v.trim()).filter(Boolean));
+}
+async function qaAccess(request, env) {
+  const url=new URL(request.url);
+  const session=await verifySessionToken(env,url.searchParams.get("session"));
+  if(!session)return json({ok:false,qaEnabled:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
+  const enabled=qaPlayerIds(env).has(String(session.playerId));
+  return json({ok:true,qaEnabled:enabled});
+}
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 }
@@ -760,6 +771,10 @@ export default {
     if (url.pathname === "/auth/play-games") {
       if (request.method !== "POST") return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
       return authenticatePlayGames(request,env);
+    }
+    if (url.pathname === "/qa/access") {
+      if (request.method !== "GET") return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
+      return qaAccess(request,env);
     }
     if (url.pathname === "/ranking") {
       // El ranking público es SOLO lectura. Las liquidaciones oficiales llegan
