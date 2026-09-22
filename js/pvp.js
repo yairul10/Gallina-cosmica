@@ -231,10 +231,13 @@
     return {outer,inner};
   }
   function showStatus(text,ok=false){ if(status){status.textContent=text;status.style.color=ok?'#86efac':'#cbd5e1';} }
-  function stopQueueTimer(){
+  function queueButtonLabel(){
+    return pvpMode==='2v2'?'🤝 Buscar equipo 2v2':pvpMode==='arena10'?'🌠 Buscar Arena 10':pvpMode==='arena'?'🌌 Buscar Arena 5':'⚔️ Buscar rival';
+  }
+  function stopQueueTimer(resetStartedAt=true){
     if(queueTimer){clearInterval(queueTimer);queueTimer=0;}
-    queueStartedAt=0;
-    const btn=$('pvpFindMatchBtn'); if(btn)btn.textContent='⚔️ Buscar rival';
+    if(resetStartedAt)queueStartedAt=0;
+    const btn=$('pvpFindMatchBtn'); if(btn)btn.textContent=queueButtonLabel();
   }
   let queueWaitingCount=1;
   function updateQueueStatus(){
@@ -284,6 +287,9 @@
       let m;try{m=JSON.parse(event.data);}catch{return;}
       if(m.type==='queue-waiting'){
         queueWaitingCount=Math.max(1,Number(m.waiting||1));
+        // Algunos despliegues del Worker cierran/reemplazan el socket de cola
+        // justo después de confirmar la espera. El estado visible debe seguir
+        // contando hasta recibir match-found o una cancelación real del usuario.
         updateQueueStatus();
       } else if(m.type==='match-found' && /^\d{6}$/.test(String(m.roomCode||''))){
         const code=String(m.roomCode);
@@ -297,9 +303,17 @@
     });
     ws.addEventListener('close',e=>{
       if(queueSocket===ws){
+        // Un cierre normal sólo debe borrar el estado cuando la búsqueda terminó
+        // de verdad. Si fue cancelada, cancelMatch() ya limpió queueStartedAt.
         queueSocket=null;
-        stopQueueTimer();
-        if(e.code!==1000)showStatus('La búsqueda se interrumpió. Intenta nuevamente.');
+        if(e.code!==1000){
+          stopQueueTimer();
+          showStatus('La búsqueda se interrumpió. Intenta nuevamente.');
+        }else if(queueStartedAt){
+          // Conserva el último estado de búsqueda en pantalla en vez de
+          // sustituirlo silenciosamente por un texto vacío/antiguo.
+          updateQueueStatus();
+        }
       }
     });
     ws.addEventListener('error',()=>{if(queueSocket===ws)showStatus('No se pudo conectar a la cola PvP.');});
