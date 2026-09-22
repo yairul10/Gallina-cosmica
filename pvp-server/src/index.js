@@ -142,11 +142,22 @@ export class PvpRoom {
       if (message.type === "bot-defeat" && (this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && !this.finished) {
         const deadSlot=Number(message.slot||0);
         const bot=this.botPlayers.find(p=>Number(p.slot)===deadSlot);
-        if(bot && !this.eliminatedSlots.has(deadSlot)){
+        const reportedKiller=Number(message.killerSlot||0);
+        const killer=this.playerList().find(p=>Number(p.slot)===reportedKiller);
+        const humanSlots=this.playerList().filter(p=>!p.bot).map(p=>Number(p.slot)).filter(Boolean);
+        const botAuthoritySlot=humanSlots.length?Math.min(...humanSlots):0;
+        // Un cliente ya no puede adjudicar una baja de bot a otro humano.
+        // Las bajas causadas por bots o por la Zona Cósmica sólo las puede
+        // confirmar el humano autoridad que ya simula esos impactos.
+        const validReporter=reportedKiller>0 && killer && !killer.bot
+          ? reportedKiller===slot
+          : slot===botAuthoritySlot;
+        const enemyKill=!killer || !killer.bot || this.mode!=="2v2" || Number(killer.team)!==Number(bot?.team);
+        if(bot && validReporter && enemyKill && !this.eliminatedSlots.has(deadSlot)){
           this.eliminationOrder.push(deadSlot);
           this.eliminatedSlots.add(deadSlot);
-          const killerSlot=Number(message.killerSlot||0);
-          const attackKind=message.attackKind==="missile"?"missile":"laser";
+          const killerSlot=reportedKiller;
+          const attackKind=message.attackKind==="missile"?"missile":message.attackKind==="zone"?"zone":"laser";
           this.recordServerKill(killerSlot,deadSlot);
           this.broadcast({type:"player-eliminated",slot:deadSlot,team:Number(bot.team||0),reason:"combat",killerSlot,attackKind});
           if(this.mode==="2v2"){
@@ -163,6 +174,14 @@ export class PvpRoom {
         return;
       }
       if (message.type === "defeat") {
+        // slot/team pertenecen al socket autenticado de esta sala. Ignoramos
+        // cualquier slot/team enviado por el cliente para que no pueda declarar
+        // derrotado a otro participante.
+        message.slot = slot;
+        message.team = team;
+        const reportedKiller=Number(message.killerSlot||0);
+        const killer=this.playerList().find(p=>Number(p.slot)===reportedKiller);
+        if(!killer || reportedKiller===slot || (this.mode==="2v2" && Number(killer.team)===Number(team))) message.killerSlot=0;
         // En 1v1 una derrota de combate termina oficialmente la sala.
         // Sin esto, al cerrar la pantalla después del resultado el servidor
         // interpretaba ambos sockets como desconexiones y volvía a penalizar copas.
