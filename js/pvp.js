@@ -673,6 +673,18 @@
     const mirrorX = x => pvpMode==='1v1' && mySlot === 2 ? worldWidth - x : x;
     const mirrorY = y => pvpMode==='1v1' && mySlot === 2 ? worldHeight - y : y;
     const mirrorAngle = a => pvpMode==='1v1' && mySlot === 2 ? a + Math.PI : a;
+    if(p.type==='hit-confirm'){
+      // El defensor es la autoridad del daño. Sólo su confirmación detiene
+      // visualmente el proyectil en la pantalla del atacante.
+      if(Number(p.attackerSlot||0)!==mySlot)return;
+      const kind=p.attackKind==='missile'?'missile':'laser';
+      if(kind==='laser'){
+        const own=bullets.filter(b=>b.own&&b.life>0);
+        const hit=own.sort((a,b)=>Math.hypot(a.x-remote.x,a.y-remote.y)-Math.hypot(b.x-remote.x,b.y-remote.y))[0];
+        if(hit){hit.life=0;hit.x=remote.x;hit.y=remote.y;impactFx.push({x:remote.x,y:remote.y,life:.32,maxLife:.32});}
+      }
+      return;
+    }
     if(p.type==='defeat'){
       // En 1v1 el peer defeat cierra la partida; acredita la eliminación si este cliente fue el atacante final.
       if(pvpMode==='1v1'){
@@ -1223,6 +1235,9 @@
           lastHitAt=now;lastRegenAt=now;
           lastAttackerSlot=Number(b.ownerSlot||0);lastAttackKind='laser';
           meState.lives=Math.max(0,meState.lives-1);updateLives();
+          // Confirma al atacante únicamente los impactos que este dispositivo
+          // aceptó como daño real; evita falsos impactos por posición atrasada.
+          send({type:'hit-confirm',attackerSlot:lastAttackerSlot,attackKind:'laser'});
           if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10'){markEliminated(mySlot);showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
         }
       }
