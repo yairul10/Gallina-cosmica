@@ -57,7 +57,7 @@
   }
   let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastSentState = null, stateSeq = 0, localVx = 0, localVy = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
   let botMatch=false, botLives=20, lastBotHitAt=0, lastRegenAt=0;
-  let qaPvpActive=false, qaPvpSpeed=1, qaPvpStartedAt=0, qaPvpSimMs=0, qaPvpLastErrorCount=0;
+  let qaPvpActive=false, qaPvpSpeed=1, qaPvpStartedAt=0, qaPvpSimMs=0, qaPvpLastErrorCount=0, qaPvpPlacement=0;
   const botAiStates=new Map();
   const botHitTimes=new Map();
   const botRegenTimes=new Map();
@@ -653,6 +653,25 @@
     const s=peerStates.get(slot);if(s)s.lives=0;
     updateLives();
   }
+  function qaCheckLocalResult(){
+    if(!qaPvpActive||matchFinished)return;
+    const alive=players.filter(p=>!eliminated.has(Number(p.slot)));
+    if(pvpMode==='2v2'){
+      const myAlive=alive.some(p=>Number(p.team)===myTeam);
+      const enemyAlive=alive.some(p=>Number(p.team)!==myTeam);
+      if(!enemyAlive)return endArena('🏆 QA · victoria de equipo','win');
+      if(!myAlive)return endArena('💥 QA · equipo eliminado','loss');
+      return;
+    }
+    if(pvpMode==='arena'||pvpMode==='arena10'){
+      if(meEliminated&&!qaPvpPlacement)qaPvpPlacement=alive.length+1;
+      if(alive.length<=1){
+        const winner=alive[0];
+        const won=Number(winner?.slot)===mySlot;
+        return endArena(won?'🏆 QA · victoria en Arena':'🌌 QA · Arena finalizada',won?'win':'loss',won?1:(qaPvpPlacement||players.length));
+      }
+    }
+  }
   function checkTeamResult(){
     if(matchFinished||pvpMode!=='2v2'||!myTeam)return;
     const teams=[1,2];
@@ -1091,7 +1110,8 @@
             bot.lives=Math.max(0,Number(bot.lives||20)-2);updateLives();
             if(bot.lives<=0&&!eliminated.has(Number(botPlayer.slot))&&!pendingBotDefeats.has(Number(botPlayer.slot))){
               pendingBotDefeats.add(Number(botPlayer.slot));
-              send({type:'bot-defeat',slot:Number(botPlayer.slot),team:0,killerSlot:0,attackKind:'zone'});
+              if(qaPvpActive){markEliminated(Number(botPlayer.slot));pendingBotDefeats.delete(Number(botPlayer.slot));qaCheckLocalResult();}
+              else send({type:'bot-defeat',slot:Number(botPlayer.slot),team:0,killerSlot:0,attackKind:'zone'});
             }
           }
         }
@@ -1242,7 +1262,11 @@
             // eliminado. Antes se añadía aquí a "eliminated", por lo que cuando
             // llegaba player-eliminated parecía duplicado y no sumaba la baja.
             pendingBotDefeats.add(slot);
-            send({type:'bot-defeat',slot,team:Number(targetPlayer.team||0),killerSlot:Number(killerSlot||0),attackKind:kind});
+            if(qaPvpActive){
+              markEliminated(slot);pendingBotDefeats.delete(slot);
+              if(Number(killerSlot)===mySlot){matchKills++;matchBotKills++;}
+              qaCheckLocalResult();
+            }else send({type:'bot-defeat',slot,team:Number(targetPlayer.team||0),killerSlot:Number(killerSlot||0),attackKind:kind});
           }
           return true;
         };
@@ -1301,7 +1325,7 @@
           // Confirma al atacante únicamente los impactos que este dispositivo
           // aceptó como daño real; evita falsos impactos por posición atrasada.
           send({type:'hit-confirm',attackerSlot:lastAttackerSlot,attackKind:'laser'});
-          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10'){markEliminated(mySlot);showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10'){markEliminated(mySlot);if(qaPvpActive)qaCheckLocalResult();showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
         }
       }
     }
@@ -1332,7 +1356,7 @@
         if(!m.own && (!targetSlot||targetSlot===mySlot) && !(pvpMode==='2v2'&&m.ownerTeam&&m.ownerTeam===myTeam) && now-lastHitAt>180){
           lastHitAt=now;lastRegenAt=now;lastAttackerSlot=Number(m.ownerSlot||0);lastAttackKind='missile';meState.lives=Math.max(0,meState.lives-1);updateLives();
           hitFlashUntil=performance.now()+260;hitShakeUntil=performance.now()+180;
-          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10'){markEliminated(mySlot);showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
+          if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10'){markEliminated(mySlot);if(qaPvpActive)qaCheckLocalResult();showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
         }
       }
     }
@@ -1698,7 +1722,7 @@
       if(running||countdownActive)stopArena();
       disconnect(true);
       pvpMode=['1v1','2v2','arena','arena10'].includes(mode)?mode:'1v1';
-      qaPvpActive=true;qaPvpSpeed=Math.max(1,Math.min(8,Number(speed)||1));qaPvpStartedAt=performance.now();qaPvpSimMs=0;
+      qaPvpActive=true;qaPvpSpeed=Math.max(1,Math.min(8,Number(speed)||1));qaPvpStartedAt=performance.now();qaPvpSimMs=0;qaPvpPlacement=0;
       currentRoom='QA-'+Date.now();mySlot=1;myTeam=pvpMode==='2v2'?1:0;botMatch=true;
       const capacity=pvpMode==='1v1'?2:pvpMode==='2v2'?4:pvpMode==='arena'?5:10;
       players=[{slot:1,team:myTeam,name:'QA Jugador',ship:shipLabel(),bot:false}];
