@@ -834,7 +834,12 @@
         // La frecuencia de esquiva escala por rango. Maestro/Leyenda reaccionan además
         // a proyectiles cercanos, pero sin superar la velocidad máxima de un jugador.
         const dodgeBase=[1800,1550,1300,1050,850,650,480][rankLevel];
-        const incomingThreat=rankLevel>=4&&bullets.some(b=>Number(b.ownerSlot)!==Number(botPlayer.slot)&&Math.hypot(b.x-bot.x,b.y-bot.y)<150);
+        const incomingThreat=rankLevel>=4&&bullets.some(b=>{
+          if(Number(b.ownerSlot)===Number(botPlayer.slot))return false;
+          const rx=bot.x-b.x,ry=bot.y-b.y,rvx=Number(b.vx||0),rvy=Number(b.vy||0);
+          const v2=rvx*rvx+rvy*rvy||1,t=Math.max(0,Math.min(.45,(rx*rvx+ry*rvy)/v2));
+          return Math.hypot((b.x+rvx*t)-bot.x,(b.y+rvy*t)-bot.y)<(rankLevel>=6?72:55);
+        });
         if(!ai.nextDodgeAt)ai.nextDodgeAt=now+dodgeBase+Math.random()*700;
         if(now>=ai.nextDodgeAt||incomingThreat){
           ai.nextDodgeAt=now+dodgeBase+Math.random()*(rankLevel>=5?450:900);
@@ -860,10 +865,13 @@
               if(Math.random()<(rankLevel>=6?.70:.45))ai.orbitSide*=-1;
             }
             const side=Number(ai.orbitSide||1);
-            const targetRadius=rankLevel>=6?232:rankLevel===5?235:240;
-            const radial=Math.max(-.38,Math.min(.38,(dist-targetRadius)/55));
-            desiredX=(-dy/dist)*side*.96+(dx/dist)*radial;
-            desiredY=( dx/dist)*side*.96+(dy/dist)*radial;
+            const targetRadius=rankLevel>=6?225:rankLevel===5?230:238;
+            // Perpendicular casi puro. La corrección radial sólo mantiene la distancia,
+            // evitando que la persecución frontal diluya la órbita.
+            const radial=Math.max(-.24,Math.min(.24,(dist-targetRadius)/70));
+            const tangent=rankLevel>=6?1.28:rankLevel===5?1.16:1.04;
+            desiredX=(-dy/dist)*side*tangent+(dx/dist)*radial;
+            desiredY=( dx/dist)*side*tangent+(dy/dist)*radial;
           }else{
             const side=(Number(botPlayer.slot)%2)?1:-1;
             desiredX=(-dy/dist)*side*.90+(dx/dist)*.12;
@@ -872,8 +880,9 @@
         }
         if(dodging){
           const side=Number(ai.dodgeSide||1);
-          desiredX=desiredX*.42+(-dy/dist)*side*.90;
-          desiredY=desiredY*.42+( dx/dist)*side*.90;
+          const keep=rankLevel>=5?.18:.42,burst=rankLevel>=6?1.45:rankLevel===5?1.25:.90;
+          desiredX=desiredX*keep+(-dy/dist)*side*burst;
+          desiredY=desiredY*keep+( dx/dist)*side*burst;
         }
         // Si un asteroide corta el camino inmediato, elegir el lado libre.
         const aheadX=bot.targetX+desiredX*70,aheadY=bot.targetY+desiredY*70;
@@ -885,13 +894,15 @@
         }
         // Pequeña variación individual para evitar formaciones robóticas.
         if(!ai.nextMoveAt||now>=ai.nextMoveAt){
-          ai.nextMoveAt=now+850+Math.random()*700;
-          ai.wander=(Math.random()-.5)*.42;
+          ai.nextMoveAt=now+(rankLevel>=5?550:850)+Math.random()*(rankLevel>=5?350:700);
+          ai.wander=(Math.random()-.5)*(rankLevel>=5?.12:.42);
         }
         const wa=Number(ai.wander||0),ca=Math.cos(wa),sa=Math.sin(wa);
         ai.moveX=desiredX*ca-desiredY*sa;ai.moveY=desiredX*sa+desiredY*ca;
-        const baseSpeed=[108,116,124,145,158,172,185][rankLevel];
-        const speed=lifeRatio<=.30?Math.min(190,baseSpeed+6):dist>250?baseSpeed:(dodging?Math.min(190,baseSpeed+8):Math.max(104,baseSpeed-8));
+        // El jugador se mueve a 190 px/s: Maestro/Leyenda ya usan prácticamente
+        // toda esa velocidad en combate en vez de quedar artificialmente lentos.
+        const baseSpeed=[108,116,124,150,170,185,190][rankLevel];
+        const speed=lifeRatio<=.30?Math.min(190,baseSpeed+8):dist>250?baseSpeed:(dodging?190:(rankLevel>=5?baseSpeed:Math.max(104,baseSpeed-6)));
         const botNextX=Math.max(45,Math.min(worldWidth-45,bot.targetX+ai.moveX*speed*dt));
         const botNextY=Math.max(70,Math.min(worldHeight-70,bot.targetY+ai.moveY*speed*dt));
         if(!positionBlockedByAsteroid(botNextX,bot.targetY,24))bot.targetX=botNextX;
