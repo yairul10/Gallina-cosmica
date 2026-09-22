@@ -28,6 +28,19 @@ if "play-services-games-v2" not in text:
         raise SystemExit("Could not find app dependencies block")
     gradle.write_text(text)
 
+# Google Play In-App Updates (flexible flow).
+text = gradle.read_text()
+if "com.google.android.play:app-update:" not in text:
+    text, count = re.subn(
+        r"(?m)^dependencies\\s*\\{",
+        'dependencies {\\n    implementation "com.google.android.play:app-update:2.1.0"',
+        text,
+        count=1,
+    )
+    if count != 1:
+        raise SystemExit("Could not add Play In-App Update dependency")
+    gradle.write_text(text)
+
 text = manifest.read_text()
 if "com.google.android.gms.games.APP_ID" not in text:
     if re.search(r"<application\b[^>]*\bandroid:name=", text, re.DOTALL):
@@ -307,6 +320,7 @@ if "PlayGamesPlugin.class" not in text:
         '    public void onCreate(android.os.Bundle savedInstanceState) {\n'
         '        registerPlugin(PlayGamesPlugin.class);\n'
         '        super.onCreate(savedInstanceState);\n'
+        '        checkForFlexibleUpdate();\n'
         '        com.google.android.gms.games.GamesSignInClient gamesSignInClient =\n'
         '            com.google.android.gms.games.PlayGames.getGamesSignInClient(this);\n'
         '        gamesSignInClient.isAuthenticated()\n'
@@ -316,6 +330,30 @@ if "PlayGamesPlugin.class" not in text:
         '                android.util.Log.i("PlayGames", "Authentication: "\n'
         '                    + (authenticated ? "success" : "automatic sign-in not available"));\n'
         '            });\n'
+        '    }\n\n'
+        '    private void checkForFlexibleUpdate() {\n'
+        '        com.google.android.play.core.appupdate.AppUpdateManager manager =\n'
+        '            com.google.android.play.core.appupdate.AppUpdateManagerFactory.create(this);\n'
+        '        manager.getAppUpdateInfo().addOnSuccessListener(info -> {\n'
+        '            if (info.updateAvailability() == com.google.android.play.core.install.model.UpdateAvailability.UPDATE_AVAILABLE\n'
+        '                && info.isUpdateTypeAllowed(com.google.android.play.core.install.model.AppUpdateType.FLEXIBLE)) {\n'
+        '                manager.startUpdateFlowForResult(\n'
+        '                    info, this,\n'
+        '                    com.google.android.play.core.appupdate.AppUpdateOptions.newBuilder(\n'
+        '                        com.google.android.play.core.install.model.AppUpdateType.FLEXIBLE).build(),\n'
+        '                    9101);\n'
+        '            }\n'
+        '        });\n'
+        '        manager.registerListener(state -> {\n'
+        '            if (state.installStatus() == com.google.android.play.core.install.model.InstallStatus.DOWNLOADED) {\n'
+        '                new android.app.AlertDialog.Builder(this)\n'
+        '                    .setTitle("Actualización lista 🚀")\n'
+        '                    .setMessage("La nueva versión de Gallina Cósmica ya se descargó. ¿Instalarla ahora?")\n'
+        '                    .setPositiveButton("Actualizar", (dialog, which) -> manager.completeUpdate())\n'
+        '                    .setNegativeButton("Después", null)\n'
+        '                    .show();\n'
+        '            }\n'
+        '        });\n'
         '    }',
         text,
         count=1,
