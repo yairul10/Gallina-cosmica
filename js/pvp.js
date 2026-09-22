@@ -548,6 +548,7 @@
         if(data?.ok&&data.record&&data.settlement){
           const cups=Number(data.record.cups||0), delta=Number(data.settlement.delta||0);
           localStorage.setItem(PVP_CUPS_KEY,String(cups));
+          renderPvpRankSummary(cups);
           return {cups,delta,record:data.record,settlement:data.settlement,authoritative:true};
         }
       }catch{}
@@ -558,9 +559,38 @@
     try{
       const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId())+'&t='+Date.now(),{cache:'no-store'});
       const data=await r.json();
-      if(data?.record){const cups=Number(data.record.cups||0);localStorage.setItem(PVP_CUPS_KEY,String(cups));return {cups,delta:0,record:data.record,pending:true,authoritative:true};}
+      if(data?.record){const cups=Number(data.record.cups||0);localStorage.setItem(PVP_CUPS_KEY,String(cups));renderPvpRankSummary(cups);return {cups,delta:0,record:data.record,pending:true,authoritative:true};}
     }catch{}
     return {cups:before,delta:0,pending:true,authoritative:true};
+  }
+  function renderPvpRankSummary(cups=getPvpCups()){
+    cups=Math.max(0,Number(cups)||0);
+    const thresholds=[0,200,500,1000,3000,7000,12000];
+    const names=['🥚 Novato','🥉 Bronce','🥈 Plata','🥇 Oro','💎 Diamante','🚀 Maestro Cósmico','🌌 Leyenda Galáctica'];
+    const level=pvpRankFromCups(cups).level;
+    const text=$('pvpRankSummaryText'),bar=$('pvpRankProgress'),next=$('pvpRankNext');
+    if(text)text.textContent=names[level]+' · 🏆 '+Math.floor(cups)+' copas';
+    if(level>=thresholds.length-1){
+      if(bar)bar.style.width='100%';
+      if(next)next.textContent='Rango máximo alcanzado';
+      return;
+    }
+    const floor=thresholds[level],target=thresholds[level+1];
+    const progress=Math.max(0,Math.min(100,((cups-floor)/(target-floor))*100));
+    if(bar)bar.style.width=progress+'%';
+    if(next)next.textContent=Math.floor(cups)+' / '+target+' → '+names[level+1];
+  }
+  async function syncPvpRankSummary(){
+    renderPvpRankSummary();
+    try{
+      const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId())+'&t='+Date.now(),{cache:'no-store'});
+      const data=await r.json();
+      if(data?.record){
+        const cups=Math.max(0,Number(data.record.cups)||0);
+        localStorage.setItem(PVP_CUPS_KEY,String(cups));
+        renderPvpRankSummary(cups);
+      }
+    }catch{}
   }
   function pvpRankName(cups){
     cups=Number(cups||0);
@@ -1422,7 +1452,7 @@
 
   $('openPvpBtn')?.addEventListener('click',()=>{
     document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';
-    const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
+    const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();syncPvpRankSummary();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
   });
   document.querySelectorAll('.pvp-mode-btn').forEach(btn=>btn.addEventListener('click',()=>{
     // No permitir cambiar de modo mientras la cola está activa: antes este click
