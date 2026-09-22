@@ -279,3 +279,60 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .pvp-stick-knob { width:48px; height:48px; border-radius:50%; background:rgba(56,189,248,.9); box-shadow:0 0 12px #38bdf8; pointer-events:none; }
 .pvp-stick-fire .pvp-stick-knob { background:rgba(244,63,94,.9); box-shadow:0 0 12px #fb7185; }
 .pvp-stick small { position:absolute; bottom:-18px; width:150px; color:#e2e8f0; font-size:.55rem; font-weight:800; text-align:center; pointer-events:none; text-shadow:0 2px 3px #000; }
+
+
+/* Menú neón vivo: acabado arcade sin alterar la lógica. */
+#startScreen .menu-btn, #startScreen .menu-mini-btn {
+    border-width: 2px;
+    text-shadow: 0 2px 3px rgba(0,0,0,.82), 0 0 8px rgba(255,255,255,.18);
+    transition: transform .1s ease, filter .16s ease, box-shadow .16s ease;
+}
+#startScreen .menu-btn::after, #startScreen .menu-mini-btn::after {
+    content:'';
+    position:absolute;
+    left:5%; right:5%; top:2px;
+    height:42%;
+    border-radius:inherit;
+    background:linear-gradient(180deg,rgba(255,255,255,.25),rgba(255,255,255,0));
+    pointer-events:none;
+    z-index:-1;
+}
+#startScreen .menu-btn:active, #startScreen .menu-mini-btn:active { filter:brightness(1.2) saturate(1.18); }
+#startScreen .menu-btn-launch {
+    border-color:#fff09a;
+    background:linear-gradient(135deg,#ffd21a 0%,#ff9418 42%,#f4510b 100%);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.72),inset 0 -4px 10px rgba(151,44,0,.32),0 0 8px #ffd84a,0 0 22px rgba(255,126,16,.9),0 7px 12px rgba(0,0,0,.55);
+}
+#superBossModeBtn {
+    border-color:#ff5c79 !important;
+    background:linear-gradient(135deg,#c11245 0%,#76103f 52%,#350b39 100%) !important;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.38),inset 0 -4px 9px rgba(55,0,20,.45),0 0 8px #ff315f,0 0 18px rgba(255,35,93,.66),0 6px 10px rgba(0,0,0,.5) !important;
+}
+#openPvpBtn {
+    border-color:#d79cff !important;
+    background:linear-gradient(135deg,#8b3dff 0%,#6424d7 48%,#35117d 100%) !important;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.42),inset 0 -4px 9px rgba(37,6,91,.45),0 0 8px #bd6cff,0 0 19px rgba(132,54,255,.78),0 6px 10px rgba(0,0,0,.5) !important;
+}
+#startScreen .menu-btn-hangar {
+    border-color:#63edff;
+    background:linear-gradient(135deg,#058de9 0%,#0756b8 48%,#082d7c 100%);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 0 8px #20d9ff,0 0 17px rgba(0,159,255,.65),0 6px 9px rgba(0,0,0,.48);
+}
+#startScreen .menu-btn-shop {
+    border-color:#67ffd0;
+    background:linear-gradient(135deg,#08c88b 0%,#07966d 46%,#075b50 100%);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 0 8px #26f5b4,0 0 17px rgba(0,214,151,.58),0 6px 9px rgba(0,0,0,.48);
+}
+#startScreen .menu-btn-tutorial {
+    border-color:#d59cff;
+    background:linear-gradient(135deg,#7c3aed 0%,#5630c5 50%,#292277 100%);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 0 8px #b56cff,0 0 16px rgba(126,58,237,.64),0 6px 9px rgba(0,0,0,.48);
+}
+#pvpRankingBtn {
+    border-color:#ffe36b !important;
+    background:linear-gradient(135deg,#0879d8 0%,#0751a9 55%,#07336f 100%) !important;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.42),0 0 7px #ffd84c,0 0 17px rgba(18,145,255,.72),0 6px 10px rgba(0,0,0,.5) !important;
+}
+#startScreen .menu-mini-btn:nth-child(1) { border-color:#63eaff; background:linear-gradient(135deg,#087dc4,#1645a0); box-shadow:0 0 14px rgba(31,202,255,.58),0 5px 8px rgba(0,0,0,.45); }
+#startScreen .menu-mini-btn:nth-child(2) { border-color:#ffe46b; background:linear-gradient(135deg,#b87808,#68420a); box-shadow:0 0 14px rgba(255,204,43,.52),0 5px 8px rgba(0,0,0,.45); }
+#startScreen .menu-mini-btn:nth-child(3) { border-color:#e29cff; background:linear-gradient(135deg,#8a35c9,#492078); box-shadow:0 0 14px rgba(196,83,255,.55),0 5px 8px rgba(0,0,0,.45); }
