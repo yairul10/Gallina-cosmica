@@ -745,7 +745,7 @@
   }
 
   function shoot(){
-    const now=performance.now(), myStats=pvpShipStats((players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship);if(!running||meEliminated||now-lastShot<myStats.shotCooldown)return;
+    const now=qaPvpActive ? qaPvpStartedAt + qaPvpSimMs : performance.now(), myStats=pvpShipStats((players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship);if(!running||meEliminated||now-lastShot<myStats.shotCooldown)return;
     const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam)&&performance.now()>=Number(remoteEvadeUntil.get(Number(p.slot))||0));
     if(!targetPlayer){showStatus('🎯 Toca una nave enemiga para seleccionarla.');return;}
     const target=peerFor(targetPlayer.slot);
@@ -766,7 +766,7 @@
     [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,ownerSlot,ownerTeam,targetSlot:Number(targetSlot||0),life:1.5});});
   }
   function fireMissile(){
-    const now=performance.now();
+    const now=qaPvpActive ? qaPvpStartedAt + qaPvpSimMs : performance.now();
     if(!running||meEliminated)return;
     // La misma constante controla tanto el HUD como el disparo para que LISTO siempre signifique que puede disparar.
     if(now-lastMissile<PVP_MISSILE_COOLDOWN)return;
@@ -870,6 +870,42 @@
       if(Number.isFinite(predictedY)) state.y+=(predictedY-state.y)*smooth;
       if(Number.isFinite(state.targetAngle)) state.angle=angleLerp(state.angle,state.targetAngle,smooth);
       if(Number.isFinite(state.targetVisualAngle)) state.visualAngle=angleLerp(state.visualAngle,state.targetVisualAngle,smooth);
+    }
+    // En QA PvP la nave local también es un jugador automático. Usa las mismas
+    // funciones reales de movimiento, disparo y misil que un jugador, mientras
+    // la simulación acelerada hace avanzar sus cooldowns con tiempo simulado.
+    if(qaPvpActive&&!meEliminated&&!matchFinished){
+      const enemies=players.filter(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam));
+      const targetInfo=enemies.map(p=>({p,state:peerFor(p.slot)}))
+        .filter(t=>Number.isFinite(t.state.x)&&Number.isFinite(t.state.y))
+        .sort((a,b)=>Math.hypot(a.state.x-meState.x,a.state.y-meState.y)-Math.hypot(b.state.x-meState.x,b.state.y-meState.y))[0];
+      if(targetInfo){
+        selectedTargetSlot=Number(targetInfo.p.slot);
+        const tx=targetInfo.state.x-meState.x,ty=targetInfo.state.y-meState.y,dist=Math.hypot(tx,ty)||1;
+        let dx=tx/dist,dy=ty/dist;
+        // Mantiene distancia de combate y orbita al objetivo para ejercitar
+        // movimiento diagonal, puntería, colisiones y persecución.
+        const side=((Math.floor(qaPvpSimMs/3200)+(mySlot||1))%2)?1:-1;
+        if(dist<150){dx=-tx/dist;dy=-ty/dist;}
+        else if(dist<330){dx=(-ty/dist)*side*.92+(tx/dist)*.18;dy=(tx/dist)*side*.92+(ty/dist)*.18;}
+        // Esquiva trayectorias hostiles cercanas.
+        const threat=bullets.filter(b=>!b.own&&b.life>0).map(b=>{
+          const vx=Number(b.vx)||0,vy=Number(b.vy)||0,v2=vx*vx+vy*vy||1;
+          const rx=meState.x-b.x,ry=meState.y-b.y,t=Math.max(0,Math.min(.45,(rx*vx+ry*vy)/v2));
+          return {b,d:Math.hypot(b.x+vx*t-meState.x,b.y+vy*t-meState.y)};
+        }).sort((a,b)=>a.d-b.d)[0];
+        if(threat&&threat.d<72){
+          const vx=Number(threat.b.vx)||1,vy=Number(threat.b.vy)||0,vl=Math.hypot(vx,vy)||1;
+          dx=(-vy/vl)*side;dy=(vx/vl)*side;
+        }
+        const zone=pvpMode==='arena10'?cosmicZoneState(0):null;
+        if(zone?.active&&Math.hypot(meState.x-zone.cx,meState.y-zone.cy)>Math.max(90,zone.radius-90)){
+          const zx=zone.cx-meState.x,zy=zone.cy-meState.y,zl=Math.hypot(zx,zy)||1;dx=zx/zl;dy=zy/zl;
+        }
+        moveStick.x=dx;moveStick.y=dy;
+        meState.angle=Math.atan2(ty,tx);
+        if(dist<=PVP_ATTACK_RANGE){shoot();fireMissile();}
+      }else{moveStick.x=0;moveStick.y=0;selectedTargetSlot=0;}
     }
     let mx=meEliminated?0:moveStick.x,my=meEliminated?0:moveStick.y;
     if(keys.has('ArrowLeft')||keys.has('a'))mx-=1;if(keys.has('ArrowRight')||keys.has('d'))mx+=1;
@@ -1677,6 +1713,9 @@
       const report={mode:pvpMode,result:'cancelled',kills:matchKills,botKills:matchBotKills,realDurationMs:performance.now()-qaPvpStartedAt,simulatedDurationMs:qaPvpSimMs,lives:meState.lives,eliminated:[...eliminated]};
       qaPvpActive=false;qaPvpSpeed=1;stopArena();window.dispatchEvent(new CustomEvent('gallina-qa-pvp-result',{detail:report}));return true;
     },
-    getQaSnapshot(){return {active:qaPvpActive,mode:pvpMode,speed:qaPvpSpeed,simulatedMs:qaPvpSimMs,lives:meState.lives,kills:matchKills,botKills:matchBotKills,bullets:bullets.length,missiles:missiles.length,eliminated:[...eliminated],players:players.length};}
+    getQaSnapshot(){
+      const peerList=players.filter(p=>Number(p.slot)!==mySlot).map(p=>{const s=peerFor(p.slot);return {slot:Number(p.slot),bot:!!p.bot,team:Number(p.team||0),x:s.x,y:s.y,lives:s.lives,eliminated:eliminated.has(Number(p.slot))};});
+      return {active:qaPvpActive,running,finished:matchFinished,mode:pvpMode,speed:qaPvpSpeed,simulatedMs:qaPvpSimMs,lives:meState.lives,kills:matchKills,botKills:matchBotKills,bullets:bullets.length,missiles:missiles.length,impacts:impactFx.length,eliminated:[...eliminated],players:players.length,me:{x:meState.x,y:meState.y,lives:meState.lives,eliminated:meEliminated},peers:peerList,world:{width:worldWidth,height:worldHeight},zone:{elapsed:cosmicZoneElapsed,progress:cosmicZoneProgress}};}
+
   };
 })();
