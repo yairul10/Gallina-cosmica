@@ -5,6 +5,92 @@ const JSON_HEADERS = {
   "access-control-allow-headers": "content-type",
 };
 
+const GOOGLE_SERVER_CLIENT_ID = "672762312251-iub1fld742850kn1v637dvhle7e0mdv4.apps.googleusercontent.com";
+const PLAY_GAMES_APPLICATION_ID = "672762312251";
+const SESSION_TTL_MS = 60 * 60 * 1000;
+
+function b64url(bytes) {
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+function b64urlText(text) { return b64url(new TextEncoder().encode(text)); }
+function fromB64url(value) {
+  const base64 = String(value).replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, ch => ch.charCodeAt(0));
+}
+async function sessionKey(env) {
+  if (!env.GOOGLE_OAUTH_CLIENT_SECRET) throw new Error("SERVER_AUTH_NOT_CONFIGURED");
+  return crypto.subtle.importKey("raw", new TextEncoder().encode(env.GOOGLE_OAUTH_CLIENT_SECRET),
+    { name:"HMAC", hash:"SHA-256" }, false, ["sign","verify"]);
+}
+async function createSessionToken(env, playerId) {
+  const payload = b64urlText(JSON.stringify({ sub:String(playerId), exp:Date.now()+SESSION_TTL_MS }));
+  const signature = await crypto.subtle.sign("HMAC", await sessionKey(env), new TextEncoder().encode(payload));
+  return payload + "." + b64url(new Uint8Array(signature));
+}
+async function verifySessionToken(env, token) {
+  try {
+    const [payload, signature] = String(token||"").split(".");
+    if (!payload || !signature) return null;
+    const ok = await crypto.subtle.verify("HMAC", await sessionKey(env), fromB64url(signature), new TextEncoder().encode(payload));
+    if (!ok) return null;
+    const data = JSON.parse(new TextDecoder().decode(fromB64url(payload)));
+    if (!data?.sub || Number(data.exp||0) <= Date.now()) return null;
+    return { playerId:String(data.sub), expiresAt:Number(data.exp) };
+  } catch { return null; }
+}
+async function authenticatePlayGames(request, env) {
+  if (!env.GOOGLE_OAUTH_CLIENT_SECRET) return json({ok:false,error:"SERVER_AUTH_NOT_CONFIGURED"},503);
+  let body; try { body=await request.json(); } catch { return json({ok:false,error:"BAD_JSON"},400); }
+  const authCode=safeText(body?.authCode,"",4096);
+  if(!authCode)return json({ok:false,error:"AUTH_CODE_REQUIRED"},400);
+
+  const form=new URLSearchParams({
+    code:authCode,
+    client_id:GOOGLE_SERVER_CLIENT_ID,
+    client_secret:env.GOOGLE_OAUTH_CLIENT_SECRET,
+    grant_type:"authorization_code",
+    redirect_uri:""
+  });
+  const tokenResponse=await fetch("https://oauth2.googleapis.com/token",{
+    method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:form
+  });
+  const tokenData=await tokenResponse.json().catch(()=>({}));
+  if(!tokenResponse.ok||!tokenData?.access_token)return json({ok:false,error:"GOOGLE_TOKEN_EXCHANGE_FAILED"},401);
+
+  const verifyResponse=await fetch("https://games.googleapis.com/games/v1/applications/"+PLAY_GAMES_APPLICATION_ID+"/verify",{
+    headers:{authorization:"Bearer "+tokenData.access_token}
+  });
+  const verified=await verifyResponse.json().catch(()=>({}));
+  const playerId=safeText(verified?.player_id||verified?.playerId,"",128);
+  if(!verifyResponse.ok||!playerId)return json({ok:false,error:"PLAY_GAMES_VERIFY_FAILED"},401);
+
+  const expiresAt=Date.now()+SESSION_TTL_MS;
+  const sessionToken=await createSessionToken(env,playerId);
+  return json({ok:true,playerId,sessionToken,expiresAt});
+}
+async function authorizePvpRequest(request, env) {
+  const url=new URL(request.url);
+  const session=await verifySessionToken(env,url.searchParams.get("session"));
+  if(!session)return null;
+  url.searchParams.set("playerId",session.playerId);
+  url.searchParams.delete("session");
+
+  // El rango y el matchmaking también usan las copas oficiales del servidor,
+  // nunca el valor que declare el cliente.
+  try{
+    const rankingId=env.PVP_RANKING.idFromName("global");
+    const rankingResponse=await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/ranking?playerId="+encodeURIComponent(session.playerId));
+    const rankingData=await rankingResponse.json();
+    url.searchParams.set("cups",String(Math.max(0,Number(rankingData?.record?.cups||0))));
+  }catch{ url.searchParams.set("cups","0"); }
+
+  return new Request(url.toString(),request);
+}
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 }
@@ -657,7 +743,11 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: JSON_HEADERS });
     if (url.pathname === "/" || url.pathname === "/health") {
-      return json({ ok: true, service: "gallina-cosmica-pvp", version: 3, matchmaking: true, modes: ["1v1", "2v2", "arena", "arena10"] });
+      return json({ ok: true, service: "gallina-cosmica-pvp", version: 4, matchmaking: true, playGamesAuth: true, modes: ["1v1", "2v2", "arena", "arena10"] });
+    }
+    if (url.pathname === "/auth/play-games") {
+      if (request.method !== "POST") return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
+      return authenticatePlayGames(request,env);
     }
     if (url.pathname === "/ranking") {
       // El ranking público es SOLO lectura. Las liquidaciones oficiales llegan
@@ -667,13 +757,18 @@ export default {
       return env.PVP_RANKING.get(id).fetch(request);
     }
     if (url.pathname === "/matchmake") {
-      const mode = gameMode(url);
+      const authorized=await authorizePvpRequest(request,env);
+      if(!authorized)return json({ok:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
+      const verifiedUrl=new URL(authorized.url);
+      const mode = gameMode(verifiedUrl);
       const id = env.PVP_MATCHMAKER.idFromName("global-" + mode);
-      return env.PVP_MATCHMAKER.get(id).fetch(request);
+      return env.PVP_MATCHMAKER.get(id).fetch(authorized);
     }
     const match = url.pathname.match(/^\/room\/(\d{6})$/);
     if (!match) return json({ ok: false, error: "NOT_FOUND" }, 404);
+    const authorized=await authorizePvpRequest(request,env);
+    if(!authorized)return json({ok:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
     const id = env.PVP_ROOMS.idFromName(match[1]);
-    return env.PVP_ROOMS.get(id).fetch(request);
+    return env.PVP_ROOMS.get(id).fetch(authorized);
   },
 };
