@@ -288,11 +288,20 @@
     if(!silent)showStatus('Desconectado de la sala.');
   }
 
-  function findMatch(){
+  async function findMatch(){
     if(queueSocket){cancelMatch();return;}
     disconnect(true);
+    let verified;
+    try{
+      showStatus('🔐 Verificando Play Games…');
+      if(typeof window.getPlayGamesPvpSession!=='function')throw new Error('Play Games no está listo');
+      verified=await window.getPlayGamesPvpSession();
+    }catch(error){
+      showStatus('🔐 No se pudo verificar Play Games: '+(error?.message||'intenta nuevamente'),false,true);
+      return;
+    }
     const me=identity();
-    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups())});
+    const params=new URLSearchParams({playerId:verified.playerId,name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups()),session:verified.token});
     const ws=new WebSocket(`${PVP_WS_BASE}/matchmake?${params}`);
     queueSocket=ws;
     queueStartedAt=Date.now();
@@ -336,13 +345,22 @@
     ws.addEventListener('error',()=>{if(queueSocket===ws){stopQueueTimer();showStatus('No se pudo conectar a la cola PvP.',false,true);}});
   }
 
-  function connect(code,creating=false,useBot=false,humanCount=1,isReconnect=false){
+  async function connect(code,creating=false,useBot=false,humanCount=1,isReconnect=false){
     code=String(code||'').replace(/\D/g,'').slice(0,6); roomInput.value=code;
     if(code.length!==6)return showStatus('Escribe un código de sala de 6 dígitos.');
     if(!isReconnect)disconnect(true);
     intentionalDisconnect=false;
+    let verified;
+    try{
+      if(!isReconnect)showStatus('🔐 Verificando Play Games…');
+      if(typeof window.getPlayGamesPvpSession!=='function')throw new Error('Play Games no está listo');
+      verified=await window.getPlayGamesPvpSession();
+    }catch(error){
+      showStatus('🔐 No se pudo verificar Play Games: '+(error?.message||'intenta nuevamente'),false,true);
+      return;
+    }
     const me=identity();
-    const params=new URLSearchParams({playerId:playerId(),name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups())});
+    const params=new URLSearchParams({playerId:verified.playerId,name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups()),session:verified.token});
     if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;
