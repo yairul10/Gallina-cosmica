@@ -197,6 +197,16 @@ export class PvpRoom {
           this.finished = true;
           if (!this.eliminatedSlots.has(slot)) this.eliminationOrder.push(slot);
           this.eliminatedSlots.add(slot);
+          // 1v1 también debe generar la liquidación oficial. Antes la sala se
+          // marcaba como terminada pero nunca escribía ganador/perdedor al ranking,
+          // por eso el cliente acababa mostrando el mismo total de copas.
+          const winner=this.playerList().find(p=>Number(p.slot)!==Number(slot))||null;
+          const winnerSlot=Number(winner?.slot||0);
+          if(winnerSlot){
+            this.recordServerKill(Number(message.killerSlot||0),slot);
+            this.officialResult=this.officialSnapshot({winnerSlot,winnerPlayerId:winner?.playerId||null});
+            this.settleOfficialResults({winnerSlot,winnerPlayerId:winner?.playerId||null});
+          }
         }
         if (message.reason === "forfeit") {
           this.forfeitedPlayers.add(playerId);
