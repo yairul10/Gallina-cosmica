@@ -7,9 +7,9 @@
     if (!PLAYER_IDENTITY_QA_ENABLED) return;
 
     const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() !== 'web');
-    // QA temporal habilitado también en Android para esta ronda de pruebas.
-    // Antes de distribuir la beta pública debe volver a false.
-    // if (isNativeApp) return;
+    // QA habilitado únicamente para pruebas HTML/GitHub Pages.
+    // La app Android siempre usa la identidad real de Play Games.
+    if (isNativeApp) return;
 
     // Este archivo se usa solo en GitHub Pages. Si una versión antigua del
     // perfil quedó guardada, el premio se reconcilia en cada carga para QA.
