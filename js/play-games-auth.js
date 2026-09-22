@@ -174,6 +174,49 @@
         return result.authCode;
     };
 
+    // Diagnóstico seguro para builds instaladas desde Google Play.
+    // El código OAuth de un solo uso sólo existe en memoria durante esta llamada:
+    // nunca se muestra, registra ni guarda.
+    let serverAuthDiagnosticRan = false;
+    const runSafePlayGamesDiagnostic = async ({ visible = false } = {}) => {
+        if (serverAuthDiagnosticRan && !visible) return window.GallinaPlayGamesDiagnostic || null;
+        serverAuthDiagnosticRan = true;
+        const report = { playGames: false, identity: false, identityConsistent: false, serverAuth: false };
+        try {
+            const playGames = getPlayGames();
+            if (!playGames) throw new Error('Play Games no disponible');
+            const auth = await playGames.getAuthStatus();
+            report.playGames = !!auth?.authenticated;
+            if (!report.playGames) throw new Error('Play Games no autenticado');
+            const player = await playGames.getPlayerStatus();
+            const nativeId = player?.playerAvailable && player?.playerId ? String(player.playerId) : '';
+            report.identity = !!nativeId;
+            const published = nativeId ? publishPlayGamesIdentity(player) : null;
+            report.identityConsistent = !!(nativeId && published?.id === nativeId && window.GallinaPlayerIdentity?.getId?.() === nativeId);
+            // Solicitar y descartar de inmediato: jamás exponer el authCode al informe.
+            const result = await playGames.requestServerSideAccess({ serverClientId: PLAY_GAMES_SERVER_CLIENT_ID });
+            report.serverAuth = !!result?.authCode;
+            result && (result.authCode = '');
+        } catch (error) {
+            report.error = String(error?.message || 'Error de diagnóstico').slice(0, 160);
+        }
+        window.GallinaPlayGamesDiagnostic = { ...report };
+        if (visible) {
+            const lines = [
+                'Diagnóstico Play Games',
+                '🎮 Conexión: ' + (report.playGames ? 'OK ✓' : 'ERROR'),
+                '🆔 Identidad: ' + (report.identity ? 'OK ✓' : 'ERROR'),
+                '🔗 Coherencia de identidad: ' + (report.identityConsistent ? 'OK ✓' : 'ERROR'),
+                '🔐 Autorización de servidor: ' + (report.serverAuth ? 'OK ✓' : 'ERROR')
+            ];
+            if (report.error) lines.push('Detalle: ' + report.error);
+            showNotice(lines.join('\\n'), report.playGames && report.identity && report.identityConsistent && report.serverAuth);
+        }
+        window.dispatchEvent(new CustomEvent('gallina-play-games-diagnostic', { detail: { ...report } }));
+        return report;
+    };
+    window.runPlayGamesDiagnostic = () => runSafePlayGamesDiagnostic({ visible: true });
+
     window.unlockPlayGamesAchievement = async (achievementId) => {
         const playGames = getPlayGames();
         if (!playGames || !achievementId) return false;
@@ -227,6 +270,7 @@
                 showNotice(identity
                     ? 'Google Play Games conectado ✓\n' + identity.name
                     : 'Google Play Games conectado ✓', true);
+                await runSafePlayGamesDiagnostic({ visible: true });
             } else {
                 const details = [
                     'signIn:\n' + (signedIn?.diagnostic || signedIn?.detail || 'Sin resultado'),
@@ -250,7 +294,7 @@
     });
 
     refreshStatus().then((status) => {
-        if (status?.authenticated) refreshPlayerIdentity();
+        if (status?.authenticated) refreshPlayerIdentity().then(() => runSafePlayGamesDiagnostic({ visible: true }));
     });
     setTimeout(() => refreshStatus().then((status) => {
         if (status?.authenticated) refreshPlayerIdentity();
