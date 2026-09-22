@@ -396,7 +396,12 @@
           const finalOrder=Array.isArray(m.finalOrder)?m.finalOrder.map(Number).filter(Boolean):podium;
           const myPlace=finalOrder.indexOf(mySlot)+1;
           const title=Number(m.winnerSlot)===mySlot?'🏆 ¡VICTORIA EN ARENA!':(myPlace>0?'🌌 ARENA FINALIZADA · Puesto #'+myPlace:'🌌 ARENA FINALIZADA');
-          endArena(title+(podiumText?'\n\n'+podiumText:''),Number(m.winnerSlot)===mySlot?'win':'loss',myPlace);
+          const official=m.official&&Array.isArray(m.official.players)?m.official:null;
+          const officialMe=official?.players.find(p=>Number(p.slot)===mySlot);
+          const officialOrder=Array.isArray(official?.finalOrder)?official.finalOrder.map(Number):[];
+          const officialPlace=officialOrder.indexOf(mySlot)+1;
+          const serverQa=officialMe?'\n\n🔐 QA servidor: puesto '+(officialPlace||'—')+' · bots '+Number(officialMe.kills?.botKills||0)+' · humanos '+Number(officialMe.kills?.humanKills||0):'\n\n⚠️ QA servidor: sin registro oficial';
+          endArena(title+(podiumText?'\n\n'+podiumText:'')+serverQa,Number(m.winnerSlot)===mySlot?'win':'loss',myPlace);
         }
       } else if(m.type==='peer-message') {
         handlePeer(m.payload||{},Number(m.from||0),Number(m.team||0));
