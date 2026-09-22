@@ -1,6 +1,11 @@
 /* Identidad simulada para probar torneos desde GitHub Pages.
    No se activa dentro de la app Android. */
 (() => {
+    // Respaldo QA conservado temporalmente para la transición a Play Games.
+    // Debe permanecer false en cualquier build distribuida por Google Play.
+    const PLAYER_IDENTITY_QA_ENABLED = false;
+    if (!PLAYER_IDENTITY_QA_ENABLED) return;
+
     const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() !== 'web');
     if (isNativeApp) return;
 
@@ -11,7 +16,8 @@
     const PLAYERS = [
         { id: 'QA-PLAYER-001', name: 'Jugador 1' },
         { id: 'QA-PLAYER-002', name: 'Jugador 2' },
-        { id: 'QA-PLAYER-003', name: 'Jugador 3' }
+        { id: 'QA-PLAYER-003', name: 'Jugador 3' },
+        { id: 'QA-PLAYER-004', name: 'Jugador 4' }
     ];
 
     const read = () => {

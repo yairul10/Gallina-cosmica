@@ -131,10 +131,10 @@ window.damageBoss = function(bIndex, dmg) {
     let boss = bosses[bIndex]; 
     let ship = gameStats.selectedShip;
     let passiveMult = 1.0;
-    if (ship === 1 && boss.type === 'corn') passiveMult = 1.2; 
-    if (ship === 3 && boss.type === 'lechuga') passiveMult = 1.2; 
+    if (!gameStats.selectedPvpShip && ship === 1 && boss.type === 'corn') passiveMult = 1.2; 
+    if (!gameStats.selectedPvpShip && ship === 3 && boss.type === 'lechuga') passiveMult = 1.2; 
     
-    let proMult = gameStats.useProShip ? 1.3 : 1.0;
+    let proMult = (!gameStats.selectedPvpShip && gameStats.useProShip) ? 1.3 : 1.0;
     boss.hp -= (dmg * passiveMult * proMult);
 
     if (boss.hp <= 0) { 
@@ -174,12 +174,12 @@ window.damageEnemy = function(eIndex, dmg) {
     let e = enemies[eIndex]; 
     let ship = gameStats.selectedShip;
     let passiveMult = 1.0;
-    if (ship === 0 && (e.type === 'corn' || e.type === 'corn_strong')) passiveMult = 1.2;
-    if (ship === 1 && e.type === 'maiz_jefe') passiveMult = 1.2;
-    if (ship === 2 && (e.type === 'lechuga' || e.type === 'lechuga_fuerte')) passiveMult = 1.2;
-    if (ship === 3 && e.type === 'lechuga_jefe') passiveMult = 1.2;
+    if (!gameStats.selectedPvpShip && ship === 0 && (e.type === 'corn' || e.type === 'corn_strong')) passiveMult = 1.2;
+    if (!gameStats.selectedPvpShip && ship === 1 && e.type === 'maiz_jefe') passiveMult = 1.2;
+    if (!gameStats.selectedPvpShip && ship === 2 && (e.type === 'lechuga' || e.type === 'lechuga_fuerte')) passiveMult = 1.2;
+    if (!gameStats.selectedPvpShip && ship === 3 && e.type === 'lechuga_jefe') passiveMult = 1.2;
 
-    let proMult = gameStats.useProShip ? 1.3 : 1.0;
+    let proMult = (!gameStats.selectedPvpShip && gameStats.useProShip) ? 1.3 : 1.0;
     e.hp -= (dmg * passiveMult * proMult);
 
     if (e.hp <= 0) { 
@@ -202,9 +202,11 @@ window.drawPlayerShip = function(x, y) {
     let isPro = gameStats.useProShip ? 1 : 0;
     let stage = evolutionStage;
     
-    let currentImg = gameStats.useGallinaChile && gameStats.gallinaChile
-        ? assets.gallinaChile
-        : assets.ships[ship][isPro][stage];
+    let currentImg;
+    if (gameStats.selectedPvpShip && gameStats.pvpShips?.[gameStats.selectedPvpShip]) {
+        currentImg = new Image(); currentImg.src = `assets/${gameStats.selectedPvpShip}.png`;
+        isPro = 0;
+    } else currentImg = gameStats.useGallinaChile && gameStats.gallinaChile ? assets.gallinaChile : assets.ships[ship][isPro][stage];
     
     if (shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 38, 0, Math.PI * 2); ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'; ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 10; ctx.stroke(); ctx.restore(); }
     if (upgrades.armor > 0 && !shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 34, 0, Math.PI * 2); ctx.fillStyle = partialHit ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.1)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = partialHit ? 'rgba(239, 68, 68, 0.8)' : 'rgba(37, 99, 235, 0.8)'; ctx.stroke(); ctx.restore(); }
