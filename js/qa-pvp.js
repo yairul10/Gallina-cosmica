@@ -3,11 +3,13 @@
  * No altera el bot QA original: sólo añade controles al panel existente cuando QA_MODE=true.
  */
 (() => {
+  function initQaPvp(){
+  if(document.getElementById('qaPvpPanelExtension'))return;
   if (!window.QA_MODE) return;
   const panel=document.getElementById('qaModePanel');
   if(!panel||!window.GallinaPvp)return;
 
-  const box=document.createElement('div');
+  const box=document.createElement('div');box.id='qaPvpPanelExtension';
   box.style.cssText='margin-top:7px;padding-top:7px;border-top:1px solid #475569';
   box.innerHTML='<div style="color:#67e8f9;margin-bottom:5px">⚔️ QA PvP</div>';
 
@@ -69,4 +71,7 @@
   });
   cancel.addEventListener('click',()=>{if(!running)return;running=false;window.GallinaPvp.stopQaMatch();render();});
   render();
+  }
+  if(window.QA_MODE)initQaPvp();
+  else window.addEventListener('gallina-qa-ready',initQaPvp,{once:true});
 })();
