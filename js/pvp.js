@@ -771,7 +771,16 @@
         const ai=botAiFor(botPlayer.slot);
         const enemyPlayers=players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==Number(botPlayer.team)));
         const enemyTargets=enemyPlayers.map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)}));
-        const nearest=enemyTargets.sort((a,b)=>Math.hypot(a.state.x-bot.x,a.state.y-bot.y)-Math.hypot(b.state.x-bot.x,b.state.y-bot.y))[0];
+        const rankLevel=Math.max(0,Math.min(6,Number(botPlayer.rankLevel||0)));
+        // Rangos altos eligen mejor sus objetivos: desde Diamante ponderan vida además de distancia.
+        const targetScore=t=>{
+          const d=Math.hypot(t.state.x-bot.x,t.state.y-bot.y);
+          if(rankLevel<4)return d;
+          const max=pvpShipStats(t.p.ship||'Gallina').maxLives;
+          const life=Math.max(0,Number(t.state.lives||max))/max;
+          return d+(life*90)-(rankLevel>=6?(1-life)*80:0);
+        };
+        const nearest=enemyTargets.sort((a,b)=>targetScore(a)-targetScore(b))[0];
         if(!nearest)continue;
         const nearestDist=Math.hypot(nearest.state.x-bot.x,nearest.state.y-bot.y);
         // Fuera del radio de búsqueda el bot patrulla su propio sector en vez de
@@ -820,11 +829,16 @@
         // poca vida y hacer esquivas ocasionales. Mantiene oportunidades claras
         // para jugadores nuevos en vez de reaccionar perfectamente a cada tiro.
         let desiredX=dx/dist,desiredY=dy/dist;
-        const lifeRatio=Math.max(0,Number(bot.lives||0))/20;
-        if(!ai.nextDodgeAt)ai.nextDodgeAt=now+900+Math.random()*1800;
-        if(now>=ai.nextDodgeAt){
-          ai.nextDodgeAt=now+1200+Math.random()*2200;
-          ai.dodgeUntil=now+350+Math.random()*450;
+        const botStats=pvpShipStats(botPlayer.ship||'Gallina');
+        const lifeRatio=Math.max(0,Number(bot.lives||0))/botStats.maxLives;
+        // La frecuencia de esquiva escala por rango. Maestro/Leyenda reaccionan además
+        // a proyectiles cercanos, pero sin superar la velocidad máxima de un jugador.
+        const dodgeBase=[1800,1550,1300,1050,850,650,480][rankLevel];
+        const incomingThreat=rankLevel>=4&&bullets.some(b=>Number(b.ownerSlot)!==Number(botPlayer.slot)&&Math.hypot(b.x-bot.x,b.y-bot.y)<150);
+        if(!ai.nextDodgeAt)ai.nextDodgeAt=now+dodgeBase+Math.random()*700;
+        if(now>=ai.nextDodgeAt||incomingThreat){
+          ai.nextDodgeAt=now+dodgeBase+Math.random()*(rankLevel>=5?450:900);
+          ai.dodgeUntil=now+(rankLevel>=5?650:420)+Math.random()*300;
           ai.dodgeSide=Math.random()<.5?-1:1;
         }
         const dodging=now<Number(ai.dodgeUntil||0);
@@ -861,7 +875,8 @@
         }
         const wa=Number(ai.wander||0),ca=Math.cos(wa),sa=Math.sin(wa);
         ai.moveX=desiredX*ca-desiredY*sa;ai.moveY=desiredX*sa+desiredY*ca;
-        const speed=lifeRatio<=.30?122:dist>250?120:(dodging?126:106);
+        const baseSpeed=[108,116,124,145,158,172,185][rankLevel];
+        const speed=lifeRatio<=.30?Math.min(190,baseSpeed+6):dist>250?baseSpeed:(dodging?Math.min(190,baseSpeed+8):Math.max(104,baseSpeed-8));
         const botNextX=Math.max(45,Math.min(worldWidth-45,bot.targetX+ai.moveX*speed*dt));
         const botNextY=Math.max(70,Math.min(worldHeight-70,bot.targetY+ai.moveY*speed*dt));
         if(!positionBlockedByAsteroid(botNextX,bot.targetY,24))bot.targetX=botNextX;
@@ -880,18 +895,21 @@
           }
         }
         const targetInAttackRange=!!chosen&&Math.hypot(chosen.state.x-bot.x,chosen.state.y-bot.y)<=PVP_ATTACK_RANGE;
-        if(targetInAttackRange&&now-ai.lastShot>850){
+        // Desde Oro usa la cadencia humana base (330 ms). El Aniquilador conserva
+        // exactamente su ventaja real de 247,5 ms; los rangos bajos dejan más ventanas.
+        const rankShotCooldown=[850,650,480,330,330,330,330][rankLevel];
+        const botShotCooldown=botPlayer.ship==='Toro Aniquilador'?Math.min(rankShotCooldown,247.5):rankShotCooldown;
+        if(targetInAttackRange&&now-ai.lastShot>botShotCooldown){
           ai.lastShot=now;
-          // Con el sistema de objetivo seleccionado, el bot apunta siempre a la
-          // posición real del objetivo. La dificultad sigue limitada por movimiento,
-          // obstáculos y el mismo tiempo de recarga del láser (850 ms).
           const aim=trueAim;
           spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
           if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim,targetSlot:Number(chosen.p.slot)});
         }
-        // Misil con cadencia humana: espera aleatoriamente entre 8 y 12 s.
+        // Los rangos altos reservan menos el misil cuando ya tienen un blanco válido.
         if(targetInAttackRange&&now>=ai.nextMissileAt){
-          ai.nextMissileAt=now+8000+Math.random()*4000;
+          const missileMin=rankLevel>=6?8000:rankLevel>=5?8500:rankLevel>=4?9000:10000;
+          const missileJitter=rankLevel>=5?1200:2500;
+          ai.nextMissileAt=now+missileMin+Math.random()*missileJitter;
           const info=shipCombatInfo(botPlayer.ship||'Gallina');
           spawnRemoteMissile(bot.x,bot.y,botPlayer.ship,info.missileType,false,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
           if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')send({type:'bot-missile',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,missileType:info.missileType,targetSlot:Number(chosen.p.slot)});
