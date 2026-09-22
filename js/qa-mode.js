@@ -5,7 +5,14 @@
 const QA_MODE = false;
 window.QA_MODE = QA_MODE;
 
-if (QA_MODE) {
+async function bootQaMode() {
+    let remoteQa = false;
+    if (!QA_MODE && typeof window.getRemoteQaAccess === 'function') {
+        remoteQa = await window.getRemoteQaAccess();
+    }
+    window.QA_MODE = QA_MODE || remoteQa;
+    if (!window.QA_MODE) return;
+
     let qaBotActive = false;
     let qaFireCooldown = 0;
     let qaPurchaseCooldown = 0;
@@ -514,3 +521,5 @@ if (QA_MODE) {
     status.textContent = 'Selecciona una serie y presiona Iniciar.';
     renderSummary();
 }
+
+bootQaMode();
