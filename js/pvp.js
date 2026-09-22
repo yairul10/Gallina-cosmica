@@ -144,17 +144,6 @@
   let selectedTargetSlot=0;
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
-  const qaCoinsBtn=$('pvpQaCoinsBtn');
-  if(qaCoinsBtn) qaCoinsBtn.addEventListener('click',()=>{
-    if(!PVP_TEST_MODE)return;
-    try{
-      gameStats.savedCoins=Number(gameStats.savedCoins||0)+5000000;
-      if(typeof coins!=='undefined') coins=gameStats.savedCoins;
-      saveStats();
-      if(typeof updateShopUI==='function') updateShopUI();
-      showStatus('🧪 +5.000.000 monedas añadidas para pruebas.');
-    }catch{ showStatus('⚠️ No se pudieron añadir las monedas de prueba.'); }
-  });
   const PVP_CUPS_KEY='gallina_pvp_cups_v1';
   const qaBotRankSelect=$('pvpQaBotRank');
   const QA_BOT_RANK_CUPS=[0,200,500,1000,3000,7000,12000];
@@ -180,7 +169,6 @@
     for(let i=1;i<thresholds.length;i++){if(n>=thresholds[i])level=i;else break;}
     return {level};
   }
-  function addPvpCups(delta){const next=Math.max(0,getPvpCups()+Number(delta||0));localStorage.setItem(PVP_CUPS_KEY,String(next));return next;}
   function currentGameStats(){
     // gameStats se declara con let en estado.js y no es propiedad de window.
     // Acceder directamente permite que PvP use la nave realmente equipada.
