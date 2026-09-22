@@ -1131,6 +1131,7 @@
             lastBotHitAt=now;botLives=Math.max(0,botLives-1);
             const bot=peerFor(botPlayer.slot);bot.lives=botLives;updateLives();
             if(botLives<=0){
+              if(!pendingBotDefeats.has(Number(botPlayer.slot))){pendingBotDefeats.add(Number(botPlayer.slot));send({type:'bot-defeat',slot:Number(botPlayer.slot),team:0,killerSlot:mySlot,attackKind:'laser'});}
               eliminated.add(Number(botPlayer.slot));matchKills++;matchBotKills++;
               endArena('🏆 ¡VICTORIA!\n⚔️ '+playerName(mySlot)+' derrotó a '+playerName(botPlayer.slot),'win');
               return;
@@ -1237,6 +1238,7 @@
             lastBotHitAt=now;botLives=Math.max(0,botLives-1);
             const bot=peerFor(botPlayer.slot);bot.lives=botLives;updateLives();
             if(botLives<=0){
+              if(!pendingBotDefeats.has(Number(botPlayer.slot))){pendingBotDefeats.add(Number(botPlayer.slot));send({type:'bot-defeat',slot:Number(botPlayer.slot),team:0,killerSlot:mySlot,attackKind:'missile'});}
               eliminated.add(Number(botPlayer.slot));matchKills++;matchBotKills++;
               endArena('🏆 ¡VICTORIA!\n🚀 '+playerName(mySlot)+' derrotó a '+playerName(botPlayer.slot),'win');
               return;
