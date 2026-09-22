@@ -66,6 +66,7 @@ export class PvpRoom {
     this.botPlayers = [];
     this.serverKills = new Map();
     this.officialResult = null;
+    this.roomCode = null;
   }
 
   async fetch(request) {
@@ -75,6 +76,7 @@ export class PvpRoom {
     }
     const url = new URL(request.url);
     const requestedMode = gameMode(url);
+    if(!this.roomCode){const m=url.pathname.match(/\/room\/(\d{6})$/);this.roomCode=m?m[1]:safeText(url.pathname,'room',40);}
     if (!this.mode) this.mode = requestedMode;
     if (requestedMode !== this.mode) return json({ ok: false, error: "MODE_MISMATCH" }, 409);
     const capacity = roomCapacity(this.mode);
@@ -152,7 +154,7 @@ export class PvpRoom {
             if(teamSlots.length===2 && teamSlots.every(s=>this.eliminatedSlots.has(s))){
               this.finished=true;
               const winnerTeam=Number(bot.team)===1?2:1;
-              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:Number(bot.team)}); this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam),official:this.officialResult});
+              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:Number(bot.team)}); this.settleOfficialResults({winnerTeam,loserTeam:Number(bot.team)}); this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam),official:this.officialResult});
             }
           } else {
             if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
@@ -187,7 +189,7 @@ export class PvpRoom {
             if (teamSlots.length === 2 && teamSlots.every(s => this.eliminatedSlots.has(s))) {
               this.finished = true;
               const winnerTeam = team === 1 ? 2 : 1;
-              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:team}); this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam), official:this.officialResult });
+              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:team}); this.settleOfficialResults({winnerTeam,loserTeam:team}); this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam), official:this.officialResult });
             }
           } else {
             if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
@@ -298,6 +300,7 @@ export class PvpRoom {
     const finalOrder = [winnerSlot, ...this.eliminationOrder.slice().reverse()].filter((slot,i,a)=>slot&&a.indexOf(slot)===i).slice(0,capacity);
     const podiumSlots = finalOrder.slice(0, 4);
     this.officialResult=this.officialSnapshot({winnerSlot,winnerPlayerId:winner?.playerId||null,finalOrder});
+    this.settleOfficialResults({winnerSlot,winnerPlayerId:winner?.playerId||null,finalOrder});
     this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, podiumSlots, finalOrder, rewards: this.rewardListBySlot(winnerSlot), official:this.officialResult });
   }
   recordServerKill(killerSlot, deadSlot) {
@@ -317,6 +320,29 @@ export class PvpRoom {
       kills:this.serverKills.get(Number(p.slot))||{botKills:0,humanKills:0}
     }));
     return {mode:this.mode,players,eliminationOrder:this.eliminationOrder.slice(),...extra};
+  }
+  async settleOfficialResults(extra={}) {
+    if(!this.started)return;
+    const snapshot=this.officialSnapshot(extra);
+    const finalOrder=Array.isArray(snapshot.finalOrder)?snapshot.finalOrder.map(Number):[];
+    const winnerSlot=Number(snapshot.winnerSlot||0),winnerTeam=Number(snapshot.winnerTeam||0);
+    const rankingId=this.env.PVP_RANKING.idFromName("global"), ranking=this.env.PVP_RANKING.get(rankingId);
+    const tasks=[];
+    for(const p of snapshot.players.filter(p=>!p.bot)){
+      const status=this.rewardStatus.get(Number(p.slot));
+      if(status?.eligible===false && status?.reason==='disconnect')continue;
+      const kills=p.kills||{botKills:0,humanKills:0};
+      const placement=(this.mode==='arena'||this.mode==='arena10')?Math.max(1,finalOrder.indexOf(Number(p.slot))+1):0;
+      const won=this.mode==='1v1'?Number(p.slot)===winnerSlot:this.mode==='2v2'?Number(p.team)===winnerTeam:placement===1;
+      const result=status?.reason==='forfeit'?'forfeit':won?'win':'loss';
+      tasks.push(ranking.fetch("https://ranking.internal/ranking",{
+        method:"POST",headers:{"content-type":"application/json","x-pvp-internal":"room"},
+        body:JSON.stringify({official:true,playerId:p.playerId,name:this.playerList().find(x=>x.playerId===p.playerId)?.name||"Jugador",
+          kills:Number(kills.botKills||0)+Number(kills.humanKills||0),botKills:Number(kills.botKills||0),humanKills:Number(kills.humanKills||0),
+          result,mode:this.mode,placement,matchId:"room-"+this.roomCode+"-"+this.mode})
+      }).catch(()=>null));
+    }
+    await Promise.all(tasks);
   }
   rewardListBySlot(winnerSlot) {
     const p = this.playerList().find(p => p.slot === winnerSlot);
@@ -400,6 +426,11 @@ export class PvpRanking {
 
     if(request.method!=='POST') return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
     let body; try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
+    const internal=request.headers.get('x-pvp-internal')==='room' && body?.official===true;
+    if(!internal){
+      const pid=safeText(body?.playerId,'',128), record=pid&&state.players[pid]?{...state.players[pid],rank:this.rankFor(state.players[pid].cups)}:null;
+      return json({ok:true,authoritative:true,pending:true,record,month:state.activeMonth});
+    }
     const playerId=safeText(body.playerId,'',128); if(!playerId)return json({ok:false,error:'PLAYER_ID_REQUIRED'},400);
     const name=safeText(body.name,'Jugador',40);
     const kills=Math.max(0,Math.min(9,Math.floor(Number(body.kills)||0)));
