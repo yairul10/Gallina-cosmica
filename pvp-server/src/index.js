@@ -421,7 +421,9 @@ export class PvpRanking {
       const playerId=safeText(url.searchParams.get('playerId'),'',128);
       const record=playerId&&state.players[playerId]?{...state.players[playerId],rank:this.rankFor(state.players[playerId].cups)}:null;
       const pendingMonthly=playerId?Object.values(state.monthlyAwards).filter(r=>r.playerId===playerId&&!r.claimed):[];
-      return json({ok:true,month:state.activeMonth,ranking,record,pendingMonthly});
+      const matchId=safeText(url.searchParams.get('matchId'),'',80);
+      const settlement=playerId&&matchId?(await this.ctx.storage.get('settlement:'+playerId+'|'+matchId))||null:null;
+      return json({ok:true,month:state.activeMonth,ranking,record,settlement,pendingMonthly});
     }
 
     if(request.method!=='POST') return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
@@ -487,7 +489,9 @@ export class PvpRanking {
     seen[dedupe]=Date.now();
     const keys=Object.keys(seen); if(keys.length>1000) keys.sort((x,y)=>seen[x]-seen[y]).slice(0,keys.length-1000).forEach(k=>delete seen[k]);
     await this.ctx.storage.put({players,seen});
-    return json({ok:true,delta:appliedDelta,record:{...record,rank:this.rankFor(record.cups)},month:state.activeMonth});
+    const settlement={playerId,matchId,delta:appliedDelta,cups:newCups,mode,placement,botKills,humanKills,result,createdAt:Date.now()};
+    await this.ctx.storage.put('settlement:'+dedupe,settlement);
+    return json({ok:true,delta:appliedDelta,settlement,record:{...record,rank:this.rankFor(record.cups)},month:state.activeMonth});
   }
 }
 
