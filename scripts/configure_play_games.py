@@ -32,8 +32,8 @@ if "play-services-games-v2" not in text:
 text = gradle.read_text()
 if "com.google.android.play:app-update:" not in text:
     text, count = re.subn(
-        r"(?m)^dependencies\\s*\\{",
-        'dependencies {\\n    implementation "com.google.android.play:app-update:2.1.0"',
+        r"(?m)^dependencies\s*\{",
+        'dependencies {\n    implementation "com.google.android.play:app-update:2.1.0"',
         text,
         count=1,
     )
