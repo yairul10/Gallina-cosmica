@@ -520,6 +520,7 @@ async function bootQaMode() {
     cancelButton.addEventListener('click', cancelSeries);
     status.textContent = 'Selecciona una serie y presiona Iniciar.';
     renderSummary();
+    window.dispatchEvent(new CustomEvent('gallina-qa-ready'));
 }
 
 bootQaMode();
