@@ -8,7 +8,7 @@ const JSON_HEADERS = {
 
 const GOOGLE_SERVER_CLIENT_ID = "672762312251-iub1fld742850kn1v637dvhle7e0mdv4.apps.googleusercontent.com";
 const PLAY_GAMES_APPLICATION_ID = "672762312251";
-const SESSION_TTL_MS = 60 * 60 * 1000;
+const SESSION_TTL_MS = 60 * 60 * 1000;\nconst ACTIVE_SESSION_HEADER = 'x-pvp-session-internal';
 
 function b64url(bytes) {
   let binary = "";
@@ -40,7 +40,7 @@ async function verifySessionToken(env, token) {
     if (!ok) return null;
     const data = JSON.parse(new TextDecoder().decode(fromB64url(payload)));
     if (!data?.sub || Number(data.exp||0) <= Date.now()) return null;
-    return { playerId:String(data.sub), expiresAt:Number(data.exp) };
+    return { playerId:String(data.sub), sessionId:String(data.sid||''), expiresAt:Number(data.exp) };
   } catch { return null; }
 }
 async function authenticatePlayGames(request, env) {
@@ -70,13 +70,24 @@ async function authenticatePlayGames(request, env) {
   if(!verifyResponse.ok||!playerId)return json({ok:false,error:"PLAY_GAMES_VERIFY_FAILED"},401);
 
   const expiresAt=Date.now()+SESSION_TTL_MS;
-  const sessionToken=await createSessionToken(env,playerId);
+  const sessionId=crypto.randomUUID();
+  const sessionToken=await createSessionToken(env,playerId,sessionId);
+  // Una sola sesión activa por cuenta. Un login posterior invalida la anterior.
+  const rankingId=env.PVP_RANKING.idFromName("global");
+  await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/active-session",{
+    method:"POST",headers:{"content-type":"application/json",[ACTIVE_SESSION_HEADER]:"1"},
+    body:JSON.stringify({playerId,sessionId,expiresAt})
+  });
   return json({ok:true,playerId,sessionToken,expiresAt});
 }
 async function authorizePvpRequest(request, env) {
   const url=new URL(request.url);
   const session=await verifySessionToken(env,url.searchParams.get("session"));
   if(!session)return null;
+  const rankingId=env.PVP_RANKING.idFromName("global");
+  const activeResponse=await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/active-session?playerId="+encodeURIComponent(session.playerId)+"&sessionId="+encodeURIComponent(session.sessionId||""),{headers:{[ACTIVE_SESSION_HEADER]:"1"}});
+  const active=await activeResponse.json().catch(()=>({}));
+  if(!active?.active)return null;
   url.searchParams.set("playerId",session.playerId);
   url.searchParams.delete("session");
 
@@ -108,6 +119,9 @@ async function qaAccess(request, env) {
   const url=new URL(request.url);
   const session=await verifySessionToken(env,url.searchParams.get("session"));
   if(!session)return json({ok:false,qaEnabled:false,isAdmin:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
+  const rankingId=env.PVP_RANKING.idFromName("global");
+  const active=await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/active-session?playerId="+encodeURIComponent(session.playerId)+"&sessionId="+encodeURIComponent(session.sessionId||""),{headers:{[ACTIVE_SESSION_HEADER]:"1"}}).then(r=>r.json()).catch(()=>({}));
+  if(!active?.active)return json({ok:false,qaEnabled:false,isAdmin:false,error:"SESSION_REPLACED"},401);
   const isAdmin=qaAdminIds(env).has(String(session.playerId));
   const response=await qaRegistry(env,"check",session.playerId);
   const data=await response.json().catch(()=>({}));
@@ -584,6 +598,18 @@ export class PvpRanking {
 
   async fetch(request) {
     const url=new URL(request.url);
+    if(url.pathname==="/active-session" && request.headers.get(ACTIVE_SESSION_HEADER)==="1"){
+      if(request.method==="POST"){
+        let body;try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}
+        const playerId=safeText(body?.playerId,"",128),sessionId=safeText(body?.sessionId,"",128);
+        if(!playerId||!sessionId)return json({ok:false,error:"SESSION_REQUIRED"},400);
+        await this.ctx.storage.put("activeSession:"+playerId,{sessionId,expiresAt:Number(body.expiresAt||0)});
+        return json({ok:true});
+      }
+      const playerId=safeText(url.searchParams.get("playerId"),"",128),sessionId=safeText(url.searchParams.get("sessionId"),"",128);
+      const row=playerId?(await this.ctx.storage.get("activeSession:"+playerId))||null:null;
+      return json({ok:true,active:!!(row&&row.sessionId===sessionId&&Number(row.expiresAt||0)>Date.now())});
+    }
     if(url.pathname==="/qa-registry" && request.headers.get("x-pvp-internal")==="qa-admin"){
       let body; try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}
       const action=safeText(body?.action,"",16), playerId=safeText(body?.playerId,"",128);
