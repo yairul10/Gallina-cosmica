@@ -203,6 +203,8 @@ export class PvpRoom {
     this.serverKills = new Map();
     this.officialResult = null;
     this.roomCode = null;
+    // Registro efímero de disparos humanos para validar confirmaciones de impacto.
+    this.activeShots = new Map();
   }
 
   async fetch(request) {
@@ -282,6 +284,34 @@ export class PvpRoom {
       const senderOut=this.eliminatedSlots.has(slot)||this.forfeitedPlayers.has(playerId);
       const gameplayTypes=new Set(["state","shot","missile","evade","hit-confirm","defeat","bot-defeat"]);
       if((this.finished||senderOut)&&gameplayTypes.has(String(message.type||""))) return;
+
+      if (message.type === "shot") {
+        const shotId=safeText(message.shotId,"",96), targetSlot=Number(message.targetSlot||0), firedAt=Number(message.firedAt||Date.now());
+        const target=this.playerList().find(p=>Number(p.slot)===targetSlot);
+        const validTarget=target && targetSlot!==slot && !(this.mode==="2v2" && Number(target.team)===Number(team));
+        if(!shotId || !validTarget) return;
+        // El servidor no acepta que el cliente suplante al atacante ni reutilice IDs.
+        if(this.activeShots.has(shotId)) return;
+        const now=Date.now();
+        this.activeShots.set(shotId,{attackerSlot:slot,targetSlot,firedAt:Math.max(now-2000,Math.min(now+250,firedAt)),createdAt:now,confirmed:false});
+        if(this.activeShots.size>256){
+          for(const [id,s] of this.activeShots) if(now-Number(s.createdAt||0)>4000)this.activeShots.delete(id);
+        }
+        message.shotId=shotId; message.targetSlot=targetSlot; message.firedAt=firedAt;
+      }
+      if (message.type === "hit-confirm") {
+        const shotId=safeText(message.shotId,"",96), shot=this.activeShots.get(shotId);
+        // Sólo el objetivo registrado puede confirmar el impacto y cada disparo
+        // puede producir como máximo un daño.
+        if(!shot || shot.confirmed || Number(shot.targetSlot)!==slot || Number(message.attackerSlot||0)!==Number(shot.attackerSlot)) return;
+        if(Date.now()-Number(shot.createdAt||0)>3000){this.activeShots.delete(shotId);return;}
+        shot.confirmed=true;
+        const x=Number(message.hitX),y=Number(message.hitY);
+        const payload={type:"hit-confirm",attackKind:"laser",shotId,attackerSlot:Number(shot.attackerSlot),targetSlot:slot,hitX:Number.isFinite(x)?x:null,hitY:Number.isFinite(y)?y:null,firedAt:Number(shot.firedAt||0)};
+        // La misma confirmación llega a ambos clientes, incluido el defensor.
+        this.broadcast({type:"peer-message",from:slot,team,payload});
+        return;
+      }
 
       if (message.type === "bot-defeat" && (this.mode === "1v1" || this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && !this.finished) {
         const deadSlot=Number(message.slot||0);
