@@ -89,7 +89,11 @@ async function refreshPvpSpecialShipAccess(){
         const identity=window.GallinaPlayerIdentity?.getCurrent?.();
         const jobs=[];
         if(identity?.id)jobs.push(fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/ranking?playerId='+encodeURIComponent(identity.id),{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d?.ok)window.gallinaSetPvpRankUnlocks(d.claimedRankRewards||[]);}));
-        if(window.getQaAdminStatus)jobs.push(window.getQaAdminStatus().then(d=>{pvpAdminPreview=!!d?.isAdmin;}));
+        if(window.getQaAdminStatus)jobs.push(window.getQaAdminStatus().then(d=>{
+            // Un fallo transitorio de Play Games no debe ocultar el catálogo QA
+            // después de que el servidor ya confirmó al administrador.
+            if(d?.ok)pvpAdminPreview=!!d.isAdmin;
+        }));
         await Promise.allSettled(jobs);
     }finally{pvpUnlockRefreshBusy=false;updateShopUI();updateHangarUI();}
 }
