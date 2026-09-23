@@ -28,8 +28,8 @@ async function sessionKey(env) {
   return crypto.subtle.importKey("raw", new TextEncoder().encode(env.GOOGLE_OAUTH_CLIENT_SECRET),
     { name:"HMAC", hash:"SHA-256" }, false, ["sign","verify"]);
 }
-async function createSessionToken(env, playerId) {
-  const payload = b64urlText(JSON.stringify({ sub:String(playerId), exp:Date.now()+SESSION_TTL_MS }));
+async function createSessionToken(env, playerId, sessionId) {
+  const payload = b64urlText(JSON.stringify({ sub:String(playerId), sid:String(sessionId||""), exp:Date.now()+SESSION_TTL_MS }));
   const signature = await crypto.subtle.sign("HMAC", await sessionKey(env), new TextEncoder().encode(payload));
   return payload + "." + b64url(new Uint8Array(signature));
 }
