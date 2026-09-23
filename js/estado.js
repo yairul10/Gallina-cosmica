@@ -37,6 +37,10 @@ if (gameStats.gallinaChile === undefined) gameStats.gallinaChile = false;
 if (gameStats.useGallinaChile === undefined) gameStats.useGallinaChile = false;
 if (!gameStats.pvpShips || typeof gameStats.pvpShips !== 'object') gameStats.pvpShips = {};
 if (gameStats.selectedPvpShip === undefined) gameStats.selectedPvpShip = null;
+if (gameStats.pvpUnlocked === undefined) gameStats.pvpUnlocked = false;
+if (gameStats.pvpGames === undefined) gameStats.pvpGames = 0;
+if (gameStats.pvpWins === undefined) gameStats.pvpWins = 0;
+if (gameStats.pvpKills === undefined) gameStats.pvpKills = 0;
 
 if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
 
@@ -99,7 +103,14 @@ const achievData = {
     'a20': { title: 'Dios del Infinito', desc: '500,000 puntos en una partida.' },
     'a21': { title: 'Venciste lo invencible', desc: 'Vence a la dupla Súper Jefe.' },
     'a22': { title: 'Millonario', desc: 'Consigue 100,000 monedas en total.' },
-    'a23': { title: 'Multimillonario', desc: 'Reúne 100,000 monedas sin gastarlas.' }
+    'a23': { title: 'Multimillonario', desc: 'Reúne 100,000 monedas sin gastarlas.' },
+    'pvp1': { title: '⚔️ Primer combate', desc: 'Completa tu primera partida PvP.' },
+    'pvp2': { title: '🏆 Primera victoria', desc: 'Gana tu primera partida PvP.' },
+    'pvp3': { title: '🔥 Veterano', desc: 'Completa 25 partidas PvP.' },
+    'pvp4': { title: '💀 Cazador Cósmico', desc: 'Consigue 50 eliminaciones PvP.' },
+    'pvp5': { title: '👑 Dominador', desc: 'Consigue 100 victorias PvP.' },
+    'pvp6': { title: '🥇 Oro', desc: 'Alcanza 1,000 copas en PvP.' },
+    'pvp7': { title: '🌌 Leyenda Galáctica', desc: 'Alcanza 12,000 copas en PvP.' }
 };
 
 let pAchiev = JSON.parse(localStorage.getItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_achievements') : 'farm_space_achievements'))) || {};
