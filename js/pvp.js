@@ -1772,7 +1772,16 @@
           const row=document.createElement('div');
           row.style.cssText='display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 4px;border-top:1px solid rgba(148,163,184,.18);'+(isCurrent?'background:rgba(56,189,248,.10);':'');
           const label=document.createElement('div');
-          label.textContent=rank.icon+' '+rank.name+' · '+rank.floor+' copas'+(rank.amount?' · 🪙 '+formatCoins(rank.amount):' · Rango inicial')+(rank.unlock?' · '+rank.unlock:'');
+          label.style.cssText='line-height:1.35;';
+          const rankLine=document.createElement('div');
+          rankLine.textContent=rank.icon+' '+rank.name+' · '+rank.floor+' copas'+(rank.amount?' · '+formatCoins(rank.amount)+' 🪙':' · Rango inicial');
+          label.appendChild(rankLine);
+          if(rank.unlock){
+            const unlockLine=document.createElement('div');
+            unlockLine.textContent=rank.unlock;
+            unlockLine.style.cssText='font-size:.86em;margin-top:3px;opacity:.92;';
+            label.appendChild(unlockLine);
+          }
           const state=document.createElement('div');
           if(rank.floor===0){state.textContent='✅';}
           else if(isClaimed){state.textContent='✅ Reclamado';state.style.color='#86efac';}
