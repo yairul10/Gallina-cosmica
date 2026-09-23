@@ -137,9 +137,13 @@
             }
         }
 
-        window.dispatchEvent(new CustomEvent('gallina-player-identity-ready', {
-            detail: { ...identity, source: 'play-games' }
-        }));
+        // Evita disparar el mismo evento en cada refresco automático:
+        // los consumidores PvP sólo deben revalidarse si el Player ID cambió.
+        if (previousId !== identity.id) {
+            window.dispatchEvent(new CustomEvent('gallina-player-identity-ready', {
+                detail: { ...identity, source: 'play-games' }
+            }));
+        }
         return identity;
     };
 
@@ -177,6 +181,9 @@
     // Crea una sesión PvP respaldada por una identidad verificada por Google.
     // El authCode es de un solo uso: se envía inmediatamente al Worker y nunca
     // se guarda. La sesión resultante sí puede vivir durante la partida.
+    // Varias pantallas pueden pedir sesión al mismo tiempo. Compartir la
+    // solicitud en curso evita pedir varios códigos OAuth a Play Games.
+    let playGamesPvpSessionPromise = null;
     window.getPlayGamesPvpSession = async ({ force = false } = {}) => {
         const cacheKey = 'gallina_pvp_server_session';
         if (!force) {
@@ -189,29 +196,41 @@
             } catch (_) {}
         }
 
-        const identity = await refreshPlayerIdentity();
-        if (!identity?.id) throw new Error('No se pudo confirmar la identidad de Play Games');
-        const authCode = await window.requestPlayGamesServerAuthCode();
-        const response = await fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/auth/play-games', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ authCode })
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data?.ok || !data?.sessionToken || !data?.playerId) {
-            throw new Error(data?.error || 'El servidor no pudo verificar Play Games');
-        }
-        if (String(data.playerId) !== String(identity.id)) {
-            try { sessionStorage.removeItem(cacheKey); } catch (_) {}
-            throw new Error('La identidad verificada por el servidor no coincide con Play Games');
-        }
-        const session = {
-            token: String(data.sessionToken),
-            playerId: String(data.playerId),
-            expiresAt: Number(data.expiresAt || 0)
+        if (!force && playGamesPvpSessionPromise) return playGamesPvpSessionPromise;
+
+        const createSession = async () => {
+            const identity = await refreshPlayerIdentity();
+            if (!identity?.id) throw new Error('No se pudo confirmar la identidad de Play Games');
+            const authCode = await window.requestPlayGamesServerAuthCode();
+            const response = await fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/auth/play-games', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ authCode })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data?.ok || !data?.sessionToken || !data?.playerId) {
+                throw new Error(data?.error || 'El servidor no pudo verificar Play Games');
+            }
+            if (String(data.playerId) !== String(identity.id)) {
+                try { sessionStorage.removeItem(cacheKey); } catch (_) {}
+                throw new Error('La identidad verificada por el servidor no coincide con Play Games');
+            }
+            const session = {
+                token: String(data.sessionToken),
+                playerId: String(data.playerId),
+                expiresAt: Number(data.expiresAt || 0)
+            };
+            try { sessionStorage.setItem(cacheKey, JSON.stringify(session)); } catch (_) {}
+            return session;
         };
-        try { sessionStorage.setItem(cacheKey, JSON.stringify(session)); } catch (_) {}
-        return session;
+
+        if (force) return createSession();
+        playGamesPvpSessionPromise = createSession();
+        try {
+            return await playGamesPvpSessionPromise;
+        } finally {
+            playGamesPvpSessionPromise = null;
+        }
     };
 
     // Consulta remota de QA. El servidor decide por Player ID verificado;
