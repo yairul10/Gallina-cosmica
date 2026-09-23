@@ -176,18 +176,35 @@ function pvpRankFromCups(cups){
   if(cups>=200)return {label:"🥉 Bronce",level:1};
   return {label:"🥚 Novato",level:0};
 }
-function seeded01(slot,salt=0){let x=(Number(slot)*1103515245+12345+salt*2654435761)>>>0;return x/4294967296;}
-function botShipForRank(level,slot){
-  const chance=level>=6?.25:level===5?.20:level===4?.15:0;
-  if(!chance||seeded01(slot,17)>=chance)return "Gallina";
-  const toros=["Toro Aniquilador","Toro Blindado","Toro Baliza"];
-  return toros[Math.floor(seeded01(slot,31)*toros.length)%toros.length];
+function botShipForRank(level){
+  const basic=["Toro Aniquilador","Toro Blindado","Toro Baliza"];
+  const strong=["Toro Oscuro","Toro Luz","Toro Maoma"];
+  const pick=list=>list[Math.floor(Math.random()*list.length)];
+  const roll=Math.random();
+  // Perfil visible y progresivo: a partir de Diamante no se rellenan con
+  // Gallinas, y Leyenda tiene al Toro Mayor como rival dominante.
+  if(level<=1)return "Gallina";
+  if(level===2)return roll<.20?pick(basic):"Gallina";
+  if(level===3)return roll<.40?pick(basic):"Gallina";
+  if(level===4)return roll<.40?pick(strong):pick(basic);
+  if(level===5)return roll<.70?pick(strong):pick(basic);
+  return roll<.80?"Toro Mayor":pick(strong);
+}
+function botInterferenceForRank(level){
+  const chance=[0,0,0,.40,.60,.80,1][Math.max(0,Math.min(6,Number(level)||0))]||0;
+  return Math.random()<chance;
 }
 function configureBotProfiles(list,humanPlayers){
   const humans=humanPlayers.filter(p=>!p.bot);
   const avg=humans.length?humans.reduce((a,p)=>a+Math.max(0,Number(p.cups)||0),0)/humans.length:0;
   const rank=pvpRankFromCups(avg);
-  for(const bot of list){bot.rankLevel=rank.level;bot.rankLabel=rank.label;bot.ship=botShipForRank(rank.level,bot.slot);bot.name="🤖 "+rank.label+" · Bot "+bot.slot;}
+  for(const bot of list){
+    bot.rankLevel=rank.level;
+    bot.rankLabel=rank.label;
+    bot.ship=botShipForRank(rank.level);
+    bot.pvpInterference=botInterferenceForRank(rank.level);
+    bot.name="🤖 "+rank.label+" · Bot "+bot.slot;
+  }
 }
 
 function roomCapacity(mode) {
