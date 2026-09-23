@@ -12,7 +12,9 @@ async function bootQaMode() {
         // de cargar la WebView. Reintentar evita que una autorización remota válida
         // desaparezca sólo por una carrera de arranque.
         for (let attempt = 0; attempt < 4 && !remoteQa; attempt++) {
-            remoteQa = await window.getRemoteQaAccess({ forceSession: attempt > 0 });
+            // Reutiliza la misma sesión en curso; forzar códigos OAuth repetidos
+            // durante el arranque podía desestabilizar Play Games.
+            remoteQa = await window.getRemoteQaAccess({ forceSession: false });
             if (!remoteQa && attempt < 3) await new Promise(resolve => window.setTimeout(resolve, 900));
         }
     }
