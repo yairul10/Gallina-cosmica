@@ -306,11 +306,16 @@
         }
     };
 
+    const withTimeout = (promise, ms, label) => Promise.race([
+        Promise.resolve(promise),
+        new Promise((_, reject) => setTimeout(() => reject(new Error(label || 'La operación tardó demasiado')), ms))
+    ]);
+
     const refreshStatus = async () => {
         const playGames = getPlayGames();
         if (!playGames) return null;
         try {
-            const result = await playGames.getAuthStatus();
+            const result = await withTimeout(playGames.getAuthStatus(), 8000, 'Play Games no respondió al consultar la sesión');
             setStatus(!!result.authenticated, result.detail);
             return result;
         } catch (error) {
@@ -331,7 +336,9 @@
         button.textContent = '…';
         button.title = 'Conectando con Google Play Games…';
         try {
-            const signedIn = await playGames.signIn();
+            // El SDK puede quedar esperando indefinidamente en algunos dispositivos.
+            // El límite devuelve el control al botón y muestra un diagnóstico en vez de dejar "…" para siempre.
+            const signedIn = await withTimeout(playGames.signIn(), 15000, 'Play Games no respondió al iniciar sesión. Cierra y vuelve a abrir el selector de cuenta e inténtalo otra vez.');
             let status = null;
             for (let attempt = 0; attempt < 4; attempt += 1) {
                 await new Promise((resolve) => setTimeout(resolve, 1000));
