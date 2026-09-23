@@ -8,7 +8,8 @@ const JSON_HEADERS = {
 
 const GOOGLE_SERVER_CLIENT_ID = "672762312251-iub1fld742850kn1v637dvhle7e0mdv4.apps.googleusercontent.com";
 const PLAY_GAMES_APPLICATION_ID = "672762312251";
-const SESSION_TTL_MS = 60 * 60 * 1000;\nconst ACTIVE_SESSION_HEADER = 'x-pvp-session-internal';
+const SESSION_TTL_MS = 60 * 60 * 1000;
+const ACTIVE_SESSION_HEADER = 'x-pvp-session-internal';
 
 function b64url(bytes) {
   let binary = "";
