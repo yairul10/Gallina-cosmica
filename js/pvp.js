@@ -630,6 +630,20 @@
       }
     }catch{}
   }
+  function recordPvpAchievements(result,kills,cups){
+    if(typeof gameStats!=='object'||typeof unlockAchievement!=='function')return;
+    gameStats.pvpGames=Math.max(0,Number(gameStats.pvpGames)||0)+1;
+    gameStats.pvpKills=Math.max(0,Number(gameStats.pvpKills)||0)+Math.max(0,Number(kills)||0);
+    if(result==='win')gameStats.pvpWins=Math.max(0,Number(gameStats.pvpWins)||0)+1;
+    if(gameStats.pvpGames>=1)unlockAchievement('pvp1');
+    if(gameStats.pvpWins>=1)unlockAchievement('pvp2');
+    if(gameStats.pvpGames>=25)unlockAchievement('pvp3');
+    if(gameStats.pvpKills>=50)unlockAchievement('pvp4');
+    if(gameStats.pvpWins>=100)unlockAchievement('pvp5');
+    if(Number(cups)>=1000)unlockAchievement('pvp6');
+    if(Number(cups)>=12000)unlockAchievement('pvp7');
+    saveStats?.();
+  }
   function pvpRankName(cups){
     cups=Number(cups||0);
     if(cups>=12000)return '🌌 Leyenda Galáctica';
@@ -658,6 +672,7 @@
       settlePvpRecord(result,'',placement).then(saved=>{
         const oldRank=pvpRankName(cupsBefore), newRank=pvpRankName(saved.cups);
         const rankUp=newRank!==oldRank && saved.cups>cupsBefore ? '\n🎉 ¡Subiste de rango a '+newRank+'!' : '';
+        recordPvpAchievements(result,matchKills,saved.cups);
         resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'')+rankUp;
       });
     }
@@ -1731,7 +1746,15 @@
   window.addEventListener('keydown',e=>{keys.add(e.key);if(e.key===' ')e.preventDefault();});
   window.addEventListener('keyup',e=>keys.delete(e.key));
 
-  $('openPvpBtn')?.addEventListener('click',()=>{
+  $('openPvpBtn')?.addEventListener('click',async()=>{
+    let admin=false;
+    try{admin=!!(await window.getQaAdminStatus?.())?.isAdmin;}catch{}
+    if(!gameStats?.pvpUnlocked&&!admin){
+      showStatus('🔒 Arena PvP bloqueada · supera Superjefes y Hordas para desbloquearla.',true);
+      const msg=document.getElementById('superBossVictoryMessage');
+      if(msg){msg.textContent='🔒 Arena PvP: supera Superjefes y Hordas para desbloquearla.';msg.classList.add('show');setTimeout(()=>msg.classList.remove('show'),4500);}
+      return;
+    }
     document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';
     const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();refreshQaBotRankAccess();syncPvpRankSummary();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
   });
