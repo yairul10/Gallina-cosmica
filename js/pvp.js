@@ -803,7 +803,8 @@
     meState.angle=a;lastShot=now;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     // Mismo láser del juego normal: 4x20 y velocidad equivalente a 14 px/frame a 60 FPS.
-    const shotId=mySlot+'-'+Date.now().toString(36)+'-'+(++shotSeq).toString(36);\n    [-1,1].forEach((s,i)=>{const bx=meState.x+sideX*s,by=meState.y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,ownerSlot:mySlot,ownerTeam:myTeam,shotId,beamIndex:i,life:1.5});});
+    const shotId=mySlot+'-'+Date.now().toString(36)+'-'+(++shotSeq).toString(36);
+    [-1,1].forEach((s,i)=>{const bx=meState.x+sideX*s,by=meState.y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,ownerSlot:mySlot,ownerTeam:myTeam,shotId,beamIndex:i,life:1.5});});
     const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
     const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
     const sa=pvpMode==='1v1'&&mySlot===2?a+Math.PI:a;
