@@ -121,7 +121,7 @@ function getOwnedShipIds() {
         if (gameStats.proSkins[i]) owned.push(dir + '_pro');
     });
     if (gameStats.gallinaChile) owned.push('gallina_chile');
-    ['toro_aniquilador','toro_blindado','toro_baliza'].forEach(id => { if (gameStats.pvpShips?.[id]) owned.push(id); });
+    ['toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'].forEach(id => { if (gameStats.pvpShips?.[id]) owned.push(id); });
     return [...new Set(owned)];
 }
 
@@ -141,7 +141,7 @@ function getOwnedExtraIds() {
 
 function applyCloudShipId(id) {
     const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
-    if (['toro_aniquilador','toro_blindado','toro_baliza'].includes(id)) { gameStats.pvpShips[id] = true; return; }
+    if (['toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'].includes(id)) { gameStats.pvpShips[id] = true; return; }
     if (id === 'gallina_chile') {
         gameStats.gallinaChile = true;
         return;
@@ -156,7 +156,7 @@ function applyCloudShipId(id) {
 
 function applyEquippedShipId(id) {
     const dirs = ['gallina', 'oveja', 'caballo', 'vaca'];
-    if (['toro_aniquilador','toro_blindado','toro_baliza'].includes(id) && gameStats.pvpShips?.[id]) { gameStats.selectedPvpShip=id; gameStats.useProShip=false; gameStats.useGallinaChile=false; return; }
+    if (['toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'].includes(id) && gameStats.pvpShips?.[id]) { gameStats.selectedPvpShip=id; gameStats.useProShip=false; gameStats.useGallinaChile=false; return; }
     if (id === 'gallina_chile' && gameStats.gallinaChile) {
         gameStats.selectedShip = 0;
         gameStats.useProShip = false;
