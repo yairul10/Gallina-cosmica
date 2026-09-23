@@ -92,9 +92,16 @@ async function authorizePvpRequest(request, env) {
   url.searchParams.set("playerId",session.playerId);
   url.searchParams.delete("session");
 
-  // El rango y el matchmaking también usan las copas oficiales del servidor,
-  // nunca el valor que declare el cliente.
-  try{
+  // El rango y el matchmaking usan las copas oficiales del servidor. Sólo un
+  // administrador autenticado puede elegir temporalmente un perfil de bot QA.
+  const requestedQaRank=Number(url.searchParams.get("qaBotRank"));
+  const useQaRank=qaAdminIds(env).has(String(session.playerId))
+    && Number.isInteger(requestedQaRank) && requestedQaRank>=0 && requestedQaRank<=6;
+  url.searchParams.delete("qaBotRank");
+  if(useQaRank){
+    const qaCups=[0,200,500,1000,3000,7000,12000][requestedQaRank];
+    url.searchParams.set("cups",String(qaCups));
+  }else try{
     const rankingId=env.PVP_RANKING.idFromName("global");
     const rankingResponse=await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/ranking?playerId="+encodeURIComponent(session.playerId));
     const rankingData=await rankingResponse.json();
@@ -273,6 +280,11 @@ export class PvpRoom {
           ship:"Gallina",slot:botSlot,team:0,bot:true
         }));
       }
+    }
+    // El perfil normal de los bots sigue el rango oficial de los humanos de
+    // la sala. En QA sólo un administrador puede sustituirlo temporalmente.
+    if(wantsBot&&!this.started&&(this.botPlayer||this.botPlayers.length)){
+      configureBotProfiles([...(this.botPlayer?[this.botPlayer]:[]),...this.botPlayers],Array.from(this.players.values()));
     }
 
     server.addEventListener("message", event => {
@@ -797,7 +809,7 @@ export class PvpMatchmaker {
 
     const sendQueueCount=list=>{
       for(const e of list){
-        try{e.socket.send(JSON.stringify({type:"queue-waiting",mode,waiting:list.length,needed}));}catch{}
+        try{e.socket.send(JSON.stringify({type:"queue-waiting",mode,waiting:list.length,needed,maxWaitMs:this.fallbackMsForRank(e.rankLevel)}));}catch{}
       }
     };
     const removeEntries=group=>{

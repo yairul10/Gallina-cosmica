@@ -152,20 +152,37 @@
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
   const PVP_CUPS_KEY='gallina_pvp_cups_v1';
   const qaBotRankSelect=$('pvpQaBotRank');
+  const qaBotRankWrap=$('pvpQaBotRankWrap');
   const QA_BOT_RANK_CUPS=[0,200,500,1000,3000,7000,12000];
+  let qaBotRankOverrideAllowed=false, qaBotRankAccessChecked=false;
+  function qaBotRankLevel(){
+    if(!qaBotRankOverrideAllowed||!qaBotRankSelect||qaBotRankSelect.value==='auto')return null;
+    return Math.max(0,Math.min(6,Number(qaBotRankSelect.value)||0));
+  }
   function qaBotCups(){
-    if(!PVP_TEST_MODE||!qaBotRankSelect||qaBotRankSelect.value==='auto')return getPvpCups();
-    const level=Math.max(0,Math.min(6,Number(qaBotRankSelect.value)||0));
+    const level=qaBotRankLevel();
+    if(level===null)return getPvpCups();
     return QA_BOT_RANK_CUPS[level];
+  }
+  async function refreshQaBotRankAccess(){
+    if(!PVP_TEST_MODE||!qaBotRankSelect||qaBotRankAccessChecked||typeof window.getPvpQaAccess!=='function')return;
+    qaBotRankAccessChecked=true;
+    let allowed=false;
+    try{allowed=!!(await window.getPvpQaAccess?.())?.isAdmin;}catch{}
+    qaBotRankOverrideAllowed=allowed;
+    if(qaBotRankWrap)qaBotRankWrap.style.display=allowed?'block':'none';
+    if(!allowed){qaBotRankSelect.value='auto';sessionStorage.removeItem('pvp_qa_bot_rank');}
   }
   if(qaBotRankSelect){
     qaBotRankSelect.value=sessionStorage.getItem('pvp_qa_bot_rank')||'auto';
     qaBotRankSelect.addEventListener('change',()=>{
+      if(!qaBotRankOverrideAllowed){qaBotRankSelect.value='auto';return;}
       sessionStorage.setItem('pvp_qa_bot_rank',qaBotRankSelect.value);
       const label=qaBotRankSelect.options[qaBotRankSelect.selectedIndex]?.text||'Automático';
       showStatus('🧪 Bots QA: '+label+'. Tus copas reales no cambian.',true);
     });
   }
+  window.addEventListener('gallina-player-identity-ready',()=>{qaBotRankAccessChecked=false;refreshQaBotRankAccess();});
 
   function getPvpCups(){const n=Number(localStorage.getItem(PVP_CUPS_KEY)||0);return Number.isFinite(n)?Math.max(0,Math.floor(n)):0;}
   function pvpRankFromCups(cups){
@@ -255,14 +272,14 @@
     }
     const btn=$('pvpFindMatchBtn'); if(btn)btn.textContent=queueButtonLabel();
   }
-  let queueWaitingCount=1;
+  let queueWaitingCount=1, queueMaxWaitMs=0;
   function updateQueueStatus(){
     if(!queueStartedAt)return;
     const sec=Math.max(0,Math.floor((Date.now()-queueStartedAt)/1000));
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
     const needed=pvpMode==='1v1'?2:pvpMode==='arena10'?10:pvpMode==='arena'?5:4;
     const searchLabel=pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena10'?'jugadores para Arena 10':pvpMode==='arena'?'jugadores para Arena 5':'rival';
-    const maxWait=([20,25,30,40,50,60,75][pvpRankFromCups(getPvpCups()).level]||20);
+    const maxWait=Math.max(1,Math.round((queueMaxWaitMs||([20,25,30,40,50,60,75][pvpRankFromCups(qaBotCups()).level]||20)*1000)/1000));
     const text='🔎 Buscando '+searchLabel+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. '+maxWait+' s';
     const btn=$('pvpFindMatchBtn');
     if(btn){
@@ -309,10 +326,12 @@
     }
     const me=identity();
     const params=new URLSearchParams({playerId:verified.playerId,name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups()),session:verified.token});
+    const qaLevel=qaBotRankLevel();if(qaLevel!==null)params.set('qaBotRank',String(qaLevel));
     const ws=new WebSocket(`${PVP_WS_BASE}/matchmake?${params}`);
     queueSocket=ws;
     queueStartedAt=Date.now();
     queueWaitingCount=1;
+    queueMaxWaitMs=([20,25,30,40,50,60,75][pvpRankFromCups(qaBotCups()).level]||20)*1000;
     const findBtn=$('pvpFindMatchBtn'); if(findBtn)findBtn.textContent='✖️ Cancelar búsqueda';
     updateQueueStatus(); queueTimer=setInterval(updateQueueStatus,1000);
     ws.addEventListener('message',event=>{
@@ -320,6 +339,7 @@
       let m;try{m=JSON.parse(event.data);}catch{return;}
       if(m.type==='queue-waiting'){
         queueWaitingCount=Math.max(1,Number(m.waiting||1));
+        if(Number.isFinite(Number(m.maxWaitMs))&&Number(m.maxWaitMs)>0)queueMaxWaitMs=Number(m.maxWaitMs);
         // Algunos despliegues del Worker cierran/reemplazan el socket de cola
         // justo después de confirmar la espera. El estado visible debe seguir
         // contando hasta recibir match-found o una cancelación real del usuario.
@@ -368,6 +388,7 @@
     }
     const me=identity();
     const params=new URLSearchParams({playerId:verified.playerId,name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups()),session:verified.token});
+    const qaLevel=qaBotRankLevel();if(qaLevel!==null)params.set('qaBotRank',String(qaLevel));
     if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;
@@ -516,8 +537,9 @@
     }
     meState.lives=pvpShipStats(shipLabel()).maxLives;
     for(const [slot,state] of peerStates){
-      const pos=pvpMode==='arena10'?arena10Starts[(slot-1)%10]:(pvpMode==='arena'||pvpMode==='arena10')?arenaStarts[(slot-1)%5]:starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];state.lives=20;
-      const team=Number(players.find(p=>Number(p.slot)===slot)?.team||0);state.angle=state.targetAngle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.targetVisualAngle=state.angle;
+      const pos=pvpMode==='arena10'?arena10Starts[(slot-1)%10]:(pvpMode==='arena'||pvpMode==='arena10')?arenaStarts[(slot-1)%5]:starts[(slot-1)%4];state.x=state.targetX=pos[0];state.y=state.targetY=pos[1];
+      const peerPlayer=players.find(p=>Number(p.slot)===slot)||{};state.lives=pvpShipStats(peerPlayer.ship||'Gallina').maxLives;
+      const team=Number(peerPlayer.team||0);state.angle=state.targetAngle=team===2?Math.PI/2:-Math.PI/2;state.visualAngle=state.targetVisualAngle=state.angle;
     }
     if(pvpMode==='1v1'){
       for(const [slot,state] of peerStates){state.x=state.targetX=w/2;state.y=state.targetY=90;state.angle=state.targetAngle=Math.PI/2;state.visualAngle=state.targetVisualAngle=Math.PI/2;}
@@ -903,7 +925,8 @@
         const slot=Number(bp.slot),st=peerFor(slot),hit=Number(botHitTimes.get(slot)||0);
         let regen=Number(botRegenTimes.get(slot)||hit);
         if(!regen){regen=now;botRegenTimes.set(slot,regen);}
-        if(st.lives>0&&st.lives<20&&now-hit>=5000&&now-regen>=2000){
+        const botStats=pvpShipStats(bp.ship||'Gallina');
+        if(st.lives>0&&st.lives<botStats.maxLives&&now-hit>=botStats.regenDelay&&now-regen>=botStats.regenEvery){
           st.lives++;botRegenTimes.set(slot,now);if(pvpMode==='1v1')botLives=st.lives;updateLives();
         }
       }
@@ -989,13 +1012,19 @@
         const enemyPlayers=players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==Number(botPlayer.team))&&(Number(p.slot)!==mySlot||now>=evadeUntil)&&now>=Number(remoteEvadeUntil.get(Number(p.slot))||0));
         const enemyTargets=enemyPlayers.map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)}));
         const rankLevel=Math.max(0,Math.min(6,Number(botPlayer.rankLevel||0)));
+        const allyToProtect=pvpMode==='2v2'
+          ? players.filter(p=>Number(p.slot)!==Number(botPlayer.slot)&&Number(p.team)===Number(botPlayer.team)&&!eliminated.has(Number(p.slot))).map(p=>({p,state:Number(p.slot)===mySlot?meState:peerFor(p.slot)})).sort((a,b)=>{
+              const ar=Number(a.state.lives||20)/pvpShipStats(a.p.ship||'Gallina').maxLives,br=Number(b.state.lives||20)/pvpShipStats(b.p.ship||'Gallina').maxLives;return ar-br;
+            })[0]
+          : null;
         // Rangos altos eligen mejor sus objetivos: desde Diamante ponderan vida además de distancia.
         const targetScore=t=>{
           const d=Math.hypot(t.state.x-bot.x,t.state.y-bot.y);
           if(rankLevel<4)return d;
           const max=pvpShipStats(t.p.ship||'Gallina').maxLives;
           const life=Math.max(0,Number(t.state.lives||max))/max;
-          return d+(life*90)-(rankLevel>=6?(1-life)*80:0);
+          const pressure=allyToProtect?Math.min(140,Math.hypot(t.state.x-allyToProtect.state.x,t.state.y-allyToProtect.state.y))*.35:0;
+          return d+pressure+(life*90)-(rankLevel>=6?(1-life)*80:0);
         };
         const nearest=enemyTargets.sort((a,b)=>targetScore(a)-targetScore(b))[0];
         if(!nearest)continue;
@@ -1045,6 +1074,17 @@
         const navTarget=botOutsideZone?{x:botZone.cx,y:botZone.cy}:(chosen?chosen.state:{x:ai.patrolX,y:ai.patrolY});
         const dx=navTarget.x-bot.x,dy=navTarget.y-bot.y,dist=Math.hypot(dx,dy)||1;
         const trueAim=chosen?Math.atan2(chosen.state.y-bot.y,chosen.state.x-bot.x):Math.atan2(dy,dx);
+        const priorTarget=ai.targetSeen;
+        const targetDt=priorTarget&&Number(priorTarget.slot)===Number(chosen?.p?.slot)?Math.max(.016,Math.min(.35,(now-Number(priorTarget.at||now))/1000)):0;
+        const targetVx=targetDt?(chosen.state.x-Number(priorTarget.x||chosen.state.x))/targetDt:0;
+        const targetVy=targetDt?(chosen.state.y-Number(priorTarget.y||chosen.state.y))/targetDt:0;
+        if(chosen)ai.targetSeen={slot:Number(chosen.p.slot),x:chosen.state.x,y:chosen.state.y,at:now};
+        const shotAim=()=>{
+          if(!chosen)return trueAim;
+          const lead=[0,0,0,.05,.09,.13,.17][rankLevel]||0;
+          const error=[.22,.18,.14,.11,.075,.045,.025][rankLevel]||.22;
+          return Math.atan2(chosen.state.y+targetVy*lead-bot.y,chosen.state.x+targetVx*lead-bot.x)+(Math.random()-.5)*2*error;
+        };
         bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
 
         // Navegación táctica imperfecta: perseguir, orbitar, retirarse con
@@ -1157,12 +1197,14 @@
         const botShotCooldown=botPlayer.ship==='Toro Aniquilador'?Math.min(rankShotCooldown,247.5):rankShotCooldown;
         if(targetInAttackRange&&now-ai.lastShot>botShotCooldown){
           ai.lastShot=now;
-          const aim=trueAim;
+          const aim=shotAim();
           spawnRemoteShot(bot.x,bot.y,aim,botPlayer.ship,botPlayer.slot,Number(botPlayer.team||0),Number(chosen.p.slot));
           if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')send({type:'bot-shot',slot:Number(botPlayer.slot),x:bot.x,y:bot.y,angle:aim,targetSlot:Number(chosen.p.slot)});
         }
         // Los rangos altos reservan menos el misil cuando ya tienen un blanco válido.
-        if(targetInAttackRange&&now>=ai.nextMissileAt){
+        const targetLifeRatio=chosen?Math.max(0,Number(chosen.state.lives||20))/pvpShipStats(chosen.p.ship||'Gallina').maxLives:1;
+        const missileWorth=rankLevel<3||targetLifeRatio<=.72||(rankLevel>=5&&dist>=170);
+        if(targetInAttackRange&&missileWorth&&now>=ai.nextMissileAt){
           const missileMin=rankLevel>=6?8000:rankLevel>=5?8500:rankLevel>=4?9000:10000;
           const missileJitter=rankLevel>=5?1200:2500;
           ai.nextMissileAt=now+missileMin+Math.random()*missileJitter;
@@ -1257,7 +1299,9 @@
         const deferBotDamage=!!(botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')&&bestPlayer?.bot);
         if(!deferBotDamage){
           b.life=0;b.x=best.hitX;b.y=best.hitY;
-          impactFx.push({x:best.hitX,y:best.hitY,life:.32,maxLife:.32});
+          // Primer contacto local: chispa pequeña para humanos y bots. Contra
+          // humanos el impacto grande llega sólo con el hit-confirm oficial.
+          impactFx.push({x:best.hitX,y:best.hitY,life:.10,maxLife:.10,predicted:true});
         }
         if(botMatch&&pvpMode==='1v1'&&now-lastBotHitAt>180){
           const botPlayer=players.find(p=>p.bot);
@@ -1290,7 +1334,9 @@
           if(now-last<=180)return false;
           botHitTimes.set(slot,now);botRegenTimes.set(slot,now);
           const st=peerFor(slot);st.lives=Math.max(0,Number(st.lives??20)-1);
-          impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});updateLives();
+          // Los impactos locales contra bots usan la misma chispa discreta
+          // que el primer contacto contra una nave humana.
+          impactFx.push({x:hitX,y:hitY,life:.10,maxLife:.10,predicted:true});updateLives();
           if(st.lives<=0&&!eliminated.has(slot)&&!pendingBotDefeats.has(slot)){
             // Esperar la confirmación oficial del servidor antes de marcarlo
             // eliminado. Antes se añadía aquí a "eliminated", por lo que cuando
@@ -1538,11 +1584,12 @@
       arenaCtx.restore();
     }
     for(const fx of impactFx){
-      const t=Math.max(0,fx.life/fx.maxLife),r=7+(1-t)*30;
+      const t=Math.max(0,fx.life/fx.maxLife),r=fx.predicted?3+(1-t)*7:7+(1-t)*30;
       arenaCtx.save();arenaCtx.globalAlpha=Math.min(1,t*1.7);
-      arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,7*t+3,0,Math.PI*2);arenaCtx.fill();
-      arenaCtx.strokeStyle='#fff';arenaCtx.lineWidth=4;arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,r,0,Math.PI*2);arenaCtx.stroke();
-      for(let i=0;i<8;i++){const a=i*Math.PI/4,len=10+(1-t)*24;arenaCtx.beginPath();arenaCtx.moveTo(fx.x+Math.cos(a)*8,fx.y+Math.sin(a)*8);arenaCtx.lineTo(fx.x+Math.cos(a)*len,fx.y+Math.sin(a)*len);arenaCtx.stroke();}
+      const color=fx.predicted?'#fde68a':'#fff',rays=fx.predicted?4:8,rayLength=fx.predicted?7+(1-t)*7:10+(1-t)*24;
+      arenaCtx.fillStyle=color;arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,(fx.predicted?2:7)*t+3,0,Math.PI*2);arenaCtx.fill();
+      arenaCtx.strokeStyle=color;arenaCtx.lineWidth=fx.predicted?1.25:4;arenaCtx.beginPath();arenaCtx.arc(fx.x,fx.y,r,0,Math.PI*2);arenaCtx.stroke();
+      for(let i=0;i<rays;i++){const a=i*Math.PI*2/rays,len=rayLength;arenaCtx.beginPath();arenaCtx.moveTo(fx.x+Math.cos(a)*4,fx.y+Math.sin(a)*4);arenaCtx.lineTo(fx.x+Math.cos(a)*len,fx.y+Math.sin(a)*len);arenaCtx.stroke();}
       arenaCtx.restore();
     }
     for(const fx of asteroidFx){
@@ -1686,7 +1733,7 @@
 
   $('openPvpBtn')?.addEventListener('click',()=>{
     document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';
-    const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();syncPvpRankSummary();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
+    const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();refreshQaBotRankAccess();syncPvpRankSummary();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
   });
   document.querySelectorAll('.pvp-mode-btn').forEach(btn=>btn.addEventListener('click',()=>{
     // No permitir cambiar de modo mientras la cola está activa: antes este click
