@@ -700,15 +700,15 @@
     const mirrorY = y => pvpMode==='1v1' && mySlot === 2 ? worldHeight - y : y;
     const mirrorAngle = a => pvpMode==='1v1' && mySlot === 2 ? a + Math.PI : a;
     if(p.type==='hit-confirm'){
-      // El defensor es la autoridad del daño. Sólo su confirmación detiene
-      // visualmente el proyectil en la pantalla del atacante.
-      if(Number(p.attackerSlot||0)!==mySlot)return;
       const kind=p.attackKind==='missile'?'missile':'laser';
       if(kind==='laser'){
         const confirmedShotId=String(p.shotId||'');
-        const own=bullets.filter(b=>b.own&&b.life>0&&(!confirmedShotId||String(b.shotId||'')===confirmedShotId));
-        const hit=own.sort((a,b)=>Math.hypot(a.x-remote.x,a.y-remote.y)-Math.hypot(b.x-remote.x,b.y-remote.y))[0];
-        if(hit){hit.life=0;hit.x=remote.x;hit.y=remote.y;impactFx.push({x:remote.x,y:remote.y,life:.32,maxLife:.32});}
+        const hx=Number(p.hitX),hy=Number(p.hitY),hasPoint=Number.isFinite(hx)&&Number.isFinite(hy);
+        // El servidor reenvía una única confirmación a atacante y defensor.
+        // Cada pantalla consume exactamente el mismo shotId y usa el mismo punto.
+        const candidates=bullets.filter(b=>b.life>0&&String(b.shotId||'')===confirmedShotId);
+        for(const hit of candidates){hit.life=0;if(hasPoint){hit.x=hx;hit.y=hy;}}
+        if(hasPoint)impactFx.push({x:hx,y:hy,life:.32,maxLife:.32});
       }
       return;
     }
@@ -758,7 +758,7 @@
       if(selectedTargetSlot===Number(fromSlot))selectedTargetSlot=0;
       return;
     } else if(p.type==='shot'){
-      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam,Number(p.targetSlot||0),String(p.shotId||''));
+      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam,Number(p.targetSlot||0),String(p.shotId||''),Number(p.firedAt||0));
     } else if(p.type==='missile'){
       spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam,Number(p.targetSlot||0));
     }
@@ -778,12 +778,12 @@
     const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
     const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
     const sa=pvpMode==='1v1'&&mySlot===2?a+Math.PI:a;
-    send({type:'shot',shotId,targetSlot:Number(targetPlayer.slot),x:sx,y:sy,angle:sa,ship:myShip});
+    send({type:'shot',shotId,targetSlot:Number(targetPlayer.slot),firedAt:Date.now(),x:sx,y:sy,angle:sa,ship:myShip});
   }
-  function spawnRemoteShot(x,y,a,ship,ownerSlot=0,ownerTeam=0,targetSlot=0,shotId=''){
+  function spawnRemoteShot(x,y,a,ship,ownerSlot=0,ownerTeam=0,targetSlot=0,shotId='',firedAt=0){
     if(!Number.isFinite(x+y+a))return;
     const sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
-    [-1,1].forEach((s,i)=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,ownerSlot,ownerTeam,targetSlot:Number(targetSlot||0),shotId:String(shotId||''),beamIndex:i,life:1.5});});
+    [-1,1].forEach((s,i)=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,ownerSlot,ownerTeam,targetSlot:Number(targetSlot||0),shotId:String(shotId||''),firedAt:Number(firedAt||0),beamIndex:i,life:1.5});});
   }
   function fireMissile(){
     const now=qaPvpActive ? qaPvpStartedAt + qaPvpSimMs : performance.now();
@@ -1334,7 +1334,7 @@
           meState.lives=Math.max(0,meState.lives-1);updateLives();
           // Confirma al atacante únicamente los impactos que este dispositivo
           // aceptó como daño real; evita falsos impactos por posición atrasada.
-          send({type:'hit-confirm',attackerSlot:lastAttackerSlot,attackKind:'laser',shotId:String(b.shotId||'')});
+          send({type:'hit-confirm',attackerSlot:lastAttackerSlot,targetSlot:mySlot,attackKind:'laser',shotId:String(b.shotId||''),hitX,hitY});
           if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10'){markEliminated(mySlot);if(qaPvpActive)qaCheckLocalResult();showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
         }
       }
