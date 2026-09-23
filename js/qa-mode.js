@@ -8,7 +8,13 @@ window.QA_MODE = QA_MODE;
 async function bootQaMode() {
     let remoteQa = false;
     if (!QA_MODE && typeof window.getRemoteQaAccess === 'function') {
-        remoteQa = await window.getRemoteQaAccess();
+        // Play Games puede terminar de publicar la identidad unos instantes después
+        // de cargar la WebView. Reintentar evita que una autorización remota válida
+        // desaparezca sólo por una carrera de arranque.
+        for (let attempt = 0; attempt < 4 && !remoteQa; attempt++) {
+            remoteQa = await window.getRemoteQaAccess({ forceSession: attempt > 0 });
+            if (!remoteQa && attempt < 3) await new Promise(resolve => window.setTimeout(resolve, 900));
+        }
     }
     window.QA_MODE = QA_MODE || remoteQa;
     if (!window.QA_MODE) return;
