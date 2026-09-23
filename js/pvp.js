@@ -165,10 +165,10 @@
     return QA_BOT_RANK_CUPS[level];
   }
   async function refreshQaBotRankAccess(){
-    if(!PVP_TEST_MODE||!qaBotRankSelect||qaBotRankAccessChecked||typeof window.getPvpQaAccess!=='function')return;
+    if(!PVP_TEST_MODE||!qaBotRankSelect||qaBotRankAccessChecked||typeof window.getQaAdminStatus!=='function')return;
     qaBotRankAccessChecked=true;
     let allowed=false;
-    try{allowed=!!(await window.getPvpQaAccess?.())?.isAdmin;}catch{}
+    try{allowed=!!(await window.getQaAdminStatus?.())?.isAdmin;}catch{}
     qaBotRankOverrideAllowed=allowed;
     if(qaBotRankWrap)qaBotRankWrap.style.display=allowed?'block':'none';
     if(!allowed){qaBotRankSelect.value='auto';sessionStorage.removeItem('pvp_qa_bot_rank');}
