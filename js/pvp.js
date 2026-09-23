@@ -1820,7 +1820,18 @@
           const label=document.createElement('div');
           label.style.cssText='line-height:1.35;';
           const rankLine=document.createElement('div');
-          rankLine.textContent=rank.icon+' '+rank.name+' · '+rank.floor+' copas'+(rank.amount?' · '+formatCoins(rank.amount)+' 🪙':' · Rango inicial');
+          rankLine.textContent=rank.icon+' '+rank.name+' · '+rank.floor+' copas';
+          if(rank.amount){
+            const reward=document.createElement('span');
+            reward.textContent=' · '+formatCoins(rank.amount)+'\u00A0🪙';
+            reward.style.whiteSpace='nowrap';
+            rankLine.appendChild(reward);
+          }else{
+            const initial=document.createElement('span');
+            initial.textContent=' · Rango inicial';
+            initial.style.whiteSpace='nowrap';
+            rankLine.appendChild(initial);
+          }
           label.appendChild(rankLine);
           if(rank.unlock){
             const unlockLine=document.createElement('div');
