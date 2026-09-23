@@ -659,9 +659,27 @@ export class PvpRanking {
       const playerId=safeText(url.searchParams.get('playerId'),'',128);
       const record=playerId&&state.players[playerId]?{...state.players[playerId],rank:this.rankFor(state.players[playerId].cups)}:null;
       const pendingMonthly=playerId?Object.values(state.monthlyAwards).filter(r=>r.playerId===playerId&&!r.claimed):[];
+      const claimedRankRewards=playerId?(await this.ctx.storage.get('rankRewards:'+playerId))||[]:[];
       const matchId=safeText(url.searchParams.get('matchId'),'',80);
       const settlement=playerId&&matchId?(await this.ctx.storage.get('settlement:'+playerId+'|'+matchId))||null:null;
-      return json({ok:true,month:state.activeMonth,ranking,record,settlement,pendingMonthly});
+      return json({ok:true,month:state.activeMonth,ranking,record,settlement,pendingMonthly,claimedRankRewards});
+    }
+
+    if(url.pathname==='/rank-reward'){
+      if(request.method!=='POST')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
+      let body;try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
+      const playerId=safeText(body?.playerId,'',128);
+      const floor=Math.max(0,Math.floor(Number(body?.floor)||0));
+      const rewards={200:100000,500:200000,1000:500000,3000:1000000,7000:3000000,12000:10000000};
+      if(!playerId||!rewards[floor])return json({ok:false,error:'BAD_REWARD'},400);
+      const record=state.players[playerId];
+      if(!record||Number(record.cups||0)<floor)return json({ok:false,error:'RANK_NOT_REACHED'},403);
+      const key='rankRewards:'+playerId;
+      const claimed=(await this.ctx.storage.get(key))||[];
+      if(claimed.includes(floor))return json({ok:true,alreadyClaimed:true,floor,amount:rewards[floor],rewardId:'pvp-rank-'+floor});
+      claimed.push(floor);
+      await this.ctx.storage.put(key,claimed);
+      return json({ok:true,claimed:true,floor,amount:rewards[floor],rewardId:'pvp-rank-'+floor});
     }
 
     if(request.method!=='POST') return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
@@ -878,6 +896,19 @@ export default {
       if (request.method !== "GET") return json({ ok:false, error:"RANKING_READ_ONLY" }, 405);
       const id = env.PVP_RANKING.idFromName("global");
       return env.PVP_RANKING.get(id).fetch(request);
+    }
+    if (url.pathname === "/rank-reward") {
+      if(request.method!=="POST")return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
+      const session=await verifySessionToken(env,url.searchParams.get("session"));
+      if(!session)return json({ok:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
+      const rankingId=env.PVP_RANKING.idFromName("global");
+      const active=await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/active-session?playerId="+encodeURIComponent(session.playerId)+"&sessionId="+encodeURIComponent(session.sessionId||""),{headers:{[ACTIVE_SESSION_HEADER]:"1"}}).then(r=>r.json()).catch(()=>({}));
+      if(!active?.active)return json({ok:false,error:"SESSION_REPLACED"},401);
+      let body;try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}
+      return env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/rank-reward",{
+        method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({playerId:session.playerId,floor:Number(body?.floor||0)})
+      });
     }
     if (url.pathname === "/matchmake") {
       const authorized=await authorizePvpRequest(request,env);
