@@ -55,7 +55,7 @@
     }catch{}
     resumeBgMusicAfterPvp = false;
   }
-  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastSentState = null, stateSeq = 0, localVx = 0, localVy = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false;
+  let running = false, countdownActive = false, countdownTimer = 0, raf = 0, lastFrame = 0, lastStateSend = 0, lastSentState = null, stateSeq = 0, localVx = 0, localVy = 0, lastShot = 0, lastHitAt = 0, lastMissile = -Infinity, missilePointerLock = false, shotSeq = 0;
   let botMatch=false, botLives=20, lastBotHitAt=0, lastRegenAt=0;
   let qaPvpActive=false, qaPvpSpeed=1, qaPvpStartedAt=0, qaPvpSimMs=0, qaPvpLastErrorCount=0, qaPvpPlacement=0;
   const botAiStates=new Map();
@@ -757,7 +757,7 @@
       if(selectedTargetSlot===Number(fromSlot))selectedTargetSlot=0;
       return;
     } else if(p.type==='shot'){
-      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam);
+      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam,0,String(p.shotId||''));
     } else if(p.type==='missile'){
       spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam,Number(p.targetSlot||0));
     }
@@ -773,16 +773,16 @@
     meState.angle=a;lastShot=now;
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     // Mismo láser del juego normal: 4x20 y velocidad equivalente a 14 px/frame a 60 FPS.
-    [-1,1].forEach(s=>{const bx=meState.x+sideX*s,by=meState.y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,ownerSlot:mySlot,ownerTeam:myTeam,life:1.5});});
+    const shotId=mySlot+'-'+Date.now().toString(36)+'-'+(++shotSeq).toString(36);\n    [-1,1].forEach((s,i)=>{const bx=meState.x+sideX*s,by=meState.y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,ownerSlot:mySlot,ownerTeam:myTeam,shotId,beamIndex:i,life:1.5});});
     const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
     const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
     const sa=pvpMode==='1v1'&&mySlot===2?a+Math.PI:a;
-    send({type:'shot',x:sx,y:sy,angle:sa,ship:myShip});
+    send({type:'shot',shotId,x:sx,y:sy,angle:sa,ship:myShip});
   }
-  function spawnRemoteShot(x,y,a,ship,ownerSlot=0,ownerTeam=0,targetSlot=0){
+  function spawnRemoteShot(x,y,a,ship,ownerSlot=0,ownerTeam=0,targetSlot=0,shotId=''){
     if(!Number.isFinite(x+y+a))return;
     const sideX=Math.cos(a+Math.PI/2)*9,sideY=Math.sin(a+Math.PI/2)*9;
-    [-1,1].forEach(s=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,ownerSlot,ownerTeam,targetSlot:Number(targetSlot||0),life:1.5});});
+    [-1,1].forEach((s,i)=>{const bx=x+sideX*s,by=y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:ship||'Gallina',own:false,ownerSlot,ownerTeam,targetSlot:Number(targetSlot||0),shotId:String(shotId||''),beamIndex:i,life:1.5});});
   }
   function fireMissile(){
     const now=qaPvpActive ? qaPvpStartedAt + qaPvpSimMs : performance.now();
@@ -1324,7 +1324,7 @@
           meState.lives=Math.max(0,meState.lives-1);updateLives();
           // Confirma al atacante únicamente los impactos que este dispositivo
           // aceptó como daño real; evita falsos impactos por posición atrasada.
-          send({type:'hit-confirm',attackerSlot:lastAttackerSlot,attackKind:'laser'});
+          send({type:'hit-confirm',attackerSlot:lastAttackerSlot,attackKind:'laser',shotId:String(b.shotId||'')});
           if(meState.lives<=0){send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot||0,attackKind:lastAttackKind||'laser'});if(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10'){markEliminated(mySlot);if(qaPvpActive)qaCheckLocalResult();showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);}else endArena('💥 Tu nave fue destruida.','loss');return;}
         }
       }
