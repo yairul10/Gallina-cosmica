@@ -154,7 +154,7 @@
   const qaBotRankSelect=$('pvpQaBotRank');
   const qaBotRankWrap=$('pvpQaBotRankWrap');
   const QA_BOT_RANK_CUPS=[0,200,500,1000,3000,7000,12000];
-  let qaBotRankOverrideAllowed=false, qaBotRankAccessChecked=false;
+  let qaBotRankOverrideAllowed=false, qaBotRankAccessChecked=false, qaBotRankAccessPromise=null, qaBotRankAccessPlayerId='';
   function qaBotRankLevel(){
     if(!qaBotRankOverrideAllowed||!qaBotRankSelect||qaBotRankSelect.value==='auto')return null;
     return Math.max(0,Math.min(6,Number(qaBotRankSelect.value)||0));
@@ -165,13 +165,27 @@
     return QA_BOT_RANK_CUPS[level];
   }
   async function refreshQaBotRankAccess(){
-    if(!PVP_TEST_MODE||!qaBotRankSelect||qaBotRankAccessChecked||typeof window.getQaAdminStatus!=='function')return;
-    qaBotRankAccessChecked=true;
-    let allowed=false;
-    try{allowed=!!(await window.getQaAdminStatus?.())?.isAdmin;}catch{}
-    qaBotRankOverrideAllowed=allowed;
-    if(qaBotRankWrap)qaBotRankWrap.style.display=allowed?'block':'none';
-    if(!allowed){qaBotRankSelect.value='auto';sessionStorage.removeItem('pvp_qa_bot_rank');}
+    if(!PVP_TEST_MODE||!qaBotRankSelect||typeof window.getQaAdminStatus!=='function')return qaBotRankOverrideAllowed;
+    if(qaBotRankAccessChecked)return qaBotRankOverrideAllowed;
+    if(qaBotRankAccessPromise)return qaBotRankAccessPromise;
+    qaBotRankAccessPromise=(async()=>{
+      // La autorización se consulta sólo una vez por identidad. Un fallo temporal
+      // de red no debe convertir a un administrador ya validado en "no admin".
+      let result=null;
+      try{result=await window.getQaAdminStatus();}catch{}
+      if(!result?.ok)return qaBotRankOverrideAllowed;
+      qaBotRankAccessChecked=true;
+      qaBotRankAccessPlayerId=String(result.playerId||qaBotRankAccessPlayerId||'');
+      qaBotRankOverrideAllowed=!!result.isAdmin;
+      if(qaBotRankWrap)qaBotRankWrap.style.display=qaBotRankOverrideAllowed?'block':'none';
+      if(!qaBotRankOverrideAllowed){
+        qaBotRankSelect.value='auto';
+        sessionStorage.removeItem('pvp_qa_bot_rank');
+      }
+      return qaBotRankOverrideAllowed;
+    })();
+    try{return await qaBotRankAccessPromise;}
+    finally{qaBotRankAccessPromise=null;}
   }
   if(qaBotRankSelect){
     qaBotRankSelect.value=sessionStorage.getItem('pvp_qa_bot_rank')||'auto';
@@ -182,7 +196,17 @@
       showStatus('🧪 Bots QA: '+label+'. Tus copas reales no cambian.',true);
     });
   }
-  window.addEventListener('gallina-player-identity-ready',()=>{qaBotRankAccessChecked=false;refreshQaBotRankAccess();});
+  window.addEventListener('gallina-player-identity-ready',event=>{
+    const nextId=String(event?.detail?.id||window.GallinaPlayerIdentity?.getId?.()||'');
+    // Ignora refrescos de la misma cuenta: antes cada uno reabría la consulta
+    // y hacía que el selector parpadeara. Si realmente cambió la cuenta, sí
+    // se valida de nuevo.
+    if(nextId&&nextId!==qaBotRankAccessPlayerId){
+      qaBotRankAccessPlayerId=nextId;
+      qaBotRankAccessChecked=false;
+      refreshQaBotRankAccess();
+    }
+  });
 
   function getPvpCups(){const n=Number(localStorage.getItem(PVP_CUPS_KEY)||0);return Number.isFinite(n)?Math.max(0,Math.floor(n)):0;}
   function pvpRankFromCups(cups){
