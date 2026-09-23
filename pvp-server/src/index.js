@@ -676,10 +676,11 @@ export class PvpRanking {
       if(!record||Number(record.cups||0)<floor)return json({ok:false,error:'RANK_NOT_REACHED'},403);
       const key='rankRewards:'+playerId;
       const claimed=(await this.ctx.storage.get(key))||[];
-      if(claimed.includes(floor))return json({ok:true,alreadyClaimed:true,floor,amount:rewards[floor],rewardId:'pvp-rank-'+floor});
+      if(claimed.includes(floor))return json({ok:true,alreadyClaimed:true,floor,amount:0,rewardId:'pvp-rank-'+floor,claimedRankRewards:claimed});
       claimed.push(floor);
+      claimed.sort((a,b)=>a-b);
       await this.ctx.storage.put(key,claimed);
-      return json({ok:true,claimed:true,floor,amount:rewards[floor],rewardId:'pvp-rank-'+floor});
+      return json({ok:true,claimed:true,floor,amount:rewards[floor],rewardId:'pvp-rank-'+floor,claimedRankRewards:claimed});
     }
 
     if(request.method!=='POST') return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
