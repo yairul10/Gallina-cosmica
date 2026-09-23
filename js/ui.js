@@ -59,8 +59,8 @@ document.getElementById('quitMatchBtn').addEventListener('click', (e) => {
 
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
 document.getElementById('openTutorialBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('tutorialScreen').style.display = 'flex'; });
-document.getElementById('openHangarBtn').addEventListener('click', () => { updateHangarUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('hangarScreen').style.display = 'flex'; });
-document.getElementById('openShopBtn').addEventListener('click', () => { updateShopUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('shopScreen').style.display = 'flex'; });
+document.getElementById('openHangarBtn').addEventListener('click', () => { refreshPvpSpecialShipAccess(); updateHangarUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('hangarScreen').style.display = 'flex'; });
+document.getElementById('openShopBtn').addEventListener('click', () => { refreshPvpSpecialShipAccess(); updateShopUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('shopScreen').style.display = 'flex'; });
 document.getElementById('openRecordsBtn').addEventListener('click', () => {
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('recordsScreen').style.display = 'flex';
@@ -77,6 +77,22 @@ window.switchHangarTab = function(tab) {
     else { document.getElementById('tabHangarExtras').classList.add('active'); document.getElementById('hangarExtras').style.display = 'grid'; }
 }
 
+const PVP_RANK_SHIP_RULES={
+    toro_oscuro:{cost:15000000,floor:3000},toro_luz:{cost:15000000,floor:3000},toro_maoma:{cost:15000000,floor:3000},toro_mayor:{cost:50000000,floor:12000}
+};
+let pvpClaimedRankUnlocks=new Set(),pvpAdminPreview=false,pvpUnlockRefreshBusy=false;
+window.gallinaSetPvpRankUnlocks=(floors)=>{pvpClaimedRankUnlocks=new Set((Array.isArray(floors)?floors:[]).map(Number));updateShopUI?.();};
+function pvpShipCanBuy(id){const rule=PVP_RANK_SHIP_RULES[id];return !rule||pvpAdminPreview||pvpClaimedRankUnlocks.has(rule.floor);}
+async function refreshPvpSpecialShipAccess(){
+    if(pvpUnlockRefreshBusy)return;pvpUnlockRefreshBusy=true;
+    try{
+        const identity=window.GallinaPlayerIdentity?.getCurrent?.();
+        const jobs=[];
+        if(identity?.id)jobs.push(fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/ranking?playerId='+encodeURIComponent(identity.id),{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d?.ok)window.gallinaSetPvpRankUnlocks(d.claimedRankRewards||[]);}));
+        if(window.getQaAdminStatus)jobs.push(window.getQaAdminStatus().then(d=>{pvpAdminPreview=!!d?.isAdmin;}));
+        await Promise.allSettled(jobs);
+    }finally{pvpUnlockRefreshBusy=false;updateShopUI();updateHangarUI();}
+}
 function updateHangarUI() {
     const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
     const passives = ['+20% a Maíz', '+20% a Jefes Maíz', '+20% a Lechuga', '+20% a Jefes Lech.'];
@@ -121,7 +137,7 @@ function updateHangarUI() {
         }
     }
     
-    const pvpIds=['toro_aniquilador','toro_blindado','toro_baliza'];
+    const pvpIds=['toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'];
     pvpIds.forEach(id=>{
         const owned=!!gameStats.pvpShips?.[id], card=document.getElementById('hangar-pvp-'+id.replaceAll('_','-')), btn=document.getElementById('btn-equip-pvp-'+id.replaceAll('_','-'));
         if(card) card.style.display=owned?'flex':'none';
@@ -193,6 +209,14 @@ function updateShopUI() {
         else{btn.textContent='🪙 1,500,000';btn.style.background='#10b981';btn.disabled=coins<1500000;}
     });
 
+    Object.entries(PVP_RANK_SHIP_RULES).forEach(([id,rule])=>{
+        const btn=document.getElementById('btn-buy-pvp-'+id.replaceAll('_','-')); if(!btn)return;
+        const owned=!!gameStats.pvpShips?.[id],allowed=pvpShipCanBuy(id);
+        if(owned){btn.textContent='Comprado';btn.style.background='#475569';btn.disabled=true;}
+        else if(!allowed){btn.textContent='🔒 '+(rule.floor===3000?'Diamante':'Leyenda Galáctica');btn.style.background='#1e293b';btn.disabled=true;}
+        else{btn.textContent=(pvpAdminPreview?'🧪 QA · ':'')+'🪙 '+rule.cost.toLocaleString('es-CL');btn.style.background='#10b981';btn.disabled=coins<rule.cost;}
+    });
+
     let bEvade = document.getElementById('btn-buy-pvp-evade');
     if (bEvade) {
         if (gameStats.pvpEvade) { bEvade.textContent = 'Comprado'; bEvade.style.background = '#475569'; bEvade.disabled = true; }
@@ -223,7 +247,13 @@ function updateShopUI() {
 }
 
 window.buyShip = function(index, isPro, cost) { if (isPro) { if (gameStats.skins[index] && !gameStats.proSkins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.proSkins[index] = true; saveStats(); updateShopUI(); } } else { if (!gameStats.skins[index] && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.skins[index] = true; saveStats(); updateShopUI(); } } }
-window.buyPvpShip = function(id) { const valid=['toro_aniquilador','toro_blindado','toro_baliza']; if(valid.includes(id)&&!gameStats.pvpShips?.[id]&&coins>=1500000){coins-=1500000;gameStats.savedCoins=coins;gameStats.pvpShips[id]=true;saveStats();updateShopUI();updateHangarUI();} }
+window.buyPvpShip = function(id) {
+    const base=['toro_aniquilador','toro_blindado','toro_baliza'];
+    const rule=PVP_RANK_SHIP_RULES[id],cost=rule?.cost??1500000;
+    if(!base.includes(id)&&!rule)return;
+    if(rule&&!pvpShipCanBuy(id))return;
+    if(!gameStats.pvpShips?.[id]&&coins>=cost){coins-=cost;gameStats.savedCoins=coins;gameStats.pvpShips[id]=true;saveStats();updateShopUI();updateHangarUI();}
+}
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
 window.buyPvpEvade = function() { if (!gameStats.pvpEvade && coins >= 500000) { coins -= 500000; gameStats.savedCoins = coins; gameStats.pvpEvade = true; saveStats(); updateShopUI(); } }
 window.buyAutoLife = function() { if (!gameStats.extraModule && coins >= 50000) { coins -= 50000; gameStats.savedCoins = coins; gameStats.extraModule = true; gameStats.equipExtraModule = true; saveStats(); updateShopUI(); } }
