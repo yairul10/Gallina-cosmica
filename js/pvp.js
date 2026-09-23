@@ -828,6 +828,13 @@
     } else if(p.type==='bot-shot'&&botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       const bp=players.find(x=>x.bot&&Number(x.slot)===Number(p.slot||0));if(!bp)return;
       spawnRemoteShot(Number(p.x),Number(p.y),Number(p.angle),bp.ship,bp.slot,Number(bp.team||0),Number(p.targetSlot||0));return;
+    } else if(p.type==='bot-evade'&&botMatch&&(pvpMode==='2v2'||pvpMode==='arena'||pvpMode==='arena10')){
+      const slot=Number(p.slot||0),bp=players.find(x=>x.bot&&Number(x.slot)===slot);if(!bp)return;
+      const until=performance.now()+PVP_EVADE_DURATION;
+      remoteEvadeUntil.set(slot,until);
+      for(const b of bullets)if(Number(b.targetSlot||0)===slot)b.life=0;
+      for(const m of missiles)if(Number(m.targetSlot||0)===slot)m.life=0;
+      return;
     } else if(p.type==='bot-missile'&&botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       const bp=players.find(x=>x.bot&&Number(x.slot)===Number(p.slot||0));if(!bp)return;
       spawnRemoteMissile(Number(p.x),Number(p.y),bp.ship,p.missileType,false,bp.slot,Number(bp.team||0),Number(p.targetSlot||0));return;
@@ -869,7 +876,7 @@
     const myShip=(players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship;
     // Mismo láser del juego normal: 4x20 y velocidad equivalente a 14 px/frame a 60 FPS.
     const shotId=mySlot+'-'+Date.now().toString(36)+'-'+(++shotSeq).toString(36);
-    [-1,1].forEach((s,i)=>{const bx=meState.x+sideX*s,by=meState.y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,ownerSlot:mySlot,ownerTeam:myTeam,shotId,beamIndex:i,life:1.5});});
+    [-1,1].forEach((s,i)=>{const bx=meState.x+sideX*s,by=meState.y+sideY*s;bullets.push({x:bx,y:by,prevX:bx,prevY:by,vx:Math.cos(a)*840,vy:Math.sin(a)*840,angle:a,ship:myShip,own:true,ownerSlot:mySlot,ownerTeam:myTeam,targetSlot:Number(targetPlayer.slot),shotId,beamIndex:i,life:1.5});});
     const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
     const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
     const sa=pvpMode==='1v1'&&mySlot===2?a+Math.PI:a;
@@ -1065,7 +1072,16 @@
           const pressure=allyToProtect?Math.min(140,Math.hypot(t.state.x-allyToProtect.state.x,t.state.y-allyToProtect.state.y))*.35:0;
           return d+pressure+(life*90)-(rankLevel>=6?(1-life)*80:0);
         };
-        const nearest=enemyTargets.sort((a,b)=>targetScore(a)-targetScore(b))[0];
+        let nearest=enemyTargets.sort((a,b)=>targetScore(a)-targetScore(b))[0];
+        // Maestro y Leyenda coordinan presión: si hay varios blancos, ambos
+        // bots priorizan al enemigo con menos vida en vez de dispersarse.
+        if(pvpMode==='2v2'&&rankLevel>=5&&enemyTargets.length>1){
+          nearest=[...enemyTargets].sort((a,b)=>{
+            const ar=Number(a.state.lives||20)/pvpShipStats(a.p.ship||'Gallina').maxLives;
+            const br=Number(b.state.lives||20)/pvpShipStats(b.p.ship||'Gallina').maxLives;
+            return ar-br||targetScore(a)-targetScore(b);
+          })[0]||nearest;
+        }
         if(!nearest)continue;
         const nearestDist=Math.hypot(nearest.state.x-bot.x,nearest.state.y-bot.y);
         // Fuera del radio de búsqueda el bot patrulla su propio sector en vez de
@@ -1132,6 +1148,21 @@
         let desiredX=dx/dist,desiredY=dy/dist;
         const botStats=pvpShipStats(botPlayer.ship||'Gallina');
         const lifeRatio=Math.max(0,Number(bot.lives||0))/botStats.maxLives;
+        // Interferencia se asigna por el Worker según rango y usa el mismo
+        // enfriamiento del jugador. Corta sólo ataques que ya iban a este bot.
+        const evadeReady=!!botPlayer.pvpInterference&&now>=Number(ai.nextInterferenceAt||0);
+        const incomingTargeted=bullets.some(b=>Number(b.ownerSlot)!==Number(botPlayer.slot)&&(
+          Number(b.targetSlot||0)===Number(botPlayer.slot)||
+          Math.hypot(b.x-bot.x,b.y-bot.y)<72
+        ))||missiles.some(m=>Number(m.ownerSlot)!==Number(botPlayer.slot)&&Number(m.targetSlot||0)===Number(botPlayer.slot));
+        if(evadeReady&&incomingTargeted){
+          ai.nextInterferenceAt=now+PVP_EVADE_COOLDOWN;
+          const until=now+PVP_EVADE_DURATION;
+          remoteEvadeUntil.set(Number(botPlayer.slot),until);
+          for(const b of bullets)if(Number(b.targetSlot||0)===Number(botPlayer.slot))b.life=0;
+          for(const m of missiles)if(Number(m.targetSlot||0)===Number(botPlayer.slot))m.life=0;
+          if(pvpMode==='2v2'||pvpMode==='arena'||pvpMode==='arena10')send({type:'bot-evade',slot:Number(botPlayer.slot)});
+        }
         // La frecuencia de esquiva escala por rango. Maestro/Leyenda reaccionan además
         // a proyectiles cercanos, pero sin superar la velocidad máxima de un jugador.
         const dodgeBase=[1800,1550,1300,1050,850,650,480][rankLevel];
@@ -1396,7 +1427,7 @@
           // Disparos humanos: sólo el propio dispositivo. Disparos de bot:
           // únicamente el cliente autoridad.
           if(owner.bot ? !botAuthority : Number(b.ownerSlot)!==mySlot)continue;
-          let targets=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))&&Number(p.slot)!==Number(b.ownerSlot)&&(pvpMode!=='2v2'||Number(p.team)!==Number(owner.team)));
+          let targets=players.filter(p=>p.bot&&!eliminated.has(Number(p.slot))&&Number(p.slot)!==Number(b.ownerSlot)&&(pvpMode!=='2v2'||Number(p.team)!==Number(owner.team))&&now>=Number(remoteEvadeUntil.get(Number(p.slot))||0));
           // Para disparos bot, priorizar el objetivo que el propio bot eligió.
           // Evita inconsistencias entre la simulación del movimiento y la detección
           // bot-vs-bot cuando hay varios bots moviéndose e interpolándose a la vez.
@@ -1449,9 +1480,25 @@
         if(now-lastHitAt>180){
           lastHitAt=now;
           lastAttackerSlot=Number(b.ownerSlot||0);lastAttackKind='laser';
-          // El defensor detecta el contacto, pero NO descuenta vida todavía.
-          // La vida cambia sólo cuando vuelve el hit-confirm validado por servidor.
-          send({type:'hit-confirm',attackerSlot:lastAttackerSlot,targetSlot:mySlot,attackKind:'laser',shotId:String(b.shotId||''),hitX,hitY});
+          const botLaser=!!players.find(p=>p.bot&&Number(p.slot)===lastAttackerSlot);
+          if(botLaser){
+            // Los bots no tienen un socket propio ni shotId validable. El
+            // defensor aplica este impacto una sola vez, igual que el misil bot.
+            lastRegenAt=now;
+            meState.lives=Math.max(0,meState.lives-1);
+            updateLives();
+            if(meState.lives<=0){
+              send({type:'defeat',slot:mySlot,team:myTeam,killerSlot:lastAttackerSlot,attackKind:'laser'});
+              if(pvpMode==='2v2'||pvpMode==='arena'||pvpMode==='arena10'){
+                markEliminated(mySlot);
+                if(qaPvpActive)qaCheckLocalResult();
+                showStatus((pvpMode==='arena'||pvpMode==='arena10')?'👀 Eliminado · observa hasta conocer al ganador.':'👀 Nave eliminada · tu compañero sigue luchando.',true);
+              }else endArena('💥 Tu nave fue destruida.','loss');
+            }
+          }else{
+            // Los humanos siguen requiriendo confirmación validada por servidor.
+            send({type:'hit-confirm',attackerSlot:lastAttackerSlot,targetSlot:mySlot,attackKind:'laser',shotId:String(b.shotId||''),hitX,hitY});
+          }
         }
       }
     }
@@ -1717,6 +1764,11 @@
       showStatus(queueStartedAt?'🔒 Cancela la búsqueda antes de ajustar los controles.':'🔒 No puedes ajustar controles mientras estás conectado a una partida.');
       return;
     }
+    // Un resultado anterior quedaba por encima de los controles e interceptaba
+    // los toques. El editor siempre inicia sin overlays de combate.
+    const result=$('pvpResult'),countdown=$('pvpCountdown');
+    if(result)result.style.display='none';
+    if(countdown)countdown.style.display='none';
     disconnect(true);lobby.style.display='none';arena.style.display='flex';controlsEditing=true;$('pvpControlsEditor').style.display='block';$('pvpLeaveArenaBtn').style.display='none';$('pvpEvadeBtn').style.display=gameStats?.pvpEvade?'block':'none';loadPvpControlLayout();
   }
   function closeControlsEditor(save=true){if(save)savePvpControlLayout();controlsEditing=false;controlDrag=null;$('pvpControlsEditor').style.display='none';$('pvpLeaveArenaBtn').style.display='block';arena.style.display='none';lobby.style.display='flex';}
