@@ -184,13 +184,13 @@
     const names=['Gallina','Oveja','Caballo','Vaca'];
     const stats=currentGameStats();
     const i=Number(stats.selectedShip ?? 0);
-    const pvpNames={toro_aniquilador:'Toro Aniquilador',toro_blindado:'Toro Blindado',toro_baliza:'Toro Baliza'};
+    const pvpNames={toro_aniquilador:'Toro Aniquilador',toro_blindado:'Toro Blindado',toro_baliza:'Toro Baliza',toro_oscuro:'Toro Oscuro',toro_luz:'Toro Luz',toro_maoma:'Toro Maoma',toro_mayor:'Toro Mayor'};
     if(stats.selectedPvpShip&&stats.pvpShips?.[stats.selectedPvpShip]) return pvpNames[stats.selectedPvpShip]||'Gallina';
     if(stats.useGallinaChile) return 'Gallina Chile';
     return (names[i]||'Gallina')+(stats.useProShip?' Pro':'');
   }
   function shipSrc(label){
-    const toroSrc={'Toro Aniquilador':'assets/toro_aniquilador.png','Toro Blindado':'assets/toro_blindado.png','Toro Baliza':'assets/toro_baliza.png'};
+    const toroSrc={'Toro Aniquilador':'assets/toro_aniquilador.png','Toro Blindado':'assets/toro_blindado.png','Toro Baliza':'assets/toro_baliza.png','Toro Oscuro':'assets/toro_oscuro.png','Toro Luz':'assets/toro_luz.png','Toro Maoma':'assets/toro_maoma.png','Toro Mayor':'assets/toro_mayor.png'};
     if(toroSrc[label]) return toroSrc[label];
     if(label==='Gallina Chile') return 'assets/gallina_chile.png';
     const pro=/ Pro$/.test(label);
@@ -201,11 +201,15 @@
     if(label==='Toro Aniquilador') return {maxLives:20,shotCooldown:247.5,regenDelay:5000,regenEvery:2000};
     if(label==='Toro Blindado') return {maxLives:26,shotCooldown:330,regenDelay:5000,regenEvery:2000};
     if(label==='Toro Baliza') return {maxLives:20,shotCooldown:330,regenDelay:4000,regenEvery:1500};
+    if(label==='Toro Oscuro') return {maxLives:26,shotCooldown:247.5,regenDelay:5000,regenEvery:2000};
+    if(label==='Toro Luz') return {maxLives:20,shotCooldown:247.5,regenDelay:4000,regenEvery:1500};
+    if(label==='Toro Maoma') return {maxLives:26,shotCooldown:330,regenDelay:4000,regenEvery:1500};
+    if(label==='Toro Mayor') return {maxLives:26,shotCooldown:247.5,regenDelay:4000,regenEvery:1500};
     return {maxLives:20,shotCooldown:330,regenDelay:5000,regenEvery:2000};
   }
   function shipCombatInfo(label){
     const base=String(label||'Gallina').replace(/ Pro$/,'');
-    const index={Gallina:0,'Gallina Chile':0,Oveja:1,Caballo:2,Vaca:3,'Toro Aniquilador':0,'Toro Blindado':0,'Toro Baliza':0}[base] ?? 0;
+    const index={Gallina:0,'Gallina Chile':0,Oveja:1,Caballo:2,Vaca:3,'Toro Aniquilador':0,'Toro Blindado':0,'Toro Baliza':0,'Toro Oscuro':0,'Toro Luz':0,'Toro Maoma':0,'Toro Mayor':0}[base] ?? 0;
     const missileType=['chick','wool','horseshoe','milk'][index];
     return {index, missileType, isPro:/ Pro$/.test(String(label||''))};
   }
@@ -1714,9 +1718,9 @@
     {floor:200,icon:'🥉',name:'Bronce',amount:100000},
     {floor:500,icon:'🥈',name:'Plata',amount:200000},
     {floor:1000,icon:'🥇',name:'Oro',amount:500000},
-    {floor:3000,icon:'💎',name:'Diamante',amount:1000000},
+    {floor:3000,icon:'💎',name:'Diamante',amount:1000000,unlock:'🔓 Habilita Toro Oscuro, Toro Luz y Toro Maoma en la tienda'},
     {floor:7000,icon:'🚀',name:'Maestro Cósmico',amount:3000000},
-    {floor:12000,icon:'🌌',name:'Leyenda Galáctica',amount:10000000}
+    {floor:12000,icon:'🌌',name:'Leyenda Galáctica',amount:10000000,unlock:'🔓 Habilita Toro Mayor en la tienda'}
   ];
   const formatCoins=n=>Number(n||0).toLocaleString('es-CL');
   async function claimPvpRankReward(floor){
@@ -1727,8 +1731,11 @@
     });
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data?.ok)throw new Error(data?.error||'No se pudo reclamar el premio');
-    const applied=window.gallinaApplyCloudCoinReward?.(data.rewardId,data.amount);
-    if(!applied?.success)throw new Error('No se pudo aplicar el premio localmente');
+    if(data.claimed===true){
+      const applied=window.gallinaApplyCloudCoinReward?.(data.rewardId,data.amount);
+      if(!applied?.success)throw new Error('No se pudo aplicar el premio localmente');
+    }
+    window.gallinaSetPvpRankUnlocks?.(data.claimedRankRewards||[data.floor]);
     return data;
   }
   async function showPvpRanking(){
@@ -1742,6 +1749,7 @@
       if(!data?.ok||!Array.isArray(data.ranking))throw new Error('ranking');
       const ranking=data.ranking,meId=playerId(),myIndex=ranking.findIndex(x=>String(x.playerId)===meId),my=myIndex>=0?ranking[myIndex]:data.record;
       const cups=Number(my?.cups||0),claimed=new Set((data.claimedRankRewards||[]).map(Number));
+      window.gallinaSetPvpRankUnlocks?.([...claimed]);
       const current=[...PVP_RANK_REWARDS].reverse().find(x=>cups>=x.floor)||PVP_RANK_REWARDS[0];
       const next=PVP_RANK_REWARDS.find(x=>x.floor>cups);
       mine.replaceChildren();
@@ -1764,7 +1772,7 @@
           const row=document.createElement('div');
           row.style.cssText='display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 4px;border-top:1px solid rgba(148,163,184,.18);'+(isCurrent?'background:rgba(56,189,248,.10);':'');
           const label=document.createElement('div');
-          label.textContent=rank.icon+' '+rank.name+' · '+rank.floor+' copas'+(rank.amount?' · 🪙 '+formatCoins(rank.amount):' · Rango inicial');
+          label.textContent=rank.icon+' '+rank.name+' · '+rank.floor+' copas'+(rank.amount?' · 🪙 '+formatCoins(rank.amount):' · Rango inicial')+(rank.unlock?' · '+rank.unlock:'');
           const state=document.createElement('div');
           if(rank.floor===0){state.textContent='✅';}
           else if(isClaimed){state.textContent='✅ Reclamado';state.style.color='#86efac';}
