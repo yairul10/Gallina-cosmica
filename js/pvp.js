@@ -1246,12 +1246,11 @@
         if(Math.hypot(hitX-target.x,hitY-target.y)<30 && (!best||t<best.t))best={t,hitX,hitY};
       }
       if(best){
-        // Contra otro humano no fingimos un impacto en la pantalla del atacante:
-        // el defensor sigue siendo autoridad del daño. El proyectil continúa
-        // hasta recibir su trayectoria normal, reduciendo los falsos impactos
-        // causados por una posición remota ligeramente atrasada.
+        // El impacto visual es inmediato también contra humanos: el atacante
+        // corta su láser usando la última posición sincronizada del objetivo.
+        // Esto NO aplica daño; la vida sólo cambia con el hit-confirm validado
+        // por el servidor y originado por el dispositivo defensor.
         const bestPlayer=players.find(p=>Number(p.slot)!==mySlot&&!eliminated.has(Number(p.slot))&&Math.hypot(peerFor(p.slot).x-best.hitX,peerFor(p.slot).y-best.hitY)<31);
-        if(bestPlayer && !bestPlayer.bot) continue;
         // En partidas con bots 2v2/Arena, el bloque específico de daño que
         // viene a continuación debe consumir el proyectil y descontar la vida.
         // Si lo anulamos aquí, sólo queda el efecto visual y nunca llega daño.
