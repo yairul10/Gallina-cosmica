@@ -705,7 +705,8 @@
       if(Number(p.attackerSlot||0)!==mySlot)return;
       const kind=p.attackKind==='missile'?'missile':'laser';
       if(kind==='laser'){
-        const own=bullets.filter(b=>b.own&&b.life>0);
+        const confirmedShotId=String(p.shotId||'');
+        const own=bullets.filter(b=>b.own&&b.life>0&&(!confirmedShotId||String(b.shotId||'')===confirmedShotId));
         const hit=own.sort((a,b)=>Math.hypot(a.x-remote.x,a.y-remote.y)-Math.hypot(b.x-remote.x,b.y-remote.y))[0];
         if(hit){hit.life=0;hit.x=remote.x;hit.y=remote.y;impactFx.push({x:remote.x,y:remote.y,life:.32,maxLife:.32});}
       }
@@ -757,7 +758,7 @@
       if(selectedTargetSlot===Number(fromSlot))selectedTargetSlot=0;
       return;
     } else if(p.type==='shot'){
-      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam,0,String(p.shotId||''));
+      spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam,Number(p.targetSlot||0),String(p.shotId||''));
     } else if(p.type==='missile'){
       spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam,Number(p.targetSlot||0));
     }
@@ -777,7 +778,7 @@
     const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
     const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
     const sa=pvpMode==='1v1'&&mySlot===2?a+Math.PI:a;
-    send({type:'shot',shotId,x:sx,y:sy,angle:sa,ship:myShip});
+    send({type:'shot',shotId,targetSlot:Number(targetPlayer.slot),x:sx,y:sy,angle:sa,ship:myShip});
   }
   function spawnRemoteShot(x,y,a,ship,ownerSlot=0,ownerTeam=0,targetSlot=0,shotId=''){
     if(!Number.isFinite(x+y+a))return;
@@ -1303,7 +1304,10 @@
     }
 
     // Daño real: cada dispositivo sigue siendo autoridad de sus propias vidas.
-    // La comprobación continua evita que una bala recibida salte la nave entre frames.
+    // Los disparos humanos llegan asociados al objetivo seleccionado. Conservamos la
+    // colisión física, pero añadimos una tolerancia corta para absorber diferencias
+    // de red entre la posición dibujada y la posición autoritativa del defensor.
+    // Esquivar y los asteroides siguen anulando el disparo.
     for(const b of bullets){
       if(b.own||b.life<=0)continue;
       if(pvpMode==='2v2' && b.ownerTeam && b.ownerTeam===myTeam)continue;
@@ -1311,7 +1315,13 @@
       const dx=b.x-ax,dy=b.y-ay,den=dx*dx+dy*dy;
       const t=den>0?Math.max(0,Math.min(1,((meState.x-ax)*dx+(meState.y-ay)*dy)/den)):0;
       const hitX=ax+dx*t,hitY=ay+dy*t;
-      if(Math.hypot(hitX-meState.x,hitY-meState.y)<30){
+      const directHit=Math.hypot(hitX-meState.x,hitY-meState.y)<30;
+      const targetedAtMe=Number(b.targetSlot||0)===mySlot;
+      // 46 px sólo se usa para el disparo que realmente fue dirigido a este jugador.
+      // Evita el láser que atraviesa una nave por pequeñas discrepancias de sincronía,
+      // sin convertir disparos contra otros objetivos en impactos.
+      const networkTolerantHit=targetedAtMe&&Math.hypot(hitX-meState.x,hitY-meState.y)<46;
+      if(directHit||networkTolerantHit){
         if(now<evadeUntil){b.life=0;continue;}
         b.life=0;b.x=hitX;b.y=hitY;
         impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});
