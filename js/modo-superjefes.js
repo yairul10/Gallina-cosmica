@@ -288,6 +288,8 @@
         coins += 200000;
         gameStats.savedCoins = coins;
         gameStats.totalCoins += 200000;
+        // Superar Superjefes y Hordas desbloquea Arena PvP permanentemente.
+        gameStats.pvpUnlocked = true;
         saveStats();
         updateUpgradesHUD();
 
