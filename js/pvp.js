@@ -1718,9 +1718,9 @@
     {floor:200,icon:'🥉',name:'Bronce',amount:100000},
     {floor:500,icon:'🥈',name:'Plata',amount:200000},
     {floor:1000,icon:'🥇',name:'Oro',amount:500000},
-    {floor:3000,icon:'💎',name:'Diamante',amount:1000000,unlock:'🔓 Habilita Toro Oscuro, Toro Luz y Toro Maoma en la tienda'},
+    {floor:3000,icon:'💎',name:'Diamante',amount:1000000,unlock:'🔓 Nuevas naves disponibles en la tienda'},
     {floor:7000,icon:'🚀',name:'Maestro Cósmico',amount:3000000},
-    {floor:12000,icon:'🌌',name:'Leyenda Galáctica',amount:10000000,unlock:'🔓 Habilita Toro Mayor en la tienda'}
+    {floor:12000,icon:'🌌',name:'Leyenda Galáctica',amount:10000000,unlock:'🔓 Nueva nave disponible en la tienda'}
   ];
   const formatCoins=n=>Number(n||0).toLocaleString('es-CL');
   async function claimPvpRankReward(floor){
