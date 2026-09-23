@@ -1709,29 +1709,88 @@
     if(cups>=200)return '🥉 Bronce';
     return '🥚 Novato';
   }
+  const PVP_RANK_REWARDS=[
+    {floor:0,icon:'🥚',name:'Novato',amount:0},
+    {floor:200,icon:'🥉',name:'Bronce',amount:100000},
+    {floor:500,icon:'🥈',name:'Plata',amount:200000},
+    {floor:1000,icon:'🥇',name:'Oro',amount:500000},
+    {floor:3000,icon:'💎',name:'Diamante',amount:1000000},
+    {floor:7000,icon:'🚀',name:'Maestro Cósmico',amount:3000000},
+    {floor:12000,icon:'🌌',name:'Leyenda Galáctica',amount:10000000}
+  ];
+  const formatCoins=n=>Number(n||0).toLocaleString('es-CL');
+  async function claimPvpRankReward(floor){
+    const session=await window.getPlayGamesPvpSession?.();
+    if(!session?.token)throw new Error('Inicia sesión en Play Games');
+    const response=await fetch(PVP_HTTP_BASE+'/rank-reward?session='+encodeURIComponent(session.token),{
+      method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({floor:Number(floor)})
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data?.ok)throw new Error(data?.error||'No se pudo reclamar el premio');
+    const applied=window.gallinaApplyCloudCoinReward?.(data.rewardId,data.amount);
+    if(!applied?.success)throw new Error('No se pudo aplicar el premio localmente');
+    return data;
+  }
   async function showPvpRanking(){
     const panel=$('pvpRankingPanel'),list=$('pvpRankingList'),mine=$('pvpMyRecord');
     if(!panel||!list||!mine)return;
-    panel.style.display='block';list.textContent='Cargando…';mine.textContent='Cargando tu récord…';
-    const rewardBox=$('pvpRankingReward'); if(rewardBox)rewardBox.style.display='none';
+    panel.style.display='block';list.textContent='Cargando…';mine.textContent='Cargando tu rango…';
+    const rewardBox=$('pvpRankingReward');
+    if(rewardBox){rewardBox.style.display='block';rewardBox.textContent='Cargando ruta de rangos…';}
     try{
       const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId()),{cache:'no-store'}),data=await r.json();
       if(!data?.ok||!Array.isArray(data.ranking))throw new Error('ranking');
       const ranking=data.ranking,meId=playerId(),myIndex=ranking.findIndex(x=>String(x.playerId)===meId),my=myIndex>=0?ranking[myIndex]:data.record;
-      mine.textContent=my?'🏆 #'+(myIndex>=0?myIndex+1:'—')+' · '+Number(my.cups||0)+' copas · '+pvpRank(my.cups)+'\n☠️ '+Number(my.kills||0)+' · ✅ '+Number(my.wins||0)+' / ❌ '+Number(my.losses||0):'🏆 Aún no tienes partidas PvP.';
+      const cups=Number(my?.cups||0),claimed=new Set((data.claimedRankRewards||[]).map(Number));
+      const current=[...PVP_RANK_REWARDS].reverse().find(x=>cups>=x.floor)||PVP_RANK_REWARDS[0];
+      const next=PVP_RANK_REWARDS.find(x=>x.floor>cups);
+      mine.replaceChildren();
+      const title=document.createElement('div');title.style.cssText='font-weight:800;font-size:1.05rem;margin-bottom:6px;';
+      title.textContent=current.icon+' '+current.name+' · 🏆 '+cups+' copas';
+      mine.appendChild(title);
+      if(next){
+        const remain=Math.max(0,next.floor-cups),span=Math.max(1,next.floor-current.floor),pct=Math.max(0,Math.min(100,((cups-current.floor)/span)*100));
+        const info=document.createElement('div');info.textContent='Faltan '+remain+' copas para '+next.icon+' '+next.name;
+        const bar=document.createElement('div');bar.style.cssText='height:9px;background:rgba(148,163,184,.25);border-radius:999px;overflow:hidden;margin-top:6px;';
+        const fill=document.createElement('div');fill.style.cssText='height:100%;width:'+pct+'%;background:#38bdf8;border-radius:999px;';bar.appendChild(fill);
+        mine.append(info,bar);
+      }else{const max=document.createElement('div');max.textContent='🌌 ¡Rango máximo alcanzado!';mine.appendChild(max);}
+
+      if(rewardBox){
+        rewardBox.replaceChildren();
+        const heading=document.createElement('div');heading.textContent='🎁 Ruta de rangos y premios';heading.style.cssText='font-weight:800;margin-bottom:8px;color:#fbbf24;';rewardBox.appendChild(heading);
+        for(const rank of PVP_RANK_REWARDS){
+          const reached=cups>=rank.floor,isCurrent=rank.floor===current.floor,isClaimed=rank.floor===0||claimed.has(rank.floor);
+          const row=document.createElement('div');
+          row.style.cssText='display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 4px;border-top:1px solid rgba(148,163,184,.18);'+(isCurrent?'background:rgba(56,189,248,.10);':'');
+          const label=document.createElement('div');
+          label.textContent=rank.icon+' '+rank.name+' · '+rank.floor+' copas'+(rank.amount?' · 🪙 '+formatCoins(rank.amount):' · Rango inicial');
+          const state=document.createElement('div');
+          if(rank.floor===0){state.textContent='✅';}
+          else if(isClaimed){state.textContent='✅ Reclamado';state.style.color='#86efac';}
+          else if(!reached){state.textContent='🔒';}
+          else{
+            const btn=document.createElement('button');btn.className='btn';btn.style.cssText='padding:5px 9px;font-size:.72rem;margin:0;';btn.textContent='🎁 Reclamar';
+            btn.addEventListener('click',async()=>{
+              btn.disabled=true;btn.textContent='Procesando…';
+              try{const reward=await claimPvpRankReward(rank.floor);btn.textContent='✅ Reclamado';btn.className='';btn.style.cssText='color:#86efac;font-weight:700;';showStatus('🎁 Premio de '+rank.name+': +'+formatCoins(reward.amount)+' monedas.',true);setTimeout(showPvpRanking,250);}
+              catch(e){btn.disabled=false;btn.textContent='🎁 Reclamar';showStatus('⚠️ '+String(e?.message||'No se pudo reclamar.'),true);}
+            });
+            state.appendChild(btn);
+          }
+          row.append(label,state);rewardBox.appendChild(row);
+        }
+      }
+
       list.replaceChildren();
       if(!ranking.length){list.textContent='Todavía no hay jugadores en el ranking.';return;}
       ranking.slice(0,100).forEach((p,i)=>{
-        const row=document.createElement('div');
-        row.style.cssText='display:grid;grid-template-columns:32px 1fr auto;gap:6px;padding:7px 3px;border-top:1px solid rgba(148,163,184,.18);align-items:center;';
-        const pos=document.createElement('span'),name=document.createElement('span'),cups=document.createElement('span');
-        pos.textContent=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
-        name.textContent=String(p.name||'Jugador')+' · '+pvpRank(p.cups);
-        cups.textContent='🏆 '+Number(p.cups||0);
-        if(String(p.playerId)===meId)row.style.fontWeight='bold';
-        row.append(pos,name,cups);list.appendChild(row);
+        const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:32px 1fr auto;gap:6px;padding:7px 3px;border-top:1px solid rgba(148,163,184,.18);align-items:center;';
+        const pos=document.createElement('span'),name=document.createElement('span'),pcups=document.createElement('span');
+        pos.textContent=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);name.textContent=String(p.name||'Jugador')+' · '+pvpRank(p.cups);pcups.textContent='🏆 '+Number(p.cups||0);
+        if(String(p.playerId)===meId)row.style.fontWeight='bold';row.append(pos,name,pcups);list.appendChild(row);
       });
-    }catch{mine.textContent='No se pudo cargar el récord.';list.textContent='Intenta nuevamente en unos segundos.';}
+    }catch{mine.textContent='No se pudo cargar tu rango.';list.textContent='Intenta nuevamente en unos segundos.';if(rewardBox)rewardBox.textContent='No se pudo cargar la ruta de rangos.';}
   }
   window.openPvpRankingMenu = showPvpRanking;
   $('pvpRankingBtn')?.addEventListener('click',showPvpRanking);
