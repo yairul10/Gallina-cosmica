@@ -2105,8 +2105,10 @@
       qaPvpActive=false;qaPvpSpeed=1;stopArena();window.dispatchEvent(new CustomEvent('gallina-qa-pvp-result',{detail:report}));return true;
     },
     getQaSnapshot(){
-      const peerList=players.filter(p=>Number(p.slot)!==mySlot).map(p=>{const s=peerFor(p.slot);return {slot:Number(p.slot),bot:!!p.bot,team:Number(p.team||0),x:s.x,y:s.y,lives:s.lives,eliminated:eliminated.has(Number(p.slot))};});
-      return {active:qaPvpActive,running,finished:matchFinished,mode:pvpMode,speed:qaPvpSpeed,simulatedMs:qaPvpSimMs,lives:meState.lives,kills:matchKills,botKills:matchBotKills,bullets:bullets.length,missiles:missiles.length,impacts:impactFx.length,eliminated:[...eliminated],players:players.length,me:{x:meState.x,y:meState.y,lives:meState.lives,eliminated:meEliminated},peers:peerList,world:{width:worldWidth,height:worldHeight},zone:{elapsed:cosmicZoneElapsed,progress:cosmicZoneProgress}};}
+      const peerList=players.filter(p=>Number(p.slot)!==mySlot).map(p=>{const s=peerFor(p.slot);return {slot:Number(p.slot),bot:!!p.bot,team:Number(p.team||0),ship:p.ship||'Gallina',maxLives:pvpShipStats(p.ship||'Gallina').maxLives,x:s.x,y:s.y,lives:s.lives,eliminated:eliminated.has(Number(p.slot))};});
+      const myPlayer=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
+      const myMaxLives=pvpShipStats(myPlayer.ship||shipLabel()).maxLives;
+      return {active:qaPvpActive,running,finished:matchFinished,mode:pvpMode,speed:qaPvpSpeed,simulatedMs:qaPvpSimMs,lives:meState.lives,maxLives:myMaxLives,kills:matchKills,botKills:matchBotKills,bullets:bullets.length,missiles:missiles.length,impacts:impactFx.length,eliminated:[...eliminated],players:players.length,me:{slot:mySlot,ship:myPlayer.ship||shipLabel(),maxLives:myMaxLives,x:meState.x,y:meState.y,lives:meState.lives,eliminated:meEliminated},peers:peerList,world:{width:worldWidth,height:worldHeight},zone:{elapsed:cosmicZoneElapsed,progress:cosmicZoneProgress}};}
 
   };
 })();
