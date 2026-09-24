@@ -683,6 +683,9 @@ export class PvpRanking {
   }
 
   monthlyPrizeLocked(period,now=Date.now()){
+    // Excepción de lanzamiento: septiembre de 2026 queda editable hasta terminar el mes.
+    // Desde octubre de 2026 vuelve la regla normal: editable del 1 al 15.
+    if(period==='2026-09' && this.monthKey(now)==='2026-09')return false;
     return period!==this.monthKey(now) || this.chileDateParts(now).day>=16;
   }
 
