@@ -57,7 +57,7 @@
     try{s=window.GallinaPvp.getQaSnapshot();}catch(e){addAnomaly('snapshot-error','No se pudo leer el estado PvP: '+(e?.message||e));return;}
     if(!s.active)return;
     const finite=v=>typeof v==='number'&&Number.isFinite(v);
-    if(!finite(s.lives)||s.lives<0||s.lives>20)addAnomaly('lives','Vidas PvP inválidas: '+s.lives,s);
+    const localMax=Math.max(1,Number(s.maxLives||s.me?.maxLives)||20);\n    if(!finite(s.lives)||s.lives<0||s.lives>localMax)addAnomaly('lives','Vidas PvP inválidas: '+s.lives+' / '+localMax,s);
     if(!finite(s.simulatedMs)||s.simulatedMs<0)addAnomaly('clock','Reloj PvP inválido',s);
     const expected=s.mode==='1v1'?2:s.mode==='2v2'?4:s.mode==='arena'?5:10;
     if(s.players!==expected)addAnomaly('players',`Cantidad de jugadores incorrecta: ${s.players}/${expected}`,s);
@@ -66,7 +66,7 @@
     entities.forEach(e=>{
       if(!finite(e.x)||!finite(e.y)||!finite(e.lives))addAnomaly('entity-'+e.slot,'Nave con posición/vidas NaN o Infinity',s);
       else if(s.world&&(e.x<-100||e.x>s.world.width+100||e.y<-100||e.y>s.world.height+100))addAnomaly('outside-'+e.slot,'Nave fuera del área válida (slot '+(e.slot||'local')+')',s);
-      if(e.lives<0||e.lives>20)addAnomaly('peer-lives-'+e.slot,'Vidas fuera de rango en slot '+(e.slot||'local')+': '+e.lives,s);
+      const maxLives=Math.max(1,Number(e.maxLives)||20);\n      if(e.lives<0||e.lives>maxLives)addAnomaly('peer-lives-'+e.slot,'Vidas fuera de rango en slot '+(e.slot||'local')+': '+e.lives+' / '+maxLives,s);
     });
     if(s.bullets>500)addAnomaly('bullet-leak','Acumulación anormal de proyectiles: '+s.bullets,s);
     if(s.missiles>100)addAnomaly('missile-leak','Acumulación anormal de misiles: '+s.missiles,s);
