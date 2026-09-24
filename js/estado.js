@@ -254,7 +254,10 @@ function buildCloudProgressPayload() {
         owned_extras: getOwnedExtraIds(),
         equipped_extra: gameStats.extraModule && gameStats.equipExtraModule ? 'auto_life' : null,
         login_streak: Number(gameStats.loginStreak || 0),
-        last_login_date: gameStats.lastLoginDate ? String(gameStats.lastLoginDate) : null
+        last_login_date: gameStats.lastLoginDate ? String(gameStats.lastLoginDate) : null,
+        // Campo adicional compatible con servidores antiguos: si aún no lo persisten,
+        // el ranking PvP seguirá restaurando el nivel; cuando lo acepten queda protegido en nube.
+        pvp_highest_rank_level: Math.max(0, Math.min(6, Number(gameStats.pvpHighestRankLevel) || 0))
     };
 }
 
@@ -340,6 +343,9 @@ async function loadCloudProgress() {
 
         if (progress.equipped_ship) applyEquippedShipId(progress.equipped_ship);
         if (progress.equipped_extra === 'auto_life' && gameStats.extraModule) gameStats.equipExtraModule = true;
+        if (progress.pvp_highest_rank_level !== undefined && progress.pvp_highest_rank_level !== null) {
+            gameStats.pvpHighestRankLevel = Math.max(Number(gameStats.pvpHighestRankLevel || 0), Math.max(0, Math.min(6, Math.floor(Number(progress.pvp_highest_rank_level) || 0))));
+        }
 
         // La recompensa diaria pertenece al perfil cloud, no al navegador.
         // Si D1 ya tiene progreso, su racha y fecha son la fuente de verdad.
