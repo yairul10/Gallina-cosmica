@@ -1884,6 +1884,38 @@
     window.gallinaSetPvpRankUnlocks?.(data.claimedRankRewards||[data.floor]);
     return data;
   }
+  function seasonLabel(period){
+    const [y,m]=String(period||'').split('-').map(Number);
+    if(!y||!m)return String(period||'Temporada');
+    return new Intl.DateTimeFormat('es-CL',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(y,m-1,1))).replace(/^./,c=>c.toUpperCase());
+  }
+  function seasonDaysLeft(period){
+    const [y,m]=String(period||'').split('-').map(Number);if(!y||!m)return '';
+    const end=Date.UTC(y,m,1),days=Math.max(0,Math.ceil((end-Date.now())/86400000));
+    return days===1?'Termina en 1 día':'Termina en '+days+' días';
+  }
+  async function claimMonthlyPvpReward(award){
+    const session=await window.getPlayGamesPvpSession?.();
+    if(!session?.token)throw new Error('Inicia sesión en Play Games');
+    const response=await fetch(PVP_HTTP_BASE+'/monthly-reward?session='+encodeURIComponent(session.token),{
+      method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({period:award.period})
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data?.ok)throw new Error(data?.error||'No se pudo reclamar el premio mensual');
+    if(data.claimed===true){
+      const a=data.award||award,baseId=data.rewardId||('pvp-month-'+a.period);
+      if(Number(a.coins||0)>0){
+        const applied=window.gallinaApplyCloudCoinReward?.(baseId+'-coins',Number(a.coins));
+        if(!applied?.success)throw new Error('No se pudieron aplicar las monedas');
+      }
+      if(a.shipId){
+        const applied=window.gallinaApplyPvpShipReward?.(baseId+'-ship',a.shipId,Number(a.shipPrice||0),Number(a.duplicateRefundRate||.60));
+        if(!applied?.success)throw new Error('No se pudo aplicar la nave');
+      }
+    }
+    return data;
+  }
+
   async function showPvpRanking(){
     const panel=$('pvpRankingPanel'),list=$('pvpRankingList'),mine=$('pvpMyRecord');
     if(!panel||!list||!mine)return;
@@ -1894,8 +1926,24 @@
       const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId()),{cache:'no-store'}),data=await r.json();
       if(!data?.ok||!Array.isArray(data.ranking))throw new Error('ranking');
       const ranking=data.ranking,meId=playerId(),myIndex=ranking.findIndex(x=>String(x.playerId)===meId),my=myIndex>=0?ranking[myIndex]:data.record;
-      const cups=Number(my?.cups||0),claimed=new Set((data.claimedRankRewards||[]).map(Number));
+      const cups=Number(my?.cups||0),claimed=new Set((data.claimedRankRewards||[]).map(Number)),pendingMonthly=Array.isArray(data.pendingMonthly)?data.pendingMonthly:[];
       window.gallinaSetPvpRankUnlocks?.([...claimed]);
+      const season=document.createElement('div');
+      season.style.cssText='margin:8px 0;padding:10px;border:1px solid rgba(168,85,247,.45);border-radius:11px;background:linear-gradient(135deg,rgba(76,29,149,.34),rgba(15,23,42,.65));text-align:center;';
+      const seasonTitle=document.createElement('div');seasonTitle.style.cssText='font-weight:900;color:#e9d5ff;font-size:.92rem;';seasonTitle.textContent='🏆 Temporada '+seasonLabel(data.month);
+      const seasonTime=document.createElement('div');seasonTime.style.cssText='font-size:.72rem;color:#c4b5fd;margin-top:3px;';seasonTime.textContent=seasonDaysLeft(data.month)+' · '+ranking.length+' pilotos en Top 100';
+      season.append(seasonTitle,seasonTime);mine.parentNode?.insertBefore(season,mine);
+      mine.parentNode?.querySelectorAll('[data-pvp-season-card]').forEach(el=>el.remove());season.dataset.pvpSeasonCard='1';
+      if(pendingMonthly.length){
+        const award=pendingMonthly[0],prize=document.createElement('div');prize.dataset.pvpSeasonCard='1';
+        prize.style.cssText='margin:8px 0;padding:10px;border:1px solid rgba(251,191,36,.5);border-radius:11px;background:rgba(120,53,15,.22);text-align:center;font-size:.78rem;';
+        const parts=[];if(award.shipName)parts.push('🚀 '+award.shipName);if(Number(award.coins||0)>0)parts.push('🪙 '+formatCoins(award.coins));
+        prize.innerHTML='<b style="color:#fde68a">🎁 Premio de '+seasonLabel(award.period)+'</b><br><span>Puesto #'+award.position+' de '+award.totalParticipants+' · '+parts.join(' + ')+'</span>';
+        if(award.shipName){const note=document.createElement('div');note.style.cssText='font-size:.7rem;color:#fcd34d;margin-top:4px;';note.textContent='Si ya tienes la nave, recibes el 60% de su valor.';prize.appendChild(note);}
+        const btn=document.createElement('button');btn.className='btn';btn.style.cssText='margin-top:7px;padding:7px 10px;background:#b45309;';btn.textContent='🎁 Reclamar premio mensual';
+        btn.addEventListener('click',async()=>{btn.disabled=true;btn.textContent='Procesando…';try{const out=await claimMonthlyPvpReward(award);const a=out.award||award;btn.textContent='✅ Reclamado';showStatus('🏆 Premio mensual reclamado'+(a.shipName?' · '+a.shipName:'')+(a.coins?' · +'+formatCoins(a.coins)+' monedas':''),true);setTimeout(showPvpRanking,300);}catch(e){btn.disabled=false;btn.textContent='🎁 Reclamar premio mensual';showStatus('⚠️ '+String(e?.message||'No se pudo reclamar.'),true);}});
+        prize.appendChild(btn);mine.parentNode?.insertBefore(prize,mine.nextSibling);
+      }
       const current=[...PVP_RANK_REWARDS].reverse().find(x=>cups>=x.floor)||PVP_RANK_REWARDS[0];
       const next=PVP_RANK_REWARDS.find(x=>x.floor>cups);
       mine.replaceChildren();
