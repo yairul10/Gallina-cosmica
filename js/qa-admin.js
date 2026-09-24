@@ -1,7 +1,7 @@
 (() => {
   const BASE='https://gallina-cosmica-pvp-test.jairog940.workers.dev';
   const SHIPS=[
-    ['toro_aniquilador','Toro Aniquilador'],['toro_blindado','Toro Blindado'],['toro_baliza','Toro Baliza'],
+    ['','🚫 Sin nave'],['toro_aniquilador','Toro Aniquilador'],['toro_blindado','Toro Blindado'],['toro_baliza','Toro Baliza'],
     ['toro_oscuro','Toro Oscuro'],['toro_luz','Toro Luz'],['toro_maoma','Toro Maoma'],['toro_mayor','Toro Mayor']
   ];
   async function sessionToken(){
@@ -41,7 +41,7 @@
       '<label for="qaM610">🏆 6.º–10.º</label><input id="qaM610" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas">'+
       '<label for="qaM50">📈 Mitad superior restante</label><input id="qaM50" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas">'+
       '<label for="qaMRest">🎮 Resto de participantes</label><input id="qaMRest" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas"></div>'+
-      '<div style="font-size:.64rem;color:#fde68a;margin-top:5px">Puedes subir, bajar o dejar en 0 cualquier premio de monedas antes del bloqueo. La nave elegida se entrega a los puestos 1.º–5.º.</div>'+
+      '<div style="font-size:.64rem;color:#fde68a;margin-top:5px">Puedes subir, bajar o dejar en 0 cualquier premio de monedas antes del bloqueo. Si eliges “Sin nave”, los puestos 1.º–5.º reciben solo las monedas configuradas.</div>'+
       '<button id="qaMonthlySave" style="width:100%;margin-top:7px;padding:7px;border-radius:7px;border:1px solid #f59e0b;background:#78350f;color:#fde68a;font-weight:800">💾 Guardar premios del mes</button>'+
       '<div style="font-size:.66rem;color:#fcd34d;margin-top:4px">Regla normal: puedes cambiarlos del día 1 al 15; desde el 16 quedan bloqueados. Septiembre 2026 tiene una excepción de lanzamiento y permanece editable hasta fin de mes.</div>'+
       '<div id="qaAdminMsg" style="font-size:.72rem;margin-top:6px"></div><div id="qaAdminList" style="font-size:.7rem;margin-top:6px;max-height:120px;overflow:auto"></div>';
@@ -53,7 +53,7 @@
     const ids=['qaM1','qaM23','qaM45','qaM610','qaM50','qaMRest'].map(id=>box.querySelector('#'+id));
     const refresh=async()=>{try{const d=await window.qaAdminRequest('list');const arr=d.playerIds||[];list.textContent=arr.length?'QA autorizados:\n'+arr.join('\n'):'No hay cuentas QA adicionales.';}catch(e){msg.textContent='⚠️ '+e.message;}};
     const act=async(action)=>{const id=input.value.trim();if(!id){msg.textContent='⚠️ Ingresa un Player ID.';return;}try{await window.qaAdminRequest(action,id);msg.textContent=action==='add'?'✅ QA autorizado.':'✅ QA retirado.';input.value='';await refresh();}catch(e){msg.textContent='⚠️ '+e.message;}};
-    const loadMonthly=async()=>{try{const d=await monthlyRequest('GET'),c=d.config||{};ship.value=c.shipId||'toro_aniquilador';[c.first,c.secondThird,c.fourthFifth,c.sixthTenth,c.upperHalf,c.rest].forEach((v,i)=>ids[i].value=Number(v||0));const locked=!!c.locked;ship.disabled=locked;ids.forEach(x=>x.disabled=locked);save.disabled=locked;state.textContent=(locked?'🔒 Premios definitivos':(c.period==='2026-09'?'✏️ Premios editables · excepción de lanzamiento hasta fin de septiembre':'✏️ Premios editables hasta el día 15'))+' · Participantes actuales: '+Number(d.participants||0);}catch(e){state.textContent='⚠️ '+e.message;}};
+    const loadMonthly=async()=>{try{const d=await monthlyRequest('GET'),c=d.config||{};ship.value=Object.prototype.hasOwnProperty.call(c,'shipId')?(c.shipId||''):'toro_aniquilador';[c.first,c.secondThird,c.fourthFifth,c.sixthTenth,c.upperHalf,c.rest].forEach((v,i)=>ids[i].value=Number(v||0));const locked=!!c.locked;ship.disabled=locked;ids.forEach(x=>x.disabled=locked);save.disabled=locked;state.textContent=(locked?'🔒 Premios definitivos':(c.period==='2026-09'?'✏️ Premios editables · excepción de lanzamiento hasta fin de septiembre':'✏️ Premios editables hasta el día 15'))+' · Participantes actuales: '+Number(d.participants||0);}catch(e){state.textContent='⚠️ '+e.message;}};
     box.querySelector('#qaAdminAdd').onclick=()=>act('add');
     box.querySelector('#qaAdminRemove').onclick=()=>act('remove');
     box.querySelector('#qaAdminRefresh').onclick=refresh;
