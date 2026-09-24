@@ -382,6 +382,7 @@ export class PvpRoom {
               const winnerTeam=Number(bot.team)===1?2:1;
               this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:Number(bot.team)}); this.settleOfficialResults({winnerTeam,loserTeam:Number(bot.team)}); this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam),official:this.officialResult});
             }
+            if(!this.finished) this.simulate2v2BotsIfNoHumans();
           } else {
             if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
           }
@@ -435,6 +436,7 @@ export class PvpRoom {
               const winnerTeam = team === 1 ? 2 : 1;
               this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:team}); this.settleOfficialResults({winnerTeam,loserTeam:team}); this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam), official:this.officialResult });
             }
+            if(!this.finished) this.simulate2v2BotsIfNoHumans();
           } else {
             if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
           }
@@ -507,6 +509,41 @@ export class PvpRoom {
   }
 
   playerList() { return [...Array.from(this.players.values()), ...(this.botPlayer ? [this.botPlayer] : []), ...this.botPlayers]; }
+  simulate2v2BotsIfNoHumans() {
+    if (this.finished || this.mode !== "2v2" || !this.started) return false;
+    const alive=this.playerList().filter(p=>!this.eliminatedSlots.has(Number(p.slot)));
+    // Sólo resolver automáticamente cuando ya no queda ningún humano vivo.
+    if(!alive.length || alive.some(p=>!p.bot)) return false;
+    const team1=alive.filter(p=>Number(p.team)===1);
+    const team2=alive.filter(p=>Number(p.team)===2);
+    if(!team1.length || !team2.length){
+      const winnerTeam=team1.length?1:team2.length?2:0;
+      if(!winnerTeam)return false;
+      const loserTeam=winnerTeam===1?2:1;
+      this.finished=true;
+      this.officialResult=this.officialSnapshot({winnerTeam,loserTeam});
+      this.settleOfficialResults({winnerTeam,loserTeam});
+      this.broadcast({type:"team-result",winnerTeam,loserTeam,rewards:this.rewardList(winnerTeam),official:this.officialResult});
+      return true;
+    }
+    // Quedan bots de ambos equipos: simular el combate restante y cerrar la sala.
+    // Se elige un equipo ganador y se eliminan únicamente los bots rivales vivos.
+    const winnerTeam=Math.random()<.5?1:2, loserTeam=winnerTeam===1?2:1;
+    for(const dead of alive.filter(p=>Number(p.team)===loserTeam)){
+      const deadSlot=Number(dead.slot);
+      if(!this.eliminatedSlots.has(deadSlot)){
+        this.eliminationOrder.push(deadSlot);
+        this.eliminatedSlots.add(deadSlot);
+        this.broadcast({type:"player-eliminated",slot:deadSlot,team:loserTeam,reason:"simulation",killerSlot:0,attackKind:"laser"});
+      }
+    }
+    this.broadcast({type:"arena-simulated"});
+    this.finished=true;
+    this.officialResult=this.officialSnapshot({winnerTeam,loserTeam});
+    this.settleOfficialResults({winnerTeam,loserTeam});
+    this.broadcast({type:"team-result",winnerTeam,loserTeam,rewards:this.rewardList(winnerTeam),official:this.officialResult});
+    return true;
+  }
   simulateArenaBotsIfNoHumans() {
     if (this.finished || (this.mode !== "arena" && this.mode !== "arena10") || !this.started) return false;
     const list=this.playerList();
