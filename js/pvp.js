@@ -633,15 +633,16 @@
     const level=pvpRankFromCups(cups).level;
     const text=$('pvpRankSummaryText'),bar=$('pvpRankProgress'),next=$('pvpRankNext');
     if(text)text.textContent=names[level]+' · 🏆 '+Math.floor(cups)+' copas';
+    const superBossReward=window.gallinaSuperBossReward?.()||200000;
     if(level>=thresholds.length-1){
       if(bar)bar.style.width='100%';
-      if(next)next.textContent='Rango máximo alcanzado';
+      if(next)next.textContent='Rango máximo · 👾 Superjefes: '+superBossReward.toLocaleString('es-CL')+' 🪙';
       return;
     }
     const floor=thresholds[level],target=thresholds[level+1];
     const progress=Math.max(0,Math.min(100,((cups-floor)/(target-floor))*100));
     if(bar)bar.style.width=progress+'%';
-    if(next)next.textContent=Math.floor(cups)+' / '+target+' → '+names[level+1];
+    if(next)next.textContent=Math.floor(cups)+' / '+target+' → '+names[level+1]+' · 👾 Superjefes: '+superBossReward.toLocaleString('es-CL')+' 🪙';
   }
   async function syncPvpRankSummary(){
     renderPvpRankSummary();
