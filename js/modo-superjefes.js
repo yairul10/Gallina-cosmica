@@ -1,4 +1,4 @@
-/* Coordina el modo de Superjefes con 5 rondas progresivas, respiro limpio, reaparición, desvanecimiento suave y 200k monedas de recompensa al finalizar. */
+/* Coordina el modo de Superjefes con 5 rondas progresivas, respiro limpio, reaparición, desvanecimiento suave y recompensa final mejorable mediante rangos PvP. */
 (() => {
     let active = false;
     let hitCooldown = 0;
