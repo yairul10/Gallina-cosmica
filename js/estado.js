@@ -28,6 +28,14 @@ if (gameStats.equipExtraModule === undefined) gameStats.equipExtraModule = false
 if (gameStats.pvpEvade === undefined) gameStats.pvpEvade = false;
 if (gameStats.pvpEmergencyLife === undefined) gameStats.pvpEmergencyLife = false;
 if (gameStats.pvpHighestRankLevel === undefined) gameStats.pvpHighestRankLevel = 0;
+window.gallinaSuperBossReward = () => 200000 + Math.max(0, Math.min(6, Number(gameStats.pvpHighestRankLevel) || 0)) * 100000;
+window.gallinaRememberPvpRankLevel = (level) => {
+    const next = Math.max(0, Math.min(6, Math.floor(Number(level) || 0)));
+    if (next <= Number(gameStats.pvpHighestRankLevel || 0)) return false;
+    gameStats.pvpHighestRankLevel = next;
+    saveStats();
+    return true;
+};
 let moduleActiveInMatch = false;
 let moduleUsed = false;
 
