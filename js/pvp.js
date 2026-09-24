@@ -1825,7 +1825,11 @@
 
   $('openPvpBtn')?.addEventListener('click',async()=>{
     let admin=false;
-    try{admin=!!(await window.getQaAdminStatus?.())?.isAdmin;}catch{}
+    // Los jugadores que ya desbloquearon PvP deben entrar de inmediato.
+    // La consulta remota de administrador sólo es necesaria para saltar el bloqueo.
+    if(!gameStats?.pvpUnlocked){
+      try{admin=!!(await window.getQaAdminStatus?.())?.isAdmin;}catch{}
+    }
     if(!gameStats?.pvpUnlocked&&!admin){
       showStatus('🔒 Arena PvP bloqueada · supera Superjefes y Hordas para desbloquearla.',true);
       const msg=document.getElementById('superBossVictoryMessage');
