@@ -27,14 +27,15 @@ if (gameStats.extraModule === undefined) gameStats.extraModule = false;
 if (gameStats.equipExtraModule === undefined) gameStats.equipExtraModule = false;
 if (gameStats.pvpEvade === undefined) gameStats.pvpEvade = false;
 if (gameStats.pvpEmergencyLife === undefined) gameStats.pvpEmergencyLife = false;
-if (gameStats.pvpHighestRankLevel === undefined) gameStats.pvpHighestRankLevel = 0;
-window.gallinaSuperBossReward = () => 200000 + Math.max(0, Math.min(6, Number(gameStats.pvpHighestRankLevel) || 0)) * 100000;
-window.gallinaRememberPvpRankLevel = (level) => {
-    const next = Math.max(0, Math.min(6, Math.floor(Number(level) || 0)));
-    if (next <= Number(gameStats.pvpHighestRankLevel || 0)) return false;
-    gameStats.pvpHighestRankLevel = next;
-    saveStats();
-    return true;
+window.gallinaSuperBossReward = () => {
+    const cups = Math.max(0, Math.floor(Number(localStorage.getItem('gallina_pvp_cups_v1') || 0) || 0));
+    const thresholds = [0, 200, 500, 1000, 3000, 7000, 12000];
+    let level = 0;
+    for (let i = 1; i < thresholds.length; i++) {
+        if (cups >= thresholds[i]) level = i;
+        else break;
+    }
+    return 200000 + level * 100000;
 };
 let moduleActiveInMatch = false;
 let moduleUsed = false;
@@ -254,10 +255,7 @@ function buildCloudProgressPayload() {
         owned_extras: getOwnedExtraIds(),
         equipped_extra: gameStats.extraModule && gameStats.equipExtraModule ? 'auto_life' : null,
         login_streak: Number(gameStats.loginStreak || 0),
-        last_login_date: gameStats.lastLoginDate ? String(gameStats.lastLoginDate) : null,
-        // Campo adicional compatible con servidores antiguos: si aún no lo persisten,
-        // el ranking PvP seguirá restaurando el nivel; cuando lo acepten queda protegido en nube.
-        pvp_highest_rank_level: Math.max(0, Math.min(6, Number(gameStats.pvpHighestRankLevel) || 0))
+        last_login_date: gameStats.lastLoginDate ? String(gameStats.lastLoginDate) : null
     };
 }
 
@@ -343,9 +341,6 @@ async function loadCloudProgress() {
 
         if (progress.equipped_ship) applyEquippedShipId(progress.equipped_ship);
         if (progress.equipped_extra === 'auto_life' && gameStats.extraModule) gameStats.equipExtraModule = true;
-        if (progress.pvp_highest_rank_level !== undefined && progress.pvp_highest_rank_level !== null) {
-            gameStats.pvpHighestRankLevel = Math.max(Number(gameStats.pvpHighestRankLevel || 0), Math.max(0, Math.min(6, Math.floor(Number(progress.pvp_highest_rank_level) || 0))));
-        }
 
         // La recompensa diaria pertenece al perfil cloud, no al navegador.
         // Si D1 ya tiene progreso, su racha y fecha son la fuente de verdad.
