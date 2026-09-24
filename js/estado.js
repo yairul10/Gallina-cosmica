@@ -71,6 +71,25 @@ window.gallinaApplyCloudCoinReward = (rewardId, amount) => {
     return { success: true, applied: true, amount: coins };
 };
 
+window.gallinaApplyPvpShipReward = (rewardId, itemId, shipPrice=0, refundRate=.60) => {
+    const id=String(rewardId),ship=String(itemId||''),price=Math.max(0,Number(shipPrice)||0),rate=Math.max(0,Math.min(1,Number(refundRate)||0));
+    const allowed=['toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'];
+    if(!id||!allowed.includes(ship))return {success:false,invalid:true};
+    if(gameStats.cloudRewardIds.includes(id))return {success:true,alreadyApplied:true,itemId:ship,refund:0};
+    const alreadyOwned=!!gameStats.pvpShips?.[ship];
+    let refund=0;
+    if(alreadyOwned){
+        refund=Math.floor(price*rate);
+        if(refund>0){gameStats.savedCoins+=refund;gameStats.totalCoins+=refund;}
+    }else{
+        gameStats.pvpShips[ship]=true;
+    }
+    gameStats.cloudRewardIds.push(id);
+    saveStats();
+    window.refreshGallinaEquipmentUI?.();
+    return {success:true,applied:true,itemId:ship,alreadyOwned,refund};
+};
+
 window.gallinaApplyCloudItemReward = (rewardId, itemId) => {
     const id = String(rewardId);
     if (!id || itemId !== 'gallina_chile') return { success: false, invalid: true };
