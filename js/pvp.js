@@ -152,6 +152,16 @@
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
   const PVP_CUPS_KEY='gallina_pvp_cups_v1';
+  // Insignias visuales de rango: se usan tanto en el menú como junto a cada nave.
+  const PVP_RANKS=[
+    {floor:0,key:'novato',name:'Novato',asset:'assets/rango_novato.png'},
+    {floor:200,key:'bronce',name:'Bronce',asset:'assets/rango_bronce.png'},
+    {floor:500,key:'plata',name:'Plata',asset:'assets/rango_plata.png'},
+    {floor:1000,key:'oro',name:'Oro',asset:'assets/rango_oro.png'},
+    {floor:3000,key:'diamante',name:'Diamante',asset:'assets/rango_diamante.png'},
+    {floor:7000,key:'maestro',name:'Maestro Cósmico',asset:'assets/rango_maestro.png'},
+    {floor:12000,key:'leyenda',name:'Leyenda Galáctica',asset:'assets/rango_leyenda.png'}
+  ];
   const qaBotRankSelect=$('pvpQaBotRank');
   const qaBotRankWrap=$('pvpQaBotRankWrap');
   const QA_BOT_RANK_CUPS=[0,200,500,1000,3000,7000,12000];
@@ -212,10 +222,26 @@
   function getPvpCups(){const n=Number(localStorage.getItem(PVP_CUPS_KEY)||0);return Number.isFinite(n)?Math.max(0,Math.floor(n)):0;}
   function pvpRankFromCups(cups){
     const n=Math.max(0,Number(cups)||0);
-    const thresholds=[0,200,500,1000,3000,7000,12000];
     let level=0;
-    for(let i=1;i<thresholds.length;i++){if(n>=thresholds[i])level=i;else break;}
-    return {level};
+    for(let i=1;i<PVP_RANKS.length;i++){if(n>=PVP_RANKS[i].floor)level=i;else break;}
+    return {...PVP_RANKS[level],level};
+  }
+  function pvpRankFromPlayer(player){
+    const level=Number(player?.rankLevel);
+    if(Number.isFinite(level)&&level>=0&&level<PVP_RANKS.length)return {...PVP_RANKS[Math.floor(level)],level:Math.floor(level)};
+    return pvpRankFromCups(player?.cups);
+  }
+  function rankIconElement(rank,size=18){
+    const img=document.createElement('img');
+    img.src=rank.asset;img.alt=rank.name;img.width=size;img.height=size;
+    img.style.cssText='width:'+size+'px;height:'+size+'px;object-fit:contain;vertical-align:middle;flex:0 0 auto;';
+    return img;
+  }
+  function setRankLabel(element,rank,before='',after=''){
+    if(!element)return;
+    element.replaceChildren();
+    if(before)element.append(document.createTextNode(before));
+    element.append(rankIconElement(rank,18),document.createTextNode(' '+rank.name+after));
   }
   function currentGameStats(){
     // gameStats se declara con let en estado.js y no es propiedad de window.
@@ -628,21 +654,19 @@
   }
   function renderPvpRankSummary(cups=getPvpCups()){
     cups=Math.max(0,Number(cups)||0);
-    const thresholds=[0,200,500,1000,3000,7000,12000];
-    const names=['🥚 Novato','🥉 Bronce','🥈 Plata','🥇 Oro','💎 Diamante','🚀 Maestro Cósmico','🌌 Leyenda Galáctica'];
-    const level=pvpRankFromCups(cups).level;
+    const current=pvpRankFromCups(cups),level=current.level;
     const text=$('pvpRankSummaryText'),bar=$('pvpRankProgress'),next=$('pvpRankNext');
-    if(text)text.textContent=names[level]+' · 🏆 '+Math.floor(cups)+' copas';
+    if(text)setRankLabel(text,current,'',' · 🏆 '+Math.floor(cups)+' copas');
     const superBossReward=window.gallinaSuperBossReward?.()||200000;
-    if(level>=thresholds.length-1){
+    if(level>=PVP_RANKS.length-1){
       if(bar)bar.style.width='100%';
       if(next)next.textContent='Rango máximo · 👾 Superjefes: '+superBossReward.toLocaleString('es-CL')+' 🪙';
       return;
     }
-    const floor=thresholds[level],target=thresholds[level+1];
+    const floor=current.floor,target=PVP_RANKS[level+1].floor;
     const progress=Math.max(0,Math.min(100,((cups-floor)/(target-floor))*100));
     if(bar)bar.style.width=progress+'%';
-    if(next)next.textContent=Math.floor(cups)+' / '+target+' → '+names[level+1]+' · 👾 Superjefes: '+superBossReward.toLocaleString('es-CL')+' 🪙';
+    if(next)setRankLabel(next,PVP_RANKS[level+1],Math.floor(cups)+' / '+target+' → ',' · 👾 Superjefes: '+superBossReward.toLocaleString('es-CL')+' 🪙');
   }
   async function syncPvpRankSummary(){
     renderPvpRankSummary();
@@ -671,14 +695,7 @@
     saveStats?.();
   }
   function pvpRankName(cups){
-    cups=Number(cups||0);
-    if(cups>=12000)return '🌌 Leyenda Galáctica';
-    if(cups>=7000)return '🚀 Maestro Cósmico';
-    if(cups>=3000)return '💎 Diamante';
-    if(cups>=1000)return '🥇 Oro';
-    if(cups>=500)return '🥈 Plata';
-    if(cups>=200)return '🥉 Bronce';
-    return '🥚 Novato';
+    return pvpRankFromCups(cups).name;
   }
   function endArena(text,result='none',placement=0){
     if(matchFinished)return; matchFinished=true;
@@ -1590,6 +1607,20 @@
   const imageCache=new Map();
   function cachedImage(src){if(!imageCache.has(src)){const im=new Image();im.src=src;imageCache.set(src,im);}return imageCache.get(src);}
   function imageFor(label){return cachedImage(shipSrc(label));}
+  function drawRankedPlayerName(state,player){
+    const rank=pvpRankFromPlayer(player);
+    const prefix=pvpMode==='2v2'&&Number(player.team)===myTeam?'🤝 ':'⚔️ ';
+    const label=prefix+(player.name||('J'+player.slot));
+    const iconSize=16,gap=3,baseline=state.y-34;
+    arenaCtx.save();arenaCtx.font='bold 10px sans-serif';
+    const width=arenaCtx.measureText(label).width+iconSize+gap;
+    const left=state.x-width/2;
+    const icon=cachedImage(rank.asset);
+    if(icon.complete&&icon.naturalWidth)arenaCtx.drawImage(icon,left,baseline-iconSize+1,iconSize,iconSize);
+    arenaCtx.textAlign='left';arenaCtx.textBaseline='alphabetic';
+    arenaCtx.fillStyle=pvpMode==='2v2'&&Number(player.team)===myTeam?'#86efac':'#fca5a5';
+    arenaCtx.fillText(label,left+iconSize+gap,baseline);arenaCtx.restore();
+  }
   function drawShip(state,label){
     const im=imageFor(label);arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);
     if(im.complete&&im.naturalWidth)arenaCtx.drawImage(im,-26,-26,52,52);else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
@@ -1629,7 +1660,7 @@
       if(asteroidImage.complete&&asteroidImage.naturalWidth)arenaCtx.drawImage(asteroidImage,a.x-a.r*1.25,a.y-a.r*1.25,a.r*2.5,a.r*2.5);
       else{arenaCtx.save();arenaCtx.fillStyle='#64748b';arenaCtx.beginPath();arenaCtx.arc(a.x,a.y,a.r,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
     }
-    const mine=players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()};
+    const mine=players.find(p=>Number(p.slot)===mySlot)||{slot:mySlot,team:myTeam,ship:shipLabel(),name:identity().name||'Jugador',cups:getPvpCups()};
     for(const p of players){
       if(Number(p.slot)===mySlot)continue;
       const state=peerFor(p.slot);
@@ -1646,12 +1677,10 @@
         for(let i=0;i<3;i++){const q=(phase+i/3)%1;arenaCtx.globalAlpha=.75*(1-q);arenaCtx.strokeStyle='#67e8f9';arenaCtx.lineWidth=3;arenaCtx.beginPath();arenaCtx.arc(state.x,state.y,30+q*34,0,Math.PI*2);arenaCtx.stroke();}
         arenaCtx.restore();
       }
-      arenaCtx.save();arenaCtx.font='bold 10px sans-serif';arenaCtx.textAlign='center';
-      arenaCtx.fillStyle=pvpMode==='2v2'&&Number(p.team)===myTeam?'#86efac':'#fca5a5';
-      arenaCtx.fillText((pvpMode==='2v2'&&Number(p.team)===myTeam?'🤝 ':'⚔️ ')+(p.name||('J'+p.slot)),state.x,state.y-34);arenaCtx.restore();
+      drawRankedPlayerName(state,p);
     }
     if(performance.now()<hitFlashUntil){arenaCtx.save();arenaCtx.globalAlpha=.42;arenaCtx.fillStyle='#fff';arenaCtx.beginPath();arenaCtx.arc(meState.x,meState.y,30,0,Math.PI*2);arenaCtx.fill();arenaCtx.restore();}
-    if(!meEliminated) drawShip(meState,mine.ship);
+    if(!meEliminated){drawShip(meState,mine.ship);drawRankedPlayerName(meState,mine);}
     if(!meEliminated&&performance.now()<evadeUntil){
       const phase=(performance.now()%700)/700;
       arenaCtx.save();
@@ -1884,24 +1913,13 @@
     showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':pvpMode==='arena10'?'Modo Arena 10 · mapa 5×5, todos contra todos.':pvpMode==='arena'?'Modo Arena 5 · todos contra todos.':'Modo 1v1.');
   }));
   function pvpRank(cups){
-    cups=Math.max(0,Number(cups)||0);
-    if(cups>=12000)return '🌌 Leyenda Galáctica';
-    if(cups>=7000)return '🚀 Maestro Cósmico';
-    if(cups>=3000)return '💎 Diamante';
-    if(cups>=1000)return '🥇 Oro';
-    if(cups>=500)return '🥈 Plata';
-    if(cups>=200)return '🥉 Bronce';
-    return '🥚 Novato';
+    return pvpRankFromCups(cups).name;
   }
-  const PVP_RANK_REWARDS=[
-    {floor:0,icon:'🥚',name:'Novato',amount:0},
-    {floor:200,icon:'🥉',name:'Bronce',amount:100000},
-    {floor:500,icon:'🥈',name:'Plata',amount:200000},
-    {floor:1000,icon:'🥇',name:'Oro',amount:500000},
-    {floor:3000,icon:'💎',name:'Diamante',amount:1000000,unlock:'🔓 Nuevas naves disponibles en la tienda'},
-    {floor:7000,icon:'🚀',name:'Maestro Cósmico',amount:3000000},
-    {floor:12000,icon:'🌌',name:'Leyenda Galáctica',amount:10000000,unlock:'🔓 Nueva nave disponible en la tienda'}
-  ];
+  const PVP_RANK_REWARDS=PVP_RANKS.map((rank,index)=>({
+    ...rank,
+    amount:[0,100000,200000,500000,1000000,3000000,10000000][index],
+    unlock:index===4?'🔓 Nuevas naves disponibles en la tienda':index===6?'🔓 Nueva nave disponible en la tienda':''
+  }));
   const formatCoins=n=>Number(n||0).toLocaleString('es-CL');
   async function claimPvpRankReward(floor){
     const session=await window.getPlayGamesPvpSession?.();
@@ -1996,11 +2014,11 @@
       const next=PVP_RANK_REWARDS.find(x=>x.floor>cups);
       mine.replaceChildren();
       const title=document.createElement('div');title.style.cssText='font-weight:800;font-size:1.05rem;margin-bottom:6px;';
-      title.textContent=current.icon+' '+current.name+' · 🏆 '+cups+' copas';
+      title.append(rankIconElement(current,22),document.createTextNode(' '+current.name+' · 🏆 '+cups+' copas'));
       mine.appendChild(title);
       if(next){
         const remain=Math.max(0,next.floor-cups),span=Math.max(1,next.floor-current.floor),pct=Math.max(0,Math.min(100,((cups-current.floor)/span)*100));
-        const info=document.createElement('div');info.textContent='Faltan '+remain+' copas para '+next.icon+' '+next.name;
+        const info=document.createElement('div');info.append(document.createTextNode('Faltan '+remain+' copas para '),rankIconElement(next,17),document.createTextNode(' '+next.name));
         const bar=document.createElement('div');bar.style.cssText='height:9px;background:rgba(148,163,184,.25);border-radius:999px;overflow:hidden;margin-top:6px;';
         const fill=document.createElement('div');fill.style.cssText='height:100%;width:'+pct+'%;background:#38bdf8;border-radius:999px;';bar.appendChild(fill);
         mine.append(info,bar);
@@ -2016,7 +2034,7 @@
           const label=document.createElement('div');
           label.style.cssText='line-height:1.35;';
           const rankLine=document.createElement('div');
-          rankLine.textContent=rank.icon+' '+rank.name+' · '+rank.floor+' copas';
+          rankLine.append(rankIconElement(rank,18),document.createTextNode(' '+rank.name+' · '+rank.floor+' copas'));
           if(rank.amount){
             const reward=document.createElement('span');
             reward.textContent=' · '+formatCoins(rank.amount)+'\u00A0🪙';
@@ -2057,7 +2075,9 @@
       ranking.slice(0,100).forEach((p,i)=>{
         const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:32px 1fr auto;gap:6px;padding:7px 3px;border-top:1px solid rgba(148,163,184,.18);align-items:center;';
         const pos=document.createElement('span'),name=document.createElement('span'),pcups=document.createElement('span');
-        pos.textContent=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);name.textContent=String(p.name||'Jugador')+' · '+pvpRank(p.cups);pcups.textContent='🏆 '+Number(p.cups||0);
+        pos.textContent=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+        const rank=pvpRankFromCups(p.cups);
+        name.append(document.createTextNode(String(p.name||'Jugador')+' · '),rankIconElement(rank,17),document.createTextNode(' '+rank.name));pcups.textContent='🏆 '+Number(p.cups||0);
         if(String(p.playerId)===meId)row.style.fontWeight='bold';row.append(pos,name,pcups);list.appendChild(row);
       });
     }catch{mine.textContent='No se pudo cargar tu rango.';list.textContent='Intenta nuevamente en unos segundos.';if(rewardBox)rewardBox.textContent='No se pudo cargar la ruta de rangos.';}
