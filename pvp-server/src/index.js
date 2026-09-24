@@ -694,9 +694,9 @@ export class PvpRanking {
     const saved=(await this.ctx.storage.get('monthlyPrizeConfig:'+period))||{};
     return {
       period,
-      shipId:saved.shipId||base.shipId,
-      shipName:saved.shipName||base.shipName,
-      shipPrice:Number(saved.shipPrice||base.shipPrice),
+      shipId:Object.prototype.hasOwnProperty.call(saved,'shipId')?saved.shipId:base.shipId,
+      shipName:Object.prototype.hasOwnProperty.call(saved,'shipId')?(saved.shipName||null):base.shipName,
+      shipPrice:Object.prototype.hasOwnProperty.call(saved,'shipId')?Number(saved.shipPrice||0):base.shipPrice,
       first:Number(saved.first??10000000),
       secondThird:Number(saved.secondThird??5000000),
       fourthFifth:Number(saved.fourthFifth??0),
@@ -782,14 +782,14 @@ export class PvpRanking {
       if(request.method!=='POST')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
       if(this.monthlyPrizeLocked(period,now))return json({ok:false,error:'MONTHLY_PRIZES_LOCKED',locked:true,editableUntilDay:15},423);
       let body;try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
-      const catalog=['toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'];
+      const catalog=['','toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'];
       const shipId=safeText(body?.shipId,'',40);
       if(!catalog.includes(shipId))return json({ok:false,error:'BAD_SHIP'},400);
       const ship=this.monthlyPrizeCatalog(period);
       const names={toro_aniquilador:'Toro Aniquilador',toro_blindado:'Toro Blindado',toro_baliza:'Toro Baliza',toro_oscuro:'Toro Oscuro',toro_luz:'Toro Luz',toro_maoma:'Toro Maoma',toro_mayor:'Toro Mayor'};
       const prices={toro_aniquilador:1500000,toro_blindado:1500000,toro_baliza:1500000,toro_oscuro:15000000,toro_luz:15000000,toro_maoma:15000000,toro_mayor:50000000};
       const money=v=>Math.max(0,Math.min(1000000000,Math.floor(Number(v)||0)));
-      const config={period,shipId,shipName:names[shipId],shipPrice:prices[shipId],first:money(body.first),secondThird:money(body.secondThird),fourthFifth:money(body.fourthFifth),sixthTenth:money(body.sixthTenth),upperHalf:money(body.upperHalf),rest:money(body.rest),updatedAt:now};
+      const config={period,shipId,shipName:shipId?names[shipId]:null,shipPrice:shipId?prices[shipId]:0,first:money(body.first),secondThird:money(body.secondThird),fourthFifth:money(body.fourthFifth),sixthTenth:money(body.sixthTenth),upperHalf:money(body.upperHalf),rest:money(body.rest),updatedAt:now};
       await this.ctx.storage.put('monthlyPrizeConfig:'+period,config);
       return json({ok:true,config:{...config,locked:false,editableUntilDay:15},participants:this.sort(state.players).filter(p=>Number(p.monthMatches||0)>0).length});
     }
