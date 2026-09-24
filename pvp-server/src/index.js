@@ -667,6 +667,28 @@ export class PvpRanking {
     return {name:'Novato',icon:'🥚',floor:0};
   }
 
+  monthlyPrizeCatalog(period){
+    const monthlyShips=['toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'];
+    const names={toro_aniquilador:'Toro Aniquilador',toro_blindado:'Toro Blindado',toro_baliza:'Toro Baliza',toro_oscuro:'Toro Oscuro',toro_luz:'Toro Luz',toro_maoma:'Toro Maoma',toro_mayor:'Toro Mayor'};
+    const prices={toro_aniquilador:1500000,toro_blindado:1500000,toro_baliza:1500000,toro_oscuro:15000000,toro_luz:15000000,toro_maoma:15000000,toro_mayor:50000000};
+    const [year,monthNo]=String(period).split('-').map(Number);
+    const shipId=monthlyShips[Math.max(0,((year*12+monthNo-1)%monthlyShips.length))];
+    return {shipId,shipName:names[shipId],shipPrice:prices[shipId]};
+  }
+
+  buildMonthlyAwards(period,players,monthlyAwards,now=Date.now()){
+    const participants=this.sort(players).filter(p=>Number(p.monthMatches||0)>0);
+    const {shipId,shipName,shipPrice}=this.monthlyPrizeCatalog(period);
+    const topHalf=Math.ceil(participants.length/2);
+    participants.forEach((p,i)=>{
+      const position=i+1,key='month:'+period+':'+p.playerId;
+      const coins=position===1?10000000:position<=3?5000000:position<=5?0:position<=10?5000000:position<=topHalf?2000000:1000000;
+      const ship=position<=5?shipId:null;
+      if(!monthlyAwards[key])monthlyAwards[key]={type:'monthly-ranking',period,playerId:p.playerId,position,totalParticipants:participants.length,coins,shipId:ship,shipName:ship?shipName:null,shipPrice:ship?shipPrice:0,duplicateRefundRate:.60,claimed:false,createdAt:now};
+    });
+    return {participants,shipId,shipName};
+  }
+
   async rollover(now=Date.now()){
     const month=this.monthKey(now);
     let activeMonth=await this.ctx.storage.get('singleRankingMonth');
@@ -676,24 +698,9 @@ export class PvpRanking {
     if(!activeMonth){
       activeMonth=month;
     } else if(activeMonth!==month){
-      // Cierre mensual: todos los jugadores que hayan disputado al menos una
-      // partida durante la temporada reciben premio. Top 1-5 comparten la nave
-      // fuerte del mes; el resto se divide entre la mitad superior e inferior.
-      const participants=this.sort(players).filter(p=>Number(p.monthMatches||0)>0);
-      const monthlyShips=['toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'];
-      const monthlyShipNames={toro_aniquilador:'Toro Aniquilador',toro_blindado:'Toro Blindado',toro_baliza:'Toro Baliza',toro_oscuro:'Toro Oscuro',toro_luz:'Toro Luz',toro_maoma:'Toro Maoma',toro_mayor:'Toro Mayor'};
-      const monthlyShipPrices={toro_aniquilador:1500000,toro_blindado:1500000,toro_baliza:1500000,toro_oscuro:15000000,toro_luz:15000000,toro_maoma:15000000,toro_mayor:50000000};
-      const [year,monthNo]=String(activeMonth).split('-').map(Number);
-      const shipId=monthlyShips[Math.max(0,((year*12+monthNo-1)%monthlyShips.length))];
-      const shipName=monthlyShipNames[shipId],shipPrice=monthlyShipPrices[shipId];
-      const topHalf=Math.ceil(participants.length/2);
-      participants.forEach((p,i)=>{
-        const position=i+1,key='month:'+activeMonth+':'+p.playerId;
-        let coins=position===1?10000000:position<=3?5000000:position<=5?0:position<=10?5000000:position<=topHalf?2000000:1000000;
-        const ship=position<=5?shipId:null;
-        if(!monthlyAwards[key]) monthlyAwards[key]={type:'monthly-ranking',period:activeMonth,playerId:p.playerId,position,totalParticipants:participants.length,coins,shipId:ship,shipName:ship?shipName:null,shipPrice:ship?shipPrice:0,duplicateRefundRate:.60,claimed:false,createdAt:now};
-      });
-      await this.ctx.storage.put('lastMonth',{period:activeMonth,ranking:participants.slice(0,100),participants:participants.length,shipId,shipName,closedAt:now});
+      // Cierre mensual automático. Usa el mismo generador que el cierre manual QA.
+      const monthly=this.buildMonthlyAwards(activeMonth,players,monthlyAwards,now);
+      await this.ctx.storage.put('lastMonth',{period:activeMonth,ranking:monthly.participants.slice(0,100),participants:monthly.participants.length,shipId:monthly.shipId,shipName:monthly.shipName,closedAt:now});
       for(const p of Object.values(players)){
         const cups=Math.max(0,Number(p.cups||0));
         // Novato, Bronce y Plata conservan sus copas. Desde Oro se vuelve al piso del rango.
@@ -732,6 +739,16 @@ export class PvpRanking {
       return json({ok:true,playerIds:[...ids].sort()});
     }
     const state=await this.rollover();
+
+    if(url.pathname==='/qa-close-month' && request.headers.get('x-pvp-internal')==='qa-admin'){
+      if(request.method!=='POST')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
+      let body;try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
+      const period=safeText(body?.period,state.activeMonth,16);
+      if(period!==state.activeMonth)return json({ok:false,error:'ACTIVE_MONTH_ONLY'},400);
+      const monthly=this.buildMonthlyAwards(period,state.players,state.monthlyAwards,Date.now());
+      await this.ctx.storage.put({monthlyAwards:state.monthlyAwards,lastMonth:{period,ranking:monthly.participants.slice(0,100),participants:monthly.participants.length,shipId:monthly.shipId,shipName:monthly.shipName,closedAt:Date.now(),manual:true}});
+      return json({ok:true,period,participants:monthly.participants.length,shipId:monthly.shipId,shipName:monthly.shipName,awardsCreated:monthly.participants.length});
+    }
 
     if(request.method==='GET'){
       const ranking=this.sort(state.players).slice(0,100).map(p=>({...p,rank:this.rankFor(p.cups)}));
@@ -990,6 +1007,17 @@ export default {
       if (request.method !== "GET") return json({ ok:false, error:"RANKING_READ_ONLY" }, 405);
       const id = env.PVP_RANKING.idFromName("global");
       return env.PVP_RANKING.get(id).fetch(request);
+    }
+    if (url.pathname === "/qa/monthly-close") {
+      if(request.method!=="POST")return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
+      const admin=await requireAdminSession(request,env);
+      if(!admin?.ok)return json({ok:false,error:admin?.error||"ADMIN_REQUIRED"},admin?.status||403);
+      let body;try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}
+      const rankingId=env.PVP_RANKING.idFromName("global");
+      return env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/qa-close-month",{
+        method:"POST",headers:{"content-type":"application/json","x-pvp-internal":"qa-admin"},
+        body:JSON.stringify({period:String(body?.period||"")})
+      });
     }
     if (url.pathname === "/monthly-reward") {
       if(request.method!=="POST")return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
