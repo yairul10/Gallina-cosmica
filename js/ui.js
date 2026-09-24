@@ -222,10 +222,22 @@ function updateShopUI() {
         else{btn.textContent=(pvpAdminPreview?'🧪 QA · ':'')+'🪙 '+rule.cost.toLocaleString('es-CL');btn.style.background='#10b981';btn.disabled=coins<rule.cost;}
     });
 
+    const pvpExtrasVisible=!!gameStats.pvpUnlocked;
+    const evadeShopCard=document.getElementById('shop-pvp-evade-card');
+    const emergencyShopCard=document.getElementById('shop-pvp-emergency-life-card');
+    if(evadeShopCard)evadeShopCard.style.display=pvpExtrasVisible?'flex':'none';
+    if(emergencyShopCard)emergencyShopCard.style.display=pvpExtrasVisible?'flex':'none';
+
     let bEvade = document.getElementById('btn-buy-pvp-evade');
     if (bEvade) {
         if (gameStats.pvpEvade) { bEvade.textContent = 'Comprado'; bEvade.style.background = '#475569'; bEvade.disabled = true; }
         else { bEvade.textContent = '🪙 500,000'; bEvade.style.background = '#10b981'; bEvade.disabled = (coins < 500000); }
+    }
+
+    let bEmergency = document.getElementById('btn-buy-pvp-emergency-life');
+    if (bEmergency) {
+        if (gameStats.pvpEmergencyLife) { bEmergency.textContent = 'Comprado'; bEmergency.style.background = '#475569'; bEmergency.disabled = true; }
+        else { bEmergency.textContent = '🪙 20,000,000'; bEmergency.style.background = '#10b981'; bEmergency.disabled = (coins < 20000000 || !gameStats.pvpUnlocked); }
     }
 
     let bAuto = document.getElementById('btn-buy-autolife');
@@ -260,7 +272,8 @@ window.buyPvpShip = function(id) {
     if(!gameStats.pvpShips?.[id]&&coins>=cost){coins-=cost;gameStats.savedCoins=coins;gameStats.pvpShips[id]=true;saveStats();updateShopUI();updateHangarUI();}
 }
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
-window.buyPvpEvade = function() { if (!gameStats.pvpEvade && coins >= 500000) { coins -= 500000; gameStats.savedCoins = coins; gameStats.pvpEvade = true; saveStats(); updateShopUI(); } }
+window.buyPvpEvade = function() { if (gameStats.pvpUnlocked && !gameStats.pvpEvade && coins >= 500000) { coins -= 500000; gameStats.savedCoins = coins; gameStats.pvpEvade = true; saveStats(); updateShopUI(); } }
+window.buyPvpEmergencyLife = function() { if (gameStats.pvpUnlocked && !gameStats.pvpEmergencyLife && coins >= 20000000) { coins -= 20000000; gameStats.savedCoins = coins; gameStats.pvpEmergencyLife = true; saveStats(); updateShopUI(); } }
 window.buyAutoLife = function() { if (!gameStats.extraModule && coins >= 50000) { coins -= 50000; gameStats.savedCoins = coins; gameStats.extraModule = true; gameStats.equipExtraModule = true; saveStats(); updateShopUI(); } }
 
 const trophyData = { '20k': { name: '🥉 Pollito de Bronce', lock: 'Consigue 20,000 pts', unlock: 'Lograste 20,000 pts.', key: 't20k' }, '50k': { name: '🥈 Lana de Plata', lock: 'Consigue 50,000 pts', unlock: 'Lograste 50,000 pts.', key: 't50k' }, '100k': { name: '🏅 Herradura de Oro', lock: 'Consigue 100,000 pts', unlock: 'Lograste 100,000 pts.', key: 't100k' }, '200k': { name: '🏆 Leche Legendaria', lock: 'Consigue 200,000 pts', unlock: 'Lograste 200,000 pts.', key: 't200k' }, '300k': { name: '💎 Gallina de Diamante', lock: 'Consigue 300,000 pts', unlock: 'Lograste 300,000 pts.', key: 't300k' } };
