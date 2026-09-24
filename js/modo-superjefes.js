@@ -284,10 +284,11 @@
         dragPointerId = null;
         if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
         
-        // Premio actualizado a 200,000 monedas
-        coins += 200000;
+        // El premio base de 200k aumenta permanentemente +100k por cada rango PvP alcanzado.
+        const superBossReward = typeof window.gallinaSuperBossReward === 'function' ? window.gallinaSuperBossReward() : 200000;
+        coins += superBossReward;
         gameStats.savedCoins = coins;
-        gameStats.totalCoins += 200000;
+        gameStats.totalCoins += superBossReward;
         // Superar Superjefes y Hordas desbloquea Arena PvP permanentemente.
         gameStats.pvpUnlocked = true;
         saveStats();
@@ -298,7 +299,7 @@
         });
         const victoryMessage = document.getElementById('superBossVictoryMessage');
         if (victoryMessage) {
-            victoryMessage.textContent = '🏆 ¡Superjefes derrotados! +200,000 🪙';
+            victoryMessage.textContent = '🏆 ¡Superjefes derrotados! +' + superBossReward.toLocaleString('es-CL') + ' 🪙';
             victoryMessage.classList.add('show');
         }
         document.getElementById('startScreen').style.display = 'flex';
