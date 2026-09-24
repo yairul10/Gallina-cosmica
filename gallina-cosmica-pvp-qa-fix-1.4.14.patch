@@ -1,0 +1,225 @@
+diff --git a/.github/workflows/build-apk.yml b/.github/workflows/build-apk.yml
+index d48f0be..105d7de 100644
+--- a/.github/workflows/build-apk.yml
++++ b/.github/workflows/build-apk.yml
+@@ -91,8 +91,8 @@ jobs:
+           from pathlib import Path
+           p = Path("android/app/build.gradle")
+           s = p.read_text()
+-          s = s.replace("versionCode 1", "versionCode 43")
+-          s = s.replace('versionName "1.0"', 'versionName "1.4.13"')
++          s = s.replace("versionCode 1", "versionCode 44")
++          s = s.replace('versionName "1.0"', 'versionName "1.4.14"')
+           p.write_text(s)
+           PY2
+
+diff --git a/index.html b/index.html
+index 6d1af45..415fd6b 100644
+--- a/index.html
++++ b/index.html
+@@ -281,10 +281,10 @@
+     <script src="js/main.js?v=auto-record-fix-2"></script>
+     <script src="js/superjefe-maiz.js"></script>
+     <script src="js/modo-superjefes.js?v=superboss-pvp-unlock-1"></script>
+-    <script src="js/pvp.js?v=pvp-monthly-rewards-3"></script>
+-    <script src="js/qa-mode.js?v=qa-session-stable-11"></script>
+-    <script src="js/qa-pvp.js?v=2"></script>
+-    <script src="js/qa-admin.js?v=monthly-rewards-2"></script>
+-    <script src="js/qa-panel-toggle.js?v=3"></script>
++    <script src="js/pvp.js?v=pvp-syntax-fix-4"></script>
++    <script src="js/qa-mode.js?v=qa-split-panels-12"></script>
++    <script src="js/qa-pvp.js?v=qa-split-panels-3"></script>
++    <script src="js/qa-admin.js?v=qa-split-panels-3"></script>
++    <script src="js/qa-panel-toggle.js?v=qa-split-panels-4"></script>
+ </body>
+ </html>
+diff --git a/js/pvp.js b/js/pvp.js
+index 0c265ea..86b9c87 100644
+--- a/js/pvp.js
++++ b/js/pvp.js
+@@ -1943,7 +1943,7 @@
+       seasonPrizes.innerHTML='<div style="font-weight:900;color:#fde68a;margin-bottom:4px">🎁 Premios de la temporada</div>'+
+         '<div>🥇 1.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.first)+'</div>'+
+         '<div>🥈 2.º–3.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.secondThird)+'</div>'+
+-        '<div>🏅 4.º–5.º: 🚀 '+String(cfg.shipName||'Nave del mes)+(Number(cfg.fourthFifth||0)>0?' + '+coin(cfg.fourthFifth):'')+'</div>'+
++        '<div>🏅 4.º–5.º: 🚀 '+String(cfg.shipName||'Nave del mes')+(Number(cfg.fourthFifth||0)>0 ? ' + '+coin(cfg.fourthFifth) : '')+'</div>'+
+         '<div>🎖️ 6.º–10.º: '+coin(cfg.sixthTenth)+'</div>'+
+         '<div>⭐ 50% superior restante: '+coin(cfg.upperHalf)+'</div>'+
+         '<div>🎁 Resto de participantes: '+coin(cfg.rest)+'</div>'+
+diff --git a/js/qa-admin.js b/js/qa-admin.js
+index 6f45b43..a2c623c 100644
+--- a/js/qa-admin.js
++++ b/js/qa-admin.js
+@@ -22,11 +22,18 @@
+     if(document.getElementById('qaAdminPanel'))return;
+     const status=await window.getQaAdminStatus?.();
+     if(!status?.isAdmin)return;
+-    const panel=document.getElementById('qaModePanel');
+-    if(!panel)return;
+-    const box=document.createElement('div'); box.id='qaAdminPanel';
+-    box.style.cssText='margin-top:10px;padding:9px;border:1px solid rgba(250,204,21,.65);border-radius:10px;background:rgba(66,32,6,.32)';
+-    box.innerHTML='<div style="font-weight:900;margin-bottom:6px">🔐 Administrador QA</div>'+
++    const dock=window.GallinaQaPanelDock?.dock||document.getElementById('qaPanelDock');
++    if(!dock)return;
++    const box=document.createElement('section'); box.id='qaAdminPanel';
++    box.style.cssText='width:min(310px,calc(100vw - 16px));box-sizing:border-box;padding:7px;background:rgba(2,11,39,.94);border:1px solid rgba(250,204,21,.75);border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,.45);color:#e2e8f0;font:700 11px/1.25 sans-serif';
++    const header=document.createElement('div');
++    header.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:6px;color:#fbbf24;font-size:12px';
++    const headerText=document.createElement('span');headerText.textContent='🔐 QA administrador';
++    const toggle=document.createElement('button');toggle.type='button';toggle.textContent='🔐 QA administrador';toggle.title='Abrir QA administrador';
++    toggle.style.cssText='border:1px solid #fbbf24;border-radius:6px;background:#0f172a;color:#fde68a;min-width:27px;height:26px;padding:0 8px;font:800 11px/1 sans-serif;cursor:pointer';
++    header.append(headerText,toggle);
++    const body=document.createElement('div');body.id='qaAdminPanelBody';body.style.cssText='margin-top:7px';
++    body.innerHTML='<div style="font-weight:900;margin-bottom:6px">🔐 Administrador QA</div>'+
+       '<div style="font-size:.72rem;margin-bottom:6px">Tu Player ID: <span id="qaAdminMyId"></span></div>'+
+       '<input id="qaAdminId" placeholder="Player ID a autorizar" inputmode="numeric" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:7px;border-radius:7px">'+
+       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button id="qaAdminAdd">➕ Autorizar</button><button id="qaAdminRemove">🗑️ Quitar</button><button id="qaAdminRefresh">↻</button></div>'+
+@@ -45,7 +52,22 @@
+       '<button id="qaMonthlySave" style="width:100%;margin-top:7px;padding:7px;border-radius:7px;border:1px solid #f59e0b;background:#78350f;color:#fde68a;font-weight:800">💾 Guardar premios del mes</button>'+
+       '<div style="font-size:.66rem;color:#fcd34d;margin-top:4px">Regla normal: puedes cambiarlos del día 1 al 15; desde el 16 quedan bloqueados. Septiembre 2026 tiene una excepción de lanzamiento y permanece editable hasta fin de mes.</div>'+
+       '<div id="qaAdminMsg" style="font-size:.72rem;margin-top:6px"></div><div id="qaAdminList" style="font-size:.7rem;margin-top:6px;max-height:120px;overflow:auto"></div>';
+-    panel.appendChild(box);
++    box.append(header,body);dock.appendChild(box);
++    let collapsed=true;
++    const setCollapsed=value=>{
++      collapsed=!!value;body.style.display=collapsed?'none':'';
++      headerText.style.display=collapsed?'none':'';
++      toggle.textContent=collapsed?'🔐 QA administrador':'−';
++      toggle.title=collapsed?'Abrir QA administrador':'Minimizar QA administrador';
++      toggle.style.fontSize=collapsed?'11px':'16px';
++      box.style.width=collapsed?'auto':'min(310px,calc(100vw - 16px))';
++    };
++    toggle.addEventListener('click',()=>{
++      if(collapsed)window.GallinaQaPanelDock?.collapseBot?.();
++      setCollapsed(!collapsed);
++    });
++    window.GallinaQaPanelDock?.registerAdmin({collapse:()=>setCollapsed(true)});
++    setCollapsed(true);
+     box.querySelector('#qaAdminMyId').textContent=status.playerId||'—';
+     const input=box.querySelector('#qaAdminId'),msg=box.querySelector('#qaAdminMsg'),list=box.querySelector('#qaAdminList');
+     const ship=box.querySelector('#qaMonthlyShip'),state=box.querySelector('#qaMonthlyState'),save=box.querySelector('#qaMonthlySave');
+diff --git a/js/qa-mode.js b/js/qa-mode.js
+index af11206..daa8cf2 100644
+--- a/js/qa-mode.js
++++ b/js/qa-mode.js
+@@ -61,13 +61,17 @@ async function bootQaMode() {
+         return `${Math.floor(total / 60)}m ${total % 60}s`;
+     };
+ 
+-    const panel = document.createElement('div');
++    // Los controles de bot y los de administrador viven en tarjetas distintas.
++    const dock = document.createElement('div');
++    dock.id = 'qaPanelDock';
++    dock.style.cssText = 'position:absolute;right:8px;top:76px;z-index:150;display:flex;flex-direction:column;align-items:stretch;gap:6px;max-width:calc(100vw - 16px);pointer-events:auto';
++    const panel = document.createElement('section');
+     panel.id = 'qaModePanel';
+-    panel.style.cssText = 'position:absolute;right:8px;top:76px;z-index:150;pointer-events:auto;width:min(230px,calc(100vw - 16px));max-height:calc(100vh - 92px);overflow:auto;background:rgba(2,11,39,.92);border:1px solid #fbbf24;border-radius:10px;padding:7px;box-shadow:0 3px 10px rgba(0,0,0,.45);color:#e2e8f0;font:700 11px/1.25 sans-serif';
++    panel.style.cssText = 'width:min(230px,calc(100vw - 16px));max-height:calc(100vh - 92px);overflow:auto;background:rgba(2,11,39,.92);border:1px solid #fbbf24;border-radius:10px;padding:7px;box-shadow:0 3px 10px rgba(0,0,0,.45);color:#e2e8f0;font:700 11px/1.25 sans-serif';
+     const title = document.createElement('div');
+     title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:6px;color:#fbbf24;font-size:12px;margin-bottom:5px';
+     const titleText = document.createElement('span');
+-    titleText.textContent = '🤖 QA interno';
++    titleText.textContent = '🤖 QA bot';
+     const collapseButton = document.createElement('button');
+     collapseButton.type = 'button';
+     collapseButton.textContent = '−';
+@@ -75,6 +79,7 @@ async function bootQaMode() {
+     collapseButton.style.cssText = 'border:1px solid #64748b;border-radius:6px;background:#0f172a;color:#fbbf24;min-width:27px;height:24px;padding:0;font:900 16px/1 sans-serif;cursor:pointer';
+     title.append(titleText, collapseButton);
+     const panelBody = document.createElement('div');
++    panelBody.id = 'qaBotPanelBody';
+     const controls = document.createElement('div');
+     controls.style.cssText = 'display:flex;gap:4px;align-items:center;margin-bottom:5px';
+     const seriesSelect = document.createElement('select');
+@@ -120,14 +125,15 @@ async function bootQaMode() {
+     controls.append(seriesSelect, startButton, cancelButton);
+     panelBody.append(controls, modeSelect, speedSelect, status, summary, resultList, anomalyList);
+     panel.append(title, panelBody);
+-    document.getElementById('game-container').appendChild(panel);
++    dock.appendChild(panel);
++    document.getElementById('game-container').appendChild(dock);
+ 
+     let qaPanelCollapsed = false;
+     const setQaPanelCollapsed = (collapsed) => {
+         qaPanelCollapsed = !!collapsed;
+         panelBody.style.display = qaPanelCollapsed ? 'none' : '';
+-        collapseButton.textContent = qaPanelCollapsed ? '🤖 QA' : '−';
+-        collapseButton.title = qaPanelCollapsed ? 'Abrir QA' : 'Minimizar QA';
++        collapseButton.textContent = qaPanelCollapsed ? '🤖 QA bot' : '−';
++        collapseButton.title = qaPanelCollapsed ? 'Abrir QA bot' : 'Minimizar QA bot';
+         collapseButton.style.fontSize = qaPanelCollapsed ? '11px' : '16px';
+         panel.style.width = qaPanelCollapsed ? 'auto' : 'min(230px,calc(100vw - 16px))';
+         panel.style.maxHeight = qaPanelCollapsed ? 'none' : 'calc(100vh - 92px)';
+@@ -136,6 +142,15 @@ async function bootQaMode() {
+         title.style.marginBottom = qaPanelCollapsed ? '0' : '5px';
+     };
+     collapseButton.addEventListener('click', () => setQaPanelCollapsed(!qaPanelCollapsed));
++    let adminPanelApi = null;
++    window.GallinaQaPanelDock = {
++        dock,
++        collapseBot: () => setQaPanelCollapsed(true),
++        openBot: () => { adminPanelApi?.collapse?.(); setQaPanelCollapsed(false); },
++        registerAdmin: (api) => { adminPanelApi = api; }
++    };
++    // Al iniciar quedan visibles los dos botones, sin cubrir el menú principal.
++    setQaPanelCollapsed(true);
+ 
+     const renderSummary = () => {
+         const completed = qaResults.length;
+diff --git a/js/qa-panel-toggle.js b/js/qa-panel-toggle.js
+index fec12c8..a5d7b40 100644
+--- a/js/qa-panel-toggle.js
++++ b/js/qa-panel-toggle.js
+@@ -6,6 +6,9 @@
+ (() => {
+   function initQaPanelToggle(){
+     if(!window.QA_MODE)return;
++    // Las secciones actuales (QA bot y QA administrador) ya se pliegan de
++    // manera independiente. El control anterior ocultaba ambas a la vez.
++    if(window.GallinaQaPanelDock)return;
+     const panel=document.getElementById('qaModePanel');
+     if(!panel||document.getElementById('qaModeRestoreTab'))return;
+ 
+diff --git a/js/qa-pvp.js b/js/qa-pvp.js
+index 030af66..f3420d7 100644
+--- a/js/qa-pvp.js
++++ b/js/qa-pvp.js
+@@ -6,7 +6,7 @@
+   function initQaPvp(){
+   if(document.getElementById('qaPvpPanelExtension'))return;
+   if (!window.QA_MODE) return;
+-  const panel=document.getElementById('qaModePanel');
++  const panel=document.getElementById('qaBotPanelBody');
+   if(!panel||!window.GallinaPvp)return;
+ 
+   const box=document.createElement('div');box.id='qaPvpPanelExtension';
+@@ -101,4 +101,4 @@
+   }
+   if(window.QA_MODE)initQaPvp();
+   else window.addEventListener('gallina-qa-ready',initQaPvp,{once:true});
+-})();
+\ No newline at end of file
++})();
+diff --git a/js/update-notice.js b/js/update-notice.js
+index 198cc6d..88b7102 100644
+--- a/js/update-notice.js
++++ b/js/update-notice.js
+@@ -1,6 +1,6 @@
+ /* Aviso opcional de actualizaciones. No bloquea el modo offline. */
+ (() => {
+-    const CURRENT_VERSION = '1.4.13';
++    const CURRENT_VERSION = '1.4.14';
+     const VERSION_URL = 'https://yairul10.github.io/Gallina-cosmica/version.json';
+ 
+     const versionParts = (version) => String(version || '')
+diff --git a/version.json b/version.json
+index be0d5a3..6c848c2 100644
+--- a/version.json
++++ b/version.json
+@@ -1,5 +1,5 @@
+ {
+-  "latestVersion": "1.4.13",
++  "latestVersion": "1.4.14",
+   "message": "Ya está disponible una nueva versión de Gallina Cósmica.",
+   "playStoreUrl": "https://play.google.com/store/apps/details?id=com.gallinacosmica.app"
+ }

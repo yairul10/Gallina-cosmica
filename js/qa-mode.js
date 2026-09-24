@@ -61,13 +61,17 @@ async function bootQaMode() {
         return `${Math.floor(total / 60)}m ${total % 60}s`;
     };
 
-    const panel = document.createElement('div');
+    // Los controles de bot y los de administrador viven en tarjetas distintas.
+    const dock = document.createElement('div');
+    dock.id = 'qaPanelDock';
+    dock.style.cssText = 'position:absolute;right:8px;top:76px;z-index:150;display:flex;flex-direction:column;align-items:stretch;gap:6px;max-width:calc(100vw - 16px);pointer-events:auto';
+    const panel = document.createElement('section');
     panel.id = 'qaModePanel';
-    panel.style.cssText = 'position:absolute;right:8px;top:76px;z-index:150;pointer-events:auto;width:min(230px,calc(100vw - 16px));max-height:calc(100vh - 92px);overflow:auto;background:rgba(2,11,39,.92);border:1px solid #fbbf24;border-radius:10px;padding:7px;box-shadow:0 3px 10px rgba(0,0,0,.45);color:#e2e8f0;font:700 11px/1.25 sans-serif';
+    panel.style.cssText = 'width:min(230px,calc(100vw - 16px));max-height:calc(100vh - 92px);overflow:auto;background:rgba(2,11,39,.92);border:1px solid #fbbf24;border-radius:10px;padding:7px;box-shadow:0 3px 10px rgba(0,0,0,.45);color:#e2e8f0;font:700 11px/1.25 sans-serif';
     const title = document.createElement('div');
     title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:6px;color:#fbbf24;font-size:12px;margin-bottom:5px';
     const titleText = document.createElement('span');
-    titleText.textContent = '🤖 QA interno';
+    titleText.textContent = '🤖 QA bot';
     const collapseButton = document.createElement('button');
     collapseButton.type = 'button';
     collapseButton.textContent = '−';
@@ -75,6 +79,7 @@ async function bootQaMode() {
     collapseButton.style.cssText = 'border:1px solid #64748b;border-radius:6px;background:#0f172a;color:#fbbf24;min-width:27px;height:24px;padding:0;font:900 16px/1 sans-serif;cursor:pointer';
     title.append(titleText, collapseButton);
     const panelBody = document.createElement('div');
+    panelBody.id = 'qaBotPanelBody';
     const controls = document.createElement('div');
     controls.style.cssText = 'display:flex;gap:4px;align-items:center;margin-bottom:5px';
     const seriesSelect = document.createElement('select');
@@ -120,14 +125,15 @@ async function bootQaMode() {
     controls.append(seriesSelect, startButton, cancelButton);
     panelBody.append(controls, modeSelect, speedSelect, status, summary, resultList, anomalyList);
     panel.append(title, panelBody);
-    document.getElementById('game-container').appendChild(panel);
+    dock.appendChild(panel);
+    document.getElementById('game-container').appendChild(dock);
 
     let qaPanelCollapsed = false;
     const setQaPanelCollapsed = (collapsed) => {
         qaPanelCollapsed = !!collapsed;
         panelBody.style.display = qaPanelCollapsed ? 'none' : '';
-        collapseButton.textContent = qaPanelCollapsed ? '🤖 QA' : '−';
-        collapseButton.title = qaPanelCollapsed ? 'Abrir QA' : 'Minimizar QA';
+        collapseButton.textContent = qaPanelCollapsed ? '🤖 QA bot' : '−';
+        collapseButton.title = qaPanelCollapsed ? 'Abrir QA bot' : 'Minimizar QA bot';
         collapseButton.style.fontSize = qaPanelCollapsed ? '11px' : '16px';
         panel.style.width = qaPanelCollapsed ? 'auto' : 'min(230px,calc(100vw - 16px))';
         panel.style.maxHeight = qaPanelCollapsed ? 'none' : 'calc(100vh - 92px)';
@@ -136,6 +142,15 @@ async function bootQaMode() {
         title.style.marginBottom = qaPanelCollapsed ? '0' : '5px';
     };
     collapseButton.addEventListener('click', () => setQaPanelCollapsed(!qaPanelCollapsed));
+    let adminPanelApi = null;
+    window.GallinaQaPanelDock = {
+        dock,
+        collapseBot: () => setQaPanelCollapsed(true),
+        openBot: () => { adminPanelApi?.collapse?.(); setQaPanelCollapsed(false); },
+        registerAdmin: (api) => { adminPanelApi = api; }
+    };
+    // Al iniciar quedan visibles los dos botones, sin cubrir el menú principal.
+    setQaPanelCollapsed(true);
 
     const renderSummary = () => {
         const completed = qaResults.length;

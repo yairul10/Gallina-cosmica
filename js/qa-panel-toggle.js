@@ -6,6 +6,9 @@
 (() => {
   function initQaPanelToggle(){
     if(!window.QA_MODE)return;
+    // Las secciones actuales (QA bot y QA administrador) ya se pliegan de
+    // manera independiente. El control anterior ocultaba ambas a la vez.
+    if(window.GallinaQaPanelDock)return;
     const panel=document.getElementById('qaModePanel');
     if(!panel||document.getElementById('qaModeRestoreTab'))return;
 

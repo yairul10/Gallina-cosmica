@@ -1943,7 +1943,7 @@
       seasonPrizes.innerHTML='<div style="font-weight:900;color:#fde68a;margin-bottom:4px">🎁 Premios de la temporada</div>'+
         '<div>🥇 1.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.first)+'</div>'+
         '<div>🥈 2.º–3.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.secondThird)+'</div>'+
-        '<div>🏅 4.º–5.º: 🚀 '+String(cfg.shipName||'Nave del mes)+(Number(cfg.fourthFifth||0)>0?' + '+coin(cfg.fourthFifth):'')+'</div>'+
+        '<div>🏅 4.º–5.º: 🚀 '+String(cfg.shipName||'Nave del mes')+(Number(cfg.fourthFifth||0)>0 ? ' + '+coin(cfg.fourthFifth) : '')+'</div>'+
         '<div>🎖️ 6.º–10.º: '+coin(cfg.sixthTenth)+'</div>'+
         '<div>⭐ 50% superior restante: '+coin(cfg.upperHalf)+'</div>'+
         '<div>🎁 Resto de participantes: '+coin(cfg.rest)+'</div>'+

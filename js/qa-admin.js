@@ -22,11 +22,18 @@
     if(document.getElementById('qaAdminPanel'))return;
     const status=await window.getQaAdminStatus?.();
     if(!status?.isAdmin)return;
-    const panel=document.getElementById('qaModePanel');
-    if(!panel)return;
-    const box=document.createElement('div'); box.id='qaAdminPanel';
-    box.style.cssText='margin-top:10px;padding:9px;border:1px solid rgba(250,204,21,.65);border-radius:10px;background:rgba(66,32,6,.32)';
-    box.innerHTML='<div style="font-weight:900;margin-bottom:6px">🔐 Administrador QA</div>'+
+    const dock=window.GallinaQaPanelDock?.dock||document.getElementById('qaPanelDock');
+    if(!dock)return;
+    const box=document.createElement('section'); box.id='qaAdminPanel';
+    box.style.cssText='width:min(310px,calc(100vw - 16px));box-sizing:border-box;padding:7px;background:rgba(2,11,39,.94);border:1px solid rgba(250,204,21,.75);border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,.45);color:#e2e8f0;font:700 11px/1.25 sans-serif';
+    const header=document.createElement('div');
+    header.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:6px;color:#fbbf24;font-size:12px';
+    const headerText=document.createElement('span');headerText.textContent='🔐 QA administrador';
+    const toggle=document.createElement('button');toggle.type='button';toggle.textContent='🔐 QA administrador';toggle.title='Abrir QA administrador';
+    toggle.style.cssText='border:1px solid #fbbf24;border-radius:6px;background:#0f172a;color:#fde68a;min-width:27px;height:26px;padding:0 8px;font:800 11px/1 sans-serif;cursor:pointer';
+    header.append(headerText,toggle);
+    const body=document.createElement('div');body.id='qaAdminPanelBody';body.style.cssText='margin-top:7px';
+    body.innerHTML='<div style="font-weight:900;margin-bottom:6px">🔐 Administrador QA</div>'+
       '<div style="font-size:.72rem;margin-bottom:6px">Tu Player ID: <span id="qaAdminMyId"></span></div>'+
       '<input id="qaAdminId" placeholder="Player ID a autorizar" inputmode="numeric" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:7px;border-radius:7px">'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button id="qaAdminAdd">➕ Autorizar</button><button id="qaAdminRemove">🗑️ Quitar</button><button id="qaAdminRefresh">↻</button></div>'+
@@ -45,7 +52,22 @@
       '<button id="qaMonthlySave" style="width:100%;margin-top:7px;padding:7px;border-radius:7px;border:1px solid #f59e0b;background:#78350f;color:#fde68a;font-weight:800">💾 Guardar premios del mes</button>'+
       '<div style="font-size:.66rem;color:#fcd34d;margin-top:4px">Regla normal: puedes cambiarlos del día 1 al 15; desde el 16 quedan bloqueados. Septiembre 2026 tiene una excepción de lanzamiento y permanece editable hasta fin de mes.</div>'+
       '<div id="qaAdminMsg" style="font-size:.72rem;margin-top:6px"></div><div id="qaAdminList" style="font-size:.7rem;margin-top:6px;max-height:120px;overflow:auto"></div>';
-    panel.appendChild(box);
+    box.append(header,body);dock.appendChild(box);
+    let collapsed=true;
+    const setCollapsed=value=>{
+      collapsed=!!value;body.style.display=collapsed?'none':'';
+      headerText.style.display=collapsed?'none':'';
+      toggle.textContent=collapsed?'🔐 QA administrador':'−';
+      toggle.title=collapsed?'Abrir QA administrador':'Minimizar QA administrador';
+      toggle.style.fontSize=collapsed?'11px':'16px';
+      box.style.width=collapsed?'auto':'min(310px,calc(100vw - 16px))';
+    };
+    toggle.addEventListener('click',()=>{
+      if(collapsed)window.GallinaQaPanelDock?.collapseBot?.();
+      setCollapsed(!collapsed);
+    });
+    window.GallinaQaPanelDock?.registerAdmin({collapse:()=>setCollapsed(true)});
+    setCollapsed(true);
     box.querySelector('#qaAdminMyId').textContent=status.playerId||'—';
     const input=box.querySelector('#qaAdminId'),msg=box.querySelector('#qaAdminMsg'),list=box.querySelector('#qaAdminList');
     const ship=box.querySelector('#qaMonthlyShip'),state=box.querySelector('#qaMonthlyState'),save=box.querySelector('#qaMonthlySave');

@@ -6,7 +6,7 @@
   function initQaPvp(){
   if(document.getElementById('qaPvpPanelExtension'))return;
   if (!window.QA_MODE) return;
-  const panel=document.getElementById('qaModePanel');
+  const panel=document.getElementById('qaBotPanelBody');
   if(!panel||!window.GallinaPvp)return;
 
   const box=document.createElement('div');box.id='qaPvpPanelExtension';

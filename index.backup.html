@@ -37,7 +37,6 @@
                 <div class="menu-primary-actions">
                     <button class="btn menu-btn menu-btn-launch" id="startBtn"><span class="menu-btn-icon">🚀</span><span>¡DESPEGAR!</span><span class="menu-btn-arrow">›</span></button>
                     <div id="superBossSlot"></div>
-                <button class="btn menu-btn" id="openPvpBtn" style="border:2px solid #a78bfa; background:linear-gradient(135deg,#4c1d95,#7c3aed);"><span class="menu-btn-icon">⚔️</span><span>PvP</span><span class="menu-btn-arrow">›</span></button>
                 </div>
 
                 <div class="menu-two-actions">
@@ -45,98 +44,31 @@
                     <button class="btn menu-btn menu-btn-shop" id="openShopBtn"><span class="menu-btn-icon">🛒</span><span>Tienda</span><span class="menu-btn-arrow">›</span></button>
                 </div>
                 <button class="btn menu-btn menu-btn-tutorial" id="openTutorialBtn"><span class="menu-btn-icon">📖</span><span>Cómo Jugar</span><span class="menu-btn-arrow">›</span></button>
+                <button class="btn menu-btn" id="openPvpBtn" style="border:2px solid #a78bfa; background:linear-gradient(135deg,#4c1d95,#7c3aed);"><span class="menu-btn-icon">⚔️</span><span>PvP Experimental</span><span class="menu-btn-arrow">›</span></button>
 
                 <div class="menu-mini-actions">
                     <button class="btn menu-mini-btn" id="openRecordsBtn" title="Récords"><span>🥇</span><small>Récords</small></button>
                     <button class="btn menu-mini-btn" id="openTrophiesBtn" title="Trofeos"><span>🏆</span><small>Trofeos</small></button>
                     <button class="btn menu-mini-btn" id="openAchievBtn" title="Logros"><span>🏅</span><small>Logros</small></button>
                 </div>
-                <button class="menu-side-ranking" id="pvpRankingBtn" type="button" title="Ranking PvP" aria-label="Ranking PvP" onclick="window.openPvpRankingMenu?.()"><span>🏆</span><small>Ranking<br>PvP</small></button>
-                <div id="pvpRankingPanel" class="leaderboard-box" style="display:none; width:min(88%,340px); max-height:250px; overflow:auto; margin-top:8px; text-align:left;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;"><b>🏆 Ranking PvP</b><button id="pvpRankingCloseBtn" style="border:0;background:transparent;color:#fff;font-size:1rem;">✕</button></div>
-                    <div id="pvpMyRecord" style="margin:8px 0; padding:7px; border-radius:8px; background:rgba(124,58,237,.18); font-size:.78rem;">Cargando tu récord…</div>
-                    <div id="pvpRankingReward" style="display:none; margin:8px 0; padding:8px; border-radius:8px; background:rgba(245,158,11,.16); font-size:.78rem; text-align:center;">
-                        <div id="pvpRankingRewardText"></div>
-                        <button id="pvpClaimWeeklyBtn" class="btn" style="margin-top:7px; padding:7px 10px; background:#b45309;">🎁 Reclamar premio</button>
-                    </div>
-                    <div id="pvpRankingList" style="font-size:.78rem;">Cargando…</div>
-                </div>
             </div>
         </div>
 
         <div id="pvpLobbyScreen" class="screen-overlay" style="display:none; background:rgba(9,13,22,.98); z-index:210;">
             <h1 style="color:#c4b5fd; margin-bottom:6px;">⚔️ Arena PvP</h1>
-            <p style="font-size:.82rem; color:#94a3b8; margin-bottom:8px;">Prueba experimental · 1 vs 1</p>
-            <div id="pvpRankSummary" style="width:min(88%,340px); margin:0 auto 10px; text-align:center;">
-                <div id="pvpRankSummaryText" style="font-size:.86rem; font-weight:800; color:#fde68a;">🏆 Cargando rango…</div>
-                <div style="height:5px; margin-top:6px; background:#1e293b; border-radius:999px; overflow:hidden;">
-                    <div id="pvpRankProgress" style="width:0%; height:100%; background:linear-gradient(90deg,#fbbf24,#a855f7); transition:width .3s ease;"></div>
-                </div>
-                <div id="pvpRankNext" style="margin-top:4px; font-size:.68rem; color:#94a3b8;"></div>
-            </div>
+            <p style="font-size:.82rem; color:#94a3b8; margin-bottom:14px;">Prueba experimental · 1 vs 1</p>
             <div class="leaderboard-box" style="width:min(88%,340px); text-align:left;">
                 <p><b>Jugador:</b> <span id="pvpPlayerName">Jugador</span></p>
                 <p><b>Nave:</b> <span id="pvpShipName">Gallina</span></p>
-                <p style="font-size:.78rem; color:#cbd5e1;">⚖️ Estadísticas PvP según nave · ❤️ Vidas y habilidades propias · 🛡️ Balance exclusivo PvP</p>
+                <p style="font-size:.78rem; color:#cbd5e1;">⚖️ Estadísticas normalizadas · ❤️ 3 vidas · 🔫 2 balas por ráfaga</p>
             </div>
-            <div id="pvpModeSelector" style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:14px 18px 0;">
-                    <button class="btn pvp-mode-btn" data-mode="1v1" style="margin:0; padding:9px 6px; background:#475569;">⚔️ 1v1</button>
-                    <button class="btn pvp-mode-btn" data-mode="2v2" style="margin:0; padding:9px 6px; background:#7c3aed;">🤝 2v2</button>
-                    <button class="btn pvp-mode-btn" data-mode="arena" style="margin:0; padding:9px 6px; background:#475569;">🌌 Arena 5</button>
-                    <button class="btn pvp-mode-btn" data-mode="arena10" style="margin:0; padding:9px 6px; background:#475569;">🌠 Arena 10</button>
-                </div>
-                <div id="pvpQaBotRankWrap" style="display:none; width:min(88%,340px); margin:10px auto 0; padding:8px; border:1px solid #0e7490; border-radius:9px; background:rgba(8,47,73,.45); color:#bae6fd; font-size:.75rem; text-align:left;">
-                    🧪 <b>QA administrador</b> · perfil de bots
-                    <select id="pvpQaBotRank" style="float:right; max-width:166px; background:#082f49; color:#e0f2fe; border:1px solid #38bdf8; border-radius:6px; padding:3px;">
-                        <option value="auto">Automático</option>
-                        <option value="0">Novato</option>
-                        <option value="1">Bronce</option>
-                        <option value="2">Plata</option>
-                        <option value="3">Oro</option>
-                        <option value="4">Diamante</option>
-                        <option value="5">Maestro</option>
-                        <option value="6">Leyenda</option>
-                    </select>
-                </div>
-                <button class="btn" id="pvpControlsBtn" style="margin-top:10px; background:#0e7490;">⚙️ Ajustar controles</button>
-                <button class="btn" id="pvpFindMatchBtn" style="margin-top:10px; background:#7c3aed;">🤝 Buscar equipo 2v2</button>
-                <div id="pvpQueueProgressWrap" style="display:none; width:min(88%,340px); height:5px; margin:7px auto 0; background:#1e293b; border-radius:999px; overflow:hidden;">
-                    <div id="pvpQueueProgress" style="width:0%; height:100%; background:linear-gradient(90deg,#22c55e,#38bdf8); transition:width .25s linear;"></div>
-                </div>
-                <details style="width:min(88%,340px); margin-top:8px; color:#94a3b8; font-size:.75rem;">
-                <summary style="cursor:pointer; padding:6px;">🔐 Sala privada</summary><button class="btn" id="pvpCreateRoomBtn" style="margin-top:8px; background:#475569;">➕ Crear sala privada</button>
-                <div style="display:flex; gap:8px; width:100%; margin-top:6px;">
-                    <input id="pvpRoomCode" inputmode="numeric" maxlength="6" placeholder="Código de 6 dígitos" style="min-width:0; flex:1; padding:11px; border-radius:9px; border:1px solid #64748b; background:#0f172a; color:#fff; text-align:center; font-size:1rem;">
-                    <button class="btn" id="pvpJoinRoomBtn" style="width:auto; margin:0; padding:10px 14px; background:#2563eb;">Unirse</button>
-                </div>
-            </details>
+            <button class="btn" id="pvpCreateRoomBtn" style="margin-top:16px; background:#7c3aed;">➕ Crear sala</button>
+            <div style="display:flex; gap:8px; width:min(88%,340px); margin-top:10px;">
+                <input id="pvpRoomCode" inputmode="numeric" maxlength="6" placeholder="Código de 6 dígitos" style="min-width:0; flex:1; padding:11px; border-radius:9px; border:1px solid #64748b; background:#0f172a; color:#fff; text-align:center; font-size:1rem;">
+                <button class="btn" id="pvpJoinRoomBtn" style="width:auto; margin:0; padding:10px 14px; background:#2563eb;">Unirse</button>
+            </div>
             <p id="pvpLobbyStatus" style="min-height:42px; margin:12px 18px 4px; font-size:.8rem; color:#cbd5e1; text-align:center;"></p>
             <button class="btn btn-secondary" id="pvpCloseBtn">🔙 Volver</button>
-        </div>
-        <div id="pvpArenaScreen" class="screen-overlay" style="display:none; padding:0; background:#020617; z-index:220; overflow:hidden;">
-            <canvas id="pvpCanvas" width="420" height="640" style="position:absolute; inset:0; width:100%; height:100%; object-fit:fill;"></canvas>
-            <div style="position:absolute; top:max(10px,env(safe-area-inset-top)); left:10px; right:10px; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; text-shadow:0 2px 4px #000;">
-                <div><b>TÚ</b><div id="pvpMyLives">❤️ x10</div></div>
-                <div id="pvpRoomHud" style="font-size:.78rem; color:#c4b5fd;">Sala</div>
-                <div style="text-align:right;"><b id="pvpRivalLabel">RIVALES</b><div id="pvpRivalLives">❤️ x10 · ❤️ x10</div></div>
-            </div>
-            <button id="pvpLeaveArenaBtn" class="btn btn-secondary" style="position:absolute; top:48px; right:8px; z-index:3; width:auto; padding:5px 9px; font-size:.7rem;">Salir</button>
-            <div id="pvpMoveStick" class="pvp-stick" style="position:absolute; left:22px; bottom:max(24px,env(safe-area-inset-bottom));"><div class="pvp-stick-knob"></div><small>MOVER</small></div>
-            <button id="pvpFireBtn" class="btn" aria-label="Disparar láser al objetivo seleccionado" style="position:absolute; right:22px; bottom:max(24px,env(safe-area-inset-bottom)); z-index:3; width:82px; height:82px; border-radius:50%; padding:4px; background:rgba(185,28,28,.92); border:2px solid #fca5a5; font-size:1.65rem;">🔫<small style="display:block; font-size:.58rem; color:#fff;">LÁSER</small></button>
-            <button id="pvpEvadeBtn" class="btn" aria-label="Romper fijación enemiga durante 2 segundos" style="display:none;position:absolute; right:31px; bottom:max(225px,calc(env(safe-area-inset-bottom) + 225px)); z-index:3; width:66px; height:66px; border-radius:50%; padding:4px; background:rgba(14,116,144,.92); border:2px solid #67e8f9; font-size:1.45rem;">🌀<small id="pvpEvadeCooldown" style="display:block; font-size:.55rem; color:#fff;">EVADIR</small></button>
-            <button id="pvpMissileBtn" class="btn" aria-label="Disparar misil rastreador" style="position:absolute; right:28px; bottom:max(145px,calc(env(safe-area-inset-bottom) + 145px)); z-index:3; width:72px; height:72px; border-radius:50%; padding:4px; background:rgba(180,83,9,.92); border:2px solid #fbbf24; font-size:1.6rem;">🎯<small id="pvpMissileCooldown" style="display:block; font-size:.58rem; color:#fff;">LISTO</small></button>
-            <div id="pvpControlsEditor" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(2,6,23,.76);pointer-events:none;">
-                <div style="position:absolute;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(92%,360px);text-align:center;color:#fff;background:rgba(15,23,42,.94);border:1px solid #22d3ee;border-radius:14px;padding:10px;pointer-events:auto;">
-                    <b>⚙️ Ajustar controles PvP</b><div style="font-size:.72rem;margin-top:4px;color:#cbd5e1;">Arrastra los controles a donde quieras. Se guardarán para tus próximas partidas.</div>
-                    <div style="display:flex;gap:8px;margin-top:8px;"><button id="pvpControlsResetBtn" class="btn btn-secondary" style="margin:0;padding:7px;font-size:.72rem;">↺ Restablecer</button><button id="pvpControlsSaveBtn" class="btn" style="margin:0;padding:7px;font-size:.72rem;background:#0891b2;">✓ Guardar</button></div>
-                </div>
-            </div>
-            <div id="pvpCountdown" style="display:none; position:absolute; inset:0; z-index:4; background:rgba(2,6,23,.42); align-items:center; justify-content:center; pointer-events:none;"><div id="pvpCountdownText" style="font-size:5rem; font-weight:900; color:#fff; text-shadow:0 0 22px #7c3aed,0 4px 8px #000;">3</div></div>\n            <div id="pvpResult" style="display:none; position:absolute; inset:0; z-index:5; background:rgba(2,6,23,.88); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
-                <div style="width:min(92%,340px); background:rgba(15,23,42,.88); border:1px solid rgba(148,163,184,.35); border-radius:18px; padding:18px 16px; box-shadow:0 12px 36px rgba(0,0,0,.38);">
-                    <div id="pvpResultText" style="color:#fff; text-align:center; white-space:pre-line; font-size:1.08rem; line-height:1.55; font-weight:800;">Resultado</div>
-                </div>
-                <button id="pvpResultBackBtn" class="btn" style="margin-top:20px; width:min(78%,240px);">Volver al menú</button>
-            </div>
         </div>
         <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;"><h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1><p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p><div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;"></div><button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button></div>
         <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1><div class="tutorial-content"><h3 style="color: #38bdf8;">🕹️ Movimiento</h3><p>• <b>Arrastrar / Joystick:</b> Configúralo en el menú de pausa.<br>• <b>PC:</b> Usa las flechas del teclado.</p><h3 style="color: #ef4444;">🚀 Combate</h3><p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparos múltiples.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯).</p><h3 style="color: #10b981;">⚙️ Mejoras</h3><p>• Los botones de la izquierda <b>brillarán ✨</b> con monedas suficientes.</p></div><button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button></div>
@@ -187,26 +119,9 @@
                         <button class="shop-btn" id="btn-hs-3-pro" onclick="equipShip(3, true)">Pro</button>
                     </div>
                 </div>
-                <div id="hangar-pvp-toro-aniquilador" class="shop-item" style="display:none;">
-                    <h4>Toro Aniquilador</h4><img src="assets/toro_aniquilador.png" class="shop-img" style="height:50px;object-fit:contain;">
-                    <p style="font-size:.75rem;color:#fca5a5;">⚔️ PvP · +25% cadencia</p><button class="shop-btn" id="btn-equip-pvp-toro-aniquilador" onclick="equipPvpShip('toro_aniquilador')">Equipar</button>
-                </div>
-                <div id="hangar-pvp-toro-blindado" class="shop-item" style="display:none;">
-                    <h4>Toro Blindado</h4><img src="assets/toro_blindado.png" class="shop-img" style="height:50px;object-fit:contain;">
-                    <p style="font-size:.75rem;color:#86efac;">🛡️ PvP · 26 vidas</p><button class="shop-btn" id="btn-equip-pvp-toro-blindado" onclick="equipPvpShip('toro_blindado')">Equipar</button>
-                </div>
-                <div id="hangar-pvp-toro-baliza" class="shop-item" style="display:none;">
-                    <h4>Toro Baliza</h4><img src="assets/toro_baliza.png" class="shop-img" style="height:50px;object-fit:contain;">
-                    <p style="font-size:.75rem;color:#7dd3fc;">🔧 PvP · reparación rápida</p><button class="shop-btn" id="btn-equip-pvp-toro-baliza" onclick="equipPvpShip('toro_baliza')">Equipar</button>
-                </div>
-                <div id="hangar-pvp-toro-oscuro" class="shop-item" style="display:none;"><h4>Toro Oscuro</h4><img src="assets/toro_oscuro.png" class="shop-img" style="height:50px;object-fit:contain;"><p style="font-size:.75rem;color:#fca5a5;">❤️ 26 vidas · ⚔️ +25% cadencia</p><button class="shop-btn" id="btn-equip-pvp-toro-oscuro" onclick="equipPvpShip('toro_oscuro')">Equipar</button></div>
-                <div id="hangar-pvp-toro-luz" class="shop-item" style="display:none;"><h4>Toro Luz</h4><img src="assets/toro_luz.png" class="shop-img" style="height:50px;object-fit:contain;"><p style="font-size:.75rem;color:#fde68a;">⚔️ +25% cadencia · 🔧 reparación rápida</p><button class="shop-btn" id="btn-equip-pvp-toro-luz" onclick="equipPvpShip('toro_luz')">Equipar</button></div>
-                <div id="hangar-pvp-toro-maoma" class="shop-item" style="display:none;"><h4>Toro Maoma</h4><img src="assets/toro_maoma.png" class="shop-img" style="height:50px;object-fit:contain;"><p style="font-size:.75rem;color:#86efac;">❤️ 26 vidas · 🔧 reparación rápida</p><button class="shop-btn" id="btn-equip-pvp-toro-maoma" onclick="equipPvpShip('toro_maoma')">Equipar</button></div>
-                <div id="hangar-pvp-toro-mayor" class="shop-item" style="display:none;"><h4>Toro Mayor</h4><img src="assets/toro_mayor.png" class="shop-img" style="height:50px;object-fit:contain;"><p style="font-size:.75rem;color:#c4b5fd;">👑 26 vidas · +25% cadencia · reparación rápida</p><button class="shop-btn" id="btn-equip-pvp-toro-mayor" onclick="equipPvpShip('toro_mayor')">Equipar</button></div>
             </div>
             <!-- SECCIÓN NUEVA: MÓDULOS -->
             <div id="hangarExtras" class="shop-grid" style="display: none; margin-top: 10px;">
-                <div class="shop-item" id="hangar-pvp-evade" style="grid-column: span 2; display:none; border-color:#22d3ee;"><h4>🌀 Campo de Interferencia PvP</h4><div style="font-size:2rem; margin:8px 0;">🌀</div><p style="font-size:0.8rem; margin-bottom:8px;">2 s sin fijación enemiga en PvP.</p><button class="shop-btn" disabled>Equipado automáticamente</button></div>
                 <div class="shop-item" style="grid-column: span 2;"><h4>Auto-Vida</h4><div style="font-size:2rem; margin:8px 0;">❤️</div><p style="font-size:0.8rem; margin-bottom:8px;">+2 Vidas cuando te queda 1.</p><button class="shop-btn" id="btn-equip-autolife" onclick="equipExtra()">Equipar</button></div>
             </div>
             <button class="btn btn-secondary" onclick="closeScreen('hangarScreen')" style="margin-top: 20px;">🔙 Volver</button>
@@ -226,17 +141,9 @@
                 <div class="shop-item"><h4>Caballo Pro</h4><img id="shop-img-pro-2" src="assets/caballo_pro_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+30% Daño<br>+20% a Lechuga.</p><button class="shop-btn" id="btn-skin-pro-2" onclick="buyShip(2, true, 60000)">🪙 60,000</button></div>
                 <div class="shop-item"><h4>Vaca Base</h4><img id="shop-img-base-3" src="assets/vaca_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+20% a Jefes Lech.</p><button class="shop-btn" id="btn-skin-base-3" onclick="buyShip(3, false, 40000)">🪙 40,000</button></div>
                 <div class="shop-item"><h4>Vaca Pro</h4><img id="shop-img-pro-3" src="assets/vaca_pro_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+30% Daño<br>+20% a Jefes Lech.</p><button class="shop-btn" id="btn-skin-pro-3" onclick="buyShip(3, true, 100000)">🪙 100,000</button></div>
-                <div class="shop-item" style="border-color:#ef4444;"><h4>Toro Aniquilador</h4><img src="assets/toro_aniquilador.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">⚔️ PvP · +25% cadencia.</p><button class="shop-btn" id="btn-buy-pvp-toro-aniquilador" onclick="buyPvpShip('toro_aniquilador')">🪙 1,500,000</button></div>
-                <div class="shop-item" style="border-color:#22c55e;"><h4>Toro Blindado</h4><img src="assets/toro_blindado.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🛡️ PvP · 26 vidas.</p><button class="shop-btn" id="btn-buy-pvp-toro-blindado" onclick="buyPvpShip('toro_blindado')">🪙 1,500,000</button></div>
-                <div class="shop-item" style="border-color:#38bdf8;"><h4>Toro Baliza</h4><img src="assets/toro_baliza.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🔧 PvP · repara desde 4 s, cada 1.5 s.</p><button class="shop-btn" id="btn-buy-pvp-toro-baliza" onclick="buyPvpShip('toro_baliza')">🪙 1,500,000</button></div>
-                <div id="shop-pvp-toro-oscuro" class="shop-item" style="display:none;border-color:#7f1d1d;"><h4>Toro Oscuro</h4><img src="assets/toro_oscuro.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">💎 Diamante · ❤️ 26 vidas · ⚔️ +25% cadencia.</p><button class="shop-btn" id="btn-buy-pvp-toro-oscuro" onclick="buyPvpShip('toro_oscuro')">🔒 Diamante</button></div>
-                <div id="shop-pvp-toro-luz" class="shop-item" style="display:none;border-color:#facc15;"><h4>Toro Luz</h4><img src="assets/toro_luz.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">💎 Diamante · ⚔️ +25% cadencia · 🔧 reparación rápida.</p><button class="shop-btn" id="btn-buy-pvp-toro-luz" onclick="buyPvpShip('toro_luz')">🔒 Diamante</button></div>
-                <div id="shop-pvp-toro-maoma" class="shop-item" style="display:none;border-color:#22c55e;"><h4>Toro Maoma</h4><img src="assets/toro_maoma.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">💎 Diamante · ❤️ 26 vidas · 🔧 reparación rápida.</p><button class="shop-btn" id="btn-buy-pvp-toro-maoma" onclick="buyPvpShip('toro_maoma')">🔒 Diamante</button></div>
-                <div id="shop-pvp-toro-mayor" class="shop-item" style="display:none;border-color:#a855f7;"><h4>Toro Mayor</h4><img src="assets/toro_mayor.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🌌 Leyenda · 👑 vida + cadencia + recuperación.</p><button class="shop-btn" id="btn-buy-pvp-toro-mayor" onclick="buyPvpShip('toro_mayor')">🔒 Leyenda Galáctica</button></div>
             </div>
             <div id="shopBoosters" class="shop-grid" style="display: none;">
                 <!-- EXTRA AUTO-VIDA -->
-                <div class="shop-item" style="grid-column: span 2; border-color:#22d3ee;"><h4>🌀 Campo de Interferencia PvP (Permanente)</h4><p style="font-size:0.8rem;">Rompe la fijación enemiga y evita que vuelvan a seleccionarte durante 2 s.</p><button class="shop-btn" id="btn-buy-pvp-evade" onclick="buyPvpEvade()">🪙 500,000</button></div>
                 <div class="shop-item" style="grid-column: span 2; border-color: #ef4444;"><h4>❤️ Auto-Vida (Permanente)</h4><p style="font-size:0.8rem;">Te otorga 2 vidas si bajas a 1.</p><button class="shop-btn" id="btn-buy-autolife" onclick="buyAutoLife()">🪙 50,000</button></div>
                 
                 <div class="shop-item" style="grid-column: span 2;"><h4>+20% Daño (1 Partida)</h4><p>Ligera ventaja bélica.</p><button class="shop-btn" id="btn-boost-20" data-cost="5000" onclick="buyBooster(1.2, 5000)">🪙 5,000</button></div>
@@ -272,19 +179,16 @@
     </div>
 
     <script src="js/player-identity-qa.js?v=14"></script>
-    <script src="js/play-games-auth.js?v=6"></script>
-    <script src="js/update-notice.js?v=1"></script>
-    <script src="js/estado.js?v=pvp-monthly-rewards-1"></script>
+    <script src="js/play-games-auth.js?v=4"></script>
+    <script src="js/estado.js?v=play-games-profile-isolation-2"></script>
     <script src="js/assets.js?v=gallina-chile-1"></script>
-    <script src="js/ui.js?v=qa-access-stable-2"></script>
+    <script src="js/ui.js?v=pro-requires-normal-1"></script>
     <script src="js/entidades.js?v=gallina-chile-1"></script>
     <script src="js/main.js?v=auto-record-fix-2"></script>
     <script src="js/superjefe-maiz.js"></script>
-    <script src="js/modo-superjefes.js?v=superboss-pvp-unlock-1"></script>
-    <script src="js/pvp.js?v=pvp-syntax-fix-4"></script>
-    <script src="js/qa-mode.js?v=qa-split-panels-12"></script>
-    <script src="js/qa-pvp.js?v=qa-split-panels-3"></script>
-    <script src="js/qa-admin.js?v=qa-split-panels-3"></script>
-    <script src="js/qa-panel-toggle.js?v=qa-split-panels-4"></script>
+    <script src="js/modo-superjefes.js?v=superboss-cloud-winner-2"></script>
+    <script src="js/pvp.js?v=pvp-lobby-1"></script>
+    <script src="js/qa-mode.js?v=qa-bot-9"></script>
+    <script src="js/qa-panel-toggle.js?v=1"></script>
 </body>
 </html>

@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gallina-cosmica-pvp",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-20",
+  "durable_objects": {
+    "bindings": [
+      { "name": "PVP_ROOMS", "class_name": "PvpRoom" },
+      { "name": "PVP_MATCHMAKER", "class_name": "PvpMatchmaker" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["PvpRoom"] },
+    { "tag": "v2", "new_sqlite_classes": ["PvpMatchmaker"] }
+  ]
+}
