@@ -1010,10 +1010,14 @@ export default {
     }
     if (url.pathname === "/qa/monthly-close") {
       if(request.method!=="POST")return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
-      const admin=await requireAdminSession(request,env);
-      if(!admin?.ok)return json({ok:false,error:admin?.error||"ADMIN_REQUIRED"},admin?.status||403);
-      let body;try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}
+      const urlAdmin=new URL(request.url);
+      const session=await verifySessionToken(env,urlAdmin.searchParams.get("session"));
+      if(!session)return json({ok:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
+      if(!qaAdminIds(env).has(String(session.playerId)))return json({ok:false,error:"QA_ADMIN_REQUIRED"},403);
       const rankingId=env.PVP_RANKING.idFromName("global");
+      const active=await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/active-session?playerId="+encodeURIComponent(session.playerId)+"&sessionId="+encodeURIComponent(session.sessionId||""),{headers:{[ACTIVE_SESSION_HEADER]:"1"}}).then(r=>r.json()).catch(()=>({}));
+      if(!active?.active)return json({ok:false,error:"SESSION_REPLACED"},401);
+      let body;try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}
       return env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/qa-close-month",{
         method:"POST",headers:{"content-type":"application/json","x-pvp-internal":"qa-admin"},
         body:JSON.stringify({period:String(body?.period||"")})
