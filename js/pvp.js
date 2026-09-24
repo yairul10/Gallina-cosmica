@@ -1929,10 +1929,24 @@
       const cups=Number(my?.cups||0),claimed=new Set((data.claimedRankRewards||[]).map(Number)),pendingMonthly=Array.isArray(data.pendingMonthly)?data.pendingMonthly:[];
       window.gallinaSetPvpRankUnlocks?.([...claimed]);
       const season=document.createElement('div');
-      season.style.cssText='margin:8px 0;padding:10px;border:1px solid rgba(168,85,247,.45);border-radius:11px;background:linear-gradient(135deg,rgba(76,29,149,.34),rgba(15,23,42,.65));text-align:center;';
+      season.style.cssText='margin:8px 0;padding:10px;border:1px solid rgba(168,85,247,.45);border-radius:11px;background:linear-gradient(135deg,rgba(76,29,149,.34),rgba(15,23,42,.65));text-align:center;cursor:pointer;';
       const seasonTitle=document.createElement('div');seasonTitle.style.cssText='font-weight:900;color:#e9d5ff;font-size:.92rem;';seasonTitle.textContent='🏆 Temporada '+seasonLabel(data.month);
       const seasonTime=document.createElement('div');seasonTime.style.cssText='font-size:.72rem;color:#c4b5fd;margin-top:3px;';seasonTime.textContent=seasonDaysLeft(data.month);
-      season.append(seasonTitle,seasonTime);mine.parentNode?.insertBefore(season,mine);
+      const seasonHint=document.createElement('div');seasonHint.style.cssText='font-size:.68rem;color:#fde68a;margin-top:5px;font-weight:700;';seasonHint.textContent='Ver premios ▼';
+      const seasonPrizes=document.createElement('div');seasonPrizes.style.cssText='display:none;margin-top:9px;padding-top:8px;border-top:1px solid rgba(196,181,253,.25);font-size:.73rem;line-height:1.55;color:#e2e8f0;';
+      const cfg=data.monthlyConfig||{};
+      const coin=v=>formatCoins(Number(v||0))+' 🪙';
+      seasonPrizes.innerHTML='<div style="font-weight:900;color:#fde68a;margin-bottom:4px">🎁 Premios de la temporada</div>'+
+        '<div>🥇 1.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.first)+'</div>'+
+        '<div>🥈 2.º–3.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.secondThird)+'</div>'+
+        '<div>🏅 4.º–5.º: 🚀 '+String(cfg.shipName||'Nave del mes)+(Number(cfg.fourthFifth||0)>0?' + '+coin(cfg.fourthFifth):'')+'</div>'+
+        '<div>🎖️ 6.º–10.º: '+coin(cfg.sixthTenth)+'</div>'+
+        '<div>⭐ 50% superior restante: '+coin(cfg.upperHalf)+'</div>'+
+        '<div>🎁 Resto de participantes: '+coin(cfg.rest)+'</div>'+
+        '<div style="margin-top:5px;color:#fcd34d">Si ya tienes la nave, recibes el 60% de su valor.</div>'+
+        '<div style="margin-top:5px;color:'+(cfg.locked?'#86efac':'#93c5fd')+'">'+(cfg.locked?'🔒 Premios definitivos de la temporada':'ℹ️ Premios provisionales hasta el día 15')+'</div>';
+      season.addEventListener('click',()=>{const open=seasonPrizes.style.display!=='none';seasonPrizes.style.display=open?'none':'block';seasonHint.textContent=open?'Ver premios ▼':'Ocultar premios ▲';});
+      season.append(seasonTitle,seasonTime,seasonHint,seasonPrizes);mine.parentNode?.insertBefore(season,mine);
       mine.parentNode?.querySelectorAll('[data-pvp-season-card]').forEach(el=>el.remove());season.dataset.pvpSeasonCard='1';
       if(pendingMonthly.length){
         const award=pendingMonthly[0],prize=document.createElement('div');prize.dataset.pvpSeasonCard='1';
