@@ -652,7 +652,6 @@
       if(data?.record){
         const cups=Math.max(0,Number(data.record.cups)||0);
         localStorage.setItem(PVP_CUPS_KEY,String(cups));
-        window.gallinaRememberPvpRankLevel?.(pvpRankFromCups(cups).level);
         renderPvpRankSummary(cups);
       }
     }catch{}
@@ -697,12 +696,13 @@
       matchCupsSettled=true;
       const cupsBefore=getPvpCups();
       settlePvpRecord(result,'',placement).then(saved=>{
-        const oldRank=pvpRankName(cupsBefore), newRank=pvpRankName(saved.cups), newLevel=pvpRankFromCups(saved.cups).level;
-        const improved=window.gallinaRememberPvpRankLevel?.(newLevel);
+        const oldRank=pvpRankName(cupsBefore), newRank=pvpRankName(saved.cups);
         const reward=window.gallinaSuperBossReward?.()||200000;
-        const rankUp=newRank!==oldRank && saved.cups>cupsBefore ? '\n🎉 ¡Subiste de rango a '+newRank+'!'+(improved?'\n👾 Superjefes mejorado: ahora entrega '+reward.toLocaleString('es-CL')+' 🪙.':'') : '';
+        const rankChanged=newRank!==oldRank;
+        const rankUp=rankChanged&&saved.cups>cupsBefore ? '\n🎉 ¡Subiste de rango a '+newRank+'!\n👾 Superjefes mejorado: ahora entrega '+reward.toLocaleString('es-CL')+' 🪙.' : '';
+        const rankDown=rankChanged&&saved.cups<cupsBefore ? '\n📉 Bajaste de rango a '+newRank+'.\n👾 Superjefes ahora entrega '+reward.toLocaleString('es-CL')+' 🪙.' : '';
         recordPvpAchievements(result,matchKills,saved.cups);
-        resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'')+rankUp;
+        resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'')+rankUp+rankDown;
       });
     }
   }
