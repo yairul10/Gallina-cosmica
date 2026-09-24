@@ -26,6 +26,8 @@ if (!gameStats.pendingBooster) gameStats.pendingBooster = 1.0;
 if (gameStats.extraModule === undefined) gameStats.extraModule = false;
 if (gameStats.equipExtraModule === undefined) gameStats.equipExtraModule = false;
 if (gameStats.pvpEvade === undefined) gameStats.pvpEvade = false;
+if (gameStats.pvpEmergencyLife === undefined) gameStats.pvpEmergencyLife = false;
+if (gameStats.pvpHighestRankLevel === undefined) gameStats.pvpHighestRankLevel = 0;
 let moduleActiveInMatch = false;
 let moduleUsed = false;
 
@@ -166,6 +168,7 @@ function getEquippedShipId() {
 function getOwnedExtraIds() {
     const ids = gameStats.extraModule ? ['auto_life'] : [];
     if (gameStats.pvpEvade) ids.push('pvp_evade');
+    if (gameStats.pvpEmergencyLife) ids.push('pvp_emergency_life');
     return ids;
 }
 
@@ -324,6 +327,7 @@ async function loadCloudProgress() {
         (Array.isArray(progress.owned_extras) ? progress.owned_extras : []).forEach(id => {
             if (id === 'auto_life') gameStats.extraModule = true;
             if (id === 'pvp_evade') gameStats.pvpEvade = true;
+            if (id === 'pvp_emergency_life') gameStats.pvpEmergencyLife = true;
         });
 
         if (progress.equipped_ship) applyEquippedShipId(progress.equipped_ship);
