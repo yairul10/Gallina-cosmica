@@ -676,16 +676,29 @@ export class PvpRanking {
     if(!activeMonth){
       activeMonth=month;
     } else if(activeMonth!==month){
-      const winners=this.sort(players).slice(0,10);
-      winners.forEach((p,i)=>{
-        const key='month:'+activeMonth+':'+p.playerId;
-        if(!monthlyAwards[key]) monthlyAwards[key]={type:i<3?'monthly-skin':'monthly-cosmetic',period:activeMonth,playerId:p.playerId,position:i+1,claimed:false,createdAt:now};
+      // Cierre mensual: todos los jugadores que hayan disputado al menos una
+      // partida durante la temporada reciben premio. Top 1-5 comparten la nave
+      // fuerte del mes; el resto se divide entre la mitad superior e inferior.
+      const participants=this.sort(players).filter(p=>Number(p.monthMatches||0)>0);
+      const monthlyShips=['toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'];
+      const monthlyShipNames={toro_aniquilador:'Toro Aniquilador',toro_blindado:'Toro Blindado',toro_baliza:'Toro Baliza',toro_oscuro:'Toro Oscuro',toro_luz:'Toro Luz',toro_maoma:'Toro Maoma',toro_mayor:'Toro Mayor'};
+      const monthlyShipPrices={toro_aniquilador:1500000,toro_blindado:1500000,toro_baliza:1500000,toro_oscuro:15000000,toro_luz:15000000,toro_maoma:15000000,toro_mayor:50000000};
+      const [year,monthNo]=String(activeMonth).split('-').map(Number);
+      const shipId=monthlyShips[Math.max(0,((year*12+monthNo-1)%monthlyShips.length))];
+      const shipName=monthlyShipNames[shipId],shipPrice=monthlyShipPrices[shipId];
+      const topHalf=Math.ceil(participants.length/2);
+      participants.forEach((p,i)=>{
+        const position=i+1,key='month:'+activeMonth+':'+p.playerId;
+        let coins=position===1?10000000:position<=3?5000000:position<=5?0:position<=10?5000000:position<=topHalf?2000000:1000000;
+        const ship=position<=5?shipId:null;
+        if(!monthlyAwards[key]) monthlyAwards[key]={type:'monthly-ranking',period:activeMonth,playerId:p.playerId,position,totalParticipants:participants.length,coins,shipId:ship,shipName:ship?shipName:null,shipPrice:ship?shipPrice:0,duplicateRefundRate:.60,claimed:false,createdAt:now};
       });
-      await this.ctx.storage.put('lastMonth',{period:activeMonth,ranking:winners,closedAt:now});
+      await this.ctx.storage.put('lastMonth',{period:activeMonth,ranking:participants.slice(0,100),participants:participants.length,shipId,shipName,closedAt:now});
       for(const p of Object.values(players)){
         const cups=Math.max(0,Number(p.cups||0));
         // Novato, Bronce y Plata conservan sus copas. Desde Oro se vuelve al piso del rango.
         if(cups>=1000)p.cups=this.rankFor(cups).floor;
+        p.monthMatches=0;
       }
       activeMonth=month;
     }
@@ -779,7 +792,7 @@ export class PvpRanking {
       return json({ok:true,duplicate:true,settlement:previousSettlement||null,record:record?{...record,rank:this.rankFor(record.cups)}:null,month:state.activeMonth});
     }
 
-    const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0};
+    const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0,monthMatches:0};
     const oldCups=Math.max(0,Number(prev.cups||0));
     const rankLossMultiplier=(cups)=>{
       if(cups>=12000)return 2;    // Leyenda Galáctica
@@ -811,7 +824,7 @@ export class PvpRanking {
       delta=result==='win'?winCups:-legacyLossPenalty(oldCups);
     }
     const newCups=Math.max(0,oldCups+delta), appliedDelta=newCups-oldCups;
-    const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result!=='win'?1:0),matches:Number(prev.matches||0)+1};
+    const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result!=='win'?1:0),matches:Number(prev.matches||0)+1,monthMatches:Number(prev.monthMatches||0)+1};
     players[playerId]=record;
     seen[dedupe]=Date.now();
     const keys=Object.keys(seen); if(keys.length>1000) keys.sort((x,y)=>seen[x]-seen[y]).slice(0,keys.length-1000).forEach(k=>delete seen[k]);
