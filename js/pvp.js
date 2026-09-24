@@ -1931,7 +1931,7 @@
       const season=document.createElement('div');
       season.style.cssText='margin:8px 0;padding:10px;border:1px solid rgba(168,85,247,.45);border-radius:11px;background:linear-gradient(135deg,rgba(76,29,149,.34),rgba(15,23,42,.65));text-align:center;';
       const seasonTitle=document.createElement('div');seasonTitle.style.cssText='font-weight:900;color:#e9d5ff;font-size:.92rem;';seasonTitle.textContent='🏆 Temporada '+seasonLabel(data.month);
-      const seasonTime=document.createElement('div');seasonTime.style.cssText='font-size:.72rem;color:#c4b5fd;margin-top:3px;';seasonTime.textContent=seasonDaysLeft(data.month)+' · '+ranking.length+' pilotos en Top 100';
+      const seasonTime=document.createElement('div');seasonTime.style.cssText='font-size:.72rem;color:#c4b5fd;margin-top:3px;';seasonTime.textContent=seasonDaysLeft(data.month);
       season.append(seasonTitle,seasonTime);mine.parentNode?.insertBefore(season,mine);
       mine.parentNode?.querySelectorAll('[data-pvp-season-card]').forEach(el=>el.remove());season.dataset.pvpSeasonCard='1';
       if(pendingMonthly.length){
