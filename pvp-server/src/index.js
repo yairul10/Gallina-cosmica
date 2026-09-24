@@ -649,9 +649,15 @@ export class PvpRoom {
 export class PvpRanking {
   constructor(ctx, env) { this.ctx=ctx; this.env=env; }
 
+  chileDateParts(now=Date.now()){
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Santiago',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now));
+    const get=t=>parts.find(p=>p.type===t)?.value||'';
+    return {year:get('year'),month:get('month'),day:Number(get('day')||1)};
+  }
+
   monthKey(now=Date.now()){
-    const d=new Date(now);
-    return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0');
+    const d=this.chileDateParts(now);
+    return d.year+'-'+d.month;
   }
 
   sort(list){ return Object.values(list).sort((a,b)=>Number(b.cups||0)-Number(a.cups||0)||Number(b.wins||0)-Number(a.wins||0)||Number(b.kills||0)-Number(a.kills||0)); }
@@ -677,7 +683,7 @@ export class PvpRanking {
   }
 
   monthlyPrizeLocked(period,now=Date.now()){
-    return period!==this.monthKey(now) || new Date(now).getUTCDate()>=16;
+    return period!==this.monthKey(now) || this.chileDateParts(now).day>=16;
   }
 
   async monthlyPrizeConfig(period,now=Date.now()){
