@@ -146,7 +146,8 @@
   }
   let selectedTargetSlot=0;
   const PVP_EVADE_DURATION=2000, PVP_EVADE_COOLDOWN=12000;
-  let evadeUntil=0,lastEvade=-Infinity;
+  const PVP_EMERGENCY_LIFE_COOLDOWN=20000;
+  let evadeUntil=0,lastEvade=-Infinity,lastEmergencyLife=-Infinity;
   const remoteEvadeUntil=new Map();
 
   function identity(){ return window.GallinaPlayerIdentity?.getCurrent?.() || {id:null,name:'Jugador'}; }
@@ -568,7 +569,7 @@
     if(pvpMode==='1v1'){
       for(const [slot,state] of peerStates){state.x=state.targetX=w/2;state.y=state.targetY=90;state.angle=state.targetAngle=Math.PI/2;state.visualAngle=state.targetVisualAngle=Math.PI/2;}
     }
-    bullets=[]; missiles=[]; confirmedLaserHits.clear(); selectedTargetSlot=0; evadeUntil=0; lastEvade=-Infinity; remoteEvadeUntil.clear(); eliminated.clear(); meEliminated=false; matchFinished=false; cosmicZoneElapsed=0;cosmicZoneProgress=0;lastZoneDamageAt=0;lastMissile=-Infinity; impactFx=[]; asteroidFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
+    bullets=[]; missiles=[]; confirmedLaserHits.clear(); selectedTargetSlot=0; evadeUntil=0; lastEvade=-Infinity; lastEmergencyLife=-Infinity; remoteEvadeUntil.clear(); eliminated.clear(); meEliminated=false; matchFinished=false; cosmicZoneElapsed=0;cosmicZoneProgress=0;lastZoneDamageAt=0;lastMissile=-Infinity; impactFx=[]; asteroidFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
     updateLives();
   }
@@ -650,6 +651,7 @@
       if(data?.record){
         const cups=Math.max(0,Number(data.record.cups)||0);
         localStorage.setItem(PVP_CUPS_KEY,String(cups));
+        window.gallinaRememberPvpRankLevel?.(pvpRankFromCups(cups).level);
         renderPvpRankSummary(cups);
       }
     }catch{}
@@ -694,8 +696,10 @@
       matchCupsSettled=true;
       const cupsBefore=getPvpCups();
       settlePvpRecord(result,'',placement).then(saved=>{
-        const oldRank=pvpRankName(cupsBefore), newRank=pvpRankName(saved.cups);
-        const rankUp=newRank!==oldRank && saved.cups>cupsBefore ? '\n🎉 ¡Subiste de rango a '+newRank+'!' : '';
+        const oldRank=pvpRankName(cupsBefore), newRank=pvpRankName(saved.cups), newLevel=pvpRankFromCups(saved.cups).level;
+        const improved=window.gallinaRememberPvpRankLevel?.(newLevel);
+        const reward=window.gallinaSuperBossReward?.()||200000;
+        const rankUp=newRank!==oldRank && saved.cups>cupsBefore ? '\n🎉 ¡Subiste de rango a '+newRank+'!'+(improved?'\n👾 Superjefes mejorado: ahora entrega '+reward.toLocaleString('es-CL')+' 🪙.':'') : '';
         recordPvpAchievements(result,matchKills,saved.cups);
         resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'')+rankUp;
       });
@@ -750,11 +754,26 @@
     if(meEliminated)showStatus('👀 Nave eliminada · tu compañero sigue luchando.',true);
   }
   function updateLives(){
+    const now=performance.now();
+    if(running&&!matchFinished&&!meEliminated&&gameStats?.pvpEmergencyLife&&meState.lives===1&&now-lastEmergencyLife>=PVP_EMERGENCY_LIFE_COOLDOWN){
+      const maxLives=pvpShipStats((players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship).maxLives;
+      meState.lives=Math.min(maxLives,meState.lives+5);
+      lastEmergencyLife=now;
+      showStatus('❤️‍🩹 Reparación de emergencia: +5 vidas · recarga 20 s.',true);
+    }
     $('pvpMyLives').textContent='❤️ x'+Math.max(0,meState.lives);
+    updateEmergencyLifeHud(now);
     const enemies=players.filter(p=>Number(p.slot)!==mySlot && !eliminated.has(Number(p.slot)) && (pvpMode!=='2v2'||Number(p.team)!==myTeam));
     const enemyLives=enemies.map(p=>'❤️ x'+Math.max(0,peerFor(p.slot).lives)).join(' · ');
     $('pvpRivalLives').textContent=enemyLives||'Esperando…';
     const label=$('pvpRivalLabel');if(label)label.textContent=pvpMode==='2v2'?'RIVALES':'RIVAL';
+  }
+  function updateEmergencyLifeHud(now=performance.now()){
+    const hud=$('pvpEmergencyLifeHud');if(!hud)return;
+    const owned=!!gameStats?.pvpEmergencyLife;
+    hud.style.display=owned?'block':'none';if(!owned)return;
+    const left=Math.max(0,PVP_EMERGENCY_LIFE_COOLDOWN-(now-lastEmergencyLife));
+    hud.textContent=left>0?'❤️‍🩹 '+Math.ceil(left/1000)+' s':'❤️‍🩹 LISTO';
   }
   function handlePeer(p,fromSlot=0,fromTeam=0){
     // hit-confirm se difunde también al defensor que lo originó. Debe procesarse
@@ -950,6 +969,7 @@
   }
   document.addEventListener('visibilitychange',syncBackgroundCombat);
   function update(dt,now){
+    updateEmergencyLifeHud(now);
     // Regeneración PvP: tras 5 s sin recibir daño, recupera 1 vida cada 2 s
     // hasta el máximo de 20. Cada impacto reinicia el temporizador.
     const myRegen=pvpShipStats((players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship);
@@ -1687,7 +1707,7 @@
     // Minimapa completo en todos los modos. En Arena 10 se ve todo el mundo
     // y la posición propia, pero sólo se revelan rivales dentro de 500 unidades.
     arenaCtx.save();arenaCtx.translate(cam.x,cam.y);
-    const mapW=112,mapH=112,mapX=w-mapW-12,mapY=12,sx=mapW/worldWidth,sy=mapH/worldHeight;
+    const mapW=112,mapH=112,mapPos=minimapDrawPosition(w,h,mapW,mapH),mapX=mapPos.x,mapY=mapPos.y,sx=mapW/worldWidth,sy=mapH/worldHeight;
     const limitedEnemies=pvpMode==='arena10', radarRadius=700;
     arenaCtx.fillStyle='rgba(2,6,23,.78)';arenaCtx.fillRect(mapX,mapY,mapW,mapH);
     arenaCtx.strokeStyle='rgba(148,163,184,.75)';arenaCtx.lineWidth=1;arenaCtx.strokeRect(mapX,mapY,mapW,mapH);
@@ -1745,14 +1765,23 @@
     const end=e=>{if(e.pointerId!==stick.id)return;stick.active=false;stick.id=null;stick.x=stick.y=0;knob.style.transform='translate(0,0)';};
     el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
   }
-  const PVP_CONTROL_IDS=['pvpMoveStick','pvpFireBtn','pvpMissileBtn','pvpEvadeBtn'];
+  const PVP_CONTROL_IDS=['pvpMoveStick','pvpFireBtn','pvpMissileBtn','pvpEvadeBtn','pvpMinimapControl'];
   const PVP_CONTROLS_KEY='gallina_pvp_controls_v1';
   const defaultControlStyle={
     pvpMoveStick:{left:'22px',right:'auto',top:'auto',bottom:'max(24px,env(safe-area-inset-bottom))'},
     pvpFireBtn:{left:'auto',right:'22px',top:'auto',bottom:'max(24px,env(safe-area-inset-bottom))'},
     pvpMissileBtn:{left:'auto',right:'28px',top:'auto',bottom:'max(145px,calc(env(safe-area-inset-bottom) + 145px))'},
-    pvpEvadeBtn:{left:'auto',right:'31px',top:'auto',bottom:'max(225px,calc(env(safe-area-inset-bottom) + 225px))'}
+    pvpEvadeBtn:{left:'auto',right:'31px',top:'auto',bottom:'max(225px,calc(env(safe-area-inset-bottom) + 225px))'},
+    pvpMinimapControl:{left:'auto',right:'12px',top:'12px',bottom:'auto'}
   };
+  function minimapDrawPosition(w,h,mapW,mapH){
+    let x=w-mapW-12,y=12;
+    try{
+      const layout=JSON.parse(localStorage.getItem(PVP_CONTROLS_KEY)||'null'),p=layout?.pvpMinimapControl,a=arena.getBoundingClientRect();
+      if(p&&a.width>0&&a.height>0){x=(parseFloat(p.left)||0)*w/a.width;y=(parseFloat(p.top)||0)*h/a.height;}
+    }catch{}
+    return {x:Math.max(0,Math.min(w-mapW,x)),y:Math.max(0,Math.min(h-mapH,y))};
+  }
   function applyPvpControlLayout(layout){PVP_CONTROL_IDS.forEach(id=>{const el=$(id),p=layout?.[id];if(!el||!p)return;el.style.left=p.left;el.style.top=p.top;el.style.right='auto';el.style.bottom='auto';});}
   function loadPvpControlLayout(){try{const v=JSON.parse(localStorage.getItem(PVP_CONTROLS_KEY)||'null');if(v)applyPvpControlLayout(v);}catch{}}
   function savePvpControlLayout(){const a=arena.getBoundingClientRect(),layout={};PVP_CONTROL_IDS.forEach(id=>{const el=$(id);if(!el)return;const r=el.getBoundingClientRect();layout[id]={left:Math.max(0,r.left-a.left)+'px',top:Math.max(0,r.top-a.top)+'px'};});localStorage.setItem(PVP_CONTROLS_KEY,JSON.stringify(layout));applyPvpControlLayout(layout);}
@@ -1770,9 +1799,9 @@
     const result=$('pvpResult'),countdown=$('pvpCountdown');
     if(result)result.style.display='none';
     if(countdown)countdown.style.display='none';
-    disconnect(true);lobby.style.display='none';arena.style.display='flex';controlsEditing=true;$('pvpControlsEditor').style.display='block';$('pvpLeaveArenaBtn').style.display='none';$('pvpEvadeBtn').style.display=gameStats?.pvpEvade?'block':'none';loadPvpControlLayout();
+    disconnect(true);lobby.style.display='none';arena.style.display='flex';controlsEditing=true;$('pvpControlsEditor').style.display='block';$('pvpLeaveArenaBtn').style.display='none';$('pvpEvadeBtn').style.display=gameStats?.pvpEvade?'block':'none';$('pvpMinimapControl').style.display='flex';loadPvpControlLayout();
   }
-  function closeControlsEditor(save=true){if(save)savePvpControlLayout();controlsEditing=false;controlDrag=null;$('pvpControlsEditor').style.display='none';$('pvpLeaveArenaBtn').style.display='block';arena.style.display='none';lobby.style.display='flex';}
+  function closeControlsEditor(save=true){if(save)savePvpControlLayout();controlsEditing=false;controlDrag=null;$('pvpControlsEditor').style.display='none';$('pvpMinimapControl').style.display='none';$('pvpLeaveArenaBtn').style.display='block';arena.style.display='none';lobby.style.display='flex';}
   PVP_CONTROL_IDS.forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('pointerdown',e=>{if(!controlsEditing)return;e.preventDefault();e.stopImmediatePropagation();const a=arena.getBoundingClientRect(),r=el.getBoundingClientRect();controlDrag={el,id:e.pointerId,dx:e.clientX-r.left,dy:e.clientY-r.top,a};try{el.setPointerCapture(e.pointerId);}catch{};},{capture:true});el.addEventListener('pointermove',e=>{if(!controlsEditing||!controlDrag||controlDrag.el!==el||controlDrag.id!==e.pointerId)return;e.preventDefault();const a=arena.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight;const left=Math.max(0,Math.min(a.width-w,e.clientX-a.left-controlDrag.dx)),top=Math.max(0,Math.min(a.height-h,e.clientY-a.top-controlDrag.dy));el.style.left=left+'px';el.style.top=top+'px';el.style.right='auto';el.style.bottom='auto';},{capture:true});const end=e=>{if(controlDrag?.el===el&&controlDrag.id===e.pointerId)controlDrag=null;};el.addEventListener('pointerup',end,{capture:true});el.addEventListener('pointercancel',end,{capture:true});});
   loadPvpControlLayout();
   stickSetup($('pvpMoveStick'),moveStick,false);
