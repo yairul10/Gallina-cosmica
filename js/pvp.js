@@ -1261,10 +1261,11 @@
           }
         }
         const targetInAttackRange=!!chosen&&Math.hypot(chosen.state.x-bot.x,chosen.state.y-bot.y)<=PVP_ATTACK_RANGE;
-        // Desde Oro usa la cadencia humana base (330 ms). El Aniquilador conserva
-        // exactamente su ventaja real de 247,5 ms; los rangos bajos dejan más ventanas.
-        const rankShotCooldown=[850,650,480,330,330,330,330][rankLevel];
-        const botShotCooldown=botPlayer.ship==='Toro Aniquilador'?Math.min(rankShotCooldown,247.5):rankShotCooldown;
+        // Cadencia base por rango. Todos los bots disparan un 15% menos veces
+        // por unidad de tiempo para dar más margen de reacción sin alterar su IA.
+        const BOT_LASER_RATE_FACTOR=1/0.85;
+        const rankShotCooldown=[850,650,480,330,330,330,330][rankLevel]*BOT_LASER_RATE_FACTOR;
+        const botShotCooldown=botPlayer.ship==='Toro Aniquilador'?Math.min(rankShotCooldown,247.5*BOT_LASER_RATE_FACTOR):rankShotCooldown;
         if(targetInAttackRange&&now-ai.lastShot>botShotCooldown){
           ai.lastShot=now;
           const aim=shotAim();
