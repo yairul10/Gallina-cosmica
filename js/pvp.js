@@ -1416,9 +1416,14 @@
         const deferBotDamage=!!(botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')&&bestPlayer?.bot);
         if(!deferBotDamage){
           b.life=0;b.x=best.hitX;b.y=best.hitY;
-          // Primer contacto local: chispa pequeña para humanos y bots. Contra
-          // humanos el impacto grande llega sólo con el hit-confirm oficial.
-          impactFx.push({x:best.hitX,y:best.hitY,life:.10,maxLife:.10,predicted:true});
+          // Contra humanos el primer contacto es sólo una chispa: la onda grande
+          // llega con el hit-confirm oficial. En 1v1 contra bot este cliente es
+          // la autoridad que aplica el daño, así que el golpe ya está confirmado
+          // localmente y debe verse con la misma onda grande.
+          const isLocalBotImpact=!!(botMatch&&bestPlayer?.bot);
+          impactFx.push(isLocalBotImpact
+            ? {x:best.hitX,y:best.hitY,life:.32,maxLife:.32}
+            : {x:best.hitX,y:best.hitY,life:.10,maxLife:.10,predicted:true});
         }
         if(botMatch&&pvpMode==='1v1'&&now-lastBotHitAt>180){
           const botPlayer=players.find(p=>p.bot);
@@ -1451,9 +1456,10 @@
           if(now-last<=180)return false;
           botHitTimes.set(slot,now);botRegenTimes.set(slot,now);
           const st=peerFor(slot);st.lives=Math.max(0,Number(st.lives??20)-1);
-          // Los impactos locales contra bots usan la misma chispa discreta
-          // que el primer contacto contra una nave humana.
-          impactFx.push({x:hitX,y:hitY,life:.10,maxLife:.10,predicted:true});updateLives();
+          // Los bots no tienen un segundo cliente que confirme el golpe. Esta
+          // simulación es la autoridad del daño, por lo que mostramos la misma
+          // onda grande que un hit-confirm humano, sin alterar vidas ni daño.
+          impactFx.push({x:hitX,y:hitY,life:.32,maxLife:.32});updateLives();
           if(st.lives<=0&&!eliminated.has(slot)&&!pendingBotDefeats.has(slot)){
             // Esperar la confirmación oficial del servidor antes de marcarlo
             // eliminado. Antes se añadía aquí a "eliminated", por lo que cuando
