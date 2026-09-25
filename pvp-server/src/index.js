@@ -318,7 +318,7 @@ export class PvpRoom {
       configureBotProfiles([...(this.botPlayer?[this.botPlayer]:[]),...this.botPlayers],Array.from(this.players.values()));
     }
 
-    server.addEventListener("message", event => {
+    server.addEventListener("message", async event => {
       let message; try { message = JSON.parse(event.data); } catch { return; }
       if (!message || typeof message !== "object") return;
 
@@ -385,16 +385,14 @@ export class PvpRoom {
             const winner=this.playerList().find(p=>!p.bot&&Number(p.slot)!==deadSlot)||null;
             const winnerSlot=Number(winner?.slot||0);
             if(winnerSlot){
-              this.officialResult=this.officialSnapshot({winnerSlot,winnerPlayerId:winner?.playerId||null});
-              this.settleOfficialResults({winnerSlot,winnerPlayerId:winner?.playerId||null});
-              this.broadcast({type:"peer-message",from:deadSlot,team:0,payload:{type:"defeat",killerSlot:winnerSlot,attackKind}});
+              this.officialResult=this.officialSnapshot({winnerSlot,winnerPlayerId:winner?.playerId||null}); await this.settleOfficialResults({winnerSlot,winnerPlayerId:winner?.playerId||null}); this.broadcast({type:"peer-message",from:deadSlot,team:0,payload:{type:"defeat",killerSlot:winnerSlot,attackKind}});
             }
           } else if(this.mode==="2v2"){
             const teamSlots=this.playerList().filter(p=>Number(p.team)===Number(bot.team)).map(p=>Number(p.slot));
             if(teamSlots.length===2 && teamSlots.every(s=>this.eliminatedSlots.has(s))){
               this.finished=true;
               const winnerTeam=Number(bot.team)===1?2:1;
-              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:Number(bot.team)}); this.settleOfficialResults({winnerTeam,loserTeam:Number(bot.team)}); this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam),official:this.officialResult});
+              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:Number(bot.team)}); await this.settleOfficialResults({winnerTeam,loserTeam:Number(bot.team)}); this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam),official:this.officialResult});
             }
             if(!this.finished) this.simulate2v2BotsIfNoHumans();
           } else {
@@ -448,7 +446,7 @@ export class PvpRoom {
             if (teamSlots.length === 2 && teamSlots.every(s => this.eliminatedSlots.has(s))) {
               this.finished = true;
               const winnerTeam = team === 1 ? 2 : 1;
-              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:team}); this.settleOfficialResults({winnerTeam,loserTeam:team}); this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam), official:this.officialResult });
+              this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:team}); await this.settleOfficialResults({winnerTeam,loserTeam:team}); this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam), official:this.officialResult });
             }
             if(!this.finished) this.simulate2v2BotsIfNoHumans();
           } else {
@@ -536,9 +534,7 @@ export class PvpRoom {
       if(!winnerTeam)return false;
       const loserTeam=winnerTeam===1?2:1;
       this.finished=true;
-      this.officialResult=this.officialSnapshot({winnerTeam,loserTeam});
-      this.settleOfficialResults({winnerTeam,loserTeam});
-      this.broadcast({type:"team-result",winnerTeam,loserTeam,rewards:this.rewardList(winnerTeam),official:this.officialResult});
+      this.officialResult=this.officialSnapshot({winnerTeam,loserTeam}); await this.settleOfficialResults({winnerTeam,loserTeam}); this.broadcast({type:"team-result",winnerTeam,loserTeam,rewards:this.rewardList(winnerTeam),official:this.officialResult});
       return true;
     }
     // Quedan bots de ambos equipos: simular el combate restante y cerrar la sala.
@@ -554,9 +550,7 @@ export class PvpRoom {
     }
     this.broadcast({type:"arena-simulated"});
     this.finished=true;
-    this.officialResult=this.officialSnapshot({winnerTeam,loserTeam});
-    this.settleOfficialResults({winnerTeam,loserTeam});
-    this.broadcast({type:"team-result",winnerTeam,loserTeam,rewards:this.rewardList(winnerTeam),official:this.officialResult});
+    this.officialResult=this.officialSnapshot({winnerTeam,loserTeam}); await this.settleOfficialResults({winnerTeam,loserTeam}); this.broadcast({type:"team-result",winnerTeam,loserTeam,rewards:this.rewardList(winnerTeam),official:this.officialResult});
     return true;
   }
   simulateArenaBotsIfNoHumans() {
@@ -595,9 +589,7 @@ export class PvpRoom {
     const winner = this.playerList().find(p => p.slot === winnerSlot) || null;
     const finalOrder = [winnerSlot, ...this.eliminationOrder.slice().reverse()].filter((slot,i,a)=>slot&&a.indexOf(slot)===i).slice(0,capacity);
     const podiumSlots = finalOrder.slice(0, 4);
-    this.officialResult=this.officialSnapshot({winnerSlot,winnerPlayerId:winner?.playerId||null,finalOrder});
-    this.settleOfficialResults({winnerSlot,winnerPlayerId:winner?.playerId||null,finalOrder});
-    this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, podiumSlots, finalOrder, rewards: this.rewardListBySlot(winnerSlot), official:this.officialResult });
+    this.officialResult=this.officialSnapshot({winnerSlot,winnerPlayerId:winner?.playerId||null,finalOrder}); await this.settleOfficialResults({winnerSlot,winnerPlayerId:winner?.playerId||null,finalOrder}); this.broadcast({ type: "arena-result", winnerSlot, winnerPlayerId: winner?.playerId || null, podiumSlots, finalOrder, rewards: this.rewardListBySlot(winnerSlot), official:this.officialResult });
   }
   recordServerKill(killerSlot, deadSlot) {
     killerSlot=Number(killerSlot||0); deadSlot=Number(deadSlot||0);
@@ -850,7 +842,7 @@ export class PvpRanking {
       let body;try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
       const playerId=safeText(body?.playerId,'',128);
       const floor=Math.max(0,Math.floor(Number(body?.floor)||0));
-      const rewards={200:100000,500:200000,1000:500000,3000:1000000,7000:3000000,12000:10000000};
+      const rewards={100:100000,200:200000,500:500000,1000:1000000,2000:3000000,4000:10000000};
       if(!playerId||!rewards[floor])return json({ok:false,error:'BAD_REWARD'},400);
       const record=state.players[playerId];
       if(!record||Number(record.cups||0)<floor)return json({ok:false,error:'RANK_NOT_REACHED'},403);
@@ -896,17 +888,17 @@ export class PvpRanking {
     const prev=players[playerId]||{playerId,name,cups:0,kills:0,wins:0,losses:0,matches:0,monthMatches:0};
     const oldCups=Math.max(0,Number(prev.cups||0));
     const rankLossMultiplier=(cups)=>{
-      if(cups>=12000)return 2;    // Leyenda Galáctica
-      if(cups>=7000)return 1.5;   // Maestro Cósmico
-      if(cups>=3000)return 1.25;  // Diamante
-      if(cups>=1000)return 1;     // Oro
+      if(cups>=4000)return 2;     // Leyenda Galáctica
+      if(cups>=2000)return 1.5;    // Maestro Cósmico
+      if(cups>=1000)return 1.25;   // Diamante
+      if(cups>=500)return 1;       // Oro
       return 0;                   // Novato, Bronce y Plata: protegidos
     };
     const legacyLossPenalty=(cups)=>{
-      if(cups>=12000)return 10;
-      if(cups>=7000)return 8;
-      if(cups>=3000)return 5;
-      if(cups>=1000)return 3;
+      if(cups>=4000)return 10;
+      if(cups>=2000)return 8;
+      if(cups>=1000)return 5;
+      if(cups>=500)return 3;
       return 0;
     };
     // Las eliminaciones sólo dan copas en Arena. 1v1 y 2v2 no tienen bono por muerte.
