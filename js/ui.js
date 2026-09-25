@@ -80,7 +80,7 @@ window.switchHangarTab = function(tab) {
 const PVP_RANK_SHIP_RULES={
     toro_oscuro:{cost:15000000,floor:1000},toro_luz:{cost:15000000,floor:1000},toro_maoma:{cost:15000000,floor:1000},toro_mayor:{cost:50000000,floor:4000}
 };
-let pvpClaimedRankUnlocks=new Set(),pvpAdminPreview=false,pvpUnlockRefreshBusy=false;
+let pvpClaimedRankUnlocks=new Set(),pvpAdminPreview=false,pvpGhostSkinAllowed=false,pvpUnlockRefreshBusy=false;
 window.gallinaSetPvpRankUnlocks=(floors)=>{pvpClaimedRankUnlocks=new Set((Array.isArray(floors)?floors:[]).map(Number));updateShopUI?.();};
 function pvpShipCanBuy(id){const rule=PVP_RANK_SHIP_RULES[id];return !rule||pvpAdminPreview||pvpClaimedRankUnlocks.has(rule.floor);}
 async function refreshPvpSpecialShipAccess(){
@@ -92,11 +92,17 @@ async function refreshPvpSpecialShipAccess(){
         if(window.getQaAdminStatus)jobs.push(window.getQaAdminStatus().then(d=>{
             // Un fallo transitorio de Play Games no debe ocultar el catálogo QA
             // después de que el servidor ya confirmó al administrador.
-            if(d?.ok)pvpAdminPreview=!!d.isAdmin;
+            if(d?.ok){
+                pvpAdminPreview=!!d.isAdmin;
+                // La autorización viene del Worker tras validar la sesión de
+                // Play Games. No se guarda ningún Player ID administrador aquí.
+                pvpGhostSkinAllowed=!!d.isAdmin;
+            }
         }));
         await Promise.allSettled(jobs);
     }finally{pvpUnlockRefreshBusy=false;updateShopUI();updateHangarUI();}
 }
+window.refreshPvpSpecialShipAccess = refreshPvpSpecialShipAccess;
 function updateHangarUI() {
     const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
     const passives = ['+20% a Maíz', '+20% a Jefes Maíz', '+20% a Lechuga', '+20% a Jefes Lech.'];
@@ -148,6 +154,18 @@ function updateHangarUI() {
         if(btn){const equipped=gameStats.selectedPvpShip===id;btn.textContent=equipped?'Equipado':'Equipar';btn.style.background=equipped?'#f59e0b':'#334155';}
     });
 
+    // Es una prueba exclusiva del administrador real y sólo tiene sentido si
+    // el Toro Mayor está disponible. Las cuentas QA normales no la ven.
+    const ghostCard=document.getElementById('hangar-pvp-toro-mayor-ghost');
+    const ghostButton=document.getElementById('btn-equip-pvp-toro-mayor-ghost');
+    const canUseGhost=!!pvpGhostSkinAllowed&&!!gameStats.pvpShips?.toro_mayor;
+    if(ghostCard)ghostCard.style.display=canUseGhost?'flex':'none';
+    if(ghostButton){
+        const active=canUseGhost&&gameStats.selectedPvpShip==='toro_mayor'&&!!gameStats.pvpToroMayorGhost;
+        ghostButton.textContent=active?'Quitar diseño':'Equipar diseño';
+        ghostButton.style.background=active?'#0891b2':'#334155';
+    }
+
     const evadeCard=document.getElementById('hangar-pvp-evade');
     if(evadeCard) evadeCard.style.display=gameStats.pvpEvade?'flex':'none';
 
@@ -179,6 +197,26 @@ window.addEventListener('gallina-cloud-progress-loaded', window.refreshGallinaEq
 window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; gameStats.useGallinaChile = false; gameStats.selectedPvpShip=null; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
 window.equipGallinaChile = function() { if (gameStats.gallinaChile) { gameStats.selectedShip = 0; gameStats.useProShip = false; gameStats.useGallinaChile = true; gameStats.selectedPvpShip=null; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
 window.equipPvpShip = function(id) { if (gameStats.pvpShips?.[id]) { gameStats.selectedPvpShip=id; gameStats.useProShip=false; gameStats.useGallinaChile=false; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
+window.gallinaGhostToroMayorActive = function(){
+    return !!(pvpGhostSkinAllowed&&gameStats.pvpToroMayorGhost&&gameStats.selectedPvpShip==='toro_mayor'&&gameStats.pvpShips?.toro_mayor);
+};
+window.togglePvpToroMayorGhost = async function(){
+    // Se vuelve a consultar justo antes de equipar: un estado visual local no
+    // basta para conceder esta prueba exclusiva.
+    let status={ok:false,isAdmin:false};
+    try{status=await window.getQaAdminStatus?.()||status;}catch{}
+    pvpGhostSkinAllowed=!!(status.ok&&status.isAdmin);
+    if(!pvpGhostSkinAllowed){
+        gameStats.pvpToroMayorGhost=false;
+        updateHangarUI();window.updateMenuShip();
+        return;
+    }
+    if(!gameStats.pvpShips?.toro_mayor)return;
+    gameStats.selectedPvpShip='toro_mayor';
+    gameStats.useProShip=false;gameStats.useGallinaChile=false;
+    gameStats.pvpToroMayorGhost=!gameStats.pvpToroMayorGhost;
+    saveStats();updateHangarUI();window.updateMenuShip();
+};
 window.equipExtra = function() { if (gameStats.extraModule) { gameStats.equipExtraModule = !gameStats.equipExtraModule; saveStats(); updateHangarUI(); } }
 
 window.switchShopTab = function(tab) {
