@@ -298,8 +298,8 @@
     const base=label.replace(/ Pro$/,'').toLowerCase();
     return 'assets/'+base+(pro?'_pro':'')+'_1.png';
   }
-  function ghostToroMayorActive(){
-    try{return !!window.gallinaGhostToroMayorActive?.();}catch{return false;}
+  function activeShipCosmetic(){
+    try{return window.gallinaGetShipCosmetic?.()||'normal';}catch{return 'normal';}
   }
   function pvpShipStats(label){
     if(label==='Toro Aniquilador') return {maxLives:20,shotCooldown:247.5,regenDelay:5000,regenEvery:2000};
@@ -933,9 +933,9 @@
       if(Number.isFinite(pa)) remote.targetAngle=mirrorAngle(pa);
       const pva=Number(p.visualAngle);
       if(Number.isFinite(pva)) remote.targetVisualAngle=mirrorAngle(pva);
-      // El rival recibe el mismo acabado visual. Sólo se acepta para Toro
-      // Mayor; no altera su nave, vidas, cadencia ni ninguna regla de PvP.
-      remote.pvpSkin=(p.skin==='toro_mayor_fantasma'&&players.find(x=>Number(x.slot)===fromSlot)?.ship==='Toro Mayor')?'toro_mayor_fantasma':'';
+      // El rival recibe sólo el acabado visual; nunca modifica nave, vidas,
+      // cadencia ni ninguna regla de PvP.
+      remote.pvpSkin=['fantasma','halloween'].includes(p.skin)?p.skin:'normal';
       remote.lives=Number.isFinite(Number(p.lives))?Number(p.lives):remote.lives;updateLives();
     } else if(p.type==='evade'){
       remoteEvadeUntil.set(Number(fromSlot),performance.now()+PVP_EVADE_DURATION);
@@ -1635,9 +1635,9 @@
     const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
     const svx=pvpMode==='1v1'&&mySlot===2?-localVx:localVx;
     const svy=pvpMode==='1v1'&&mySlot===2?-localVy:localVy;
-    const stateNow={x:Math.round(sx),y:Math.round(sy),vx:Math.round(svx),vy:Math.round(svy),angle:sa,visualAngle:sva,lives:meState.lives,skin:ghostToroMayorActive()?'toro_mayor_fantasma':''};
+    const stateNow={x:Math.round(sx),y:Math.round(sy),vx:Math.round(svx),vy:Math.round(svy),angle:sa,visualAngle:sva,lives:meState.lives,skin:activeShipCosmetic()};
     const angleDiff=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
-    const stateChanged=!lastSentState||Math.abs(stateNow.x-lastSentState.x)>=1||Math.abs(stateNow.y-lastSentState.y)>=1||Math.abs(stateNow.vx-lastSentState.vx)>=1||Math.abs(stateNow.vy-lastSentState.vy)>=1||angleDiff(stateNow.angle,lastSentState.angle)>.015||angleDiff(stateNow.visualAngle,lastSentState.visualAngle)>.015||stateNow.lives!==lastSentState.lives;
+    const stateChanged=!lastSentState||Math.abs(stateNow.x-lastSentState.x)>=1||Math.abs(stateNow.y-lastSentState.y)>=1||Math.abs(stateNow.vx-lastSentState.vx)>=1||Math.abs(stateNow.vy-lastSentState.vy)>=1||angleDiff(stateNow.angle,lastSentState.angle)>.015||angleDiff(stateNow.visualAngle,lastSentState.visualAngle)>.015||stateNow.lives!==lastSentState.lives||stateNow.skin!==lastSentState.skin;
     const wasIdle=!!lastSentState&&Math.abs(Number(lastSentState.vx)||0)<1&&Math.abs(Number(lastSentState.vy)||0)<1;
     const moving=Math.abs(stateNow.vx)>=1||Math.abs(stateNow.vy)>=1;
     const resumed=wasIdle&&moving;
@@ -1675,11 +1675,11 @@
     arenaCtx.fillStyle=pvpMode==='2v2'&&Number(player.team)===myTeam?'#86efac':'#fca5a5';
     arenaCtx.fillText(label,left+iconSize+gap,baseline);arenaCtx.restore();
   }
-  function isGhostToroMayor(state,label){
-    return label==='Toro Mayor'&&(state===meState?ghostToroMayorActive():state?.pvpSkin==='toro_mayor_fantasma');
+  function shipCosmeticForState(state){
+    return state===meState?activeShipCosmetic():(['fantasma','halloween'].includes(state?.pvpSkin)?state.pvpSkin:'normal');
   }
   function drawShip(state,label){
-    const ghost=isGhostToroMayor(state,label),im=imageFor(label);
+    const cosmetic=shipCosmeticForState(state),ghost=cosmetic==='fantasma',halloween=cosmetic==='halloween',im=imageFor(label);
     const vx=Number(state.vx)||0,vy=Number(state.vy)||0,velocity=Math.hypot(vx,vy);
     if(ghost){
       // Estela únicamente decorativa: se calcula con la velocidad ya recibida,
@@ -1697,7 +1697,7 @@
       arenaCtx.restore();
     }
     arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);
-    if(im.complete&&im.naturalWidth){if(ghost){arenaCtx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';arenaCtx.globalAlpha=.78;}arenaCtx.drawImage(im,-26,-26,52,52);}else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
+    if(im.complete&&im.naturalWidth){if(ghost){arenaCtx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';arenaCtx.globalAlpha=.78;}else if(halloween){arenaCtx.filter='sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)';}arenaCtx.drawImage(im,-26,-26,52,52);}else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
     arenaCtx.restore();
   }
   function cameraPosition(){
