@@ -557,7 +557,7 @@
         reconnectTimer=setTimeout(()=>{
           reconnectTimer=0;
           if(!reconnecting||socket||!currentRoom)return;
-          connect(currentRoom,false,botMatch,1,true);
+          connect(currentRoom,false,botMatch,1,true,rankedMatch,activePartyCode);
         },RECONNECT_DELAY);
       }else if(running||countdownActive){
         reconnecting=false;endArena('Se perdió la conexión.'+detail);
@@ -715,7 +715,7 @@
       window.dispatchEvent(new CustomEvent('gallina-qa-pvp-result',{detail:report}));
     }
     const resultEl=$('pvpResultText');
-    resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+(result==='win'||result==='loss'?'\n🏆 Guardando copas…':'');
+    resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+(rankedMatch&&(result==='win'||result==='loss')?'\n🏆 Guardando copas…':'\n🤝 Sala amistosa · las copas no cambian.');
     $('pvpResult').style.display='flex';
     if(!wasQaPvp && rankedMatch && !matchCupsSettled && (result==='win'||result==='loss')){
       matchCupsSettled=true;
