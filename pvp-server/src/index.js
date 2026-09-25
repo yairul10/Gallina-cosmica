@@ -99,7 +99,7 @@ async function authorizePvpRequest(request, env) {
     && Number.isInteger(requestedQaRank) && requestedQaRank>=0 && requestedQaRank<=6;
   url.searchParams.delete("qaBotRank");
   if(useQaRank){
-    const qaCups=[0,200,500,1000,3000,7000,12000][requestedQaRank];
+    const qaCups=[0,100,200,500,1000,2000,4000][requestedQaRank];
     url.searchParams.set("cups",String(qaCups));
   }else try{
     const rankingId=env.PVP_RANKING.idFromName("global");
@@ -168,12 +168,12 @@ function gameMode(url) {
 
 function pvpRankFromCups(cups){
   cups=Math.max(0,Number(cups)||0);
-  if(cups>=12000)return {label:"🌌 Leyenda Galáctica",level:6};
-  if(cups>=7000)return {label:"🚀 Maestro Cósmico",level:5};
-  if(cups>=3000)return {label:"💎 Diamante",level:4};
-  if(cups>=1000)return {label:"🥇 Oro",level:3};
-  if(cups>=500)return {label:"🥈 Plata",level:2};
-  if(cups>=200)return {label:"🥉 Bronce",level:1};
+  if(cups>=4000)return {label:"🌌 Leyenda Galáctica",level:6};
+  if(cups>=2000)return {label:"🚀 Maestro Cósmico",level:5};
+  if(cups>=1000)return {label:"💎 Diamante",level:4};
+  if(cups>=500)return {label:"🥇 Oro",level:3};
+  if(cups>=200)return {label:"🥈 Plata",level:2};
+  if(cups>=100)return {label:"🥉 Bronce",level:1};
   return {label:"🥚 Novato",level:0};
 }
 function botShipForRank(level){
@@ -241,6 +241,8 @@ export class PvpRoom {
     const requestedMode = gameMode(url);
     if(!this.roomCode){const m=url.pathname.match(/\/room\/(\d{6})$/);this.roomCode=m?m[1]:safeText(url.pathname,'room',40);}
     if (!this.mode) this.mode = requestedMode;
+    if (this.ranked === undefined) this.ranked = url.searchParams.get("ranked") === "1";
+    const partyCode = safeText(url.searchParams.get("partyCode"),"",6);
     if (requestedMode !== this.mode) return json({ ok: false, error: "MODE_MISMATCH" }, 409);
     const capacity = roomCapacity(this.mode);
     const wantsBot = (this.mode === "1v1" || this.mode === "2v2" || this.mode === "arena" || this.mode === "arena10") && url.searchParams.get("bot") === "1";
@@ -253,6 +255,7 @@ export class PvpRoom {
     const name = safeText(url.searchParams.get("name"), "Jugador", 40);
     const ship = safeText(url.searchParams.get("ship"), "Gallina", 40);
     const cups = Math.max(0, Math.min(9999999, Number(url.searchParams.get("cups") || 0)));
+    if(!this.partyTeams)this.partyTeams=new Map();
     let slot, team, reconnected = false;
     const pending = Array.from(this.rewardStatus.entries()).find(([,s]) => s.playerId === playerId && s.pendingReconnect);
     if (pending) {
@@ -264,16 +267,23 @@ export class PvpRoom {
     } else {
       const used = new Set(Array.from(this.players.values()).map(p => p.slot));
       if(wantsBot&&this.mode==="2v2"&&requestedHumanCount===2&&!this.humanSlotPlan){
-        this.humanSlotPlan=Math.random()<0.5?[1,2]:[1,3];
+        this.humanSlotPlan=partyCode?[1,2]:(Math.random()<0.5?[1,2]:[1,3]);
       }
       const humanSlots = wantsBot && (this.mode==="2v2"||this.mode==="arena"||this.mode==="arena10")
         ? (this.mode==="2v2"&&requestedHumanCount===2 ? this.humanSlotPlan : Array.from({length:requestedHumanCount},(_,i)=>i+1))
         : Array.from({length:capacity},(_,i)=>i+1);
       slot = humanSlots.find(s => !used.has(s)) || Array.from({length:capacity},(_,i)=>i+1).find(s => !used.has(s)) || capacity;
       team = this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0;
+      if(this.mode==="2v2"&&partyCode){
+        let assigned=this.partyTeams.get(partyCode);
+        if(!assigned){const usedTeams=new Set(this.partyTeams.values());assigned=!usedTeams.has(1)?1:2;this.partyTeams.set(partyCode,assigned);}
+        team=assigned;
+        const teamSlots=assigned===1?[1,2]:[3,4], usedNow=new Set(Array.from(this.players.values()).map(p=>p.slot));
+        slot=teamSlots.find(x=>!usedNow.has(x))||slot;
+      }
       this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
     }
-    this.players.set(server, { playerId, name, ship, slot, team, cups });
+    this.players.set(server, { playerId, name, ship, slot, team, cups, partyCode });
     if (wantsBot && this.players.size === 1 && !this.botPlayer && this.botPlayers.length === 0) {
       if (this.mode === "1v1") {
         const botSlot = slot === 1 ? 2 : 1;
@@ -463,6 +473,7 @@ export class PvpRoom {
           // La desconexion definitiva se liquida en el servidor tras los 5 s de gracia.
           // El ranking deduplica por jugador+sala para evitar cobros repetidos.
           try {
+            if(!this.ranked) throw new Error("FRIENDLY_ROOM");
             const rankingId=this.env.PVP_RANKING.idFromName("global");
             const rankingStub=this.env.PVP_RANKING.get(rankingId);
             const disconnectedName=safeText(state.name || name, name || "Jugador", 40);
@@ -603,7 +614,7 @@ export class PvpRoom {
     return {mode:this.mode,players,eliminationOrder:this.eliminationOrder.slice(),...extra};
   }
   async settleOfficialResults(extra={}) {
-    if(!this.started)return;
+    if(!this.started||!this.ranked)return;
     const snapshot=this.officialSnapshot(extra);
     const finalOrder=Array.isArray(snapshot.finalOrder)?snapshot.finalOrder.map(Number):[];
     const winnerSlot=Number(snapshot.winnerSlot||0),winnerTeam=Number(snapshot.winnerTeam||0);
@@ -956,7 +967,8 @@ export class PvpMatchmaker {
     const cups=Math.max(0,Math.min(9999999,Number(url.searchParams.get("cups")||0)));
     const rank=pvpRankFromCups(cups);
     const mode=gameMode(url),needed=roomCapacity(mode),joinedAt=Date.now();
-    const entry={socket:server,playerId,name,ship,cups,rankLevel:rank.level,joinedAt};
+    const partyCode=mode==="2v2"?safeText(url.searchParams.get("partyCode"),"",6):"";
+    const entry={socket:server,playerId,name,ship,cups,rankLevel:rank.level,joinedAt,partyCode};
     const queue=(this.waitingByMode.get(mode)||[]).filter(e=>e.playerId!==playerId);
     queue.push(entry);this.waitingByMode.set(mode,queue);
 
@@ -977,7 +989,8 @@ export class PvpMatchmaker {
       const match={type:"match-found",roomCode,mode,players:needed};
       if(withBots){match.bot=true;match.humanCount=humanCount;}
       for(const e of group){
-        try{e.socket.send(JSON.stringify(match));}catch{}
+        const personal={...match,partyCode:e.partyCode||""};
+        try{e.socket.send(JSON.stringify(personal));}catch{}
         try{e.socket.close(1000,withBots?"matched-bots":"matched");}catch{}
       }
     };
@@ -990,11 +1003,26 @@ export class PvpMatchmaker {
         const theirFallback=this.fallbackMsForRank(e.rankLevel);
         const theirGap=this.allowedRankGap(now-e.joinedAt,theirFallback);
         return Math.abs(e.rankLevel-entry.rankLevel)<=Math.max(myGap,theirGap);
-      });
-      if(compatible.length<needed)return null;
-      // 2v2 se ordena por copas para que la sala pueda repartir alternadamente
-      // jugadores fuertes/débiles; FFA y 1v1 priorizan antigüedad.
-      return compatible.sort((a,b)=>a.joinedAt-b.joinedAt).slice(0,needed);
+      }).sort((a,b)=>a.joinedAt-b.joinedAt);
+      if(mode!=="2v2"){
+        return compatible.length>=needed?compatible.slice(0,needed):null;
+      }
+      // Un código de compañero forma una unidad indivisible de dos jugadores.
+      // Nunca se separa el dúo ni se lanza hasta que ambos estén en la cola.
+      const seenParties=new Set(),units=[];
+      for(const e of compatible){
+        if(!e.partyCode){units.push([e]);continue;}
+        if(seenParties.has(e.partyCode))continue;
+        seenParties.add(e.partyCode);
+        const pair=compatible.filter(x=>x.partyCode===e.partyCode).slice(0,2);
+        if(pair.length===2)units.push(pair);
+      }
+      const chosen=[];
+      for(const unit of units){
+        if(chosen.length+unit.length<=needed)chosen.push(...unit);
+        if(chosen.length===needed)return chosen;
+      }
+      return null;
     };
 
     const clear=()=>{
@@ -1023,12 +1051,17 @@ export class PvpMatchmaker {
         if(!live.includes(entry))return;
         // El más antiguo compatible con su propia ventana reúne a los humanos
         // disponibles y completa únicamente los puestos restantes con bots.
-        const candidates=live.filter(e=>{
+        let candidates=live.filter(e=>{
           const ef=this.fallbackMsForRank(e.rankLevel);
           const gap=Math.max(this.allowedRankGap(waited,fallback),this.allowedRankGap(Date.now()-e.joinedAt,ef));
           return Math.abs(e.rankLevel-entry.rankLevel)<=gap;
         }).sort((a,b)=>a.joinedAt-b.joinedAt);
         if(candidates[0]!==entry)return;
+        if(mode==="2v2"&&entry.partyCode){
+          const pair=candidates.filter(e=>e.partyCode===entry.partyCode).slice(0,2);
+          if(pair.length<2)return;
+          candidates=pair.concat(candidates.filter(e=>!e.partyCode).slice(0,needed-pair.length));
+        }
         launch(candidates.slice(0,needed),true);
       }
     },1000);
