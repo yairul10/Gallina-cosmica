@@ -22,6 +22,37 @@
   const MAX_RECONNECT_ATTEMPTS=3, RECONNECT_DELAY=900;
   let pvpMode = '2v2';
   let queueStartedAt = 0, queueTimer = 0;
+  // Pequeño efecto visual para entretener durante la cola. Sólo se activa al
+  // tocar el fondo libre del lobby; no participa en matchmaking ni controles.
+  const queuePulseColors=['#38bdf8','#a78bfa','#f472b6','#34d399'];
+  let queuePulseLayer=null, queuePulseColorIndex=0;
+  function getQueuePulseLayer(){
+    if(!lobby)return null;
+    if(queuePulseLayer?.isConnected)return queuePulseLayer;
+    queuePulseLayer=document.createElement('div');
+    queuePulseLayer.id='pvpQueuePulseLayer';
+    queuePulseLayer.setAttribute('aria-hidden','true');
+    lobby.prepend(queuePulseLayer);
+    return queuePulseLayer;
+  }
+  function clearQueuePulses(){if(queuePulseLayer)queuePulseLayer.replaceChildren();}
+  function addQueuePulse(event){
+    // Las zonas con texto, botones y controles no reaccionan: sólo el fondo
+    // oscuro y libre de la pantalla de espera crea el pulso.
+    if(!queueStartedAt||event.target!==lobby)return;
+    const layer=getQueuePulseLayer();if(!layer)return;
+    const rect=lobby.getBoundingClientRect();
+    const pulse=document.createElement('span');
+    pulse.className='pvp-queue-pulse';
+    pulse.style.left=((event.clientX-rect.left)/Math.max(1,rect.width)*100)+'%';
+    pulse.style.top=((event.clientY-rect.top)/Math.max(1,rect.height)*100)+'%';
+    pulse.style.setProperty('--pvp-pulse-color',queuePulseColors[queuePulseColorIndex++%queuePulseColors.length]);
+    layer.appendChild(pulse);
+    // Límite estricto para mantener el efecto liviano incluso si se toca rápido.
+    while(layer.childElementCount>3)layer.firstElementChild?.remove();
+    pulse.addEventListener('animationend',()=>pulse.remove(),{once:true});
+  }
+  lobby?.addEventListener('pointerdown',addQueuePulse);
   const PVP_MISSILE_COOLDOWN = 8000;
   const pvpBackground = new Image();
   pvpBackground.src = 'assets/fondo_pvp.png';
@@ -320,6 +351,7 @@
     if(queueTimer){clearInterval(queueTimer);queueTimer=0;}
     if(resetStartedAt){
       queueStartedAt=0;
+      clearQueuePulses();
       if(queueProgressWrap)queueProgressWrap.style.display='none';
       if(queueProgress)queueProgress.style.width='0%';
     }
