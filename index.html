@@ -213,7 +213,16 @@
                 <div id="hangar-pvp-toro-luz" class="shop-item" style="display:none;"><h4>Toro Luz</h4><img src="assets/toro_luz.png" class="shop-img" style="height:50px;object-fit:contain;"><p style="font-size:.75rem;color:#fde68a;">⚔️ +25% cadencia · 🔧 reparación rápida</p><button class="shop-btn" id="btn-equip-pvp-toro-luz" onclick="equipPvpShip('toro_luz')">Equipar</button></div>
                 <div id="hangar-pvp-toro-maoma" class="shop-item" style="display:none;"><h4>Toro Maoma</h4><img src="assets/toro_maoma.png" class="shop-img" style="height:50px;object-fit:contain;"><p style="font-size:.75rem;color:#86efac;">❤️ 26 vidas · 🔧 reparación rápida</p><button class="shop-btn" id="btn-equip-pvp-toro-maoma" onclick="equipPvpShip('toro_maoma')">Equipar</button></div>
                 <div id="hangar-pvp-toro-mayor" class="shop-item" style="display:none;"><h4>Toro Mayor</h4><img src="assets/toro_mayor.png" class="shop-img" style="height:50px;object-fit:contain;"><p style="font-size:.75rem;color:#c4b5fd;">👑 26 vidas · +25% cadencia · reparación rápida</p><button class="shop-btn" id="btn-equip-pvp-toro-mayor" onclick="equipPvpShip('toro_mayor')">Equipar</button></div>
-                <div id="hangar-pvp-toro-mayor-ghost" class="shop-item" style="display:none;border-color:#67e8f9;"><h4>👻 Diseño Fantasma Cósmico</h4><img src="assets/toro_mayor.png" class="shop-img" style="height:58px;object-fit:contain;filter:hue-rotate(145deg) saturate(.55) brightness(1.28);opacity:.78;"><p style="font-size:.75rem;color:#a5f3fc;">Toro Mayor · aura y estela visual PvP.</p><button class="shop-btn" id="btn-equip-pvp-toro-mayor-ghost" onclick="togglePvpToroMayorGhost()">Equipar diseño</button></div>
+                <div id="hangar-ship-cosmetics" class="shop-item" style="display:none;grid-column:span 2;border-color:#a855f7;">
+                    <h4>🎨 Diseños de nave</h4>
+                    <p style="font-size:.76rem;color:#cbd5e1;">Solo cambian el aspecto. Funcionan con cualquier nave equipada.</p>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+                        <button class="shop-btn" id="btn-ship-cosmetic-normal" onclick="setShipCosmetic('normal')">Normal</button>
+                        <button class="shop-btn" id="btn-ship-cosmetic-ghost" onclick="setShipCosmetic('fantasma')">👻 Fantasma</button>
+                        <button class="shop-btn" id="btn-ship-cosmetic-halloween" onclick="setShipCosmetic('halloween')">🎃 Halloween</button>
+                    </div>
+                    <p id="ship-cosmetic-status" style="font-size:.72rem;color:#d8b4fe;margin-top:8px;">Diseño normal equipado.</p>
+                </div>
             </div>
             <!-- SECCIÓN NUEVA: MÓDULOS -->
             <div id="hangarExtras" class="shop-grid" style="display: none; margin-top: 10px;">
@@ -286,14 +295,14 @@
     <script src="js/player-identity-qa.js?v=14"></script>
     <script src="js/play-games-auth.js?v=6"></script>
     <script src="js/update-notice.js?v=1"></script>
-    <script src="js/estado.js?v=toro-mayor-ghost-1"></script>
+    <script src="js/estado.js?v=ship-cosmetics-2"></script>
     <script src="js/assets.js?v=gallina-chile-1"></script>
-    <script src="js/ui.js?v=toro-mayor-ghost-1"></script>
-    <script src="js/entidades.js?v=gallina-chile-1"></script>
+    <script src="js/ui.js?v=ship-cosmetics-2"></script>
+    <script src="js/entidades.js?v=ship-cosmetics-2"></script>
     <script src="js/main.js?v=auto-record-fix-2"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=pvp-rank-reward-1"></script>
-    <script src="js/pvp.js?v=toro-mayor-ghost-1"></script>
+    <script src="js/pvp.js?v=ship-cosmetics-2"></script>
     <script src="js/qa-mode.js?v=qa-split-panels-12"></script>
     <script src="js/qa-pvp.js?v=qa-split-panels-3"></script>
     <script src="js/qa-admin.js?v=qa-split-panels-3"></script>
