@@ -298,6 +298,9 @@
     const base=label.replace(/ Pro$/,'').toLowerCase();
     return 'assets/'+base+(pro?'_pro':'')+'_1.png';
   }
+  function ghostToroMayorActive(){
+    try{return !!window.gallinaGhostToroMayorActive?.();}catch{return false;}
+  }
   function pvpShipStats(label){
     if(label==='Toro Aniquilador') return {maxLives:20,shotCooldown:247.5,regenDelay:5000,regenEvery:2000};
     if(label==='Toro Blindado') return {maxLives:26,shotCooldown:330,regenDelay:5000,regenEvery:2000};
@@ -930,6 +933,9 @@
       if(Number.isFinite(pa)) remote.targetAngle=mirrorAngle(pa);
       const pva=Number(p.visualAngle);
       if(Number.isFinite(pva)) remote.targetVisualAngle=mirrorAngle(pva);
+      // El rival recibe el mismo acabado visual. Sólo se acepta para Toro
+      // Mayor; no altera su nave, vidas, cadencia ni ninguna regla de PvP.
+      remote.pvpSkin=(p.skin==='toro_mayor_fantasma'&&players.find(x=>Number(x.slot)===fromSlot)?.ship==='Toro Mayor')?'toro_mayor_fantasma':'';
       remote.lives=Number.isFinite(Number(p.lives))?Number(p.lives):remote.lives;updateLives();
     } else if(p.type==='evade'){
       remoteEvadeUntil.set(Number(fromSlot),performance.now()+PVP_EVADE_DURATION);
@@ -1629,7 +1635,7 @@
     const sva=pvpMode==='1v1'&&mySlot===2?meState.visualAngle+Math.PI:meState.visualAngle;
     const svx=pvpMode==='1v1'&&mySlot===2?-localVx:localVx;
     const svy=pvpMode==='1v1'&&mySlot===2?-localVy:localVy;
-    const stateNow={x:Math.round(sx),y:Math.round(sy),vx:Math.round(svx),vy:Math.round(svy),angle:sa,visualAngle:sva,lives:meState.lives};
+    const stateNow={x:Math.round(sx),y:Math.round(sy),vx:Math.round(svx),vy:Math.round(svy),angle:sa,visualAngle:sva,lives:meState.lives,skin:ghostToroMayorActive()?'toro_mayor_fantasma':''};
     const angleDiff=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
     const stateChanged=!lastSentState||Math.abs(stateNow.x-lastSentState.x)>=1||Math.abs(stateNow.y-lastSentState.y)>=1||Math.abs(stateNow.vx-lastSentState.vx)>=1||Math.abs(stateNow.vy-lastSentState.vy)>=1||angleDiff(stateNow.angle,lastSentState.angle)>.015||angleDiff(stateNow.visualAngle,lastSentState.visualAngle)>.015||stateNow.lives!==lastSentState.lives;
     const wasIdle=!!lastSentState&&Math.abs(Number(lastSentState.vx)||0)<1&&Math.abs(Number(lastSentState.vy)||0)<1;
@@ -1652,7 +1658,9 @@
   }
   const imageCache=new Map();
   function cachedImage(src){if(!imageCache.has(src)){const im=new Image();im.src=src;imageCache.set(src,im);}return imageCache.get(src);}
-  function imageFor(label){return cachedImage(shipSrc(label));}
+  function imageFor(label){
+    return cachedImage(shipSrc(label));
+  }
   function drawRankedPlayerName(state,player){
     const rank=pvpRankFromPlayer(player);
     const prefix=pvpMode==='2v2'&&Number(player.team)===myTeam?'🤝 ':'⚔️ ';
@@ -1667,9 +1675,29 @@
     arenaCtx.fillStyle=pvpMode==='2v2'&&Number(player.team)===myTeam?'#86efac':'#fca5a5';
     arenaCtx.fillText(label,left+iconSize+gap,baseline);arenaCtx.restore();
   }
+  function isGhostToroMayor(state,label){
+    return label==='Toro Mayor'&&(state===meState?ghostToroMayorActive():state?.pvpSkin==='toro_mayor_fantasma');
+  }
   function drawShip(state,label){
-    const im=imageFor(label);arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);
-    if(im.complete&&im.naturalWidth)arenaCtx.drawImage(im,-26,-26,52,52);else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
+    const ghost=isGhostToroMayor(state,label),im=imageFor(label);
+    const vx=Number(state.vx)||0,vy=Number(state.vy)||0,velocity=Math.hypot(vx,vy);
+    if(ghost){
+      // Estela únicamente decorativa: se calcula con la velocidad ya recibida,
+      // no cambia el estado de la partida, impactos ni validación del servidor.
+      const ux=velocity>1?vx/velocity:0,uy=velocity>1?vy/velocity:0;
+      arenaCtx.save();
+      const glow=arenaCtx.createRadialGradient(state.x,state.y,8,state.x,state.y,46);
+      glow.addColorStop(0,'rgba(103,232,249,.28)');glow.addColorStop(.55,'rgba(56,189,248,.12)');glow.addColorStop(1,'rgba(56,189,248,0)');
+      arenaCtx.fillStyle=glow;arenaCtx.beginPath();arenaCtx.arc(state.x,state.y,46,0,Math.PI*2);arenaCtx.fill();
+      if(velocity>8&&im.complete&&im.naturalWidth){
+        for(let i=3;i>=1;i--){
+          arenaCtx.save();arenaCtx.globalAlpha=.20/i;arenaCtx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';arenaCtx.translate(state.x-ux*i*12,state.y-uy*i*12);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);arenaCtx.drawImage(im,-26,-26,52,52);arenaCtx.restore();
+        }
+      }
+      arenaCtx.restore();
+    }
+    arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);
+    if(im.complete&&im.naturalWidth){if(ghost){arenaCtx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';arenaCtx.globalAlpha=.78;}arenaCtx.drawImage(im,-26,-26,52,52);}else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
     arenaCtx.restore();
   }
   function cameraPosition(){
@@ -1930,6 +1958,9 @@
 
   $('openPvpBtn')?.addEventListener('click',async()=>{
     let admin=false;
+    // Actualiza la autorización de skins antes de crear la sala. Si la sesión
+    // dejó de ser admin, la skin de prueba se desactiva visualmente.
+    try{await window.refreshPvpSpecialShipAccess?.();}catch{}
     // Los jugadores que ya desbloquearon PvP deben entrar de inmediato.
     // La consulta remota de administrador sólo es necesaria para saltar el bloqueo.
     if(!gameStats?.pvpUnlocked){
