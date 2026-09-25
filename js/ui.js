@@ -81,6 +81,21 @@ const PVP_RANK_SHIP_RULES={
     toro_oscuro:{cost:15000000,floor:1000},toro_luz:{cost:15000000,floor:1000},toro_maoma:{cost:15000000,floor:1000},toro_mayor:{cost:50000000,floor:4000}
 };
 let pvpClaimedRankUnlocks=new Set(),pvpAdminPreview=false,pvpGhostSkinAllowed=false,pvpUnlockRefreshBusy=false;
+const SHIP_COSMETIC_STYLE={
+    normal:{filter:'none',opacity:'1',shadow:'none',label:'Diseño normal equipado.'},
+    fantasma:{filter:'hue-rotate(145deg) saturate(.55) brightness(1.28)',opacity:'.78',shadow:'drop-shadow(0 0 10px #67e8f9)',label:'👻 Fantasma Cósmico equipado.'},
+    halloween:{filter:'sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)',opacity:'1',shadow:'drop-shadow(0 0 8px #f97316)',label:'🎃 Halloween equipado.'}
+};
+function normalizedShipCosmetic(value){return ['normal','fantasma','halloween'].includes(value)?value:'normal';}
+window.gallinaGetShipCosmetic=function(){
+    return pvpGhostSkinAllowed?normalizedShipCosmetic(gameStats.shipCosmetic):'normal';
+};
+window.gallinaShipCosmeticStyle=function(cosmetic){return SHIP_COSMETIC_STYLE[normalizedShipCosmetic(cosmetic)]||SHIP_COSMETIC_STYLE.normal;};
+function applyShipCosmeticToImage(img,cosmetic){
+    if(!img)return;
+    const style=window.gallinaShipCosmeticStyle(cosmetic);
+    img.style.filter=style.filter;img.style.opacity=style.opacity;img.style.filter=style.filter+(style.shadow==='none'?'':' '+style.shadow);
+}
 window.gallinaSetPvpRankUnlocks=(floors)=>{pvpClaimedRankUnlocks=new Set((Array.isArray(floors)?floors:[]).map(Number));updateShopUI?.();};
 function pvpShipCanBuy(id){const rule=PVP_RANK_SHIP_RULES[id];return !rule||pvpAdminPreview||pvpClaimedRankUnlocks.has(rule.floor);}
 async function refreshPvpSpecialShipAccess(){
@@ -154,17 +169,18 @@ function updateHangarUI() {
         if(btn){const equipped=gameStats.selectedPvpShip===id;btn.textContent=equipped?'Equipado':'Equipar';btn.style.background=equipped?'#f59e0b':'#334155';}
     });
 
-    // Es una prueba exclusiva del administrador real y sólo tiene sentido si
-    // el Toro Mayor está disponible. Las cuentas QA normales no la ven.
-    const ghostCard=document.getElementById('hangar-pvp-toro-mayor-ghost');
-    const ghostButton=document.getElementById('btn-equip-pvp-toro-mayor-ghost');
-    const canUseGhost=!!pvpGhostSkinAllowed&&!!gameStats.pvpShips?.toro_mayor;
-    if(ghostCard)ghostCard.style.display=canUseGhost?'flex':'none';
-    if(ghostButton){
-        const active=canUseGhost&&gameStats.selectedPvpShip==='toro_mayor'&&!!gameStats.pvpToroMayorGhost;
-        ghostButton.textContent=active?'Quitar diseño':'Equipar diseño';
-        ghostButton.style.background=active?'#0891b2':'#334155';
-    }
+    // Catálogo temporal exclusivo del administrador real. No depende de la
+    // nave elegida y no entrega ventajas de combate.
+    const cosmeticCard=document.getElementById('hangar-ship-cosmetics');
+    const canUseCosmetics=!!pvpGhostSkinAllowed;
+    if(cosmeticCard)cosmeticCard.style.display=canUseCosmetics?'flex':'none';
+    const cosmetic=window.gallinaGetShipCosmetic();
+    [['normal','btn-ship-cosmetic-normal','#334155'],['fantasma','btn-ship-cosmetic-ghost','#0891b2'],['halloween','btn-ship-cosmetic-halloween','#ea580c']].forEach(([id,buttonId,color])=>{
+        const button=document.getElementById(buttonId);if(!button)return;
+        const active=cosmetic===id;button.style.background=active?color:'#334155';button.textContent=active?(id==='normal'?'✓ Normal':id==='fantasma'?'✓ 👻 Fantasma':'✓ 🎃 Halloween'):(id==='normal'?'Normal':id==='fantasma'?'👻 Fantasma':'🎃 Halloween');
+    });
+    const cosmeticStatus=document.getElementById('ship-cosmetic-status');
+    if(cosmeticStatus)cosmeticStatus.textContent=window.gallinaShipCosmeticStyle(cosmetic).label;
 
     const evadeCard=document.getElementById('hangar-pvp-evade');
     if(evadeCard) evadeCard.style.display=gameStats.pvpEvade?'flex':'none';
@@ -185,6 +201,7 @@ window.updateMenuShip = function() {
     img.src = gameStats.selectedPvpShip && gameStats.pvpShips?.[gameStats.selectedPvpShip]
         ? `assets/${gameStats.selectedPvpShip}.png`
         : gameStats.useGallinaChile ? 'assets/gallina_chile.png' : `assets/${dir}${gameStats.useProShip ? '_pro' : ''}_1.png`;
+    applyShipCosmeticToImage(img,window.gallinaGetShipCosmetic());
     img.alt = 'Nave seleccionada';
 };
 window.refreshGallinaEquipmentUI = function() {
@@ -197,24 +214,20 @@ window.addEventListener('gallina-cloud-progress-loaded', window.refreshGallinaEq
 window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; gameStats.useGallinaChile = false; gameStats.selectedPvpShip=null; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
 window.equipGallinaChile = function() { if (gameStats.gallinaChile) { gameStats.selectedShip = 0; gameStats.useProShip = false; gameStats.useGallinaChile = true; gameStats.selectedPvpShip=null; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
 window.equipPvpShip = function(id) { if (gameStats.pvpShips?.[id]) { gameStats.selectedPvpShip=id; gameStats.useProShip=false; gameStats.useGallinaChile=false; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
-window.gallinaGhostToroMayorActive = function(){
-    return !!(pvpGhostSkinAllowed&&gameStats.pvpToroMayorGhost&&gameStats.selectedPvpShip==='toro_mayor'&&gameStats.pvpShips?.toro_mayor);
-};
-window.togglePvpToroMayorGhost = async function(){
+window.setShipCosmetic = async function(cosmetic){
+    cosmetic=normalizedShipCosmetic(cosmetic);
     // Se vuelve a consultar justo antes de equipar: un estado visual local no
     // basta para conceder esta prueba exclusiva.
     let status={ok:false,isAdmin:false};
     try{status=await window.getQaAdminStatus?.()||status;}catch{}
     pvpGhostSkinAllowed=!!(status.ok&&status.isAdmin);
     if(!pvpGhostSkinAllowed){
-        gameStats.pvpToroMayorGhost=false;
+        gameStats.shipCosmetic='normal';
         updateHangarUI();window.updateMenuShip();
         return;
     }
-    if(!gameStats.pvpShips?.toro_mayor)return;
-    gameStats.selectedPvpShip='toro_mayor';
-    gameStats.useProShip=false;gameStats.useGallinaChile=false;
-    gameStats.pvpToroMayorGhost=!gameStats.pvpToroMayorGhost;
+    gameStats.shipCosmetic=cosmetic;
+    gameStats.pvpToroMayorGhost=false;
     saveStats();updateHangarUI();window.updateMenuShip();
 };
 window.equipExtra = function() { if (gameStats.extraModule) { gameStats.equipExtraModule = !gameStats.equipExtraModule; saveStats(); updateHangarUI(); } }
