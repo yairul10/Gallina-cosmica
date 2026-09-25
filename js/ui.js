@@ -210,6 +210,12 @@ window.refreshGallinaEquipmentUI = function() {
     window.updateMenuShip();
 };
 window.addEventListener('gallina-cloud-progress-loaded', window.refreshGallinaEquipmentUI);
+// Al restaurar la sesión de Play Games, confirmamos el permiso y volvemos a
+// pintar la nave del menú. Así un diseño ya equipado no aparece como normal
+// mientras el administrador espera abrir el Hangar.
+window.addEventListener('gallina-player-identity-ready', () => {
+    refreshPvpSpecialShipAccess().then(() => window.updateMenuShip?.());
+});
 
 window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; gameStats.useGallinaChile = false; gameStats.selectedPvpShip=null; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
 window.equipGallinaChile = function() { if (gameStats.gallinaChile) { gameStats.selectedShip = 0; gameStats.useProShip = false; gameStats.useGallinaChile = true; gameStats.selectedPvpShip=null; saveStats(); updateHangarUI(); window.updateMenuShip(); } }
