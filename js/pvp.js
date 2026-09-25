@@ -1987,7 +1987,7 @@
       const seasonHint=document.createElement('div');seasonHint.style.cssText='font-size:.68rem;color:#fde68a;margin-top:5px;font-weight:700;';seasonHint.textContent='Ver premios ▼';
       const seasonPrizes=document.createElement('div');seasonPrizes.style.cssText='display:none;margin-top:9px;padding-top:8px;border-top:1px solid rgba(196,181,253,.25);font-size:.73rem;line-height:1.55;color:#e2e8f0;';
       const cfg=data.monthlyConfig||{};
-      const coin=v=>formatCoins(Number(v||0))+' 🪙';
+      const coin=v=>'<span style="white-space:nowrap">'+formatCoins(Number(v||0))+' 🪙</span>';
       seasonPrizes.innerHTML='<div style="font-weight:900;color:#fde68a;margin-bottom:4px">🎁 Premios de la temporada</div>'+
         '<div>🥇 1.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.first)+'</div>'+
         '<div>🥈 2.º–3.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.secondThird)+'</div>'+
