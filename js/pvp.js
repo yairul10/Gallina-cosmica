@@ -155,16 +155,16 @@
   // Insignias visuales de rango: se usan tanto en el menú como junto a cada nave.
   const PVP_RANKS=[
     {floor:0,key:'novato',name:'Novato',asset:'assets/rango_novato.png'},
-    {floor:200,key:'bronce',name:'Bronce',asset:'assets/rango_bronce.png'},
-    {floor:500,key:'plata',name:'Plata',asset:'assets/rango_plata.png'},
-    {floor:1000,key:'oro',name:'Oro',asset:'assets/rango_oro.png'},
-    {floor:3000,key:'diamante',name:'Diamante',asset:'assets/rango_diamante.png'},
-    {floor:7000,key:'maestro',name:'Maestro Cósmico',asset:'assets/rango_maestro.png'},
-    {floor:12000,key:'leyenda',name:'Leyenda Galáctica',asset:'assets/rango_leyenda.png'}
+    {floor:100,key:'bronce',name:'Bronce',asset:'assets/rango_bronce.png'},
+    {floor:200,key:'plata',name:'Plata',asset:'assets/rango_plata.png'},
+    {floor:500,key:'oro',name:'Oro',asset:'assets/rango_oro.png'},
+    {floor:1000,key:'diamante',name:'Diamante',asset:'assets/rango_diamante.png'},
+    {floor:2000,key:'maestro',name:'Maestro Cósmico',asset:'assets/rango_maestro.png'},
+    {floor:4000,key:'leyenda',name:'Leyenda Galáctica',asset:'assets/rango_leyenda.png'}
   ];
   const qaBotRankSelect=$('pvpQaBotRank');
   const qaBotRankWrap=$('pvpQaBotRankWrap');
-  const QA_BOT_RANK_CUPS=[0,200,500,1000,3000,7000,12000];
+  const QA_BOT_RANK_CUPS=[0,100,200,500,1000,2000,4000];
   let qaBotRankOverrideAllowed=false, qaBotRankAccessChecked=false, qaBotRankAccessPromise=null, qaBotRankAccessPlayerId='';
   function qaBotRankLevel(){
     if(!qaBotRankOverrideAllowed||!qaBotRankSelect||qaBotRankSelect.value==='auto')return null;
@@ -690,8 +690,8 @@
     if(gameStats.pvpGames>=25)unlockAchievement('pvp3');
     if(gameStats.pvpKills>=50)unlockAchievement('pvp4');
     if(gameStats.pvpWins>=100)unlockAchievement('pvp5');
-    if(Number(cups)>=1000)unlockAchievement('pvp6');
-    if(Number(cups)>=12000)unlockAchievement('pvp7');
+    if(Number(cups)>=500)unlockAchievement('pvp6');
+    if(Number(cups)>=4000)unlockAchievement('pvp7');
     saveStats?.();
   }
   function pvpRankName(cups){
