@@ -16,6 +16,8 @@
   const roomInput = $('pvpRoomCode');
 
   let socket = null, queueSocket = null, currentRoom = '', mySlot = 0, myTeam = 0, players = [];
+  let rankedMatch=false, activePartyCode='';
+  const partyInput=$('pvpPartyCode');
   let reconnectTimer=0,reconnectAttempts=0,reconnecting=false,intentionalDisconnect=false;
   const MAX_RECONNECT_ATTEMPTS=3, RECONNECT_DELAY=900;
   let pvpMode = '2v2';
@@ -363,7 +365,7 @@
     if(!silent)showStatus('Desconectado de la sala.');
   }
 
-  async function findMatch(){
+  async function findMatch(partyCode=''){
     if(queueSocket){cancelMatch();return;}
     disconnect(true);
     let verified;
@@ -376,7 +378,10 @@
       return;
     }
     const me=identity();
+    partyCode=pvpMode==='2v2'?String(partyCode||'').replace(/\D/g,'').slice(0,6):'';
+    activePartyCode=partyCode;
     const params=new URLSearchParams({playerId:verified.playerId,name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups()),session:verified.token});
+    if(partyCode)params.set('partyCode',partyCode);
     const qaLevel=qaBotRankLevel();if(qaLevel!==null)params.set('qaBotRank',String(qaLevel));
     const ws=new WebSocket(`${PVP_WS_BASE}/matchmake?${params}`);
     queueSocket=ws;
@@ -402,7 +407,7 @@
         try{ws.close(1000,'matched');}catch{}
         botMatch=!!m.bot;
         showStatus(botMatch?'🤖 ¡Bot Cósmico encontrado! Entrando…':'⚔️ ¡Partida encontrada! Entrando…',true);
-        setTimeout(()=>connect(code,false,botMatch,Number(m.humanCount||1)),120);
+        setTimeout(()=>connect(code,false,botMatch,Number(m.humanCount||1),false,true,String(m.partyCode||activePartyCode||'')),120);
       }
     });
     ws.addEventListener('close',e=>{
@@ -423,7 +428,7 @@
     ws.addEventListener('error',()=>{if(queueSocket===ws){stopQueueTimer();showStatus('No se pudo conectar a la cola PvP.',false,true);}});
   }
 
-  async function connect(code,creating=false,useBot=false,humanCount=1,isReconnect=false){
+  async function connect(code,creating=false,useBot=false,humanCount=1,isReconnect=false,isRanked=false,partyCode=''){
     code=String(code||'').replace(/\D/g,'').slice(0,6); roomInput.value=code;
     if(code.length!==6)return showStatus('Escribe un código de sala de 6 dígitos.');
     if(!isReconnect)disconnect(true);
@@ -439,10 +444,12 @@
     }
     const me=identity();
     const params=new URLSearchParams({playerId:verified.playerId,name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups()),session:verified.token});
+    if(isRanked)params.set('ranked','1');
+    if(partyCode)params.set('partyCode',String(partyCode).replace(/\D/g,'').slice(0,6));
     const qaLevel=qaBotRankLevel();if(qaLevel!==null)params.set('qaBotRank',String(qaLevel));
     if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
-    socket=ws;currentRoom=code;
+    socket=ws;currentRoom=code;rankedMatch=!!isRanked;
     showStatus((creating?'Creando':'Entrando a')+' sala '+code+'…');
     ws.addEventListener('open',()=>{if(socket===ws)showStatus('Conectado a sala '+code+'. Esperando rival…',true);});
     ws.addEventListener('message',event=>{
@@ -464,6 +471,7 @@
         players=m.players||players; syncPeerPlayers();
         const mates=players.filter(p=>Number(p.slot)!==mySlot && Number(p.team)===myTeam);
         showStatus(pvpMode==='2v2'?'🤝 ¡2v2 listo! Compañero: '+(mates[0]?.name||'Jugador'):'⚔️ ¡Sala lista!',true);
+        showStatus((rankedMatch?'🏆 Partida clasificatoria':'🤝 Sala amistosa · sin cambios de copas')+' · comenzando…',true);
         setTimeout(()=>startArena(),450);
       } else if(m.type==='player-reconnecting') {
         const p=players.find(x=>Number(x.slot)===Number(m.slot));
@@ -709,7 +717,7 @@
     const resultEl=$('pvpResultText');
     resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+(result==='win'||result==='loss'?'\n🏆 Guardando copas…':'');
     $('pvpResult').style.display='flex';
-    if(!wasQaPvp && !matchCupsSettled && (result==='win'||result==='loss')){
+    if(!wasQaPvp && rankedMatch && !matchCupsSettled && (result==='win'||result==='loss')){
       matchCupsSettled=true;
       const cupsBefore=getPvpCups();
       settlePvpRecord(result,'',placement).then(saved=>{
@@ -2089,7 +2097,17 @@
   $('pvpControlsSaveBtn')?.addEventListener('click',()=>closeControlsEditor(true));
   $('pvpControlsResetBtn')?.addEventListener('click',()=>{resetPvpControlLayout();});
   $('pvpFindMatchBtn')?.addEventListener('click',()=>{unlockPvpMusic();findMatch();});
-  $('pvpCreateRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();const c=randomCode();roomInput.value=c;connect(c,true);});
+  $('pvpPartyCreateBtn')?.addEventListener('click',()=>{
+    unlockPvpMusic();pvpMode='2v2';const c=randomCode();if(partyInput)partyInput.value=c;
+    showStatus('👥 Código de compañero '+c+' creado. Compártelo y ambos pulsen “Buscar partida juntos”.',true);
+  });
+  partyInput?.addEventListener('input',()=>partyInput.value=String(partyInput.value||'').replace(/\D/g,'').slice(0,6));
+  $('pvpPartyFindBtn')?.addEventListener('click',()=>{
+    unlockPvpMusic();pvpMode='2v2';const c=String(partyInput?.value||'').replace(/\D/g,'').slice(0,6);
+    if(c.length!==6)return showStatus('Escribe o crea un código de compañero de 6 dígitos.');
+    findMatch(c);
+  });
+    $('pvpCreateRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();const c=randomCode();roomInput.value=c;connect(c,true);});
   $('pvpJoinRoomBtn')?.addEventListener('click',()=>{unlockPvpMusic();connect(roomInput.value,false);});
   roomInput?.addEventListener('input',()=>roomInput.value=String(roomInput.value||'').replace(/\D/g,'').slice(0,6));
   $('pvpCloseBtn')?.addEventListener('click',()=>{disconnect(true);lobby.style.display='none';$('startScreen').style.display='flex';});
@@ -2097,7 +2115,7 @@
     // Abandono voluntario: penalizacion inmediata de -15 copas, una sola vez por sala.
     const inBattle=running||countdownActive,forfeitMatchId=currentRoom+'-'+pvpMode;
     if(socket?.readyState===WebSocket.OPEN && inBattle) send({type:'defeat',reason:'forfeit',slot:mySlot,team:myTeam,rewardEligible:false});
-    if(inBattle&&!matchCupsSettled){matchCupsSettled=true;settlePvpRecord('forfeit',forfeitMatchId);}
+    if(inBattle&&rankedMatch&&!matchCupsSettled){matchCupsSettled=true;settlePvpRecord('forfeit',forfeitMatchId);}
     disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';
   });
   $('pvpResultBackBtn')?.addEventListener('click',()=>{disconnect(true);arena.style.display='none';$('startScreen').style.display='flex';});
