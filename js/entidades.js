@@ -211,8 +211,13 @@ window.drawPlayerShip = function(x, y) {
     if (shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 38, 0, Math.PI * 2); ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'; ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 10; ctx.stroke(); ctx.restore(); }
     if (upgrades.armor > 0 && !shieldActive) { ctx.save(); ctx.beginPath(); ctx.arc(x + player.width / 2, y + player.height / 2, 34, 0, Math.PI * 2); ctx.fillStyle = partialHit ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.1)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = partialHit ? 'rgba(239, 68, 68, 0.8)' : 'rgba(37, 99, 235, 0.8)'; ctx.stroke(); ctx.restore(); }
     
-    if (currentImg && currentImg.complete && currentImg.naturalWidth > 0) { 
-        ctx.drawImage(currentImg, x, y, player.width, player.height); 
+    if (currentImg && currentImg.complete && currentImg.naturalWidth > 0) {
+        const cosmetic=window.gallinaGetShipCosmetic?.()||'normal';
+        if(cosmetic==='fantasma'){
+            ctx.save();const glow=ctx.createRadialGradient(x+player.width/2,y+player.height/2,6,x+player.width/2,y+player.height/2,42);glow.addColorStop(0,'rgba(103,232,249,.30)');glow.addColorStop(.55,'rgba(56,189,248,.12)');glow.addColorStop(1,'rgba(56,189,248,0)');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x+player.width/2,y+player.height/2,42,0,Math.PI*2);ctx.fill();ctx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';ctx.globalAlpha=.78;ctx.drawImage(currentImg,x,y,player.width,player.height);ctx.restore();
+        }else if(cosmetic==='halloween'){
+            ctx.save();ctx.filter='sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)';ctx.drawImage(currentImg,x,y,player.width,player.height);ctx.restore();
+        }else ctx.drawImage(currentImg, x, y, player.width, player.height);
     } else { 
         ctx.save(); ctx.translate(x + player.width/2, y + player.height/2); 
         if (isPro) { ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 15; } 
