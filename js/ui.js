@@ -78,7 +78,7 @@ window.switchHangarTab = function(tab) {
 }
 
 const PVP_RANK_SHIP_RULES={
-    toro_oscuro:{cost:15000000,floor:3000},toro_luz:{cost:15000000,floor:3000},toro_maoma:{cost:15000000,floor:3000},toro_mayor:{cost:50000000,floor:12000}
+    toro_oscuro:{cost:15000000,floor:1000},toro_luz:{cost:15000000,floor:1000},toro_maoma:{cost:15000000,floor:1000},toro_mayor:{cost:50000000,floor:4000}
 };
 let pvpClaimedRankUnlocks=new Set(),pvpAdminPreview=false,pvpUnlockRefreshBusy=false;
 window.gallinaSetPvpRankUnlocks=(floors)=>{pvpClaimedRankUnlocks=new Set((Array.isArray(floors)?floors:[]).map(Number));updateShopUI?.();};
@@ -218,7 +218,7 @@ function updateShopUI() {
         const owned=!!gameStats.pvpShips?.[id],allowed=pvpShipCanBuy(id);
         if(card)card.style.display=(owned||allowed)?'flex':'none';
         if(owned){btn.textContent='Comprado';btn.style.background='#475569';btn.disabled=true;}
-        else if(!allowed){btn.textContent='🔒 '+(rule.floor===3000?'Diamante':'Leyenda Galáctica');btn.style.background='#1e293b';btn.disabled=true;}
+        else if(!allowed){btn.textContent='🔒 '+(rule.floor===1000?'Diamante':'Leyenda Galáctica');btn.style.background='#1e293b';btn.disabled=true;}
         else{btn.textContent=(pvpAdminPreview?'🧪 QA · ':'')+'🪙 '+rule.cost.toLocaleString('es-CL');btn.style.background='#10b981';btn.disabled=coins<rule.cost;}
     });
 
