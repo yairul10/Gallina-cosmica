@@ -48,6 +48,8 @@ if (gameStats.gallinaChile === undefined) gameStats.gallinaChile = false;
 if (gameStats.useGallinaChile === undefined) gameStats.useGallinaChile = false;
 if (!gameStats.pvpShips || typeof gameStats.pvpShips !== 'object') gameStats.pvpShips = {};
 if (gameStats.selectedPvpShip === undefined) gameStats.selectedPvpShip = null;
+// Skin visual de prueba: no modifica estadísticas, sólo el dibujo del Toro Mayor.
+if (gameStats.pvpToroMayorGhost === undefined) gameStats.pvpToroMayorGhost = false;
 if (gameStats.pvpUnlocked === undefined) gameStats.pvpUnlocked = false;
 if (gameStats.pvpGames === undefined) gameStats.pvpGames = 0;
 if (gameStats.pvpWins === undefined) gameStats.pvpWins = 0;
