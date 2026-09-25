@@ -394,9 +394,9 @@ export class PvpRoom {
               const winnerTeam=Number(bot.team)===1?2:1;
               this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:Number(bot.team)}); await this.settleOfficialResults({winnerTeam,loserTeam:Number(bot.team)}); this.broadcast({type:"team-result",winnerTeam,loserTeam:Number(bot.team),rewards:this.rewardList(winnerTeam),official:this.officialResult});
             }
-            if(!this.finished) this.simulate2v2BotsIfNoHumans();
+            if(!this.finished) await this.simulate2v2BotsIfNoHumans();
           } else {
-            if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
+            if(!(await this.simulateArenaBotsIfNoHumans())) await this.checkArenaResult();
           }
         }
         return;
@@ -425,7 +425,7 @@ export class PvpRoom {
           if(winnerSlot){
             this.recordServerKill(Number(message.killerSlot||0),slot);
             this.officialResult=this.officialSnapshot({winnerSlot,winnerPlayerId:winner?.playerId||null});
-            this.settleOfficialResults({winnerSlot,winnerPlayerId:winner?.playerId||null});
+            await this.settleOfficialResults({winnerSlot,winnerPlayerId:winner?.playerId||null});
           }
         }
         if (message.reason === "forfeit") {
@@ -448,9 +448,9 @@ export class PvpRoom {
               const winnerTeam = team === 1 ? 2 : 1;
               this.officialResult=this.officialSnapshot({winnerTeam,loserTeam:team}); await this.settleOfficialResults({winnerTeam,loserTeam:team}); this.broadcast({ type: "team-result", winnerTeam, loserTeam: team, rewards: this.rewardList(winnerTeam), official:this.officialResult });
             }
-            if(!this.finished) this.simulate2v2BotsIfNoHumans();
+            if(!this.finished) await this.simulate2v2BotsIfNoHumans();
           } else {
-            if(!this.simulateArenaBotsIfNoHumans()) this.checkArenaResult();
+            if(!(await this.simulateArenaBotsIfNoHumans())) await this.checkArenaResult();
           }
         }
       }
@@ -522,7 +522,7 @@ export class PvpRoom {
   }
 
   playerList() { return [...Array.from(this.players.values()), ...(this.botPlayer ? [this.botPlayer] : []), ...this.botPlayers]; }
-  simulate2v2BotsIfNoHumans() {
+  async simulate2v2BotsIfNoHumans() {
     if (this.finished || this.mode !== "2v2" || !this.started) return false;
     const alive=this.playerList().filter(p=>!this.eliminatedSlots.has(Number(p.slot)));
     // Sólo resolver automáticamente cuando ya no queda ningún humano vivo.
@@ -553,13 +553,13 @@ export class PvpRoom {
     this.officialResult=this.officialSnapshot({winnerTeam,loserTeam}); await this.settleOfficialResults({winnerTeam,loserTeam}); this.broadcast({type:"team-result",winnerTeam,loserTeam,rewards:this.rewardList(winnerTeam),official:this.officialResult});
     return true;
   }
-  simulateArenaBotsIfNoHumans() {
+  async simulateArenaBotsIfNoHumans() {
     if (this.finished || (this.mode !== "arena" && this.mode !== "arena10") || !this.started) return false;
     const list=this.playerList();
     const alive=list.filter(p=>!this.eliminatedSlots.has(Number(p.slot)));
     // Si ya queda uno solo, cerrar la Arena inmediatamente. Esto evita que un
     // cliente eliminado quede atascado en "Esperando…" cuando el resultado ya existe.
-    if(alive.length===1){ this.checkArenaResult(); return true; }
+    if(alive.length===1){ await this.checkArenaResult(); return true; }
     if(alive.length===0 || alive.some(p=>!p.bot)) return false;
     // Si sólo quedan bots, resolver el resto inmediatamente. El orden se pondera
     // ligeramente por las vidas reportadas cuando estén disponibles; si no, azar.
@@ -573,10 +573,10 @@ export class PvpRoom {
       }
     }
     this.broadcast({type:"arena-simulated"});
-    this.checkArenaResult();
+    await this.checkArenaResult();
     return true;
   }
-  checkArenaResult() {
+  async checkArenaResult() {
     if (this.finished || (this.mode !== "arena" && this.mode !== "arena10") || !this.started) return;
     // Arena 5 y Arena 10 terminan sólo cuando queda un participante vivo.
     const capacity=roomCapacity(this.mode);
