@@ -29,7 +29,7 @@ if (gameStats.pvpEvade === undefined) gameStats.pvpEvade = false;
 if (gameStats.pvpEmergencyLife === undefined) gameStats.pvpEmergencyLife = false;
 window.gallinaSuperBossReward = () => {
     const cups = Math.max(0, Math.floor(Number(localStorage.getItem('gallina_pvp_cups_v1') || 0) || 0));
-    const thresholds = [0, 200, 500, 1000, 3000, 7000, 12000];
+    const thresholds = [0, 100, 200, 500, 1000, 2000, 4000];
     let level = 0;
     for (let i = 1; i < thresholds.length; i++) {
         if (cups >= thresholds[i]) level = i;
