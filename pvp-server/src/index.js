@@ -276,9 +276,13 @@ export class PvpRoom {
       team = this.mode === "2v2" ? (slot <= 2 ? 1 : 2) : 0;
       if(this.mode==="2v2"&&partyCode){
         let assigned=this.partyTeams.get(partyCode);
-        if(!assigned){const usedTeams=new Set(this.partyTeams.values());assigned=!usedTeams.has(1)?1:2;this.partyTeams.set(partyCode,assigned);}
+        const usedNow=new Set(Array.from(this.players.values()).map(p=>p.slot));
+        if(!assigned){
+          const free1=[1,2].filter(x=>!usedNow.has(x)).length,free2=[3,4].filter(x=>!usedNow.has(x)).length;
+          assigned=free1>=2?1:free2>=2?2:(free1>=free2?1:2);this.partyTeams.set(partyCode,assigned);
+        }
         team=assigned;
-        const teamSlots=assigned===1?[1,2]:[3,4], usedNow=new Set(Array.from(this.players.values()).map(p=>p.slot));
+        const teamSlots=assigned===1?[1,2]:[3,4];
         slot=teamSlots.find(x=>!usedNow.has(x))||slot;
       }
       this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
