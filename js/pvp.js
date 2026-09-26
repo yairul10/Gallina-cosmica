@@ -939,7 +939,7 @@
       if(Number.isFinite(pva)) remote.targetVisualAngle=mirrorAngle(pva);
       // El rival recibe sólo el acabado visual; nunca modifica nave, vidas,
       // cadencia ni ninguna regla de PvP.
-      remote.pvpSkin=['fantasma','halloween'].includes(p.skin)?p.skin:'normal';
+      remote.pvpSkin=['fantasma','halloween','navidad'].includes(p.skin)?p.skin:'normal';
       remote.lives=Number.isFinite(Number(p.lives))?Number(p.lives):remote.lives;updateLives();
     } else if(p.type==='evade'){
       remoteEvadeUntil.set(Number(fromSlot),performance.now()+PVP_EVADE_DURATION);
@@ -1680,10 +1680,10 @@
     arenaCtx.fillText(label,left+iconSize+gap,baseline);arenaCtx.restore();
   }
   function shipCosmeticForState(state){
-    return state===meState?activeShipCosmetic():(['fantasma','halloween'].includes(state?.pvpSkin)?state.pvpSkin:'normal');
+    return state===meState?activeShipCosmetic():(['fantasma','halloween','navidad'].includes(state?.pvpSkin)?state.pvpSkin:'normal');
   }
   function drawShip(state,label){
-    const cosmetic=shipCosmeticForState(state),ghost=cosmetic==='fantasma',halloween=cosmetic==='halloween',im=imageFor(label);
+    const cosmetic=shipCosmeticForState(state),ghost=cosmetic==='fantasma',halloween=cosmetic==='halloween',christmas=cosmetic==='navidad',im=imageFor(label);
     const vx=Number(state.vx)||0,vy=Number(state.vy)||0,velocity=Math.hypot(vx,vy);
     if(ghost){
       // Estela únicamente decorativa: se calcula con la velocidad ya recibida,
@@ -1701,7 +1701,8 @@
       arenaCtx.restore();
     }
     arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);
-    if(im.complete&&im.naturalWidth){if(ghost){arenaCtx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';arenaCtx.globalAlpha=.78;}else if(halloween){arenaCtx.filter='sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)';}arenaCtx.drawImage(im,-26,-26,52,52);}else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
+    if(christmas){const glow=arenaCtx.createRadialGradient(0,0,4,0,0,36);glow.addColorStop(0,'rgba(250,204,21,.30)');glow.addColorStop(.58,'rgba(34,197,94,.14)');glow.addColorStop(1,'rgba(34,197,94,0)');arenaCtx.fillStyle=glow;arenaCtx.beginPath();arenaCtx.arc(0,0,36,0,Math.PI*2);arenaCtx.fill();}
+    if(im.complete&&im.naturalWidth){if(ghost){arenaCtx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';arenaCtx.globalAlpha=.78;}else if(halloween){arenaCtx.filter='sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)';}else if(christmas){arenaCtx.filter='sepia(.78) saturate(2.45) hue-rotate(315deg) contrast(1.12) brightness(1.08)';}arenaCtx.drawImage(im,-26,-26,52,52);}else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
     arenaCtx.restore();
   }
   function cameraPosition(){
