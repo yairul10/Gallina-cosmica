@@ -83,7 +83,8 @@ const PVP_RANK_SHIP_RULES={
 let pvpClaimedRankUnlocks=new Set(),pvpAdminPreview=false,pvpGhostSkinAllowed=false,pvpUnlockRefreshBusy=false,pvpGlobalEventTheme='normal';
 const SHIP_COSMETIC_STYLE={
     normal:{filter:'none',opacity:'1',shadow:'none',label:'Diseño normal equipado.'},
-    fantasma:{filter:'hue-rotate(145deg) saturate(.55) brightness(1.28)',opacity:'.78',shadow:'drop-shadow(0 0 10px #67e8f9)',label:'👻 Fantasma Cósmico equipado.'},
+    // No es sólo un cambio de tono: la nave queda translúcida, fría y luminosa.
+    fantasma:{filter:'grayscale(1) sepia(1) hue-rotate(128deg) saturate(3.2) brightness(1.48) contrast(.82)',opacity:'.64',shadow:'drop-shadow(0 0 4px #e0faff) drop-shadow(0 0 13px #22d3ee) drop-shadow(0 0 24px rgba(34,211,238,.72))',label:'👻 Fantasma Cósmico equipado.'},
     halloween:{filter:'sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)',opacity:'1',shadow:'drop-shadow(0 0 8px #f97316)',label:'🎃 Halloween equipado.'}
     ,navidad:{filter:'sepia(.78) saturate(2.45) hue-rotate(315deg) contrast(1.12) brightness(1.08)',opacity:'1',shadow:'drop-shadow(0 0 7px #facc15) drop-shadow(0 0 13px #22c55e)',label:'🎄 Navidad Cósmica equipada.'}
 };
