@@ -230,6 +230,7 @@ export class PvpRoom {
     this.roomCode = null;
     // Registro efímero de disparos humanos para validar confirmaciones de impacto.
     this.activeShots = new Map();
+    this.quickChatAt = new Map();
   }
 
   async fetch(request) {
@@ -328,6 +329,17 @@ export class PvpRoom {
       const senderOut=this.eliminatedSlots.has(slot)||this.forfeitedPlayers.has(playerId);
       const gameplayTypes=new Set(["state","shot","missile","evade","hit-confirm","defeat","bot-defeat"]);
       if((this.finished||senderOut)&&gameplayTypes.has(String(message.type||""))) return;
+
+      if (message.type === "quick-chat") {
+        const key=safeText(message.key,"",16);
+        const allowed=new Set(["luck","go","careful","help","nice","gg"]);
+        if(!allowed.has(key))return;
+        const now=Date.now(),last=Number(this.quickChatAt.get(playerId)||0);
+        if(now-last<3000)return;
+        this.quickChatAt.set(playerId,now);
+        this.broadcast({type:"peer-message",from:slot,team,payload:{type:"quick-chat",key}},server);
+        return;
+      }
 
       if (message.type === "shot") {
         const shotId=safeText(message.shotId,"",96), targetSlot=Number(message.targetSlot||0), firedAt=Number(message.firedAt||Date.now());
