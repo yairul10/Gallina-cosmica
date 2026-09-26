@@ -112,11 +112,11 @@ function applyShipCosmeticToImage(img,cosmetic){
 // Gorrito vectorial compartido por todos los tipos de nave. Sólo es decorativo.
 window.gallinaDrawSantaHat=function(drawCtx,x,y,size){
     if(!drawCtx)return;const s=size/52;
-    drawCtx.save();drawCtx.translate(x,y-size*.38);drawCtx.rotate(.14);
-    drawCtx.fillStyle='#c5162d';drawCtx.beginPath();drawCtx.moveTo(-15*s,8*s);drawCtx.quadraticCurveTo(-3*s,-23*s,14*s,7*s);drawCtx.closePath();drawCtx.fill();
-    drawCtx.lineWidth=1.2*s;drawCtx.strokeStyle='#7f1020';drawCtx.stroke();
-    drawCtx.fillStyle='#fff';drawCtx.beginPath();drawCtx.roundRect(-16*s,5*s,31*s,7*s,4*s);drawCtx.fill();drawCtx.strokeStyle='#cbd5e1';drawCtx.lineWidth=.7*s;drawCtx.stroke();
-    drawCtx.beginPath();drawCtx.arc(15*s,7*s,4.5*s,0,Math.PI*2);drawCtx.fill();drawCtx.restore();
+    drawCtx.save();drawCtx.translate(x,y-size*.40);drawCtx.rotate(.14);
+    drawCtx.fillStyle='#c5162d';drawCtx.beginPath();drawCtx.moveTo(-11*s,5*s);drawCtx.quadraticCurveTo(-2*s,-15*s,11*s,5*s);drawCtx.closePath();drawCtx.fill();
+    drawCtx.lineWidth=1*s;drawCtx.strokeStyle='#831323';drawCtx.stroke();
+    drawCtx.fillStyle='#fff';drawCtx.beginPath();drawCtx.roundRect(-12*s,3*s,23*s,5*s,3*s);drawCtx.fill();drawCtx.strokeStyle='#cbd5e1';drawCtx.lineWidth=.55*s;drawCtx.stroke();
+    drawCtx.beginPath();drawCtx.arc(12*s,5*s,3.5*s,0,Math.PI*2);drawCtx.fill();drawCtx.restore();
 }
 window.gallinaSetPvpRankUnlocks=(floors)=>{pvpClaimedRankUnlocks=new Set((Array.isArray(floors)?floors:[]).map(Number));updateShopUI?.();};
 function pvpShipCanBuy(id){const rule=PVP_RANK_SHIP_RULES[id];return !rule||pvpAdminPreview||pvpClaimedRankUnlocks.has(rule.floor);}
