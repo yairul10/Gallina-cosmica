@@ -733,6 +733,23 @@ export class PvpRanking {
     };
   }
 
+  async eventThemeConfig(now=Date.now()){
+    const saved=(await this.ctx.storage.get('eventTheme'))||{};
+    const themes=['normal','fantasma','halloween','navidad'];
+    const theme=themes.includes(saved.theme)?saved.theme:'normal';
+    const scope=saved.scope==='ids'?'ids':'all';
+    const playerIds=Array.isArray(saved.playerIds)?saved.playerIds.map(x=>safeText(x,'',128)).filter(Boolean).slice(0,100):[];
+    const expiresAt=Math.max(0,Number(saved.expiresAt)||0);
+    const active=theme!=='normal'&&(!expiresAt||expiresAt>now);
+    return {theme:active?theme:'normal',scope,playerIds,expiresAt,active,updatedAt:Number(saved.updatedAt)||0};
+  }
+
+  async eventThemeForPlayer(playerId,now=Date.now()){
+    const config=await this.eventThemeConfig(now);
+    if(!config.active)return 'normal';
+    return config.scope==='all'||config.playerIds.includes(String(playerId||''))?config.theme:'normal';
+  }
+
   async buildMonthlyAwards(period,players,monthlyAwards,now=Date.now()){
     const participants=this.sort(players).filter(p=>Number(p.monthMatches||0)>0);
     const config=await this.monthlyPrizeConfig(period,now);
@@ -816,6 +833,21 @@ export class PvpRanking {
       return json({ok:true,config:await this.monthlyPrizeConfig(period,now),participants:this.sort(state.players).filter(p=>Number(p.monthMatches||0)>0).length});
     }
 
+    if(url.pathname==='/qa-event-theme' && request.headers.get('x-pvp-internal')==='qa-admin'){
+      if(request.method==='GET')return json({ok:true,config:await this.eventThemeConfig()});
+      if(request.method!=='POST')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
+      let body;try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
+      const themes=['normal','fantasma','halloween','navidad'],theme=safeText(body?.theme,'normal',20);
+      if(!themes.includes(theme))return json({ok:false,error:'BAD_THEME'},400);
+      const scope=body?.scope==='ids'?'ids':'all';
+      const playerIds=[...new Set((Array.isArray(body?.playerIds)?body.playerIds:[]).map(x=>safeText(x,'',128)).filter(Boolean))].slice(0,100);
+      if(theme!=='normal'&&scope==='ids'&&!playerIds.length)return json({ok:false,error:'PLAYER_IDS_REQUIRED'},400);
+      const hours=Math.max(0,Math.min(720,Math.floor(Number(body?.durationHours)||0)));
+      const now=Date.now(),config={theme,scope,playerIds,expiresAt:theme==='normal'?0:(hours?now+hours*3600000:0),updatedAt:now};
+      await this.ctx.storage.put('eventTheme',config);
+      return json({ok:true,config:await this.eventThemeConfig(now)});
+    }
+
     if(url.pathname==='/qa-close-month' && request.headers.get('x-pvp-internal')==='qa-admin'){
       if(request.method!=='POST')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
       let body;try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
@@ -835,7 +867,7 @@ export class PvpRanking {
       const matchId=safeText(url.searchParams.get('matchId'),'',80);
       const settlement=playerId&&matchId?(await this.ctx.storage.get('settlement:'+playerId+'|'+matchId))||null:null;
       const monthlyConfig=await this.monthlyPrizeConfig(state.activeMonth,Date.now());
-      return json({ok:true,month:state.activeMonth,ranking,record,settlement,pendingMonthly,claimedRankRewards,monthlyConfig});
+      return json({ok:true,month:state.activeMonth,ranking,record,settlement,pendingMonthly,claimedRankRewards,monthlyConfig,eventTheme:await this.eventThemeForPlayer(playerId)});
     }
 
     if(url.pathname==='/monthly-reward'){
@@ -1117,6 +1149,20 @@ export default {
       if(!active?.active)return json({ok:false,error:"SESSION_REPLACED"},401);
       let body={};if(request.method==="POST"){try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}}
       return env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/qa-monthly-config",{
+        method:request.method,headers:{"content-type":"application/json","x-pvp-internal":"qa-admin"},
+        body:request.method==="POST"?JSON.stringify(body):undefined
+      });
+    }
+    if (url.pathname === "/qa/event-theme") {
+      if(!["GET","POST"].includes(request.method))return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
+      const session=await verifySessionToken(env,url.searchParams.get("session"));
+      if(!session)return json({ok:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
+      if(!qaAdminIds(env).has(String(session.playerId)))return json({ok:false,error:"QA_ADMIN_REQUIRED"},403);
+      const rankingId=env.PVP_RANKING.idFromName("global");
+      const active=await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/active-session?playerId="+encodeURIComponent(session.playerId)+"&sessionId="+encodeURIComponent(session.sessionId||""),{headers:{[ACTIVE_SESSION_HEADER]:"1"}}).then(r=>r.json()).catch(()=>({}));
+      if(!active?.active)return json({ok:false,error:"SESSION_REPLACED"},401);
+      let body={};if(request.method==="POST"){try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}}
+      return env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/qa-event-theme",{
         method:request.method,headers:{"content-type":"application/json","x-pvp-internal":"qa-admin"},
         body:request.method==="POST"?JSON.stringify(body):undefined
       });
