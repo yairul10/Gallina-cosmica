@@ -2067,6 +2067,7 @@
       const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId()),{cache:'no-store'}),data=await r.json();
       if(!data?.ok||!Array.isArray(data.ranking))throw new Error('ranking');
       const ranking=data.ranking,meId=playerId(),myIndex=ranking.findIndex(x=>String(x.playerId)===meId),my=myIndex>=0?ranking[myIndex]:data.record;
+      window.gallinaSetGlobalEventTheme?.(data.eventTheme);
       const cups=Number(my?.cups||0),claimed=new Set((data.claimedRankRewards||[]).map(Number)),pendingMonthly=Array.isArray(data.pendingMonthly)?data.pendingMonthly:[];
       window.gallinaSetPvpRankUnlocks?.([...claimed]);
       const season=document.createElement('div');
