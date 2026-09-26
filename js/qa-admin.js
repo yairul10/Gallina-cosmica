@@ -23,6 +23,13 @@
     if(!r.ok||!d?.ok)throw new Error(d?.error==='MONTHLY_PRIZES_LOCKED'?'Los premios ya están bloqueados desde el día 16.':(d?.error||'No se pudo actualizar la temporada.'));
     return d;
   }
+  async function eventThemeRequest(method,body){
+    const token=await sessionToken();
+    const r=await fetch(BASE+'/qa/event-theme?session='+encodeURIComponent(token),{method,headers:{'content-type':'application/json'},body:method==='POST'?JSON.stringify(body):undefined,cache:'no-store'});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d?.ok)throw new Error(d?.error||'No se pudo actualizar el evento visual.');
+    return d;
+  }
   async function init(){
     if(document.getElementById('qaAdminPanel'))return;
     const status=await window.getQaAdminStatus?.();
@@ -42,6 +49,7 @@
       '<div style="font-size:.72rem;margin-bottom:6px">Tu Player ID: <span id="qaAdminMyId"></span></div>'+
       '<input id="qaAdminId" placeholder="Player ID a autorizar" inputmode="numeric" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:7px;border-radius:7px">'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button id="qaAdminAdd">➕ Autorizar</button><button id="qaAdminRemove">🗑️ Quitar</button><button id="qaAdminRefresh">↻</button></div>'+
+      '<div style="margin-top:9px;padding-top:8px;border-top:1px solid rgba(250,204,21,.35)"><button id="qaThemeToggle" type="button" style="width:100%;padding:7px;border:1px solid #a855f7;border-radius:7px;background:#24104f;color:#e9d5ff;font-weight:900;text-align:left">🎭 Eventos visuales globales ▸</button><div id="qaThemeBody" style="display:none;padding-top:7px"><div style="font-size:.66rem;color:#ddd6fe;margin-bottom:6px">El tema reemplaza temporalmente el diseño personal y vuelve al terminar.</div><label style="display:block;margin:4px 0">Tema<select id="qaEventTheme" style="float:right;width:145px"><option value="normal">🚫 Desactivar evento</option><option value="fantasma">👻 Fantasma</option><option value="halloween">🎃 Halloween</option><option value="navidad">🎄 Navidad</option></select></label><label style="display:block;clear:both;margin:8px 0 4px">Alcance<select id="qaEventScope" style="float:right;width:145px"><option value="all">Todos los jugadores</option><option value="ids">Solo estos Player IDs</option></select></label><textarea id="qaEventIds" rows="3" placeholder="Un Player ID por línea o separado por comas" style="clear:both;width:100%;box-sizing:border-box;margin-top:6px;padding:6px"></textarea><label style="display:block;margin-top:6px">Duración en horas <input id="qaEventHours" type="number" min="0" max="720" value="24" inputmode="numeric" style="float:right;width:70px"> <span style="font-size:.62rem;color:#cbd5e1">0 = hasta desactivar</span></label><button id="qaEventSave" type="button" style="width:100%;margin-top:9px;padding:7px;border:1px solid #a855f7;border-radius:7px;background:#581c87;color:#f3e8ff;font-weight:900">✨ Activar / guardar evento</button><div id="qaEventState" style="font-size:.66rem;color:#ddd6fe;margin-top:5px"></div></div></div>'+
       '<div style="margin-top:9px;padding-top:8px;border-top:1px solid rgba(250,204,21,.35);font-weight:900">🏆 Premios PvP del mes</div>'+
       '<div id="qaMonthlyState" style="font-size:.68rem;color:#fde68a;margin:4px 0"></div>'+
       '<div style="font-size:.72rem;font-weight:800;margin:7px 0 5px">🎁 Premio especial y monedas por grupo</div>'+
@@ -69,6 +77,7 @@
     box.querySelector('#qaAdminMyId').textContent=status.playerId||'—';
     const input=box.querySelector('#qaAdminId'),msg=box.querySelector('#qaAdminMsg'),list=box.querySelector('#qaAdminList');
     const state=box.querySelector('#qaMonthlyState'),save=box.querySelector('#qaMonthlySave'),groupsBox=box.querySelector('#qaMonthlyGroups');
+    const eventToggle=box.querySelector('#qaThemeToggle'),eventBody=box.querySelector('#qaThemeBody'),eventTheme=box.querySelector('#qaEventTheme'),eventScope=box.querySelector('#qaEventScope'),eventIds=box.querySelector('#qaEventIds'),eventHours=box.querySelector('#qaEventHours'),eventSave=box.querySelector('#qaEventSave'),eventState=box.querySelector('#qaEventState');
     GROUPS.forEach(([key,label,coinsId])=>{
       const row=document.createElement('div');row.style.cssText='padding:6px 0;border-top:1px solid rgba(148,163,184,.2)';
       row.innerHTML='<label style="display:block;font-size:.7rem;margin-bottom:3px" for="qaMonthlyPrize-'+key+'">'+label+'</label><div style="display:grid;grid-template-columns:minmax(0,1fr) 82px;gap:5px"><select id="qaMonthlyPrize-'+key+'" style="width:100%;box-sizing:border-box;padding:6px"></select><input id="'+coinsId+'" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas" aria-label="Monedas '+label+'"></div>';
@@ -79,10 +88,15 @@
     const prizes=GROUPS.map(([key])=>box.querySelector('#qaMonthlyPrize-'+key));
     const refresh=async()=>{try{const d=await window.qaAdminRequest('list');const arr=d.playerIds||[];list.textContent=arr.length?'QA autorizados:\n'+arr.join('\n'):'No hay cuentas QA adicionales.';}catch(e){msg.textContent='⚠️ '+e.message;}};
     const act=async(action)=>{const id=input.value.trim();if(!id){msg.textContent='⚠️ Ingresa un Player ID.';return;}try{await window.qaAdminRequest(action,id);msg.textContent=action==='add'?'✅ QA autorizado.':'✅ QA retirado.';input.value='';await refresh();}catch(e){msg.textContent='⚠️ '+e.message;}};
+    const updateEventIds=()=>{eventIds.disabled=eventScope.value!=='ids';eventIds.style.opacity=eventIds.disabled?'.5':'1';};
+    const loadEventTheme=async()=>{try{const d=await eventThemeRequest('GET'),c=d.config||{};eventTheme.value=c.theme||'normal';eventScope.value=c.scope||'all';eventIds.value=(c.playerIds||[]).join('\n');eventHours.value=c.expiresAt&&c.expiresAt>Date.now()?Math.max(1,Math.ceil((c.expiresAt-Date.now())/3600000)):24;updateEventIds();eventState.textContent=c.active?'✅ Activo: '+c.theme+(c.scope==='ids'?' para '+(c.playerIds||[]).length+' ID(s)':' para todos')+(c.expiresAt?' · termina '+new Date(c.expiresAt).toLocaleString('es-CL'):' · sin término automático'):'Sin evento visual activo.';}catch(e){eventState.textContent='⚠️ '+e.message;}};
     const loadMonthly=async()=>{try{const d=await monthlyRequest('GET'),c=d.config||{};GROUPS.forEach(([key],i)=>{prizes[i].value=c[key+'Prize']||'';ids[i].value=Number(c[key]||0);});const locked=!!c.locked;prizes.forEach(x=>x.disabled=locked);ids.forEach(x=>x.disabled=locked);save.disabled=locked;state.textContent=(locked?'🔒 Premios definitivos':(c.period==='2026-09'?'✏️ Premios editables · excepción de lanzamiento hasta fin de septiembre':'✏️ Premios editables hasta el día 15'))+' · Participantes actuales: '+Number(d.participants||0);}catch(e){state.textContent='⚠️ '+e.message;}};
     box.querySelector('#qaAdminAdd').onclick=()=>act('add');
     box.querySelector('#qaAdminRemove').onclick=()=>act('remove');
     box.querySelector('#qaAdminRefresh').onclick=refresh;
+    eventToggle.onclick=()=>{const open=eventBody.style.display==='none';eventBody.style.display=open?'':'none';eventToggle.textContent='🎭 Eventos visuales globales '+(open?'▾':'▸');if(open)loadEventTheme();};
+    eventScope.onchange=updateEventIds;
+    eventSave.onclick=async()=>{eventSave.disabled=true;eventState.textContent='⏳ Guardando evento…';try{const playerIds=eventIds.value.split(/[\s,;]+/).map(x=>x.trim()).filter(Boolean);const d=await eventThemeRequest('POST',{theme:eventTheme.value,scope:eventScope.value,playerIds,durationHours:Number(eventHours.value)||0});eventState.textContent=d.config?.theme==='normal'?'✅ Evento desactivado.':'✅ Evento activado.';await loadEventTheme();await window.refreshPvpSpecialShipAccess?.();}catch(e){eventState.textContent='⚠️ '+e.message;}finally{eventSave.disabled=false;}};
     save.onclick=async()=>{save.disabled=true;msg.textContent='⏳ Guardando premios…';try{const vals=ids.map(x=>Math.max(0,Math.floor(Number(x.value)||0))),body={};GROUPS.forEach(([key],i)=>{body[key]=vals[i];body[key+'Prize']=prizes[i].value;});const d=await monthlyRequest('POST',body);msg.textContent='✅ Premios actualizados para todos los jugadores.';state.textContent=(d.config?.period==='2026-09'?'✏️ Premios editables · excepción de lanzamiento hasta fin de septiembre':'✏️ Premios editables hasta el día 15')+' · Participantes actuales: '+Number(d.participants||0);}catch(e){msg.textContent='⚠️ '+e.message;}finally{await loadMonthly();}};
     refresh();loadMonthly();
   }
