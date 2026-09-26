@@ -53,7 +53,7 @@
     pulse.addEventListener('animationend',()=>pulse.remove(),{once:true});
   }
   lobby?.addEventListener('pointerdown',addQueuePulse);
-  const PVP_MISSILE_COOLDOWN = 8000;
+  const PVP_MISSILE_COOLDOWN = 4000;
   const pvpBackground = new Image();
   pvpBackground.src = 'assets/fondo_pvp.png';
   const pvpMusic = new Audio('assets/musica_4.mp3');
