@@ -350,6 +350,10 @@
   function queueButtonLabel(){
     return pvpMode==='2v2'?'🤝 Buscar equipo 2v2':pvpMode==='arena10'?'🌠 Buscar Arena 10':pvpMode==='arena'?'🌌 Buscar Arena 5':'⚔️ Buscar rival';
   }
+  function setPartyPanelOpen(open=false){
+    const panel=$('pvpPartyWrap');
+    if(panel)panel.style.display=(pvpMode==='2v2'&&open)?'block':'none';
+  }
   function stopQueueTimer(resetStartedAt=true){
     if(queueTimer){clearInterval(queueTimer);queueTimer=0;}
     if(resetStartedAt){
@@ -1972,7 +1976,7 @@
       if(msg){msg.textContent='🔒 Arena PvP: supera Superjefes y Hordas para desbloquearla.';msg.classList.add('show');setTimeout(()=>msg.classList.remove('show'),4500);}
       return;
     }
-    document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';
+    document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';setPartyPanelOpen(false);
     const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();refreshQaBotRankAccess();syncPvpRankSummary();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
   });
   document.querySelectorAll('.pvp-mode-btn').forEach(btn=>btn.addEventListener('click',()=>{
@@ -1985,6 +1989,9 @@
     }
     pvpMode=btn.dataset.mode||'1v1';
     document.querySelectorAll('.pvp-mode-btn').forEach(b=>b.style.background=b===btn?'#7c3aed':'#475569');
+    // El código de compañero sólo ocupa espacio cuando se elige 2v2 de forma
+    // explícita. Cambiar a otro modo lo pliega de inmediato.
+    setPartyPanelOpen(pvpMode==='2v2');
     const find=$('pvpFindMatchBtn');
     if(find) find.textContent=queueButtonLabel();
     showStatus(pvpMode==='2v2'?'Modo 2v2 · 4 jugadores, sin fuego amigo.':pvpMode==='arena10'?'Modo Arena 10 · mapa 5×5, todos contra todos.':pvpMode==='arena'?'Modo Arena 5 · todos contra todos.':'Modo 1v1.');
