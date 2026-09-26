@@ -1057,10 +1057,11 @@ export class PvpMatchmaker {
     queue.push(entry);this.waitingByMode.set(mode,queue);
 
     const sendQueueCount=list=>{
-      const first=list.slice().sort((a,b)=>a.joinedAt-b.joinedAt)[0];
-      const queueMaxWait=first?this.fallbackMsForRank(first.rankLevel):0;
+      const deadlines=list.map(e=>({e,deadline:e.joinedAt+this.fallbackMsForRank(e.rankLevel)}));
+      const earliest=deadlines.sort((a,b)=>a.deadline-b.deadline)[0];
+      const queueDeadline=earliest?.deadline||Date.now();
       for(const e of list){
-        try{e.socket.send(JSON.stringify({type:"queue-waiting",mode,waiting:list.length,needed,maxWaitMs:queueMaxWait,queueStartedAt:first?.joinedAt||e.joinedAt}));}catch{}
+        try{e.socket.send(JSON.stringify({type:"queue-waiting",mode,waiting:list.length,needed,maxWaitMs:Math.max(0,queueDeadline-e.joinedAt),queueStartedAt:e.joinedAt,queueDeadline}));}catch{}
       }
     };
     const removeEntries=group=>{
@@ -1113,9 +1114,13 @@ export class PvpMatchmaker {
     const fallbackGroup=()=>{
       const list=this.waitingByMode.get(mode)||[];
       if(!list.length)return null;
-      const anchor=list.slice().sort((a,b)=>a.joinedAt-b.joinedAt)[0],now=Date.now();
-      const deadline=anchor.joinedAt+this.fallbackMsForRank(anchor.rankLevel);
+      const now=Date.now();
+      // La cola termina en el primer límite prometido a cualquiera de sus
+      // integrantes: cada jugador conserva como máximo la espera de su rango.
+      const deadlines=list.map(e=>({e,deadline:e.joinedAt+this.fallbackMsForRank(e.rankLevel)})).sort((a,b)=>a.deadline-b.deadline);
+      const deadline=deadlines[0]?.deadline??now;
       if(now<deadline)return null;
+      const anchor=list.slice().sort((a,b)=>a.joinedAt-b.joinedAt)[0];
       const compatible=list.filter(e=>compatibleWith(anchor,e,now));
       const units=unitsFor(compatible),chosen=[];
       for(const unit of units){
@@ -1132,8 +1137,8 @@ export class PvpMatchmaker {
       // la partida comienza sin esperar al límite.
       const full=fullGroup();
       if(full){launch(full,false);return;}
-      // El tiempo pertenece siempre al primer jugador que inició esta cola.
-      // Los que entren después heredan ese mismo límite.
+      // Se respeta el límite más corto que venza primero entre los jugadores
+      // presentes; nadie queda esperando más que el máximo de su propio rango.
       const fallback=fallbackGroup();
       if(fallback)launch(fallback,true);
     };
