@@ -1,8 +1,13 @@
 (() => {
   const BASE='https://gallina-cosmica-pvp-test.jairog940.workers.dev';
-  const SHIPS=[
-    ['','🚫 Sin nave'],['toro_aniquilador','Toro Aniquilador'],['toro_blindado','Toro Blindado'],['toro_baliza','Toro Baliza'],
-    ['toro_oscuro','Toro Oscuro'],['toro_luz','Toro Luz'],['toro_maoma','Toro Maoma'],['toro_mayor','Toro Mayor']
+  const PRIZES=[
+    ['','🚫 Sin premio especial'],['toro_aniquilador','🚀 Toro Aniquilador'],['toro_blindado','🚀 Toro Blindado'],['toro_baliza','🚀 Toro Baliza'],
+    ['toro_oscuro','🚀 Toro Oscuro'],['toro_luz','🚀 Toro Luz'],['toro_maoma','🚀 Toro Maoma'],['toro_mayor','🚀 Toro Mayor'],
+    ['cosmetic_fantasma','👻 Diseño Fantasma'],['cosmetic_halloween','🎃 Diseño Halloween']
+  ];
+  const GROUPS=[
+    ['first','🥇 1.º puesto','qaM1'],['secondThird','🥈 2.º–3.º','qaM23'],['fourthFifth','🏅 4.º–5.º','qaM45'],
+    ['sixthTenth','🏆 6.º–10.º','qaM610'],['upperHalf','📈 Mitad superior restante','qaM50'],['rest','🎮 Resto de participantes','qaMRest']
   ];
   async function sessionToken(){
     const session=await window.getPlayGamesPvpSession?.();
@@ -39,16 +44,9 @@
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button id="qaAdminAdd">➕ Autorizar</button><button id="qaAdminRemove">🗑️ Quitar</button><button id="qaAdminRefresh">↻</button></div>'+
       '<div style="margin-top:9px;padding-top:8px;border-top:1px solid rgba(250,204,21,.35);font-weight:900">🏆 Premios PvP del mes</div>'+
       '<div id="qaMonthlyState" style="font-size:.68rem;color:#fde68a;margin:4px 0"></div>'+
-      '<div style="font-size:.72rem;font-weight:800;margin:7px 0 3px">🚀 Nave para puestos 1.º–5.º</div><select id="qaMonthlyShip" style="width:100%;box-sizing:border-box;padding:7px;margin:3px 0 8px"></select>'+
-      '<div style="font-size:.72rem;font-weight:800;margin-bottom:5px">🪙 Monedas por posición</div>'+
-      '<div style="display:grid;grid-template-columns:minmax(120px,1fr) minmax(145px,1fr);gap:6px;align-items:center;min-width:290px">'+
-      '<label for="qaM1">🥇 1.º puesto</label><input id="qaM1" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas">'+
-      '<label for="qaM23">🥈 2.º–3.º</label><input id="qaM23" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas">'+
-      '<label for="qaM45">🏅 4.º–5.º</label><input id="qaM45" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas">'+
-      '<label for="qaM610">🏆 6.º–10.º</label><input id="qaM610" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas">'+
-      '<label for="qaM50">📈 Mitad superior restante</label><input id="qaM50" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas">'+
-      '<label for="qaMRest">🎮 Resto de participantes</label><input id="qaMRest" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas"></div>'+
-      '<div style="font-size:.64rem;color:#fde68a;margin-top:5px">Puedes subir, bajar o dejar en 0 cualquier premio de monedas antes del bloqueo. Si eliges “Sin nave”, los puestos 1.º–5.º reciben solo las monedas configuradas.</div>'+
+      '<div style="font-size:.72rem;font-weight:800;margin:7px 0 5px">🎁 Premio especial y monedas por grupo</div>'+
+      '<div id="qaMonthlyGroups"></div>'+
+      '<div style="font-size:.64rem;color:#fde68a;margin-top:5px">Cada grupo puede recibir monedas, una nave, un diseño o solo monedas. Los diseños son visuales y no alteran las estadísticas.</div>'+
       '<button id="qaMonthlySave" style="width:100%;margin-top:7px;padding:7px;border-radius:7px;border:1px solid #f59e0b;background:#78350f;color:#fde68a;font-weight:800">💾 Guardar premios del mes</button>'+
       '<div style="font-size:.66rem;color:#fcd34d;margin-top:4px">Regla normal: puedes cambiarlos del día 1 al 15; desde el 16 quedan bloqueados. Septiembre 2026 tiene una excepción de lanzamiento y permanece editable hasta fin de mes.</div>'+
       '<div id="qaAdminMsg" style="font-size:.72rem;margin-top:6px"></div><div id="qaAdminList" style="font-size:.7rem;margin-top:6px;max-height:120px;overflow:auto"></div>';
@@ -70,16 +68,22 @@
     setCollapsed(true);
     box.querySelector('#qaAdminMyId').textContent=status.playerId||'—';
     const input=box.querySelector('#qaAdminId'),msg=box.querySelector('#qaAdminMsg'),list=box.querySelector('#qaAdminList');
-    const ship=box.querySelector('#qaMonthlyShip'),state=box.querySelector('#qaMonthlyState'),save=box.querySelector('#qaMonthlySave');
-    SHIPS.forEach(([id,name])=>{const o=document.createElement('option');o.value=id;o.textContent=name;ship.appendChild(o);});
-    const ids=['qaM1','qaM23','qaM45','qaM610','qaM50','qaMRest'].map(id=>box.querySelector('#'+id));
+    const state=box.querySelector('#qaMonthlyState'),save=box.querySelector('#qaMonthlySave'),groupsBox=box.querySelector('#qaMonthlyGroups');
+    GROUPS.forEach(([key,label,coinsId])=>{
+      const row=document.createElement('div');row.style.cssText='padding:6px 0;border-top:1px solid rgba(148,163,184,.2)';
+      row.innerHTML='<label style="display:block;font-size:.7rem;margin-bottom:3px" for="qaMonthlyPrize-'+key+'">'+label+'</label><div style="display:grid;grid-template-columns:minmax(0,1fr) 82px;gap:5px"><select id="qaMonthlyPrize-'+key+'" style="width:100%;box-sizing:border-box;padding:6px"></select><input id="'+coinsId+'" type="number" min="0" inputmode="numeric" style="width:100%;box-sizing:border-box" placeholder="Monedas" aria-label="Monedas '+label+'"></div>';
+      groupsBox.appendChild(row);
+      const select=row.querySelector('select');PRIZES.forEach(([id,name])=>{const o=document.createElement('option');o.value=id;o.textContent=name;select.appendChild(o);});
+    });
+    const ids=GROUPS.map(([, ,id])=>box.querySelector('#'+id));
+    const prizes=GROUPS.map(([key])=>box.querySelector('#qaMonthlyPrize-'+key));
     const refresh=async()=>{try{const d=await window.qaAdminRequest('list');const arr=d.playerIds||[];list.textContent=arr.length?'QA autorizados:\n'+arr.join('\n'):'No hay cuentas QA adicionales.';}catch(e){msg.textContent='⚠️ '+e.message;}};
     const act=async(action)=>{const id=input.value.trim();if(!id){msg.textContent='⚠️ Ingresa un Player ID.';return;}try{await window.qaAdminRequest(action,id);msg.textContent=action==='add'?'✅ QA autorizado.':'✅ QA retirado.';input.value='';await refresh();}catch(e){msg.textContent='⚠️ '+e.message;}};
-    const loadMonthly=async()=>{try{const d=await monthlyRequest('GET'),c=d.config||{};ship.value=Object.prototype.hasOwnProperty.call(c,'shipId')?(c.shipId||''):'toro_aniquilador';[c.first,c.secondThird,c.fourthFifth,c.sixthTenth,c.upperHalf,c.rest].forEach((v,i)=>ids[i].value=Number(v||0));const locked=!!c.locked;ship.disabled=locked;ids.forEach(x=>x.disabled=locked);save.disabled=locked;state.textContent=(locked?'🔒 Premios definitivos':(c.period==='2026-09'?'✏️ Premios editables · excepción de lanzamiento hasta fin de septiembre':'✏️ Premios editables hasta el día 15'))+' · Participantes actuales: '+Number(d.participants||0);}catch(e){state.textContent='⚠️ '+e.message;}};
+    const loadMonthly=async()=>{try{const d=await monthlyRequest('GET'),c=d.config||{};GROUPS.forEach(([key],i)=>{prizes[i].value=c[key+'Prize']||'';ids[i].value=Number(c[key]||0);});const locked=!!c.locked;prizes.forEach(x=>x.disabled=locked);ids.forEach(x=>x.disabled=locked);save.disabled=locked;state.textContent=(locked?'🔒 Premios definitivos':(c.period==='2026-09'?'✏️ Premios editables · excepción de lanzamiento hasta fin de septiembre':'✏️ Premios editables hasta el día 15'))+' · Participantes actuales: '+Number(d.participants||0);}catch(e){state.textContent='⚠️ '+e.message;}};
     box.querySelector('#qaAdminAdd').onclick=()=>act('add');
     box.querySelector('#qaAdminRemove').onclick=()=>act('remove');
     box.querySelector('#qaAdminRefresh').onclick=refresh;
-    save.onclick=async()=>{save.disabled=true;msg.textContent='⏳ Guardando premios…';try{const vals=ids.map(x=>Math.max(0,Math.floor(Number(x.value)||0)));const d=await monthlyRequest('POST',{shipId:ship.value,first:vals[0],secondThird:vals[1],fourthFifth:vals[2],sixthTenth:vals[3],upperHalf:vals[4],rest:vals[5]});msg.textContent='✅ Premios actualizados para todos los jugadores.';state.textContent=(d.config?.period==='2026-09'?'✏️ Premios editables · excepción de lanzamiento hasta fin de septiembre':'✏️ Premios editables hasta el día 15')+' · Participantes actuales: '+Number(d.participants||0);}catch(e){msg.textContent='⚠️ '+e.message;}finally{await loadMonthly();}};
+    save.onclick=async()=>{save.disabled=true;msg.textContent='⏳ Guardando premios…';try{const vals=ids.map(x=>Math.max(0,Math.floor(Number(x.value)||0))),body={};GROUPS.forEach(([key],i)=>{body[key]=vals[i];body[key+'Prize']=prizes[i].value;});const d=await monthlyRequest('POST',body);msg.textContent='✅ Premios actualizados para todos los jugadores.';state.textContent=(d.config?.period==='2026-09'?'✏️ Premios editables · excepción de lanzamiento hasta fin de septiembre':'✏️ Premios editables hasta el día 15')+' · Participantes actuales: '+Number(d.participants||0);}catch(e){msg.textContent='⚠️ '+e.message;}finally{await loadMonthly();}};
     refresh();loadMonthly();
   }
   if(window.QA_MODE)init(); else window.addEventListener('gallina-qa-ready',init,{once:true});
