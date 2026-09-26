@@ -86,7 +86,7 @@ const SHIP_COSMETIC_STYLE={
     // No es sólo un cambio de tono: la nave queda translúcida, fría y luminosa.
     fantasma:{filter:'grayscale(1) sepia(1) hue-rotate(128deg) saturate(3.2) brightness(1.48) contrast(.82)',opacity:'.64',shadow:'drop-shadow(0 0 4px #e0faff) drop-shadow(0 0 13px #22d3ee) drop-shadow(0 0 24px rgba(34,211,238,.72))',label:'👻 Fantasma Cósmico equipado.'},
     halloween:{filter:'sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)',opacity:'1',shadow:'drop-shadow(0 0 8px #f97316)',label:'🎃 Halloween equipado.'}
-    ,navidad:{filter:'sepia(.78) saturate(2.45) hue-rotate(315deg) contrast(1.12) brightness(1.08)',opacity:'1',shadow:'drop-shadow(0 0 7px #facc15) drop-shadow(0 0 13px #22c55e)',label:'🎄 Navidad Cósmica equipada.'}
+    ,navidad:{filter:'none',opacity:'1',shadow:'none',label:'🎄 Navidad Cósmica equipada: gorrito navideño, colores originales.'}
 };
 function normalizedShipCosmetic(value){return ['normal','fantasma','halloween','navidad'].includes(value)?value:'normal';}
 window.gallinaSetGlobalEventTheme=function(theme){
@@ -103,6 +103,15 @@ function applyShipCosmeticToImage(img,cosmetic){
     if(!img)return;
     const style=window.gallinaShipCosmeticStyle(cosmetic);
     img.style.filter=style.filter;img.style.opacity=style.opacity;img.style.filter=style.filter+(style.shadow==='none'?'':' '+style.shadow);
+}
+// Gorrito vectorial compartido por todos los tipos de nave. Sólo es decorativo.
+window.gallinaDrawSantaHat=function(drawCtx,x,y,size){
+    if(!drawCtx)return;const s=size/52;
+    drawCtx.save();drawCtx.translate(x,y-size*.38);drawCtx.rotate(.14);
+    drawCtx.fillStyle='#c5162d';drawCtx.beginPath();drawCtx.moveTo(-15*s,8*s);drawCtx.quadraticCurveTo(-3*s,-23*s,14*s,7*s);drawCtx.closePath();drawCtx.fill();
+    drawCtx.lineWidth=1.2*s;drawCtx.strokeStyle='#7f1020';drawCtx.stroke();
+    drawCtx.fillStyle='#fff';drawCtx.beginPath();drawCtx.roundRect(-16*s,5*s,31*s,7*s,4*s);drawCtx.fill();drawCtx.strokeStyle='#cbd5e1';drawCtx.lineWidth=.7*s;drawCtx.stroke();
+    drawCtx.beginPath();drawCtx.arc(15*s,7*s,4.5*s,0,Math.PI*2);drawCtx.fill();drawCtx.restore();
 }
 window.gallinaSetPvpRankUnlocks=(floors)=>{pvpClaimedRankUnlocks=new Set((Array.isArray(floors)?floors:[]).map(Number));updateShopUI?.();};
 function pvpShipCanBuy(id){const rule=PVP_RANK_SHIP_RULES[id];return !rule||pvpAdminPreview||pvpClaimedRankUnlocks.has(rule.floor);}
@@ -212,6 +221,8 @@ window.updateMenuShip = function() {
         ? `assets/${gameStats.selectedPvpShip}.png`
         : gameStats.useGallinaChile ? 'assets/gallina_chile.png' : `assets/${dir}${gameStats.useProShip ? '_pro' : ''}_1.png`;
     applyShipCosmeticToImage(img,window.gallinaGetShipCosmetic());
+    const wrap=document.getElementById('menuShipWrap');
+    if(wrap)wrap.classList.toggle('navidad',window.gallinaGetShipCosmetic()==='navidad');
     img.alt = 'Nave seleccionada';
 };
 window.refreshGallinaEquipmentUI = function() {
