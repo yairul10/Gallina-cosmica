@@ -1029,16 +1029,17 @@
     meState.angle=a;
     const speed=450, initialSpeed=300;
     const targetSlot=Number(targetPlayer.slot);
-    missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ownerSlot:mySlot,ownerTeam:myTeam,targetSlot,ship:myShip,missileType:info.missileType,isPro:usePro,life:6,vx:Math.cos(a)*initialSpeed,vy:Math.sin(a)*initialSpeed,speed});
+    const curveSide=Math.random()<.5?-1:1;
+    missiles.push({x:meState.x,y:meState.y,prevX:meState.x,prevY:meState.y,own:true,ownerSlot:mySlot,ownerTeam:myTeam,targetSlot,ship:myShip,missileType:info.missileType,isPro:usePro,life:6,vx:Math.cos(a)*initialSpeed,vy:Math.sin(a)*initialSpeed,speed,curveSide,curveTime:0,trail:[]});
     const sx=pvpMode==='1v1'&&mySlot===2?worldWidth-meState.x:meState.x;
     const sy=pvpMode==='1v1'&&mySlot===2?worldHeight-meState.y:meState.y;
-    send({type:'missile',x:sx,y:sy,ship:myShip,missileType:info.missileType,isPro:usePro,targetSlot});
+    send({type:'missile',x:sx,y:sy,ship:myShip,missileType:info.missileType,isPro:usePro,targetSlot,curveSide});
   }
-  function spawnRemoteMissile(x,y,ship,missileType,isPro,ownerSlot=0,ownerTeam=0,targetSlot=0){
+  function spawnRemoteMissile(x,y,ship,missileType,isPro,ownerSlot=0,ownerTeam=0,targetSlot=0,curveSide=0){
     if(!Number.isFinite(x+y))return;
     const info=shipCombatInfo(ship||'Gallina');
     // En la vista remota el rival parte apuntando hacia abajo.
-    missiles.push({x,y,prevX:x,prevY:y,own:false,ship:ship||'Gallina',missileType:missileType||info.missileType,isPro:!!isPro,ownerSlot,ownerTeam,targetSlot,life:6,vx:0,vy:300,speed:450});
+    missiles.push({x,y,prevX:x,prevY:y,own:false,ship:ship||'Gallina',missileType:missileType||info.missileType,isPro:!!isPro,ownerSlot,ownerTeam,targetSlot,life:6,vx:0,vy:300,speed:450,curveSide:Number(curveSide)||((Number(ownerSlot||1)%2)?1:-1),curveTime:0,trail:[]});
   }
   function updateMissileButton(now=performance.now()){
     const btn=$('pvpMissileBtn'), label=$('pvpMissileCooldown'); if(!btn||!label)return;
@@ -1438,12 +1439,20 @@
         target=targetSlot===mySlot?meState:(targetSlot?peerStates.get(targetSlot):meState);
         if(!target){m.life=0;continue;}
       }
-      // Misma persecución del modo normal: la velocidad se interpola 8% por frame hacia el objetivo.
-      const angle=Math.atan2(target.y-m.y,target.x-m.x);
+      // El misil abre una curva lateral y después converge suavemente al objetivo.
+      m.curveTime=Number(m.curveTime||0)+dt;
+      const directAngle=Math.atan2(target.y-m.y,target.x-m.x);
+      const curveStrength=Math.max(0,1-Math.min(1,m.curveTime/1.05))*.72;
+      const angle=directAngle+(Number(m.curveSide)||1)*curveStrength;
       const follow=1-Math.pow(0.92,dt*60);
       m.vx+=(Math.cos(angle)*m.speed-m.vx)*follow;
       m.vy+=(Math.sin(angle)*m.speed-m.vy)*follow;
       m.x+=m.vx*dt;m.y+=m.vy*dt;m.life-=dt;
+      if(!Array.isArray(m.trail))m.trail=[];
+      m.trail.push({x:m.x,y:m.y,life:.42,maxLife:.42});
+      if(m.trail.length>18)m.trail.shift();
+      for(const puff of m.trail)puff.life-=dt;
+      m.trail=m.trail.filter(puff=>puff.life>0);
     }
     // Los asteroides bloquean láseres y misiles para crear cobertura real.
     for(const b of bullets){
@@ -1830,6 +1839,17 @@
       arenaCtx.shadowBlur=0;arenaCtx.restore();
     }
     for(const m of missiles){
+      // Estela corta: humo/energía local, sin tráfico adicional de red.
+      if(Array.isArray(m.trail)){
+        arenaCtx.save();
+        for(const puff of m.trail){
+          const t=Math.max(0,puff.life/Math.max(.001,puff.maxLife||.42));
+          arenaCtx.globalAlpha=.28*t;
+          arenaCtx.fillStyle='#e2e8f0';
+          arenaCtx.beginPath();arenaCtx.arc(puff.x,puff.y,2.5+(1-t)*5,0,Math.PI*2);arenaCtx.fill();
+        }
+        arenaCtx.restore();
+      }
       arenaCtx.save();arenaCtx.translate(m.x,m.y);
       const angle=Math.atan2(m.vy,m.vx)+Math.PI/2;arenaCtx.rotate(angle);
       const im=missileImage(m.missileType,m.isPro);
