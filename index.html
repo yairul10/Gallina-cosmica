@@ -126,6 +126,13 @@
             <p id="pvpLobbyStatus" style="min-height:42px; margin:12px 18px 4px; font-size:.8rem; color:#cbd5e1; text-align:center;"></p>
             <button class="btn btn-secondary" id="pvpCloseBtn">🔙 Volver</button>
         </div>
+        <div id="pvpQueueGameScreen" class="screen-overlay" style="display:none; padding:0; background:#020617; z-index:215; overflow:hidden;">
+            <canvas id="pvpQueueGameCanvas" width="420" height="640" style="position:absolute; inset:0; width:100%; height:100%; touch-action:none;"></canvas>
+            <div id="pvpQueueGameStatus" style="position:absolute; top:max(12px,env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:3; width:min(92%,390px); padding:8px 10px; border:1px solid #22c55e; border-radius:11px; background:rgba(5,46,22,.88); color:#86efac; font-size:.72rem; font-weight:800; text-align:center; text-shadow:0 1px 2px #000;">🔎 Buscando partida…</div>
+            <div id="pvpQueueGameKills" style="position:absolute; top:max(58px,calc(env(safe-area-inset-top) + 58px)); left:12px; z-index:3; padding:6px 9px; border-radius:9px; background:rgba(2,6,23,.72); color:#fbbf24; font-size:.72rem; font-weight:800;">🎯 Enemigos: 0</div>
+            <div style="position:absolute; left:12px; bottom:max(14px,env(safe-area-inset-bottom)); z-index:3; color:#cbd5e1; font-size:.67rem; padding:6px 9px; border-radius:9px; background:rgba(2,6,23,.68); pointer-events:none;">Arrastra para mover · toca para disparar</div>
+            <button id="pvpQueueCancelBtn" class="btn btn-secondary" style="position:absolute; right:12px; bottom:max(14px,env(safe-area-inset-bottom)); z-index:4; width:auto; margin:0; padding:7px 11px; font-size:.72rem;">✖️ Cancelar búsqueda</button>
+        </div>
         <div id="pvpArenaScreen" class="screen-overlay" style="display:none; padding:0; background:#020617; z-index:220; overflow:hidden;">
             <canvas id="pvpCanvas" width="420" height="640" style="position:absolute; inset:0; width:100%; height:100%; object-fit:fill;"></canvas>
             <div style="position:absolute; top:max(10px,env(safe-area-inset-top)); left:10px; right:10px; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; text-shadow:0 2px 4px #000;">
@@ -337,7 +344,7 @@
     <script src="js/main.js?v=auto-record-fix-2"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=pvp-rank-reward-1"></script>
-    <script src="js/pvp.js?v=quick-chat-1"></script>
+    <script src="js/pvp.js?v=queue-game-1"></script>
     <script src="js/qa-mode.js?v=qa-split-panels-12"></script>
     <script src="js/qa-pvp.js?v=qa-split-panels-3"></script>
     <script src="js/qa-admin.js?v=qa-scroll-hat-2"></script>
