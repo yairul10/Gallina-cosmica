@@ -1710,8 +1710,13 @@
     arenaCtx.save();arenaCtx.font='bold 10px sans-serif';
     const width=arenaCtx.measureText(label).width+iconSize+gap;
     const left=state.x-width/2;
-    const icon=cachedImage(rank.asset);
-    if(icon.complete&&icon.naturalWidth)arenaCtx.drawImage(icon,left,baseline-iconSize+1,iconSize,iconSize);
+    if(rank.icon){
+      arenaCtx.save();arenaCtx.font='16px sans-serif';arenaCtx.textAlign='left';arenaCtx.textBaseline='alphabetic';
+      arenaCtx.fillText(rank.icon,left,baseline);arenaCtx.restore();
+    }else{
+      const icon=cachedImage(rank.asset);
+      if(icon.complete&&icon.naturalWidth)arenaCtx.drawImage(icon,left,baseline-iconSize+1,iconSize,iconSize);
+    }
     arenaCtx.textAlign='left';arenaCtx.textBaseline='alphabetic';
     arenaCtx.fillStyle=pvpMode==='2v2'&&Number(player.team)===myTeam?'#86efac':'#fca5a5';
     arenaCtx.fillText(label,left+iconSize+gap,baseline);arenaCtx.restore();
