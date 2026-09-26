@@ -88,7 +88,8 @@ const SHIP_COSMETIC_STYLE={
 };
 function normalizedShipCosmetic(value){return ['normal','fantasma','halloween'].includes(value)?value:'normal';}
 window.gallinaGetShipCosmetic=function(){
-    return pvpGhostSkinAllowed?normalizedShipCosmetic(gameStats.shipCosmetic):'normal';
+    const cosmetic=normalizedShipCosmetic(gameStats.shipCosmetic);
+    return cosmetic==='normal'||pvpGhostSkinAllowed||gameStats.shipCosmetics?.includes(cosmetic)?cosmetic:'normal';
 };
 window.gallinaShipCosmeticStyle=function(cosmetic){return SHIP_COSMETIC_STYLE[normalizedShipCosmetic(cosmetic)]||SHIP_COSMETIC_STYLE.normal;};
 function applyShipCosmeticToImage(img,cosmetic){
@@ -172,12 +173,13 @@ function updateHangarUI() {
     // Catálogo temporal exclusivo del administrador real. No depende de la
     // nave elegida y no entrega ventajas de combate.
     const cosmeticCard=document.getElementById('hangar-ship-cosmetics');
-    const canUseCosmetics=!!pvpGhostSkinAllowed;
+    const canUseCosmetics=!!pvpGhostSkinAllowed||!!gameStats.shipCosmetics?.length;
     if(cosmeticCard)cosmeticCard.style.display=canUseCosmetics?'flex':'none';
     const cosmetic=window.gallinaGetShipCosmetic();
     [['normal','btn-ship-cosmetic-normal','#334155'],['fantasma','btn-ship-cosmetic-ghost','#0891b2'],['halloween','btn-ship-cosmetic-halloween','#ea580c']].forEach(([id,buttonId,color])=>{
         const button=document.getElementById(buttonId);if(!button)return;
         const active=cosmetic===id;button.style.background=active?color:'#334155';button.textContent=active?(id==='normal'?'✓ Normal':id==='fantasma'?'✓ 👻 Fantasma':'✓ 🎃 Halloween'):(id==='normal'?'Normal':id==='fantasma'?'👻 Fantasma':'🎃 Halloween');
+        button.disabled=id!=='normal'&&!pvpGhostSkinAllowed&&!gameStats.shipCosmetics?.includes(id);
     });
     const cosmeticStatus=document.getElementById('ship-cosmetic-status');
     if(cosmeticStatus)cosmeticStatus.textContent=window.gallinaShipCosmeticStyle(cosmetic).label;
@@ -226,9 +228,8 @@ window.setShipCosmetic = async function(cosmetic){
     // basta para conceder esta prueba exclusiva.
     let status={ok:false,isAdmin:false};
     try{status=await window.getQaAdminStatus?.()||status;}catch{}
-    pvpGhostSkinAllowed=!!(status.ok&&status.isAdmin);
-    if(!pvpGhostSkinAllowed){
-        gameStats.shipCosmetic='normal';
+    if(status.ok)pvpGhostSkinAllowed=!!status.isAdmin;
+    if(cosmetic!=='normal'&&!pvpGhostSkinAllowed&&!gameStats.shipCosmetics?.includes(cosmetic)){
         updateHangarUI();window.updateMenuShip();
         return;
     }
