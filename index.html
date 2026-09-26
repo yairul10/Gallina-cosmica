@@ -297,7 +297,13 @@
                 <div style="padding:7px 10px; border-radius:10px; background:rgba(2,6,23,.72); color:#e0f2fe; font-size:.72rem; text-align:left;"><b>🧪 LAB 2.5D</b><br><span style="color:#94a3b8;">Arrastra para mover · toca para disparar</span></div>
                 <button id="close25dLabBtn" class="btn btn-secondary" style="pointer-events:auto; width:auto; margin:0; padding:7px 11px; font-size:.72rem;">✕ Salir</button>
             </div>
-            <div style="position:absolute; left:12px; bottom:max(14px,env(safe-area-inset-bottom)); z-index:2; padding:6px 9px; border-radius:9px; background:rgba(2,6,23,.65); color:#c4b5fd; font-size:.67rem; pointer-events:none;">Perspectiva + parallax + inclinación + partículas</div>
+            <div style="position:absolute; left:12px; right:12px; bottom:max(14px,env(safe-area-inset-bottom)); z-index:2; display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:7px 9px; border-radius:10px; background:rgba(2,6,23,.72); color:#c4b5fd; font-size:.67rem;">
+                <button id="toggle25dViewBtn" type="button" style="padding:6px 9px; border:1px solid #38bdf8; border-radius:8px; background:#082f49; color:#e0f2fe; font-weight:800;">Vista: 2.5D</button>
+                <span>Profundidad</span>
+                <input id="depth25dRange" type="range" min="0" max="100" value="65" step="5" style="width:105px;">
+                <span id="depth25dValue">65%</span>
+                <span id="kills25dText" style="margin-left:auto;color:#fbbf24;">🎯 0</span>
+            </div>
         </div>
 
         <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.92);">
@@ -336,6 +342,6 @@
     <script src="js/qa-pvp.js?v=qa-split-panels-3"></script>
     <script src="js/qa-admin.js?v=qa-scroll-hat-2"></script>
     <script src="js/qa-panel-toggle.js?v=qa-split-panels-4"></script>
-    <script src="js/graphics-25d-lab.js?v=1"></script>
+    <script src="js/graphics-25d-lab.js?v=2"></script>
 </body>
 </html>
