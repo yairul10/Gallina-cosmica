@@ -214,7 +214,13 @@ window.drawPlayerShip = function(x, y) {
     if (currentImg && currentImg.complete && currentImg.naturalWidth > 0) {
         const cosmetic=window.gallinaGetShipCosmetic?.()||'normal';
         if(cosmetic==='fantasma'){
-            ctx.save();const glow=ctx.createRadialGradient(x+player.width/2,y+player.height/2,6,x+player.width/2,y+player.height/2,42);glow.addColorStop(0,'rgba(103,232,249,.30)');glow.addColorStop(.55,'rgba(56,189,248,.12)');glow.addColorStop(1,'rgba(56,189,248,0)');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x+player.width/2,y+player.height/2,42,0,Math.PI*2);ctx.fill();ctx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';ctx.globalAlpha=.78;ctx.drawImage(currentImg,x,y,player.width,player.height);ctx.restore();
+            // Silueta espectral + núcleo celeste: no modifica colisiones ni estadísticas.
+            const cx=x+player.width/2,cy=y+player.height/2;
+            ctx.save();const glow=ctx.createRadialGradient(cx,cy,4,cx,cy,48);glow.addColorStop(0,'rgba(224,250,255,.48)');glow.addColorStop(.40,'rgba(34,211,238,.24)');glow.addColorStop(1,'rgba(34,211,238,0)');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(cx,cy,48,0,Math.PI*2);ctx.fill();
+            ctx.globalAlpha=.18;ctx.filter='brightness(0) saturate(100%) invert(88%) sepia(34%) saturate(920%) hue-rotate(140deg) brightness(105%)';
+            [[-2,0],[2,0],[0,-2],[0,2]].forEach(([ox,oy])=>ctx.drawImage(currentImg,x+ox,y+oy,player.width,player.height));
+            ctx.globalAlpha=.64;ctx.filter='grayscale(1) sepia(1) hue-rotate(128deg) saturate(3.2) brightness(1.48) contrast(.82)';ctx.drawImage(currentImg,x,y,player.width,player.height);
+            ctx.globalCompositeOperation='screen';ctx.globalAlpha=.17;ctx.fillStyle='#dffcff';ctx.fillRect(x,y,player.width,player.height);ctx.restore();
         }else if(cosmetic==='halloween'){
             ctx.save();ctx.filter='sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)';ctx.drawImage(currentImg,x,y,player.width,player.height);ctx.restore();
         }else if(cosmetic==='navidad'){
