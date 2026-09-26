@@ -256,6 +256,16 @@ export class PvpRoom {
     const name = safeText(url.searchParams.get("name"), "Jugador", 40);
     const ship = safeText(url.searchParams.get("ship"), "Gallina", 40);
     const cups = Math.max(0, Math.min(9999999, Number(url.searchParams.get("cups") || 0)));
+    // El rango administrador se decide únicamente en el Worker usando el playerId
+    // verificado por la sesión de Play Games; nunca se confía en un parámetro del cliente.
+    const session=await verifySessionToken(this.env,url.searchParams.get("session"));
+    if(!session||String(session.playerId)!==String(playerId)){
+      try{server.close(1008,"PLAY_GAMES_AUTH_REQUIRED");}catch{}
+      return new Response(null,{status:101,webSocket:client});
+    }
+    const adminRank=qaAdminIds(this.env).has(String(playerId))
+      ? {key:"admin",name:"Administrador Cósmico",icon:"👑",floor:0,level:99}
+      : null;
     if(!this.partyTeams)this.partyTeams=new Map();
     let slot, team, reconnected = false;
     const pending = Array.from(this.rewardStatus.entries()).find(([,s]) => s.playerId === playerId && s.pendingReconnect);
@@ -288,7 +298,7 @@ export class PvpRoom {
       }
       this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
     }
-    this.players.set(server, { playerId, name, ship, slot, team, cups, partyCode });
+    this.players.set(server, { playerId, name, ship, slot, team, cups, partyCode, ...(adminRank?{rank:adminRank}: {}) });
     if (wantsBot && this.players.size === 1 && !this.botPlayer && this.botPlayers.length === 0) {
       if (this.mode === "1v1") {
         const botSlot = slot === 1 ? 2 : 1;
@@ -524,8 +534,8 @@ export class PvpRoom {
     server.addEventListener("error", remove);
 
     server.send(JSON.stringify({ type: "joined", slot, team, mode: this.mode, capacity, players: this.playerList(), reconnected }));
-    if (reconnected) this.broadcast({ type: "player-reconnected", player: { playerId, name, ship, slot, team } }, server);
-    this.broadcast({ type: "player-joined", player: { playerId, name, ship, slot, team } }, server);
+    if (reconnected) this.broadcast({ type: "player-reconnected", player: { playerId, name, ship, slot, team, ...(adminRank?{rank:adminRank}: {}) } }, server);
+    this.broadcast({ type: "player-joined", player: { playerId, name, ship, slot, team, ...(adminRank?{rank:adminRank}: {}) } }, server);
     if (new Set(this.playerList().map(p=>Number(p.slot))).size === capacity) {
       this.started = true;
       this.broadcast({ type: "ready", mode: this.mode, players: this.playerList() });
@@ -1167,7 +1177,7 @@ export default {
       const response=await env.PVP_RANKING.get(id).fetch(request);
       const data=await response.json().catch(()=>null);
       if(!data||!data.ok)return json(data||{ok:false,error:"RANKING_UNAVAILABLE"},response.status);
-      const adminIds=qaAdminIds(env),adminRank={key:'admin',name:'Administrador Cósmico',icon:'🔐',floor:0};
+      const adminIds=qaAdminIds(env),adminRank={key:'admin',name:'Administrador Cósmico',icon:'👑',floor:0,level:99};
       const mark=player=>player&&adminIds.has(String(player.playerId))?{...player,rank:adminRank}:player;
       data.record=mark(data.record);
       if(Array.isArray(data.ranking))data.ranking=data.ranking.map(mark);
