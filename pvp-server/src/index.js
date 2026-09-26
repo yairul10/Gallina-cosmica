@@ -689,6 +689,15 @@ export class PvpRanking {
     return {shipId,shipName:names[shipId],shipPrice:prices[shipId]};
   }
 
+  monthlySpecialPrizeCatalog(){
+    const ships={toro_aniquilador:['Toro Aniquilador',1500000],toro_blindado:['Toro Blindado',1500000],toro_baliza:['Toro Baliza',1500000],toro_oscuro:['Toro Oscuro',15000000],toro_luz:['Toro Luz',15000000],toro_maoma:['Toro Maoma',15000000],toro_mayor:['Toro Mayor',50000000]};
+    const catalog={'':{kind:'none',name:null,price:0}};
+    for(const [id,[name,price]] of Object.entries(ships))catalog[id]={kind:'ship',name,price};
+    catalog.cosmetic_fantasma={kind:'cosmetic',cosmeticId:'fantasma',name:'Diseño Fantasma',price:0};
+    catalog.cosmetic_halloween={kind:'cosmetic',cosmeticId:'halloween',name:'Diseño Halloween',price:0};
+    return catalog;
+  }
+
   monthlyPrizeLocked(period,now=Date.now()){
     // Excepción de lanzamiento: septiembre de 2026 queda editable hasta terminar el mes.
     // Desde octubre de 2026 vuelve la regla normal: editable del 1 al 15.
@@ -699,11 +708,19 @@ export class PvpRanking {
   async monthlyPrizeConfig(period,now=Date.now()){
     const base=this.monthlyPrizeCatalog(period);
     const saved=(await this.ctx.storage.get('monthlyPrizeConfig:'+period))||{};
+    const catalog=this.monthlySpecialPrizeCatalog();
+    const legacy=Object.prototype.hasOwnProperty.call(saved,'shipId')?saved.shipId:base.shipId;
+    const prize=(field,fallback='')=>Object.prototype.hasOwnProperty.call(saved,field)&&Object.prototype.hasOwnProperty.call(catalog,saved[field])?saved[field]:fallback;
+    const firstPrize=prize('firstPrize',legacy),secondThirdPrize=prize('secondThirdPrize',legacy),fourthFifthPrize=prize('fourthFifthPrize',legacy),sixthTenthPrize=prize('sixthTenthPrize',''),upperHalfPrize=prize('upperHalfPrize',''),restPrize=prize('restPrize','');
+    const detail=id=>catalog[id]||catalog[''];
     return {
       period,
-      shipId:Object.prototype.hasOwnProperty.call(saved,'shipId')?saved.shipId:base.shipId,
-      shipName:Object.prototype.hasOwnProperty.call(saved,'shipId')?(saved.shipName||null):base.shipName,
-      shipPrice:Object.prototype.hasOwnProperty.call(saved,'shipId')?Number(saved.shipPrice||0):base.shipPrice,
+      // Compatibilidad con temporadas ya configuradas: representa el premio del primer puesto.
+      shipId:detail(firstPrize).kind==='ship'?firstPrize:null,
+      shipName:detail(firstPrize).name,
+      shipPrice:detail(firstPrize).price,
+      firstPrize,secondThirdPrize,fourthFifthPrize,sixthTenthPrize,upperHalfPrize,restPrize,
+      firstPrizeName:detail(firstPrize).name,secondThirdPrizeName:detail(secondThirdPrize).name,fourthFifthPrizeName:detail(fourthFifthPrize).name,sixthTenthPrizeName:detail(sixthTenthPrize).name,upperHalfPrizeName:detail(upperHalfPrize).name,restPrizeName:detail(restPrize).name,
       first:Number(saved.first??10000000),
       secondThird:Number(saved.secondThird??5000000),
       fourthFifth:Number(saved.fourthFifth??0),
@@ -721,9 +738,9 @@ export class PvpRanking {
     const topHalf=Math.ceil(participants.length/2);
     participants.forEach((p,i)=>{
       const position=i+1,key='month:'+period+':'+p.playerId;
-      const coins=position===1?config.first:position<=3?config.secondThird:position<=5?config.fourthFifth:position<=10?config.sixthTenth:position<=topHalf?config.upperHalf:config.rest;
-      const ship=position<=5?config.shipId:null;
-      if(!monthlyAwards[key])monthlyAwards[key]={type:'monthly-ranking',period,playerId:p.playerId,position,totalParticipants:participants.length,coins,shipId:ship,shipName:ship?config.shipName:null,shipPrice:ship?config.shipPrice:0,duplicateRefundRate:.60,claimed:false,createdAt:now};
+      const group=position===1?'first':position<=3?'secondThird':position<=5?'fourthFifth':position<=10?'sixthTenth':position<=topHalf?'upperHalf':'rest';
+      const coins=Number(config[group]||0),prizeId=config[group+'Prize']||'',prize=this.monthlySpecialPrizeCatalog()[prizeId]||this.monthlySpecialPrizeCatalog()[''];
+      if(!monthlyAwards[key])monthlyAwards[key]={type:'monthly-ranking',period,playerId:p.playerId,position,totalParticipants:participants.length,coins,shipId:prize.kind==='ship'?prizeId:null,shipName:prize.kind==='ship'?prize.name:null,shipPrice:prize.kind==='ship'?prize.price:0,cosmeticId:prize.kind==='cosmetic'?prize.cosmeticId:null,cosmeticName:prize.kind==='cosmetic'?prize.name:null,duplicateRefundRate:.60,claimed:false,createdAt:now};
     });
     return {participants,shipId:config.shipId,shipName:config.shipName,config};
   }
@@ -789,16 +806,13 @@ export class PvpRanking {
       if(request.method!=='POST')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
       if(this.monthlyPrizeLocked(period,now))return json({ok:false,error:'MONTHLY_PRIZES_LOCKED',locked:true,editableUntilDay:15},423);
       let body;try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
-      const catalog=['','toro_aniquilador','toro_blindado','toro_baliza','toro_oscuro','toro_luz','toro_maoma','toro_mayor'];
-      const shipId=safeText(body?.shipId,'',40);
-      if(!catalog.includes(shipId))return json({ok:false,error:'BAD_SHIP'},400);
-      const ship=this.monthlyPrizeCatalog(period);
-      const names={toro_aniquilador:'Toro Aniquilador',toro_blindado:'Toro Blindado',toro_baliza:'Toro Baliza',toro_oscuro:'Toro Oscuro',toro_luz:'Toro Luz',toro_maoma:'Toro Maoma',toro_mayor:'Toro Mayor'};
-      const prices={toro_aniquilador:1500000,toro_blindado:1500000,toro_baliza:1500000,toro_oscuro:15000000,toro_luz:15000000,toro_maoma:15000000,toro_mayor:50000000};
+      const catalog=this.monthlySpecialPrizeCatalog(),groups=['first','secondThird','fourthFifth','sixthTenth','upperHalf','rest'];
+      const prizes={};
+      for(const group of groups){const id=safeText(body?.[group+'Prize'],'',40);if(!Object.prototype.hasOwnProperty.call(catalog,id))return json({ok:false,error:'BAD_PRIZE'},400);prizes[group+'Prize']=id;}
       const money=v=>Math.max(0,Math.min(1000000000,Math.floor(Number(v)||0)));
-      const config={period,shipId,shipName:shipId?names[shipId]:null,shipPrice:shipId?prices[shipId]:0,first:money(body.first),secondThird:money(body.secondThird),fourthFifth:money(body.fourthFifth),sixthTenth:money(body.sixthTenth),upperHalf:money(body.upperHalf),rest:money(body.rest),updatedAt:now};
+      const config={period,...prizes,first:money(body.first),secondThird:money(body.secondThird),fourthFifth:money(body.fourthFifth),sixthTenth:money(body.sixthTenth),upperHalf:money(body.upperHalf),rest:money(body.rest),updatedAt:now};
       await this.ctx.storage.put('monthlyPrizeConfig:'+period,config);
-      return json({ok:true,config:{...config,locked:false,editableUntilDay:15},participants:this.sort(state.players).filter(p=>Number(p.monthMatches||0)>0).length});
+      return json({ok:true,config:await this.monthlyPrizeConfig(period,now),participants:this.sort(state.players).filter(p=>Number(p.monthMatches||0)>0).length});
     }
 
     if(url.pathname==='/qa-close-month' && request.headers.get('x-pvp-internal')==='qa-admin'){
