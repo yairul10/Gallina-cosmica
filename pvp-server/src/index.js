@@ -695,6 +695,7 @@ export class PvpRanking {
     for(const [id,[name,price]] of Object.entries(ships))catalog[id]={kind:'ship',name,price};
     catalog.cosmetic_fantasma={kind:'cosmetic',cosmeticId:'fantasma',name:'Diseño Fantasma',price:0};
     catalog.cosmetic_halloween={kind:'cosmetic',cosmeticId:'halloween',name:'Diseño Halloween',price:0};
+    catalog.cosmetic_navidad={kind:'cosmetic',cosmeticId:'navidad',name:'Diseño Navidad',price:0};
     return catalog;
   }
 
