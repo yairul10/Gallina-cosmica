@@ -1152,7 +1152,14 @@ export default {
       // directamente desde PvpRoom al Durable Object PvpRanking y no pasan por aquí.
       if (request.method !== "GET") return json({ ok:false, error:"RANKING_READ_ONLY" }, 405);
       const id = env.PVP_RANKING.idFromName("global");
-      return env.PVP_RANKING.get(id).fetch(request);
+      const response=await env.PVP_RANKING.get(id).fetch(request);
+      const data=await response.json().catch(()=>null);
+      if(!data||!data.ok)return json(data||{ok:false,error:"RANKING_UNAVAILABLE"},response.status);
+      const adminIds=qaAdminIds(env),adminRank={key:'admin',name:'Administrador Cósmico',icon:'🔐',floor:0};
+      const mark=player=>player&&adminIds.has(String(player.playerId))?{...player,rank:adminRank}:player;
+      data.record=mark(data.record);
+      if(Array.isArray(data.ranking))data.ranking=data.ranking.map(mark);
+      return json(data,response.status);
     }
     if (url.pathname === "/qa/monthly-config") {
       if(!["GET","POST"].includes(request.method))return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
