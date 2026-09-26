@@ -50,7 +50,7 @@ if (!gameStats.pvpShips || typeof gameStats.pvpShips !== 'object') gameStats.pvp
 if (gameStats.selectedPvpShip === undefined) gameStats.selectedPvpShip = null;
 // Diseños puramente visuales: no modifican estadísticas, colisiones ni premios.
 // Conservamos la preferencia anterior del Toro Mayor como migración de la prueba.
-if (!['normal','fantasma','halloween'].includes(gameStats.shipCosmetic)) {
+if (!['normal','fantasma','halloween','navidad'].includes(gameStats.shipCosmetic)) {
     gameStats.shipCosmetic = gameStats.pvpToroMayorGhost ? 'fantasma' : 'normal';
 }
 if (!Array.isArray(gameStats.shipCosmetics)) gameStats.shipCosmetics = [];
@@ -110,7 +110,7 @@ window.gallinaApplyPvpShipReward = (rewardId, itemId, shipPrice=0, refundRate=.6
 
 window.gallinaApplyPvpCosmeticReward = (rewardId, cosmeticId) => {
     const id=String(rewardId),cosmetic=String(cosmeticId||'');
-    if(!id||!['fantasma','halloween'].includes(cosmetic))return {success:false,invalid:true};
+    if(!id||!['fantasma','halloween','navidad'].includes(cosmetic))return {success:false,invalid:true};
     if(gameStats.cloudRewardIds.includes(id))return {success:true,alreadyApplied:true,cosmeticId:cosmetic};
     if(!gameStats.shipCosmetics.includes(cosmetic))gameStats.shipCosmetics.push(cosmetic);
     gameStats.cloudRewardIds.push(id);
