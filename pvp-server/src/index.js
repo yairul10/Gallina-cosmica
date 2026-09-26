@@ -90,7 +90,10 @@ async function authorizePvpRequest(request, env) {
   const active=await activeResponse.json().catch(()=>({}));
   if(!active?.active)return null;
   url.searchParams.set("playerId",session.playerId);
-  url.searchParams.delete("session");
+  // La sala Durable Object también valida la sesión para decidir privilegios
+  // (por ejemplo el rango Administrador). Conservamos el token firmado al
+  // reenviar la solicitud; eliminarlo aquí provocaba el cierre 1008 al entrar.
+  url.searchParams.set("session",url.searchParams.get("session")||"");
 
   // El rango y el matchmaking usan las copas oficiales del servidor. Sólo un
   // administrador autenticado puede elegir temporalmente un perfil de bot QA.
