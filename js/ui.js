@@ -85,8 +85,9 @@ const SHIP_COSMETIC_STYLE={
     normal:{filter:'none',opacity:'1',shadow:'none',label:'Diseño normal equipado.'},
     fantasma:{filter:'hue-rotate(145deg) saturate(.55) brightness(1.28)',opacity:'.78',shadow:'drop-shadow(0 0 10px #67e8f9)',label:'👻 Fantasma Cósmico equipado.'},
     halloween:{filter:'sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)',opacity:'1',shadow:'drop-shadow(0 0 8px #f97316)',label:'🎃 Halloween equipado.'}
+    ,navidad:{filter:'sepia(.78) saturate(2.45) hue-rotate(315deg) contrast(1.12) brightness(1.08)',opacity:'1',shadow:'drop-shadow(0 0 7px #facc15) drop-shadow(0 0 13px #22c55e)',label:'🎄 Navidad Cósmica equipada.'}
 };
-function normalizedShipCosmetic(value){return ['normal','fantasma','halloween'].includes(value)?value:'normal';}
+function normalizedShipCosmetic(value){return ['normal','fantasma','halloween','navidad'].includes(value)?value:'normal';}
 window.gallinaGetShipCosmetic=function(){
     const cosmetic=normalizedShipCosmetic(gameStats.shipCosmetic);
     return cosmetic==='normal'||pvpGhostSkinAllowed||gameStats.shipCosmetics?.includes(cosmetic)?cosmetic:'normal';
@@ -176,9 +177,10 @@ function updateHangarUI() {
     const canUseCosmetics=!!pvpGhostSkinAllowed||!!gameStats.shipCosmetics?.length;
     if(cosmeticCard)cosmeticCard.style.display=canUseCosmetics?'flex':'none';
     const cosmetic=window.gallinaGetShipCosmetic();
-    [['normal','btn-ship-cosmetic-normal','#334155'],['fantasma','btn-ship-cosmetic-ghost','#0891b2'],['halloween','btn-ship-cosmetic-halloween','#ea580c']].forEach(([id,buttonId,color])=>{
+    [['normal','btn-ship-cosmetic-normal','#334155'],['fantasma','btn-ship-cosmetic-ghost','#0891b2'],['halloween','btn-ship-cosmetic-halloween','#ea580c'],['navidad','btn-ship-cosmetic-christmas','#b91c1c']].forEach(([id,buttonId,color])=>{
         const button=document.getElementById(buttonId);if(!button)return;
-        const active=cosmetic===id;button.style.background=active?color:'#334155';button.textContent=active?(id==='normal'?'✓ Normal':id==='fantasma'?'✓ 👻 Fantasma':'✓ 🎃 Halloween'):(id==='normal'?'Normal':id==='fantasma'?'👻 Fantasma':'🎃 Halloween');
+        const label=id==='normal'?'Normal':id==='fantasma'?'👻 Fantasma':id==='halloween'?'🎃 Halloween':'🎄 Navidad';
+        const active=cosmetic===id;button.style.background=active?color:'#334155';button.textContent=active?'✓ '+label:label;
         button.disabled=id!=='normal'&&!pvpGhostSkinAllowed&&!gameStats.shipCosmetics?.includes(id);
     });
     const cosmeticStatus=document.getElementById('ship-cosmetic-status');
