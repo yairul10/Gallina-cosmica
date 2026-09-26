@@ -195,6 +195,8 @@
     {floor:2000,key:'maestro',name:'Maestro Cósmico',asset:'assets/rango_maestro.png'},
     {floor:4000,key:'leyenda',name:'Leyenda Galáctica',asset:'assets/rango_leyenda.png'}
   ];
+  // Insignia exclusivamente visual. La autorización real continúa en el Worker.
+  const PVP_ADMIN_RANK={key:'admin',name:'Administrador Cósmico',icon:'🔐',floor:0,level:99};
   const qaBotRankSelect=$('pvpQaBotRank');
   const qaBotRankWrap=$('pvpQaBotRankWrap');
   const QA_BOT_RANK_CUPS=[0,100,200,500,1000,2000,4000];
@@ -260,11 +262,13 @@
     return {...PVP_RANKS[level],level};
   }
   function pvpRankFromPlayer(player){
+    if(player?.rank?.key==='admin')return {...PVP_ADMIN_RANK};
     const level=Number(player?.rankLevel);
     if(Number.isFinite(level)&&level>=0&&level<PVP_RANKS.length)return {...PVP_RANKS[Math.floor(level)],level:Math.floor(level)};
     return pvpRankFromCups(player?.cups);
   }
   function rankIconElement(rank,size=18){
+    if(rank?.icon){const icon=document.createElement('span');icon.textContent=rank.icon;icon.style.cssText='font-size:'+size+'px;line-height:1;vertical-align:middle;flex:0 0 auto;';return icon;}
     const img=document.createElement('img');
     img.src=rank.asset;img.alt=rank.name;img.width=size;img.height=size;
     img.style.cssText='width:'+size+'px;height:'+size+'px;object-fit:contain;vertical-align:middle;flex:0 0 auto;';
@@ -684,7 +688,7 @@
         if(data?.ok&&data.record&&data.settlement){
           const cups=Number(data.record.cups||0), delta=Number(data.settlement.delta||0);
           localStorage.setItem(PVP_CUPS_KEY,String(cups));
-          renderPvpRankSummary(cups);
+          renderPvpRankSummary(cups,pvpRankFromPlayer(data.record));
           return {cups,delta,record:data.record,settlement:data.settlement,authoritative:true};
         }
       }catch{}
@@ -695,13 +699,13 @@
     try{
       const r=await fetch(PVP_HTTP_BASE+'/ranking?playerId='+encodeURIComponent(playerId())+'&t='+Date.now(),{cache:'no-store'});
       const data=await r.json();
-      if(data?.record){const cups=Number(data.record.cups||0);localStorage.setItem(PVP_CUPS_KEY,String(cups));renderPvpRankSummary(cups);return {cups,delta:0,record:data.record,pending:true,authoritative:true};}
+      if(data?.record){const cups=Number(data.record.cups||0);localStorage.setItem(PVP_CUPS_KEY,String(cups));renderPvpRankSummary(cups,pvpRankFromPlayer(data.record));return {cups,delta:0,record:data.record,pending:true,authoritative:true};}
     }catch{}
     return {cups:before,delta:0,pending:true,authoritative:true};
   }
-  function renderPvpRankSummary(cups=getPvpCups()){
+  function renderPvpRankSummary(cups=getPvpCups(),forcedRank=null){
     cups=Math.max(0,Number(cups)||0);
-    const current=pvpRankFromCups(cups),level=current.level;
+    const current=forcedRank||pvpRankFromCups(cups),level=current.level;
     const text=$('pvpRankSummaryText'),bar=$('pvpRankProgress'),next=$('pvpRankNext');
     if(text)setRankLabel(text,current,'',' · 🏆 '+Math.floor(cups)+' copas');
     const superBossReward=window.gallinaSuperBossReward?.()||200000;
@@ -723,7 +727,7 @@
       if(data?.record){
         const cups=Math.max(0,Number(data.record.cups)||0);
         localStorage.setItem(PVP_CUPS_KEY,String(cups));
-        renderPvpRankSummary(cups);
+        renderPvpRankSummary(cups,pvpRankFromPlayer(data.record));
       }
     }catch{}
   }
