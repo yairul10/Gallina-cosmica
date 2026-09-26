@@ -3,7 +3,7 @@
   const PRIZES=[
     ['','🚫 Sin premio especial'],['toro_aniquilador','🚀 Toro Aniquilador'],['toro_blindado','🚀 Toro Blindado'],['toro_baliza','🚀 Toro Baliza'],
     ['toro_oscuro','🚀 Toro Oscuro'],['toro_luz','🚀 Toro Luz'],['toro_maoma','🚀 Toro Maoma'],['toro_mayor','🚀 Toro Mayor'],
-    ['cosmetic_fantasma','👻 Diseño Fantasma'],['cosmetic_halloween','🎃 Diseño Halloween']
+    ['cosmetic_fantasma','👻 Diseño Fantasma'],['cosmetic_halloween','🎃 Diseño Halloween'],['cosmetic_navidad','🎄 Diseño Navidad']
   ];
   const GROUPS=[
     ['first','🥇 1.º puesto','qaM1'],['secondThird','🥈 2.º–3.º','qaM23'],['fourthFifth','🏅 4.º–5.º','qaM45'],
