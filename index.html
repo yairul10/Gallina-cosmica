@@ -36,6 +36,7 @@
                     <span id="menuSantaHat" class="menu-santa-hat" aria-hidden="true"><img src="assets/ship-santa-hat.svg?v=2" alt=""></span>
                 </div>
                 <p class="menu-tagline">Mejora tu nave y conquista la galaxia</p>
+                <button id="openWaitingGamesLabBtn" type="button" style="margin:5px auto 10px; padding:7px 12px; border:1px solid #a78bfa; border-radius:9px; background:rgba(46,16,101,.88); color:#f5f3ff; font-size:.72rem; font-weight:800;">🧪 Minijuegos de espera</button>
                 <p id="superBossVictoryMessage" class="menu-victory-message" aria-live="polite"></p>
 
                 <div class="menu-primary-actions">
@@ -297,6 +298,20 @@
         <div id="trophiesScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 24px;">🏆 Salón de la Fama</h1><div class="trophy-rack"><div class="trophy-item" data-id="20k" onclick="showTrophyInfo('20k')"><span id="fall-20k" class="trophy-emoji-fallback">🥉</span><img src="assets/trofeo_pollito.png" id="img-t20k" class="trophy-img" onload="document.getElementById('fall-20k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="50k" onclick="showTrophyInfo('50k')"><span id="fall-50k" class="trophy-emoji-fallback">🥈</span><img src="assets/trofeo_lana.png" id="img-t50k" class="trophy-img" onload="document.getElementById('fall-50k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="100k" onclick="showTrophyInfo('100k')"><span id="fall-100k" class="trophy-emoji-fallback">🏅</span><img src="assets/trofeo_herradura.png" id="img-t100k" class="trophy-img" onload="document.getElementById('fall-100k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="200k" onclick="showTrophyInfo('200k')"><span id="fall-200k" class="trophy-emoji-fallback">🏆</span><img src="assets/trofeo_leche.png" id="img-t200k" class="trophy-img" onload="document.getElementById('fall-200k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="300k" onclick="showTrophyInfo('300k')"><span id="fall-300k" class="trophy-emoji-fallback">💎</span><img src="assets/trofeo_diamante.png" id="img-t300k" class="trophy-img" onload="document.getElementById('fall-300k').style.display='none'" onerror="this.style.display='none'"></div></div><div id="trophyInfoBox" class="leaderboard-box" style="margin-top: 15px; text-align: center; min-height: 80px;"><h3 id="trophyName" style="color: #fff; margin-bottom: 8px;">Toca un trofeo</h3><p id="trophyDesc" style="font-size: 0.85rem; color: #94a3b8;">Para ver la información y requisitos.</p></div><button class="btn btn-secondary" onclick="closeScreen('trophiesScreen')" style="margin-top: 20px;">🔙 Volver</button></div>
         <div id="achievScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 15px;">🏅 Logros</h1><div class="achievements-list" id="achievListUI"></div><div class="leaderboard-box" style="margin-top: 10px; text-align: center; min-height: 70px; margin-bottom: 5px;"><h3 id="achievNameUI" style="color: #fff; margin-bottom: 6px;">Toca un logro</h3><p id="achievDescUI" style="font-size: 0.8rem; color: #94a3b8;">Para ver su información detallada.</p></div><button class="btn btn-secondary" onclick="closeScreen('achievScreen')">🔙 Volver</button></div>
 
+        <div id="waitingGamesLab" class="screen-overlay" style="display:none; z-index:260; padding:0; overflow:hidden; background:#020617;">
+            <canvas id="waitingGamesCanvas" style="position:absolute; inset:0; width:100%; height:100%; touch-action:none;"></canvas>
+            <div style="position:absolute; top:max(10px,env(safe-area-inset-top)); left:10px; right:10px; z-index:3; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                <select id="waitingGameSelect" style="flex:1; min-width:190px; padding:8px; border-radius:9px; border:1px solid #a78bfa; background:rgba(30,27,75,.94); color:#fff; font-weight:800;">
+                    <option value="match3">🧩 Tríos cósmicos</option>
+                    <option value="formations">🌌 Formaciones cósmicas</option>
+                    <option value="pairs">🃏 Parejas galácticas</option>
+                </select>
+                <button id="resetWaitingGameBtn" class="btn btn-secondary" style="width:auto;margin:0;padding:7px 9px;">↻</button>
+                <button id="closeWaitingGamesLabBtn" class="btn btn-secondary" style="width:auto;margin:0;padding:7px 9px;">✕</button>
+            </div>
+            <div id="waitingGameInfo" style="position:absolute; top:max(58px,calc(env(safe-area-inset-top) + 58px)); left:10px; right:10px; z-index:3; padding:7px 9px; border-radius:9px; background:rgba(2,6,23,.72); color:#cbd5e1; font-size:.69rem; text-align:center;">Prueba los minijuegos que podrían rotar durante el matchmaking.</div>
+        </div>
+
         <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.92);">
             <h1 style="margin-bottom: 4px;">⏸️ Pausa</h1>
             <p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p>
@@ -333,5 +348,6 @@
     <script src="js/qa-pvp.js?v=qa-split-panels-3"></script>
     <script src="js/qa-admin.js?v=qa-scroll-hat-2"></script>
     <script src="js/qa-panel-toggle.js?v=qa-split-panels-4"></script>
+    <script src="js/waiting-games-lab.js?v=1"></script>
 </body>
 </html>
