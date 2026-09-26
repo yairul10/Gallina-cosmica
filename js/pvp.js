@@ -398,6 +398,33 @@
     return id;
   }
   function send(payload){ if(socket?.readyState!==WebSocket.OPEN)return false; socket.send(JSON.stringify(payload)); return true; }
+  const PVP_QUICK_MESSAGES={
+    luck:'🍀 ¡Buena suerte!',go:'🚀 ¡Vamos!',careful:'⚠️ ¡Cuidado!',
+    help:'🤝 ¡Ayuda!',nice:'👏 ¡Buena partida!',gg:'🐔 GG'
+  };
+  let lastQuickChatAt=0,quickChatToastTimer=0;
+  function showQuickChatMessage(key,fromSlot=mySlot){
+    const text=PVP_QUICK_MESSAGES[key];if(!text)return;
+    const toast=$('pvpQuickChatToast');if(!toast)return;
+    const sender=Number(fromSlot)===Number(mySlot)?'TÚ':playerName(Number(fromSlot)||0);
+    toast.textContent=sender+': '+text;
+    toast.style.display='block';
+    clearTimeout(quickChatToastTimer);
+    quickChatToastTimer=setTimeout(()=>{toast.style.display='none';},2600);
+  }
+  function sendQuickChat(key){
+    if(!PVP_QUICK_MESSAGES[key]||!running||matchFinished)return;
+    const now=Date.now();
+    if(now-lastQuickChatAt<3000){showStatus('💬 Espera un momento antes de enviar otro mensaje.',true);return;}
+    if(!send({type:'quick-chat',key}))return;
+    lastQuickChatAt=now;showQuickChatMessage(key,mySlot);
+    const panel=$('pvpQuickChatPanel');if(panel)panel.style.display='none';
+  }
+  $('pvpQuickChatBtn')?.addEventListener('click',()=>{
+    const panel=$('pvpQuickChatPanel');if(!panel)return;
+    panel.style.display=panel.style.display==='block'?'none':'block';
+  });
+  document.querySelectorAll('.pvp-quick-msg').forEach(btn=>btn.addEventListener('click',()=>sendQuickChat(String(btn.dataset.msg||''))));
   function disconnect(silent=false){
     intentionalDisconnect=true;reconnecting=false;reconnectAttempts=0;if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=0;}
     stopArena();
@@ -648,6 +675,8 @@
     }
     bullets=[]; missiles=[]; confirmedLaserHits.clear(); selectedTargetSlot=0; evadeUntil=0; lastEvade=-Infinity; lastEmergencyLife=-Infinity; remoteEvadeUntil.clear(); eliminated.clear(); meEliminated=false; matchFinished=false; cosmicZoneElapsed=0;cosmicZoneProgress=0;lastZoneDamageAt=0;lastMissile=-Infinity; impactFx=[]; asteroidFx=[]; hitFlashUntil=0; hitShakeUntil=0; lastHitAt=0; $('pvpResult').style.display='none';
     $('pvpRoomHud').textContent='Sala '+currentRoom;
+    const quickPanel=$('pvpQuickChatPanel'),quickToast=$('pvpQuickChatToast');
+    if(quickPanel)quickPanel.style.display='none';if(quickToast)quickToast.style.display='none';lastQuickChatAt=0;
     updateLives();
   }
   function startArena(){
@@ -883,6 +912,10 @@
           }
         }
       }
+      return;
+    }
+    if(p.type==='quick-chat'){
+      showQuickChatMessage(String(p.key||''),fromSlot);
       return;
     }
     if(!fromSlot || fromSlot===mySlot)return;
