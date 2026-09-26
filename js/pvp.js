@@ -397,6 +397,21 @@
     if(!id){id='guest-'+crypto.randomUUID();sessionStorage.setItem('gallina_pvp_guest_id',id);}
     return id;
   }
+  let pvpPingTimer=0,pvpPingSeq=0,pvpPingSent=new Map();
+  function stopPvpPing(){
+    if(pvpPingTimer){clearInterval(pvpPingTimer);pvpPingTimer=0;}
+    pvpPingSent.clear();const el=$('pvpPingText');if(el){el.style.display='none';el.textContent='Ping: -- ms';}
+  }
+  function probePvpPing(){
+    if(socket?.readyState!==WebSocket.OPEN)return;
+    const id=String(++pvpPingSeq),now=performance.now();pvpPingSent.set(id,now);
+    if(pvpPingSent.size>8)pvpPingSent.delete(pvpPingSent.keys().next().value);
+    socket.send(JSON.stringify({type:'ping',id}));
+  }
+  function startPvpPing(){
+    stopPvpPing();const el=$('pvpPingText');if(el)el.style.display='block';
+    probePvpPing();pvpPingTimer=setInterval(probePvpPing,2000);
+  }
   function send(payload){ if(socket?.readyState!==WebSocket.OPEN)return false; socket.send(JSON.stringify(payload)); return true; }
   const PVP_QUICK_MESSAGES={
     luck:'🍀 ¡Buena suerte!',go:'🚀 ¡Vamos!',careful:'⚠️ ¡Cuidado!',
@@ -425,7 +440,7 @@
     panel.style.display=panel.style.display==='block'?'none':'block';
   });
   document.querySelectorAll('.pvp-quick-msg').forEach(btn=>btn.addEventListener('click',()=>sendQuickChat(String(btn.dataset.msg||''))));
-  function disconnect(silent=false){
+  function disconnect(silent=false){stopPvpPing();
     intentionalDisconnect=true;reconnecting=false;reconnectAttempts=0;if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=0;}
     stopArena();
     if(queueSocket){const q=queueSocket;queueSocket=null;try{q.close(1000,'leaving');}catch{}}
@@ -521,10 +536,17 @@
     const ws=new WebSocket(`${PVP_WS_BASE}/room/${code}?${params}`);
     socket=ws;currentRoom=code;rankedMatch=!!isRanked;
     showStatus((creating?'Creando':'Entrando a')+' sala '+code+'…');
-    ws.addEventListener('open',()=>{if(socket===ws)showStatus('Conectado a sala '+code+'. Esperando rival…',true);});
+    ws.addEventListener('open',()=>{if(socket===ws){showStatus('Conectado a sala '+code+'. Esperando rival…',true);startPvpPing();}});
     ws.addEventListener('message',event=>{
       if(socket!==ws)return;
       let m;try{m=JSON.parse(event.data);}catch{return;}
+      if(m.type==='pong'){
+        const sent=pvpPingSent.get(String(m.id||''));if(sent!==undefined){
+          const ms=Math.max(0,Math.round(performance.now()-sent));pvpPingSent.delete(String(m.id||''));
+          const el=$('pvpPingText');if(el){el.style.display='block';el.textContent='Ping: '+ms+' ms';}
+        }
+        return;
+      }
       if(m.type==='joined'){
         const wasReconnect=reconnecting||!!m.reconnected;
         reconnecting=false;reconnectAttempts=0;if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=0;}
