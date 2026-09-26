@@ -111,12 +111,13 @@ function applyShipCosmeticToImage(img,cosmetic){
 }
 // Gorrito vectorial compartido por todos los tipos de nave. Sólo es decorativo.
 window.gallinaDrawSantaHat=function(drawCtx,x,y,size){
-    if(!drawCtx)return;const s=size/52;
-    drawCtx.save();drawCtx.translate(x,y-size*.40);drawCtx.rotate(.14);
-    drawCtx.fillStyle='#c5162d';drawCtx.beginPath();drawCtx.moveTo(-11*s,5*s);drawCtx.quadraticCurveTo(-2*s,-15*s,11*s,5*s);drawCtx.closePath();drawCtx.fill();
-    drawCtx.lineWidth=1*s;drawCtx.strokeStyle='#831323';drawCtx.stroke();
-    drawCtx.fillStyle='#fff';drawCtx.beginPath();drawCtx.roundRect(-12*s,3*s,23*s,5*s,3*s);drawCtx.fill();drawCtx.strokeStyle='#cbd5e1';drawCtx.lineWidth=.55*s;drawCtx.stroke();
-    drawCtx.beginPath();drawCtx.arc(12*s,5*s,3.5*s,0,Math.PI*2);drawCtx.fill();drawCtx.restore();
+    if(!drawCtx)return;const s=size/108;
+    drawCtx.save();drawCtx.translate(x+size*.035,y-size*.42);drawCtx.rotate(.06);
+    const red=drawCtx.createLinearGradient(-12*s,-15*s,15*s,9*s);red.addColorStop(0,'#ff7a83');red.addColorStop(.5,'#e1263e');red.addColorStop(1,'#961126');
+    drawCtx.fillStyle=red;drawCtx.beginPath();drawCtx.moveTo(-12*s,6*s);drawCtx.bezierCurveTo(-8*s,-3*s,-1*s,-17*s,8*s,-15*s);drawCtx.bezierCurveTo(15*s,-13*s,8*s,-4*s,17*s,-1*s);drawCtx.bezierCurveTo(21*s,0,21*s,7*s,13*s,8*s);drawCtx.bezierCurveTo(5*s,8*s,-4*s,6*s,-12*s,6*s);drawCtx.closePath();drawCtx.fill();
+    drawCtx.strokeStyle='#8e1023';drawCtx.lineWidth=1.1*s;drawCtx.stroke();
+    drawCtx.fillStyle='#fff';drawCtx.beginPath();drawCtx.roundRect(-13*s,4*s,27*s,5.7*s,3*s);drawCtx.fill();drawCtx.strokeStyle='#cbd5e1';drawCtx.lineWidth=.55*s;drawCtx.stroke();
+    drawCtx.beginPath();drawCtx.arc(18*s,3*s,3.7*s,0,Math.PI*2);drawCtx.fill();drawCtx.stroke();drawCtx.restore();
 }
 window.gallinaSetPvpRankUnlocks=(floors)=>{pvpClaimedRankUnlocks=new Set((Array.isArray(floors)?floors:[]).map(Number));updateShopUI?.();};
 function pvpShipCanBuy(id){const rule=PVP_RANK_SHIP_RULES[id];return !rule||pvpAdminPreview||pvpClaimedRankUnlocks.has(rule.floor);}
