@@ -9,8 +9,8 @@ let active=false,raf=0,last=0,dpr=1,w=1,h=1;
 let px=.5,py=.70,tx=.5,ty=.70,tilt=0,shotCooldown=0;
 let shots=[],particles=[],stars=[];
 function qaVisible(){
-  const enabled=window.QA_MODE===true||localStorage.getItem('gallina_qa_mode')==='true'||localStorage.getItem('qa_mode')==='true';
-  open.style.display=enabled?'block':'none';
+  // Laboratorio gráfico público: no depende de QA ni de Play Games.
+  open.style.display='block';
 }
 function resize(){
  const r=lab.getBoundingClientRect();dpr=Math.min(2,devicePixelRatio||1);w=Math.max(1,r.width);h=Math.max(1,r.height);
