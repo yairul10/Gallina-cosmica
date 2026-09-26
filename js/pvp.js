@@ -985,7 +985,7 @@
     } else if(p.type==='shot'){
       spawnRemoteShot(mirrorX(Number(p.x)),mirrorY(Number(p.y)),mirrorAngle(Number(p.angle)),p.ship,fromSlot,fromTeam,Number(p.targetSlot||0),String(p.shotId||''),Number(p.firedAt||0));
     } else if(p.type==='missile'){
-      spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam,Number(p.targetSlot||0));
+      spawnRemoteMissile(mirrorX(Number(p.x)),mirrorY(Number(p.y)),p.ship,p.missileType,p.isPro,fromSlot,fromTeam,Number(p.targetSlot||0),Number(p.curveSide||0));
     }
   }
 
