@@ -36,6 +36,7 @@
                     <span id="menuSantaHat" class="menu-santa-hat" aria-hidden="true"><img src="assets/ship-santa-hat.svg?v=2" alt=""></span>
                 </div>
                 <p class="menu-tagline">Mejora tu nave y conquista la galaxia</p>
+                <button id="open25dLabBtn" type="button" style="display:none; margin:5px auto 10px; padding:7px 12px; border:1px solid #38bdf8; border-radius:9px; background:rgba(8,47,73,.86); color:#e0f2fe; font-size:.72rem; font-weight:800;">🧪 Prueba gráfica 2.5D</button>
                 <p id="superBossVictoryMessage" class="menu-victory-message" aria-live="polite"></p>
 
                 <div class="menu-primary-actions">
@@ -290,6 +291,15 @@
         <div id="trophiesScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 24px;">🏆 Salón de la Fama</h1><div class="trophy-rack"><div class="trophy-item" data-id="20k" onclick="showTrophyInfo('20k')"><span id="fall-20k" class="trophy-emoji-fallback">🥉</span><img src="assets/trofeo_pollito.png" id="img-t20k" class="trophy-img" onload="document.getElementById('fall-20k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="50k" onclick="showTrophyInfo('50k')"><span id="fall-50k" class="trophy-emoji-fallback">🥈</span><img src="assets/trofeo_lana.png" id="img-t50k" class="trophy-img" onload="document.getElementById('fall-50k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="100k" onclick="showTrophyInfo('100k')"><span id="fall-100k" class="trophy-emoji-fallback">🏅</span><img src="assets/trofeo_herradura.png" id="img-t100k" class="trophy-img" onload="document.getElementById('fall-100k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="200k" onclick="showTrophyInfo('200k')"><span id="fall-200k" class="trophy-emoji-fallback">🏆</span><img src="assets/trofeo_leche.png" id="img-t200k" class="trophy-img" onload="document.getElementById('fall-200k').style.display='none'" onerror="this.style.display='none'"></div><div class="trophy-item" data-id="300k" onclick="showTrophyInfo('300k')"><span id="fall-300k" class="trophy-emoji-fallback">💎</span><img src="assets/trofeo_diamante.png" id="img-t300k" class="trophy-img" onload="document.getElementById('fall-300k').style.display='none'" onerror="this.style.display='none'"></div></div><div id="trophyInfoBox" class="leaderboard-box" style="margin-top: 15px; text-align: center; min-height: 80px;"><h3 id="trophyName" style="color: #fff; margin-bottom: 8px;">Toca un trofeo</h3><p id="trophyDesc" style="font-size: 0.85rem; color: #94a3b8;">Para ver la información y requisitos.</p></div><button class="btn btn-secondary" onclick="closeScreen('trophiesScreen')" style="margin-top: 20px;">🔙 Volver</button></div>
         <div id="achievScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 15px;">🏅 Logros</h1><div class="achievements-list" id="achievListUI"></div><div class="leaderboard-box" style="margin-top: 10px; text-align: center; min-height: 70px; margin-bottom: 5px;"><h3 id="achievNameUI" style="color: #fff; margin-bottom: 6px;">Toca un logro</h3><p id="achievDescUI" style="font-size: 0.8rem; color: #94a3b8;">Para ver su información detallada.</p></div><button class="btn btn-secondary" onclick="closeScreen('achievScreen')">🔙 Volver</button></div>
 
+        <div id="graphics25dLab" class="screen-overlay" style="display:none; z-index:260; padding:0; overflow:hidden; background:#020617;">
+            <canvas id="graphics25dCanvas" style="position:absolute; inset:0; width:100%; height:100%; touch-action:none;"></canvas>
+            <div style="position:absolute; top:max(12px,env(safe-area-inset-top)); left:12px; right:12px; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none;">
+                <div style="padding:7px 10px; border-radius:10px; background:rgba(2,6,23,.72); color:#e0f2fe; font-size:.72rem; text-align:left;"><b>🧪 LAB 2.5D</b><br><span style="color:#94a3b8;">Arrastra para mover · toca para disparar</span></div>
+                <button id="close25dLabBtn" class="btn btn-secondary" style="pointer-events:auto; width:auto; margin:0; padding:7px 11px; font-size:.72rem;">✕ Salir</button>
+            </div>
+            <div style="position:absolute; left:12px; bottom:max(14px,env(safe-area-inset-bottom)); z-index:2; padding:6px 9px; border-radius:9px; background:rgba(2,6,23,.65); color:#c4b5fd; font-size:.67rem; pointer-events:none;">Perspectiva + parallax + inclinación + partículas</div>
+        </div>
+
         <div id="pauseScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.92);">
             <h1 style="margin-bottom: 4px;">⏸️ Pausa</h1>
             <p style="color:#fbbf24; margin-bottom: 12px; font-size: 0.75rem;">Organiza botones o compra mejoras:</p>
@@ -326,5 +336,6 @@
     <script src="js/qa-pvp.js?v=qa-split-panels-3"></script>
     <script src="js/qa-admin.js?v=qa-scroll-hat-2"></script>
     <script src="js/qa-panel-toggle.js?v=qa-split-panels-4"></script>
+    <script src="js/graphics-25d-lab.js?v=1"></script>
 </body>
 </html>
