@@ -53,6 +53,7 @@ if (gameStats.selectedPvpShip === undefined) gameStats.selectedPvpShip = null;
 if (!['normal','fantasma','halloween'].includes(gameStats.shipCosmetic)) {
     gameStats.shipCosmetic = gameStats.pvpToroMayorGhost ? 'fantasma' : 'normal';
 }
+if (!Array.isArray(gameStats.shipCosmetics)) gameStats.shipCosmetics = [];
 if (gameStats.pvpToroMayorGhost === undefined) gameStats.pvpToroMayorGhost = false;
 if (gameStats.pvpUnlocked === undefined) gameStats.pvpUnlocked = false;
 if (gameStats.pvpGames === undefined) gameStats.pvpGames = 0;
@@ -105,6 +106,17 @@ window.gallinaApplyPvpShipReward = (rewardId, itemId, shipPrice=0, refundRate=.6
     saveStats();
     window.refreshGallinaEquipmentUI?.();
     return {success:true,applied:true,itemId:ship,alreadyOwned,refund};
+};
+
+window.gallinaApplyPvpCosmeticReward = (rewardId, cosmeticId) => {
+    const id=String(rewardId),cosmetic=String(cosmeticId||'');
+    if(!id||!['fantasma','halloween'].includes(cosmetic))return {success:false,invalid:true};
+    if(gameStats.cloudRewardIds.includes(id))return {success:true,alreadyApplied:true,cosmeticId:cosmetic};
+    if(!gameStats.shipCosmetics.includes(cosmetic))gameStats.shipCosmetics.push(cosmetic);
+    gameStats.cloudRewardIds.push(id);
+    saveStats();
+    window.refreshGallinaEquipmentUI?.();
+    return {success:true,applied:true,cosmeticId:cosmetic};
 };
 
 window.gallinaApplyCloudItemReward = (rewardId, itemId) => {
