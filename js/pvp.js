@@ -196,7 +196,7 @@
     {floor:4000,key:'leyenda',name:'Leyenda Galáctica',asset:'assets/rango_leyenda.png'}
   ];
   // Insignia exclusivamente visual. La autorización real continúa en el Worker.
-  const PVP_ADMIN_RANK={key:'admin',name:'Administrador Cósmico',icon:'🔐',floor:0,level:99};
+  const PVP_ADMIN_RANK={key:'admin',name:'Administrador Cósmico',icon:'👑',floor:0,level:99};
   const qaBotRankSelect=$('pvpQaBotRank');
   const qaBotRankWrap=$('pvpQaBotRankWrap');
   const QA_BOT_RANK_CUPS=[0,100,200,500,1000,2000,4000];
