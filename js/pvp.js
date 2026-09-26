@@ -2048,6 +2048,10 @@
         const applied=window.gallinaApplyPvpShipReward?.(baseId+'-ship',a.shipId,Number(a.shipPrice||0),Number(a.duplicateRefundRate||.60));
         if(!applied?.success)throw new Error('No se pudo aplicar la nave');
       }
+      if(a.cosmeticId){
+        const applied=window.gallinaApplyPvpCosmeticReward?.(baseId+'-cosmetic',a.cosmeticId);
+        if(!applied?.success)throw new Error('No se pudo aplicar el diseño');
+      }
     }
     return data;
   }
@@ -2072,13 +2076,14 @@
       const seasonPrizes=document.createElement('div');seasonPrizes.style.cssText='display:none;margin-top:9px;padding-top:8px;border-top:1px solid rgba(196,181,253,.25);font-size:.73rem;line-height:1.55;color:#e2e8f0;';
       const cfg=data.monthlyConfig||{};
       const coin=v=>'<span style="white-space:nowrap">'+formatCoins(Number(v||0))+' 🪙</span>';
+      const rewardLine=(icon,label,name,amount)=>'<div>'+icon+' '+label+': '+(name?'🎁 '+String(name)+' + ':'')+coin(amount)+'</div>';
       seasonPrizes.innerHTML='<div style="font-weight:900;color:#fde68a;margin-bottom:4px">🎁 Premios de la temporada</div>'+
-        '<div>🥇 1.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.first)+'</div>'+
-        '<div>🥈 2.º–3.º: 🚀 '+String(cfg.shipName||'Nave del mes')+' + '+coin(cfg.secondThird)+'</div>'+
-        '<div>🏅 4.º–5.º: 🚀 '+String(cfg.shipName||'Nave del mes')+(Number(cfg.fourthFifth||0)>0 ? ' + '+coin(cfg.fourthFifth) : '')+'</div>'+
-        '<div>🎖️ 6.º–10.º: '+coin(cfg.sixthTenth)+'</div>'+
-        '<div>⭐ 50% superior restante: '+coin(cfg.upperHalf)+'</div>'+
-        '<div>🎁 Resto de participantes: '+coin(cfg.rest)+'</div>'+
+        rewardLine('🥇','1.º',cfg.firstPrizeName,cfg.first)+
+        rewardLine('🥈','2.º–3.º',cfg.secondThirdPrizeName,cfg.secondThird)+
+        rewardLine('🏅','4.º–5.º',cfg.fourthFifthPrizeName,cfg.fourthFifth)+
+        rewardLine('🎖️','6.º–10.º',cfg.sixthTenthPrizeName,cfg.sixthTenth)+
+        rewardLine('⭐','50% superior restante',cfg.upperHalfPrizeName,cfg.upperHalf)+
+        rewardLine('🎁','Resto de participantes',cfg.restPrizeName,cfg.rest)+
         '<div style="margin-top:5px;color:#fcd34d">Si ya tienes la nave, recibes el 60% de su valor.</div>'+
         '<div style="margin-top:5px;color:'+(cfg.locked?'#86efac':'#93c5fd')+'">'+(cfg.locked?'🔒 Premios definitivos de la temporada':'ℹ️ Premios provisionales hasta el día 15')+'</div>';
       season.addEventListener('click',()=>{const open=seasonPrizes.style.display!=='none';seasonPrizes.style.display=open?'none':'block';seasonHint.textContent=open?'Ver premios ▼':'Ocultar premios ▲';});
@@ -2087,11 +2092,11 @@
       if(pendingMonthly.length){
         const award=pendingMonthly[0],prize=document.createElement('div');prize.dataset.pvpSeasonCard='1';
         prize.style.cssText='margin:8px 0;padding:10px;border:1px solid rgba(251,191,36,.5);border-radius:11px;background:rgba(120,53,15,.22);text-align:center;font-size:.78rem;';
-        const parts=[];if(award.shipName)parts.push('🚀 '+award.shipName);if(Number(award.coins||0)>0)parts.push('🪙 '+formatCoins(award.coins));
+        const parts=[];if(award.shipName)parts.push('🚀 '+award.shipName);if(award.cosmeticName)parts.push('🎨 '+award.cosmeticName);if(Number(award.coins||0)>0)parts.push('🪙 '+formatCoins(award.coins));
         prize.innerHTML='<b style="color:#fde68a">🎁 Premio de '+seasonLabel(award.period)+'</b><br><span>Puesto #'+award.position+' de '+award.totalParticipants+' · '+parts.join(' + ')+'</span>';
         if(award.shipName){const note=document.createElement('div');note.style.cssText='font-size:.7rem;color:#fcd34d;margin-top:4px;';note.textContent='Si ya tienes la nave, recibes el 60% de su valor.';prize.appendChild(note);}
         const btn=document.createElement('button');btn.className='btn';btn.style.cssText='margin-top:7px;padding:7px 10px;background:#b45309;';btn.textContent='🎁 Reclamar premio mensual';
-        btn.addEventListener('click',async()=>{btn.disabled=true;btn.textContent='Procesando…';try{const out=await claimMonthlyPvpReward(award);const a=out.award||award;btn.textContent='✅ Reclamado';showStatus('🏆 Premio mensual reclamado'+(a.shipName?' · '+a.shipName:'')+(a.coins?' · +'+formatCoins(a.coins)+' monedas':''),true);setTimeout(showPvpRanking,300);}catch(e){btn.disabled=false;btn.textContent='🎁 Reclamar premio mensual';showStatus('⚠️ '+String(e?.message||'No se pudo reclamar.'),true);}});
+        btn.addEventListener('click',async()=>{btn.disabled=true;btn.textContent='Procesando…';try{const out=await claimMonthlyPvpReward(award);const a=out.award||award;btn.textContent='✅ Reclamado';showStatus('🏆 Premio mensual reclamado'+(a.shipName?' · '+a.shipName:'')+(a.cosmeticName?' · '+a.cosmeticName:'')+(a.coins?' · +'+formatCoins(a.coins)+' monedas':''),true);setTimeout(showPvpRanking,300);}catch(e){btn.disabled=false;btn.textContent='🎁 Reclamar premio mensual';showStatus('⚠️ '+String(e?.message||'No se pudo reclamar.'),true);}});
         prize.appendChild(btn);mine.parentNode?.insertBefore(prize,mine.nextSibling);
       }
       const current=[...PVP_RANK_REWARDS].reverse().find(x=>cups>=x.floor)||PVP_RANK_REWARDS[0];
