@@ -78,7 +78,7 @@ window.switchHangarTab = function(tab) {
 }
 
 const PVP_RANK_SHIP_RULES={
-    toro_oscuro:{cost:15000000,floor:1000},toro_luz:{cost:15000000,floor:1000},toro_maoma:{cost:15000000,floor:1000},toro_mayor:{cost:50000000,floor:4000}
+    toro_oscuro:{cost:15000000,floor:500},toro_luz:{cost:15000000,floor:500},toro_maoma:{cost:15000000,floor:500},toro_mayor:{cost:50000000,floor:2000}
 };
 let pvpClaimedRankUnlocks=new Set(),pvpAdminPreview=false,pvpGhostSkinAllowed=false,pvpUnlockRefreshBusy=false,pvpGlobalEventTheme='normal',pvpGlobalMenuTheme='normal';
 const SHIP_COSMETIC_STYLE={
