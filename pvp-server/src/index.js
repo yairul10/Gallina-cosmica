@@ -343,6 +343,11 @@ export class PvpRoom {
       const gameplayTypes=new Set(["state","shot","missile","evade","hit-confirm","defeat","bot-defeat"]);
       if((this.finished||senderOut)&&gameplayTypes.has(String(message.type||""))) return;
 
+      if (message.type === "ping") {
+        try{server.send(JSON.stringify({type:"pong",id:safeText(message.id,"",64)}));}catch{}
+        return;
+      }
+
       if (message.type === "quick-chat") {
         const key=safeText(message.key,"",16);
         const allowed=new Set(["luck","go","careful","help","nice","gg"]);
