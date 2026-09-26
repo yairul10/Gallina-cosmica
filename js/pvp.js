@@ -1690,19 +1690,19 @@
       // no cambia el estado de la partida, impactos ni validación del servidor.
       const ux=velocity>1?vx/velocity:0,uy=velocity>1?vy/velocity:0;
       arenaCtx.save();
-      const glow=arenaCtx.createRadialGradient(state.x,state.y,8,state.x,state.y,46);
-      glow.addColorStop(0,'rgba(103,232,249,.28)');glow.addColorStop(.55,'rgba(56,189,248,.12)');glow.addColorStop(1,'rgba(56,189,248,0)');
+      const glow=arenaCtx.createRadialGradient(state.x,state.y,4,state.x,state.y,52);
+      glow.addColorStop(0,'rgba(224,250,255,.48)');glow.addColorStop(.40,'rgba(34,211,238,.24)');glow.addColorStop(1,'rgba(34,211,238,0)');
       arenaCtx.fillStyle=glow;arenaCtx.beginPath();arenaCtx.arc(state.x,state.y,46,0,Math.PI*2);arenaCtx.fill();
       if(velocity>8&&im.complete&&im.naturalWidth){
         for(let i=3;i>=1;i--){
-          arenaCtx.save();arenaCtx.globalAlpha=.20/i;arenaCtx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';arenaCtx.translate(state.x-ux*i*12,state.y-uy*i*12);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);arenaCtx.drawImage(im,-26,-26,52,52);arenaCtx.restore();
+          arenaCtx.save();arenaCtx.globalAlpha=.22/i;arenaCtx.filter='grayscale(1) sepia(1) hue-rotate(128deg) saturate(3.2) brightness(1.48) contrast(.82)';arenaCtx.translate(state.x-ux*i*14,state.y-uy*i*14);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);arenaCtx.drawImage(im,-26,-26,52,52);arenaCtx.restore();
         }
       }
       arenaCtx.restore();
     }
     arenaCtx.save();arenaCtx.translate(state.x,state.y);arenaCtx.rotate((Number.isFinite(state.visualAngle)?state.visualAngle:state.angle)+Math.PI/2);
     if(christmas){const glow=arenaCtx.createRadialGradient(0,0,4,0,0,36);glow.addColorStop(0,'rgba(250,204,21,.30)');glow.addColorStop(.58,'rgba(34,197,94,.14)');glow.addColorStop(1,'rgba(34,197,94,0)');arenaCtx.fillStyle=glow;arenaCtx.beginPath();arenaCtx.arc(0,0,36,0,Math.PI*2);arenaCtx.fill();}
-    if(im.complete&&im.naturalWidth){if(ghost){arenaCtx.filter='hue-rotate(145deg) saturate(.55) brightness(1.28)';arenaCtx.globalAlpha=.78;}else if(halloween){arenaCtx.filter='sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)';}else if(christmas){arenaCtx.filter='sepia(.78) saturate(2.45) hue-rotate(315deg) contrast(1.12) brightness(1.08)';}arenaCtx.drawImage(im,-26,-26,52,52);}else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
+    if(im.complete&&im.naturalWidth){if(ghost){arenaCtx.save();arenaCtx.globalAlpha=.18;arenaCtx.filter='brightness(0) saturate(100%) invert(88%) sepia(34%) saturate(920%) hue-rotate(140deg) brightness(105%)';[[-2,0],[2,0],[0,-2],[0,2]].forEach(([ox,oy])=>arenaCtx.drawImage(im,-26+ox,-26+oy,52,52));arenaCtx.restore();arenaCtx.filter='grayscale(1) sepia(1) hue-rotate(128deg) saturate(3.2) brightness(1.48) contrast(.82)';arenaCtx.globalAlpha=.64;}else if(halloween){arenaCtx.filter='sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)';}else if(christmas){arenaCtx.filter='sepia(.78) saturate(2.45) hue-rotate(315deg) contrast(1.12) brightness(1.08)';}arenaCtx.drawImage(im,-26,-26,52,52);}else{arenaCtx.fillStyle='#7dd3fc';arenaCtx.beginPath();arenaCtx.arc(0,0,22,0,Math.PI*2);arenaCtx.fill();}
     arenaCtx.restore();
   }
   function cameraPosition(){
