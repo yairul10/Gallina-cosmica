@@ -51,7 +51,7 @@
     const toggle=document.createElement('button');toggle.type='button';toggle.textContent='🔐 QA administrador';toggle.title='Abrir QA administrador';
     toggle.style.cssText='border:1px solid #fbbf24;border-radius:6px;background:#0f172a;color:#fde68a;min-width:27px;height:26px;padding:0 8px;font:800 11px/1 sans-serif;cursor:pointer';
     header.append(headerText,toggle);
-    const body=document.createElement('div');body.id='qaAdminPanelBody';body.style.cssText='margin-top:7px';
+    const body=document.createElement('div');body.id='qaAdminPanelBody';body.style.cssText='margin-top:7px;max-height:calc(100dvh - 145px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-right:3px';
     body.innerHTML='<div style="font-weight:900;margin-bottom:6px">🔐 Administrador QA</div>'+
       '<div style="font-size:.72rem;margin-bottom:6px">Tu Player ID: <span id="qaAdminMyId"></span></div>'+
       '<input id="qaAdminId" placeholder="Player ID a autorizar" inputmode="numeric" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:7px;border-radius:7px">'+
