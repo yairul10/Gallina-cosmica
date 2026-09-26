@@ -80,7 +80,7 @@ window.switchHangarTab = function(tab) {
 const PVP_RANK_SHIP_RULES={
     toro_oscuro:{cost:15000000,floor:1000},toro_luz:{cost:15000000,floor:1000},toro_maoma:{cost:15000000,floor:1000},toro_mayor:{cost:50000000,floor:4000}
 };
-let pvpClaimedRankUnlocks=new Set(),pvpAdminPreview=false,pvpGhostSkinAllowed=false,pvpUnlockRefreshBusy=false,pvpGlobalEventTheme='normal';
+let pvpClaimedRankUnlocks=new Set(),pvpAdminPreview=false,pvpGhostSkinAllowed=false,pvpUnlockRefreshBusy=false,pvpGlobalEventTheme='normal',pvpGlobalMenuTheme='normal';
 const SHIP_COSMETIC_STYLE={
     normal:{filter:'none',opacity:'1',shadow:'none',label:'Diseño normal equipado.'},
     // No es sólo un cambio de tono: la nave queda translúcida, fría y luminosa.
@@ -92,6 +92,11 @@ function normalizedShipCosmetic(value){return ['normal','fantasma','halloween','
 window.gallinaSetGlobalEventTheme=function(theme){
     pvpGlobalEventTheme=['fantasma','halloween','navidad'].includes(theme)?theme:'normal';
     window.updateMenuShip?.();updateHangarUI?.();
+};
+window.gallinaSetGlobalMenuTheme=function(theme){
+    pvpGlobalMenuTheme=['halloween','navidad'].includes(theme)?theme:'normal';
+    const overlay=document.getElementById('menuThemeOverlay');
+    if(overlay)overlay.className='menu-theme-overlay '+(pvpGlobalMenuTheme==='normal'?'':pvpGlobalMenuTheme);
 };
 window.gallinaGetShipCosmetic=function(){
     if(['fantasma','halloween','navidad'].includes(pvpGlobalEventTheme))return pvpGlobalEventTheme;
@@ -120,7 +125,7 @@ async function refreshPvpSpecialShipAccess(){
     try{
         const identity=window.GallinaPlayerIdentity?.getCurrent?.();
         const jobs=[];
-        if(identity?.id)jobs.push(fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/ranking?playerId='+encodeURIComponent(identity.id),{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d?.ok){window.gallinaSetPvpRankUnlocks(d.claimedRankRewards||[]);window.gallinaSetGlobalEventTheme(d.eventTheme);}}));
+        jobs.push(fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/ranking?playerId='+encodeURIComponent(identity?.id||''),{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d?.ok){if(identity?.id){window.gallinaSetPvpRankUnlocks(d.claimedRankRewards||[]);window.gallinaSetGlobalEventTheme(d.eventTheme);}window.gallinaSetGlobalMenuTheme(d.menuTheme);}}));
         if(window.getQaAdminStatus)jobs.push(window.getQaAdminStatus().then(d=>{
             // Un fallo transitorio de Play Games no debe ocultar el catálogo QA
             // después de que el servidor ya confirmó al administrador.
