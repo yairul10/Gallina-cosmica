@@ -1020,6 +1020,7 @@ export class PvpMatchmaker {
     this.ctx = ctx;
     this.env = env;
     this.waitingByMode = new Map();
+    this.timersByMode = new Map();
   }
 
   fallbackMsForRank(level){
@@ -1056,8 +1057,10 @@ export class PvpMatchmaker {
     queue.push(entry);this.waitingByMode.set(mode,queue);
 
     const sendQueueCount=list=>{
+      const first=list.slice().sort((a,b)=>a.joinedAt-b.joinedAt)[0];
+      const queueMaxWait=first?this.fallbackMsForRank(first.rankLevel):0;
       for(const e of list){
-        try{e.socket.send(JSON.stringify({type:"queue-waiting",mode,waiting:list.length,needed,maxWaitMs:this.fallbackMsForRank(e.rankLevel)}));}catch{}
+        try{e.socket.send(JSON.stringify({type:"queue-waiting",mode,waiting:list.length,needed,maxWaitMs:queueMaxWait,queueStartedAt:first?.joinedAt||e.joinedAt}));}catch{}
       }
     };
     const removeEntries=group=>{
@@ -1077,37 +1080,73 @@ export class PvpMatchmaker {
         try{e.socket.close(1000,withBots?"matched-bots":"matched");}catch{}
       }
     };
-    const compatibleGroup=()=>{
-      const list=this.waitingByMode.get(mode)||[];
-      if(!list.includes(entry))return null;
-      const now=Date.now(),myFallback=this.fallbackMsForRank(entry.rankLevel);
-      const myGap=this.allowedRankGap(now-entry.joinedAt,myFallback);
-      const compatible=list.filter(e=>{
-        const theirFallback=this.fallbackMsForRank(e.rankLevel);
-        const theirGap=this.allowedRankGap(now-e.joinedAt,theirFallback);
-        return Math.abs(e.rankLevel-entry.rankLevel)<=Math.max(myGap,theirGap);
-      }).sort((a,b)=>a.joinedAt-b.joinedAt);
-      if(mode!=="2v2"){
-        return compatible.length>=needed?compatible.slice(0,needed):null;
-      }
-      // Un código de compañero forma una unidad indivisible de dos jugadores.
-      // Nunca se separa el dúo ni se lanza hasta que ambos estén en la cola.
-      const seenParties=new Set(),units=[];
-      for(const e of compatible){
+    const unitsFor=list=>{
+      if(mode!=="2v2")return list.map(e=>[e]);
+      const seen=new Set(),units=[];
+      for(const e of list){
         if(!e.partyCode){units.push([e]);continue;}
-        if(seenParties.has(e.partyCode))continue;
-        seenParties.add(e.partyCode);
-        const pair=compatible.filter(x=>x.partyCode===e.partyCode).slice(0,2);
+        if(seen.has(e.partyCode))continue;
+        seen.add(e.partyCode);
+        const pair=list.filter(x=>x.partyCode===e.partyCode).sort((a,b)=>a.joinedAt-b.joinedAt).slice(0,2);
+        // Un grupo de compañero sólo participa cuando sus dos miembros están presentes.
         if(pair.length===2)units.push(pair);
       }
-      const chosen=[];
+      return units.sort((a,b)=>Math.min(...a.map(e=>e.joinedAt))-Math.min(...b.map(e=>e.joinedAt)));
+    };
+    const compatibleWith=(anchor,e,now)=>{
+      const af=this.fallbackMsForRank(anchor.rankLevel),ef=this.fallbackMsForRank(e.rankLevel);
+      const gap=Math.max(this.allowedRankGap(now-anchor.joinedAt,af),this.allowedRankGap(now-e.joinedAt,ef));
+      return Math.abs(e.rankLevel-anchor.rankLevel)<=gap;
+    };
+    const fullGroup=()=>{
+      const list=this.waitingByMode.get(mode)||[];
+      if(!list.length)return null;
+      const anchor=list.slice().sort((a,b)=>a.joinedAt-b.joinedAt)[0],now=Date.now();
+      const compatible=list.filter(e=>compatibleWith(anchor,e,now));
+      const units=unitsFor(compatible),chosen=[];
       for(const unit of units){
         if(chosen.length+unit.length<=needed)chosen.push(...unit);
         if(chosen.length===needed)return chosen;
       }
       return null;
     };
-
+    const fallbackGroup=()=>{
+      const list=this.waitingByMode.get(mode)||[];
+      if(!list.length)return null;
+      const anchor=list.slice().sort((a,b)=>a.joinedAt-b.joinedAt)[0],now=Date.now();
+      const deadline=anchor.joinedAt+this.fallbackMsForRank(anchor.rankLevel);
+      if(now<deadline)return null;
+      const compatible=list.filter(e=>compatibleWith(anchor,e,now));
+      const units=unitsFor(compatible),chosen=[];
+      for(const unit of units){
+        if(chosen.length+unit.length<=needed)chosen.push(...unit);
+      }
+      // Si el primero creó un dúo, no arrancamos hasta que llegue su compañero.
+      if(anchor.partyCode&&!chosen.some(e=>e.partyCode===anchor.partyCode))return null;
+      return chosen.length?chosen.slice(0,needed):[anchor];
+    };
+    const processQueue=()=>{
+      const list=this.waitingByMode.get(mode)||[];
+      if(!list.length)return;
+      // En cuanto hay suficientes humanos válidos (incluidos dos dúos completos),
+      // la partida comienza sin esperar al límite.
+      const full=fullGroup();
+      if(full){launch(full,false);return;}
+      // El tiempo pertenece siempre al primer jugador que inició esta cola.
+      // Los que entren después heredan ese mismo límite.
+      const fallback=fallbackGroup();
+      if(fallback)launch(fallback,true);
+    };
+    const ensureTimer=()=>{
+      if(this.timersByMode.has(mode))return;
+      const timer=setInterval(()=>{
+        processQueue();
+        if(!(this.waitingByMode.get(mode)||[]).length){
+          clearInterval(timer);this.timersByMode.delete(mode);
+        }
+      },500);
+      this.timersByMode.set(mode,timer);
+    };
     const clear=()=>{
       const list=this.waitingByMode.get(mode)||[];
       const left=list.filter(e=>e.socket!==server);
@@ -1115,44 +1154,12 @@ export class PvpMatchmaker {
     };
     server.addEventListener("close",clear);server.addEventListener("error",clear);
     sendQueueCount(queue);
-
-    // Intento inmediato: sólo empareja rangos compatibles según cuánto haya
-    // esperado cada jugador. La búsqueda se amplía gradualmente con el tiempo.
-    const immediate=compatibleGroup();
-    if(immediate)launch(immediate,false);
-
-    const tick=setInterval(()=>{
-      const list=this.waitingByMode.get(mode)||[];
-      if(!list.includes(entry)){clearInterval(tick);return;}
-      const group=compatibleGroup();
-      if(group){clearInterval(tick);launch(group,false);return;}
-      const waited=Date.now()-entry.joinedAt;
-      const fallback=this.fallbackMsForRank(entry.rankLevel);
-      if(waited>=fallback){
-        clearInterval(tick);
-        const live=this.waitingByMode.get(mode)||[];
-        if(!live.includes(entry))return;
-        // El más antiguo compatible con su propia ventana reúne a los humanos
-        // disponibles y completa únicamente los puestos restantes con bots.
-        let candidates=live.filter(e=>{
-          const ef=this.fallbackMsForRank(e.rankLevel);
-          const gap=Math.max(this.allowedRankGap(waited,fallback),this.allowedRankGap(Date.now()-e.joinedAt,ef));
-          return Math.abs(e.rankLevel-entry.rankLevel)<=gap;
-        }).sort((a,b)=>a.joinedAt-b.joinedAt);
-        if(candidates[0]!==entry)return;
-        if(mode==="2v2"&&entry.partyCode){
-          const pair=candidates.filter(e=>e.partyCode===entry.partyCode).slice(0,2);
-          if(pair.length<2)return;
-          candidates=pair.concat(candidates.filter(e=>!e.partyCode).slice(0,needed-pair.length));
-        }
-        launch(candidates.slice(0,needed),true);
-      }
-    },1000);
+    ensureTimer();
+    processQueue();
 
     return new Response(null,{status:101,webSocket:client});
   }
 }
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
