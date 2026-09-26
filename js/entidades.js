@@ -224,7 +224,8 @@ window.drawPlayerShip = function(x, y) {
         }else if(cosmetic==='halloween'){
             ctx.save();ctx.filter='sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)';ctx.drawImage(currentImg,x,y,player.width,player.height);ctx.restore();
         }else if(cosmetic==='navidad'){
-            ctx.save();const glow=ctx.createRadialGradient(x+player.width/2,y+player.height/2,5,x+player.width/2,y+player.height/2,43);glow.addColorStop(0,'rgba(250,204,21,.22)');glow.addColorStop(.58,'rgba(34,197,94,.12)');glow.addColorStop(1,'rgba(34,197,94,0)');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x+player.width/2,y+player.height/2,43,0,Math.PI*2);ctx.fill();ctx.filter='sepia(.78) saturate(2.45) hue-rotate(315deg) contrast(1.12) brightness(1.08)';ctx.drawImage(currentImg,x,y,player.width,player.height);ctx.restore();
+            ctx.drawImage(currentImg,x,y,player.width,player.height);
+            window.gallinaDrawSantaHat?.(ctx,x+player.width/2,y+player.height/2,player.width);
         }else ctx.drawImage(currentImg, x, y, player.width, player.height);
     } else { 
         ctx.save(); ctx.translate(x + player.width/2, y + player.height/2); 
