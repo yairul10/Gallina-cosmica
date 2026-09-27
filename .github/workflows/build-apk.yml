@@ -74,16 +74,23 @@ jobs:
         run: |
           python3 - <<'PYADMOB'
           from pathlib import Path
-          p = Path("android/app/src/main/AndroidManifest.xml")
-          s = p.read_text()
+          import re
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          s = manifest.read_text()
           tag = """        <meta-data
               android:name="com.google.android.gms.ads.APPLICATION_ID"
-              android:value="ca-app-pub-3940256099942544~3347511713" />
+              android:value="@string/admob_app_id" />
           """
           if "com.google.android.gms.ads.APPLICATION_ID" not in s:
-              import re
               s = re.sub(r'(<application\\b[^>]*>)', r'\\1\\n' + tag, s, count=1)
-          p.write_text(s)
+          manifest.write_text(s)
+
+          strings = Path("android/app/src/main/res/values/strings.xml")
+          x = strings.read_text()
+          if 'name="admob_app_id"' not in x:
+              x = x.replace("</resources>", '    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>\\n</resources>')
+          strings.write_text(x)
           PYADMOB
 
       - name: Generar icono
