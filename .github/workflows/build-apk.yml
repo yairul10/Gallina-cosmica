@@ -83,7 +83,11 @@ jobs:
               android:value="@string/admob_app_id" />
           """
           if "com.google.android.gms.ads.APPLICATION_ID" not in s:
-              s = re.sub(r'(<application\\b[^>]*>)', r'\\1\\n' + tag, s, count=1)
+              pos = s.find("<application")
+              end = s.find(">", pos)
+              if pos < 0 or end < 0:
+                  raise RuntimeError("No se encontro <application> en AndroidManifest.xml")
+              s = s[:end + 1] + "\n" + tag + s[end + 1:]
           manifest.write_text(s)
 
           strings = Path("android/app/src/main/res/values/strings.xml")
@@ -91,6 +95,13 @@ jobs:
           if 'name="admob_app_id"' not in x:
               x = x.replace("</resources>", '    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>\\n</resources>')
           strings.write_text(x)
+
+          # Fallar el build antes de generar el AAB si el App ID no quedo realmente en el manifest.
+          final_manifest = manifest.read_text()
+          if "com.google.android.gms.ads.APPLICATION_ID" not in final_manifest:
+              raise RuntimeError("AdMob APPLICATION_ID no fue insertado en AndroidManifest.xml")
+          if "ca-app-pub-3940256099942544~3347511713" not in strings.read_text():
+              raise RuntimeError("AdMob test App ID no fue insertado en strings.xml")
           PYADMOB
 
       - name: Generar icono
