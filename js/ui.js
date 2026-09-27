@@ -264,6 +264,32 @@ window.setShipCosmetic = async function(cosmetic){
 };
 window.equipExtra = function() { if (gameStats.extraModule) { gameStats.equipExtraModule = !gameStats.equipExtraModule; saveStats(); updateHangarUI(); } }
 
+
+window.openCoinShop = function(){
+    refreshPvpSpecialShipAccess?.(); updateShopUI?.();
+    document.getElementById('startScreen').style.display='none';
+    document.getElementById('shopScreen').style.display='flex';
+    switchShopTab('playcoins');
+};
+document.getElementById('coinShopPlusBtn')?.addEventListener('click', window.openCoinShop);
+
+window.updatePackOffers = function(){
+    const initialOwned=!!window.gallinaPackOwned?.('pack_inicial');
+    const pvpOwned=!!window.gallinaPackOwned?.('pack_pvp');
+    const pvpReady=!!gameStats.pvpUnlocked;
+    const initialCollapsed=!!window.gallinaPackOfferCollapsed?.('initial');
+    const pvpCollapsed=!!window.gallinaPackOfferCollapsed?.('pvp');
+    const initial=document.getElementById('starterPackOffer'), initialIcon=document.getElementById('starterPackIcon');
+    const pvp=document.getElementById('pvpPackOffer'), pvpIcon=document.getElementById('pvpPackIcon');
+    if(initial){initial.style.display=!initialOwned&&!initialCollapsed?'block':'none';}
+    if(initialIcon){initialIcon.style.display=!initialOwned&&initialCollapsed?'block':'none';}
+    if(pvp){pvp.style.display=pvpReady&&!pvpOwned&&!pvpCollapsed?'block':'none';}
+    if(pvpIcon){pvpIcon.style.display=pvpReady&&!pvpOwned&&pvpCollapsed?'block':'none';}
+};
+window.collapsePackOffer = function(key){ window.gallinaSetPackOfferCollapsed?.(key,true); updatePackOffers(); };
+window.expandPackOffer = function(key){ window.gallinaSetPackOfferCollapsed?.(key,false); updatePackOffers(); window.GallinaBilling?.loadPrices?.(); };
+window.addEventListener('load',()=>setTimeout(()=>{updatePackOffers();window.GallinaBilling?.loadPrices?.();},1100),{once:true});
+
 window.switchShopTab = function(tab) {
     const tabs = {
         skins: document.getElementById('tabSkins'),
