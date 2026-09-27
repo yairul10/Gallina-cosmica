@@ -5,7 +5,9 @@
     monedas_1000000:  { amount:1000000,  label:'1.000.000' },
     monedas_5000000:  { amount:5000000,  label:'5.000.000' },
     monedas_15000000: { amount:15000000, label:'15.000.000' },
-    monedas_50000000: { amount:50000000, label:'50.000.000', cosmetic:'fantasma' }
+    monedas_50000000: { amount:50000000, label:'50.000.000', cosmetic:'fantasma' },
+    pack_inicial:      { label:'Pack Inicial', pack:true, consumable:false },
+    pack_pvp:          { label:'Pack PvP', pack:true, consumable:false }
   };
   const plugin=()=>window.Capacitor?.Plugins?.GallinaBilling;
   const status=(t)=>{const e=document.getElementById('playCoinsStatus');if(e)e.textContent=t||'';};
@@ -15,7 +17,9 @@
   function applyPurchase(productId, token){
     const item=PRODUCTS[productId];
     if(!item) return {success:false};
-    const applied=window.gallinaApplyPlayCoinPurchase?.(token,item.amount);
+    const applied=item.pack
+      ? window.gallinaApplyPlayPackPurchase?.(token,productId)
+      : window.gallinaApplyPlayCoinPurchase?.(token,item.amount);
     if(!applied?.success) return applied;
     if(item.cosmetic){
       window.gallinaApplyPvpCosmeticReward?.(token+':cosmetic',item.cosmetic);
@@ -40,8 +44,9 @@
       if(returned.length && !returned.includes(productId)) throw new Error('El producto devuelto no coincide');
       const applied=applyPurchase(productId,r.purchaseToken);
       if(!applied?.success) throw new Error('No se pudo guardar la recompensa');
-      status(applied.alreadyApplied?'Esta compra ya había sido acreditada.':('✅ ¡'+item.label+' monedas recibidas!'+(item.cosmetic?' 👻 Diseño Fantasma desbloqueado.':'')));
-      await consumeAfterReward(r.purchaseToken);
+      status(applied.alreadyApplied?'Esta compra ya había sido acreditada.':(item.pack?'✅ '+item.label+' desbloqueado.':('✅ ¡'+item.label+' monedas recibidas!'+(item.cosmetic?' 👻 Diseño Fantasma desbloqueado.':''))));
+      if(item.consumable!==false) await consumeAfterReward(r.purchaseToken);
+      window.updatePackOffers?.();
     }catch(e){
       const msg=String(e?.message||e||'');
       status(/cancel/i.test(msg)?'Compra cancelada.':'No se completó la compra. Inténtalo nuevamente.');
@@ -70,7 +75,8 @@
         const productId=(p.products||[]).find(id=>PRODUCTS[id]);
         if(!productId || !p.purchaseToken)continue;
         const applied=applyPurchase(productId,p.purchaseToken);
-        if(applied?.success) await consumeAfterReward(p.purchaseToken);
+        if(applied?.success && PRODUCTS[productId]?.consumable!==false) await consumeAfterReward(p.purchaseToken);
+        if(applied?.success) window.updatePackOffers?.();
       }
     }catch(e){console.warn('[Billing recovery]',e);}
   }
