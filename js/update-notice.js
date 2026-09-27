@@ -1,6 +1,6 @@
 /* Aviso opcional de actualizaciones. No bloquea el modo offline. */
 (() => {
-    const CURRENT_VERSION = '1.4.33';
+    const CURRENT_VERSION = '1.4.34';
     const VERSION_URL = 'https://yairul10.github.io/Gallina-cosmica/version.json';
 
     const versionParts = (version) => String(version || '')
