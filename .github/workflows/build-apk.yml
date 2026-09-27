@@ -30,6 +30,7 @@ jobs:
           npm init -y
           npm install @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8
           npm install @capacitor/splash-screen@8
+          npm install @capacitor-community/admob@8
           npm install --save-dev @capacitor/assets
 
       - name: Preparar juego
@@ -68,6 +69,21 @@ jobs:
         run: |
           npx cap init "Gallina Cosmica" "com.gallinacosmica.app" --web-dir www
           npx cap add android
+
+      - name: Configurar AdMob de prueba
+        run: |
+          python3 - <<'PYADMOB'
+          from pathlib import Path
+          p = Path("android/app/src/main/AndroidManifest.xml")
+          s = p.read_text()
+          tag = """        <meta-data
+              android:name="com.google.android.gms.ads.APPLICATION_ID"
+              android:value="ca-app-pub-3940256099942544~3347511713" />
+          """
+          if "com.google.android.gms.ads.APPLICATION_ID" not in s:
+              s = s.replace("<application", tag + "\n    <application", 1)
+          p.write_text(s)
+          PYADMOB
 
       - name: Generar icono
         run: |
