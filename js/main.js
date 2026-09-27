@@ -16,8 +16,8 @@ window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = fal
 // El récord ahora se guarda automáticamente al terminar o abandonar la partida.
 
 document.getElementById('reviveBtn').addEventListener('click', () => {
-    if (coins >= 5000) {
-        coins -= 5000; gameStats.savedCoins = coins; saveStats(); lives = 3; 
+    if (coins >= 10000) {
+        coins -= 10000; gameStats.savedCoins = coins; saveStats(); lives = 3; 
         if (typeof window.isSuperBossModeActive === 'undefined' || !window.isSuperBossModeActive) {
             enemies.length = 0; 
         }
@@ -113,7 +113,7 @@ window.gameOver = function() {
     renderLeaderboard('endLeaderboardList');
     document.getElementById('coinsStatus').textContent = `Tienes: 🪙 ${coins}`;
     const reviveBtn = document.getElementById('reviveBtn');
-    if (coins >= 5000) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; }
+    if (coins >= 10000) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; }
     else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
     document.getElementById('gameOverScreen').style.display = 'flex';
     document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
