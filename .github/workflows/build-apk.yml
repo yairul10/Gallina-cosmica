@@ -92,6 +92,97 @@ jobs:
               raise RuntimeError("Google Play Billing 9.1.0 no fue agregado")
           PYBILLING
 
+      - name: Crear puente nativo Google Play Billing
+        run: |
+          cat > android/app/src/main/java/com/gallinacosmica/app/GallinaBillingPlugin.java <<'JAVA'
+          package com.gallinacosmica.app;
+
+          import com.getcapacitor.*;
+          import com.getcapacitor.annotation.*;
+          import com.android.billingclient.api.*;
+          import java.util.*;
+
+          @CapacitorPlugin(name = "GallinaBilling")
+          public class GallinaBillingPlugin extends Plugin implements PurchasesUpdatedListener {
+              private BillingClient client;
+              private PluginCall pendingBuy;
+
+              private void connect(final Runnable ready, final PluginCall call) {
+                  if (client == null) {
+                      PendingPurchasesParams pending = PendingPurchasesParams.newBuilder().enableOneTimeProducts().build();
+                      client = BillingClient.newBuilder(getContext()).setListener(this).enablePendingPurchases(pending).build();
+                  }
+                  if (client.isReady()) { ready.run(); return; }
+                  client.startConnection(new BillingClientStateListener() {
+                      public void onBillingSetupFinished(BillingResult r) {
+                          if (r.getResponseCode()==BillingClient.BillingResponseCode.OK) ready.run();
+                          else call.reject("Google Play Billing no disponible: "+r.getDebugMessage());
+                      }
+                      public void onBillingServiceDisconnected() {}
+                  });
+              }
+
+              @PluginMethod
+              public void buy(PluginCall call) {
+                  String productId=call.getString("productId");
+                  if(productId==null){call.reject("Falta productId");return;}
+                  connect(() -> queryAndLaunch(productId, call), call);
+              }
+
+              private void queryAndLaunch(String productId, PluginCall call) {
+                  QueryProductDetailsParams.Product p=QueryProductDetailsParams.Product.newBuilder()
+                      .setProductId(productId).setProductType(BillingClient.ProductType.INAPP).build();
+                  QueryProductDetailsParams q=QueryProductDetailsParams.newBuilder().setProductList(Collections.singletonList(p)).build();
+                  client.queryProductDetailsAsync(q,(result, detailsResult)->{
+                      if(result.getResponseCode()!=BillingClient.BillingResponseCode.OK || detailsResult.getProductDetailsList().isEmpty()){
+                          call.reject("Producto no disponible en Google Play"); return;
+                      }
+                      ProductDetails d=detailsResult.getProductDetailsList().get(0);
+                      ProductDetails.OneTimePurchaseOfferDetails offer=null;
+                      List<ProductDetails.OneTimePurchaseOfferDetails> offers=d.getOneTimePurchaseOfferDetailsList();
+                      if(offers!=null && !offers.isEmpty()) offer=offers.get(0);
+                      BillingFlowParams.ProductDetailsParams.Builder pb=BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(d);
+                      if(offer!=null && offer.getOfferToken()!=null) pb.setOfferToken(offer.getOfferToken());
+                      BillingFlowParams flow=BillingFlowParams.newBuilder().setProductDetailsParamsList(Collections.singletonList(pb.build())).build();
+                      pendingBuy=call;
+                      BillingResult launch=client.launchBillingFlow(getActivity(),flow);
+                      if(launch.getResponseCode()!=BillingClient.BillingResponseCode.OK){pendingBuy=null;call.reject("No se pudo abrir Google Play: "+launch.getDebugMessage());}
+                  });
+              }
+
+              public void onPurchasesUpdated(BillingResult result, List<Purchase> purchases) {
+                  if(pendingBuy==null)return;
+                  PluginCall call=pendingBuy; pendingBuy=null;
+                  if(result.getResponseCode()==BillingClient.BillingResponseCode.USER_CANCELED){call.reject("Compra cancelada");return;}
+                  if(result.getResponseCode()!=BillingClient.BillingResponseCode.OK || purchases==null || purchases.isEmpty()){call.reject("Compra no completada: "+result.getDebugMessage());return;}
+                  Purchase p=purchases.get(0);
+                  if(p.getPurchaseState()!=Purchase.PurchaseState.PURCHASED){call.reject("Compra pendiente o no completada");return;}
+                  JSObject out=new JSObject(); out.put("purchaseToken",p.getPurchaseToken()); out.put("orderId",p.getOrderId()); call.resolve(out);
+              }
+
+              @PluginMethod
+              public void consume(PluginCall call) {
+                  String token=call.getString("purchaseToken");
+                  if(token==null){call.reject("Falta purchaseToken");return;}
+                  connect(() -> {
+                      ConsumeParams cp=ConsumeParams.newBuilder().setPurchaseToken(token).build();
+                      client.consumeAsync(cp,(r,t)->{if(r.getResponseCode()==BillingClient.BillingResponseCode.OK)call.resolve();else call.reject("No se pudo consumir la compra: "+r.getDebugMessage());});
+                  }, call);
+              }
+          }
+          JAVA
+          cat > android/app/src/main/java/com/gallinacosmica/app/MainActivity.java <<'JAVA'
+          package com.gallinacosmica.app;
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+              @Override public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(GallinaBillingPlugin.class);
+                  super.onCreate(savedInstanceState);
+              }
+          }
+          JAVA
+
       - name: Configurar AdMob de prueba
         run: |
           python3 - <<'PYADMOB'
@@ -148,8 +239,8 @@ jobs:
           from pathlib import Path
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          s = s.replace("versionCode 1", "versionCode 62")
-          s = s.replace('versionName "1.0"', 'versionName "1.4.32"')
+          s = s.replace("versionCode 1", "versionCode 63")
+          s = s.replace('versionName "1.0"', 'versionName "1.4.33"')
           p.write_text(s)
           PY2
 
