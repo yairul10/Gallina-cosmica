@@ -274,6 +274,13 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .shop-btn.equipped { background: #3b82f6; cursor: pointer; }
 .shop-btn:disabled { background: #475569 !important; color: #94a3b8; cursor: not-allowed; transform: none; }
 .shop-img { height: 45px; object-fit: contain; margin: 4px 0; filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5)); }
+.play-coin-pack-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.play-coin-pack { min-height:142px; padding:7px 6px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:3px; background:linear-gradient(145deg,#0f5132,#047857); border:1px solid rgba(253,230,138,.7); }
+.play-coin-pack img { display:block; width:100%; height:82px; object-fit:contain; filter:drop-shadow(0 3px 5px rgba(0,0,0,.48)); }
+.play-coin-pack span { line-height:1.08; }
+.play-coin-pack small { color:#fef3c7; font-size:.75rem; }
+.play-coin-pack-ghost { grid-column:1/-1; min-height:156px; border-color:#c4b5fd; background:linear-gradient(135deg,#312e81,#6d28d9); }
+.play-coin-pack-ghost img { height:96px; }
 
 @keyframes glowUpgrade {
     0% { box-shadow: 0 0 5px #10b981; border-color: #10b981; }

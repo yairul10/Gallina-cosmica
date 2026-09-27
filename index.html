@@ -289,12 +289,12 @@
             <div id="playCoinsPurchase" style="margin:10px 0;padding:12px;border:1px solid #fbbf24;border-radius:14px;background:rgba(120,53,15,.22);text-align:center;">
                 <strong>🪙 Monedas de Google Play</strong>
                 <p style="font-size:.72rem;margin:5px 0 9px;color:#fde68a;">El precio final se obtiene directamente de Google Play.</p>
-                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;">
-                    <button class="shop-btn" data-play-product="monedas_500000" onclick="GallinaBilling.buy('monedas_500000')">🪙 500.000<br><small data-play-price="monedas_500000">Ver precio</small></button>
-                    <button class="shop-btn" data-play-product="monedas_1000000" onclick="GallinaBilling.buy('monedas_1000000')">🪙 1.000.000<br><small data-play-price="monedas_1000000">Ver precio</small></button>
-                    <button class="shop-btn" data-play-product="monedas_5000000" onclick="GallinaBilling.buy('monedas_5000000')">🪙 5.000.000<br><small data-play-price="monedas_5000000">Ver precio</small></button>
-                    <button class="shop-btn" data-play-product="monedas_15000000" onclick="GallinaBilling.buy('monedas_15000000')">🪙 15.000.000<br><small data-play-price="monedas_15000000">Ver precio</small></button>
-                    <button class="shop-btn" data-play-product="pack_50000000_fantasma" onclick="GallinaBilling.buy('pack_50000000_fantasma')" style="grid-column:1/-1;border-color:#a78bfa;background:linear-gradient(135deg,#312e81,#6d28d9);">👻 50.000.000 + Diseño Fantasma<br><small data-play-price="pack_50000000_fantasma">Ver precio</small></button>
+                <div class="play-coin-pack-grid">
+                    <button class="shop-btn play-coin-pack" data-play-product="monedas_500000" onclick="GallinaBilling.buy('monedas_500000')"><img src="assets/paquete_500k.png" alt="Paquete de 500.000 monedas"><span>🪙 500.000</span><small data-play-price="monedas_500000">Ver precio</small></button>
+                    <button class="shop-btn play-coin-pack" data-play-product="monedas_1000000" onclick="GallinaBilling.buy('monedas_1000000')"><img src="assets/paquete_1m.png" alt="Paquete de 1.000.000 de monedas"><span>🪙 1.000.000</span><small data-play-price="monedas_1000000">Ver precio</small></button>
+                    <button class="shop-btn play-coin-pack" data-play-product="monedas_5000000" onclick="GallinaBilling.buy('monedas_5000000')"><img src="assets/paquete_5m.png" alt="Paquete de 5.000.000 de monedas"><span>🪙 5.000.000</span><small data-play-price="monedas_5000000">Ver precio</small></button>
+                    <button class="shop-btn play-coin-pack" data-play-product="monedas_15000000" onclick="GallinaBilling.buy('monedas_15000000')"><img src="assets/paquete_15m.png" alt="Paquete de 15.000.000 de monedas"><span>🪙 15.000.000</span><small data-play-price="monedas_15000000">Ver precio</small></button>
+                    <button class="shop-btn play-coin-pack play-coin-pack-ghost" data-play-product="pack_50000000_fantasma" onclick="GallinaBilling.buy('pack_50000000_fantasma')"><img src="assets/paquete_50m_fantasma.png" alt="Paquete de 50.000.000 de monedas con Diseño Fantasma"><span>👻 50.000.000 + Diseño Fantasma</span><small data-play-price="pack_50000000_fantasma">Ver precio</small></button>
                 </div>
                 <p id="playCoinsStatus" style="min-height:18px;font-size:.72rem;color:#fde68a;margin:7px 0 0;"></p>
             </div>
