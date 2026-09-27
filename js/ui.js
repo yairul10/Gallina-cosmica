@@ -337,7 +337,7 @@ function updateShopUI() {
     let bAuto = document.getElementById('btn-buy-autolife');
     if (bAuto) {
         if (gameStats.extraModule) { bAuto.textContent = 'Comprado'; bAuto.style.background = '#475569'; bAuto.disabled = true; }
-        else { bAuto.textContent = '🪙 50,000'; bAuto.style.background = '#10b981'; bAuto.disabled = (coins < 50000); }
+        else { bAuto.textContent = '🪙 250,000'; bAuto.style.background = '#10b981'; bAuto.disabled = (coins < 250000); }
     }
     
     let b20 = document.getElementById('btn-boost-20'); let b50 = document.getElementById('btn-boost-50'); let b100 = document.getElementById('btn-boost-100');
@@ -368,7 +368,7 @@ window.buyPvpShip = function(id) {
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
 window.buyPvpEvade = function() { if (gameStats.pvpUnlocked && !gameStats.pvpEvade && coins >= 500000) { coins -= 500000; gameStats.savedCoins = coins; gameStats.pvpEvade = true; saveStats(); updateShopUI(); } }
 window.buyPvpEmergencyLife = function() { if (gameStats.pvpUnlocked && !gameStats.pvpEmergencyLife && coins >= 20000000) { coins -= 20000000; gameStats.savedCoins = coins; gameStats.pvpEmergencyLife = true; saveStats(); updateShopUI(); } }
-window.buyAutoLife = function() { if (!gameStats.extraModule && coins >= 50000) { coins -= 50000; gameStats.savedCoins = coins; gameStats.extraModule = true; gameStats.equipExtraModule = true; saveStats(); updateShopUI(); } }
+window.buyAutoLife = function() { if (!gameStats.extraModule && coins >= 250000) { coins -= 250000; gameStats.savedCoins = coins; gameStats.extraModule = true; gameStats.equipExtraModule = true; saveStats(); updateShopUI(); } }
 
 const trophyData = { '20k': { name: '🥉 Pollito de Bronce', lock: 'Consigue 20,000 pts', unlock: 'Lograste 20,000 pts.', key: 't20k' }, '50k': { name: '🥈 Lana de Plata', lock: 'Consigue 50,000 pts', unlock: 'Lograste 50,000 pts.', key: 't50k' }, '100k': { name: '🏅 Herradura de Oro', lock: 'Consigue 100,000 pts', unlock: 'Lograste 100,000 pts.', key: 't100k' }, '200k': { name: '🏆 Leche Legendaria', lock: 'Consigue 200,000 pts', unlock: 'Lograste 200,000 pts.', key: 't200k' }, '300k': { name: '💎 Gallina de Diamante', lock: 'Consigue 300,000 pts', unlock: 'Lograste 300,000 pts.', key: 't300k' } };
 function updateTrophyMenu() { let pTrophies = JSON.parse(localStorage.getItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_trophies') : 'farm_space_trophies'))) || {}; ['20k', '50k', '100k', '200k', '300k'].forEach(id => { let img = document.getElementById(`img-t${id}`); let emoji = document.getElementById(`fall-${id}`); if(img && emoji) { if(pTrophies[trophyData[id].key]) { img.className = 'trophy-img trophy-unlocked'; emoji.style.filter = 'none'; emoji.style.opacity = '1'; } else { img.className = 'trophy-img trophy-locked'; emoji.style.filter = 'grayscale(100%)'; emoji.style.opacity = '0.3'; } } }); }
