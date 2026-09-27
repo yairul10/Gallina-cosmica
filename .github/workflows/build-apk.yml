@@ -81,7 +81,8 @@ jobs:
               android:value="ca-app-pub-3940256099942544~3347511713" />
           """
           if "com.google.android.gms.ads.APPLICATION_ID" not in s:
-              s = s.replace("<application", tag + "\n    <application", 1)
+              import re
+              s = re.sub(r'(<application\\b[^>]*>)', r'\\1\\n' + tag, s, count=1)
           p.write_text(s)
           PYADMOB
 
