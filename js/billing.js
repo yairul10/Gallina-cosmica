@@ -5,7 +5,7 @@
     monedas_1000000:  { amount:1000000,  label:'1.000.000' },
     monedas_5000000:  { amount:5000000,  label:'5.000.000' },
     monedas_15000000: { amount:15000000, label:'15.000.000' },
-    pack_50000000_fantasma: { amount:50000000, label:'50.000.000', cosmetic:'fantasma' }
+    monedas_50000000: { amount:50000000, label:'50.000.000', cosmetic:'fantasma' }
   };
   const plugin=()=>window.Capacitor?.Plugins?.GallinaBilling;
   const status=(t)=>{const e=document.getElementById('playCoinsStatus');if(e)e.textContent=t||'';};
