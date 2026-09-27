@@ -268,6 +268,7 @@
             <div class="shop-tabs">
                 <button class="shop-tab active" id="tabSkins" onclick="switchShopTab('skins')">Naves y Diseños</button>
                 <button class="shop-tab" id="tabBoosters" onclick="switchShopTab('boosters')">Potenciadores y Extras</button>
+                <button class="shop-tab" id="tabPlayCoins" onclick="switchShopTab('playcoins')">🪙 Comprar Monedas</button>
             </div>
             <div id="shopSkins" class="shop-grid">
                 <div class="shop-item"><h4>Gallina Base</h4><img id="shop-img-base-0" src="assets/gallina_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+20% a Maíz.</p><button class="shop-btn" id="btn-skin-base-0" onclick="buyShip(0, false, 0)">Comprado</button></div>
@@ -286,7 +287,7 @@
                 <div id="shop-pvp-toro-maoma" class="shop-item" style="display:none;border-color:#22c55e;"><h4>Toro Maoma</h4><img src="assets/toro_maoma.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">💎 Diamante · ❤️ 26 vidas · 🔧 reparación rápida.</p><button class="shop-btn" id="btn-buy-pvp-toro-maoma" onclick="buyPvpShip('toro_maoma')">🔒 Diamante</button></div>
                 <div id="shop-pvp-toro-mayor" class="shop-item" style="display:none;border-color:#a855f7;"><h4>Toro Mayor</h4><img src="assets/toro_mayor.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🌌 Leyenda · 👑 vida + cadencia + recuperación.</p><button class="shop-btn" id="btn-buy-pvp-toro-mayor" onclick="buyPvpShip('toro_mayor')">🔒 Leyenda Galáctica</button></div>
             </div>
-            <div id="playCoinsPurchase" style="margin:10px 0;padding:12px;border:1px solid #fbbf24;border-radius:14px;background:rgba(120,53,15,.22);text-align:center;">
+            <div id="playCoinsPurchase" style="display:none;margin:10px 0;padding:12px;border:1px solid #fbbf24;border-radius:14px;background:rgba(120,53,15,.22);text-align:center;">
                 <strong>🪙 Monedas de Google Play</strong>
                 <p style="font-size:.72rem;margin:5px 0 9px;color:#fde68a;">El precio final se obtiene directamente de Google Play.</p>
                 <div class="play-coin-pack-grid">
@@ -341,7 +342,7 @@
     <script src="js/update-notice.js?v=1"></script>
     <script src="js/estado.js?v=navidad-1"></script>
     <script src="js/assets.js?v=gallina-chile-1"></script>
-    <script src="js/ui.js?v=qa-scroll-hat-2"></script>
+    <script src="js/ui.js?v=shop-tabs-3"></script>
     <script src="js/entidades.js?v=christmas-hat-1"></script>
     <script src="js/main.js?v=revive-ad-test-1"></script>
     <script src="js/ads-test.js?v=1"></script>
