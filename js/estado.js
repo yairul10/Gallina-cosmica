@@ -59,6 +59,8 @@ if (gameStats.pvpUnlocked === undefined) gameStats.pvpUnlocked = false;
 if (gameStats.pvpGames === undefined) gameStats.pvpGames = 0;
 if (gameStats.pvpWins === undefined) gameStats.pvpWins = 0;
 if (gameStats.pvpKills === undefined) gameStats.pvpKills = 0;
+if (!gameStats.playOwnedPacks || typeof gameStats.playOwnedPacks !== 'object') gameStats.playOwnedPacks = {};
+if (!gameStats.packOfferCollapsed || typeof gameStats.packOfferCollapsed !== 'object') gameStats.packOfferCollapsed = { initial:false, pvp:false };
 
 if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
 
@@ -88,6 +90,42 @@ window.gallinaApplyPlayCoinPurchase = (purchaseToken, amount) => {
     document.getElementById('coinVal')?.replaceChildren(String(coins));
     document.getElementById('shopCoinsVal')?.replaceChildren(String(coins));
     return { success:true, applied:true, amount:value };
+};
+
+window.gallinaApplyPlayPackPurchase = (purchaseToken, productId) => {
+    const token=String(purchaseToken||''), product=String(productId||'');
+    if(!token || !['pack_inicial','pack_pvp'].includes(product)) return {success:false,invalid:true};
+    if(gameStats.playOwnedPacks[product]) return {success:true,alreadyApplied:true,productId:product};
+    const tokenSeen=gameStats.playPurchaseTokens.includes(token);
+    if(!tokenSeen){
+        const amount=product==='pack_inicial'?100000:500000;
+        gameStats.savedCoins+=amount; gameStats.totalCoins+=amount;
+        gameStats.playPurchaseTokens.push(token);
+        if(gameStats.playPurchaseTokens.length>200) gameStats.playPurchaseTokens=gameStats.playPurchaseTokens.slice(-200);
+    }
+    if(product==='pack_inicial'){
+        gameStats.skins[1]=true;
+        gameStats.extraModule=true;
+        gameStats.equipExtraModule=true;
+        gameStats.pendingBooster=Math.max(Number(gameStats.pendingBooster)||1,2.0);
+    }else{
+        gameStats.pvpShips.toro_aniquilador=true;
+        gameStats.pvpEvade=true;
+    }
+    gameStats.playOwnedPacks[product]=true;
+    coins=gameStats.savedCoins;
+    saveStats();
+    document.getElementById('coinVal')?.replaceChildren(String(coins));
+    document.getElementById('shopCoinsVal')?.replaceChildren(String(coins));
+    window.refreshGallinaEquipmentUI?.();
+    window.updatePackOffers?.();
+    return {success:true,applied:true,productId:product};
+};
+window.gallinaPackOwned = productId => !!gameStats.playOwnedPacks?.[productId];
+window.gallinaPackOfferCollapsed = key => !!gameStats.packOfferCollapsed?.[key];
+window.gallinaSetPackOfferCollapsed = (key,value) => {
+    if(!gameStats.packOfferCollapsed || typeof gameStats.packOfferCollapsed!=='object') gameStats.packOfferCollapsed={};
+    gameStats.packOfferCollapsed[key]=!!value; saveStats();
 };
 
 window.gallinaApplyCloudCoinReward = (rewardId, amount) => {
