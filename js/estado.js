@@ -72,6 +72,24 @@ function saveStats() {
 // de red entre la entrega local y el ACK del servidor no duplique monedas.
 if (!Array.isArray(gameStats.cloudRewardIds)) gameStats.cloudRewardIds = [];
 
+// Compras Google Play: el token evita acreditar dos veces la misma transacción.
+if (!Array.isArray(gameStats.playPurchaseTokens)) gameStats.playPurchaseTokens = [];
+window.gallinaApplyPlayCoinPurchase = (purchaseToken, amount) => {
+    const token = String(purchaseToken || '');
+    const value = Math.max(0, Math.floor(Number(amount) || 0));
+    if (!token || !value) return { success:false, invalid:true };
+    if (gameStats.playPurchaseTokens.includes(token)) return { success:true, alreadyApplied:true, amount:value };
+    gameStats.savedCoins += value;
+    gameStats.totalCoins += value;
+    gameStats.playPurchaseTokens.push(token);
+    if (gameStats.playPurchaseTokens.length > 200) gameStats.playPurchaseTokens = gameStats.playPurchaseTokens.slice(-200);
+    coins = gameStats.savedCoins;
+    saveStats();
+    document.getElementById('coinVal')?.replaceChildren(String(coins));
+    document.getElementById('shopCoinsVal')?.replaceChildren(String(coins));
+    return { success:true, applied:true, amount:value };
+};
+
 window.gallinaApplyCloudCoinReward = (rewardId, amount) => {
     const id = String(rewardId);
     const coins = Number(amount);
