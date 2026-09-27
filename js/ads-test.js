@@ -36,5 +36,4 @@ async function showReviveAd(onReward,status){
  }catch(e){console.warn('[AdMob TEST]',e);status?.('No se pudo cargar el anuncio de prueba.');busy=false;return false;}
 }
 window.GallinaAds={init,showReviveAd,isTestMode:true};
-window.addEventListener('load',()=>setTimeout(()=>init(),1200),{once:true});
 })();
