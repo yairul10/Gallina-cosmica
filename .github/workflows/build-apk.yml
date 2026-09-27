@@ -157,7 +157,53 @@ jobs:
                   if(result.getResponseCode()!=BillingClient.BillingResponseCode.OK || purchases==null || purchases.isEmpty()){call.reject("Compra no completada: "+result.getDebugMessage());return;}
                   Purchase p=purchases.get(0);
                   if(p.getPurchaseState()!=Purchase.PurchaseState.PURCHASED){call.reject("Compra pendiente o no completada");return;}
-                  JSObject out=new JSObject(); out.put("purchaseToken",p.getPurchaseToken()); out.put("orderId",p.getOrderId()); call.resolve(out);
+                  JSObject out=new JSObject(); out.put("purchaseToken",p.getPurchaseToken()); out.put("orderId",p.getOrderId()); out.put("products",new JSArray(p.getProducts())); call.resolve(out);
+              }
+
+              @PluginMethod
+              public void getProducts(PluginCall call) {
+                  JSArray ids=call.getArray("productIds");
+                  if(ids==null){call.reject("Faltan productIds");return;}
+                  List<QueryProductDetailsParams.Product> products=new ArrayList<>();
+                  try {
+                      for(Object raw: ids.toList()){
+                          String id=String.valueOf(raw);
+                          products.add(QueryProductDetailsParams.Product.newBuilder().setProductId(id).setProductType(BillingClient.ProductType.INAPP).build());
+                      }
+                  } catch(Exception e){call.reject("productIds inválidos");return;}
+                  connect(() -> {
+                      QueryProductDetailsParams q=QueryProductDetailsParams.newBuilder().setProductList(products).build();
+                      client.queryProductDetailsAsync(q,(r,detailsResult)->{
+                          if(r.getResponseCode()!=BillingClient.BillingResponseCode.OK){call.reject("No se pudieron consultar los productos: "+r.getDebugMessage());return;}
+                          JSArray out=new JSArray();
+                          for(ProductDetails d: detailsResult.getProductDetailsList()){
+                              JSObject item=new JSObject(); item.put("productId",d.getProductId());
+                              List<ProductDetails.OneTimePurchaseOfferDetails> offers=d.getOneTimePurchaseOfferDetailsList();
+                              if(offers!=null && !offers.isEmpty()) item.put("formattedPrice",offers.get(0).getFormattedPrice());
+                              out.put(item);
+                          }
+                          JSObject result=new JSObject(); result.put("products",out); call.resolve(result);
+                      });
+                  }, call);
+              }
+
+              @PluginMethod
+              public void getPurchases(PluginCall call) {
+                  connect(() -> {
+                      QueryPurchasesParams q=QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build();
+                      client.queryPurchasesAsync(q,(r,purchases)->{
+                          if(r.getResponseCode()!=BillingClient.BillingResponseCode.OK){call.reject("No se pudieron recuperar compras: "+r.getDebugMessage());return;}
+                          JSArray out=new JSArray();
+                          for(Purchase p:purchases){
+                              if(p.getPurchaseState()!=Purchase.PurchaseState.PURCHASED) continue;
+                              JSObject item=new JSObject();
+                              item.put("purchaseToken",p.getPurchaseToken());
+                              item.put("products",new JSArray(p.getProducts()));
+                              out.put(item);
+                          }
+                          JSObject result=new JSObject(); result.put("purchases",out); call.resolve(result);
+                      });
+                  }, call);
               }
 
               @PluginMethod
@@ -245,8 +291,8 @@ jobs:
           from pathlib import Path
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          s = s.replace("versionCode 1", "versionCode 63")
-          s = s.replace('versionName "1.0"', 'versionName "1.4.33"')
+          s = s.replace("versionCode 1", "versionCode 64")
+          s = s.replace('versionName "1.0"', 'versionName "1.4.34"')
           p.write_text(s)
           PY2
 
