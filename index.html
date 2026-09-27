@@ -286,7 +286,8 @@
                 <div id="shop-pvp-toro-maoma" class="shop-item" style="display:none;border-color:#22c55e;"><h4>Toro Maoma</h4><img src="assets/toro_maoma.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">💎 Diamante · ❤️ 26 vidas · 🔧 reparación rápida.</p><button class="shop-btn" id="btn-buy-pvp-toro-maoma" onclick="buyPvpShip('toro_maoma')">🔒 Diamante</button></div>
                 <div id="shop-pvp-toro-mayor" class="shop-item" style="display:none;border-color:#a855f7;"><h4>Toro Mayor</h4><img src="assets/toro_mayor.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🌌 Leyenda · 👑 vida + cadencia + recuperación.</p><button class="shop-btn" id="btn-buy-pvp-toro-mayor" onclick="buyPvpShip('toro_mayor')">🔒 Leyenda Galáctica</button></div>
             </div>
-            <div id="shopBoosters" class="shop-grid" style="display: none;">
+            <div id="playCoinsPurchase" style="margin:10px 0;padding:12px;border:1px solid #fbbf24;border-radius:14px;background:rgba(120,53,15,.22);text-align:center;"><strong>🪙 Paquete de monedas</strong><p style="font-size:.8rem;margin:5px 0 8px;">500.000 monedas · El precio final lo muestra Google Play.</p><button class="shop-btn" id="buyPlayCoins500k" onclick="GallinaBilling.buy500k()">🛒 Comprar 500.000 🪙</button><p id="playCoinsStatus" style="min-height:18px;font-size:.72rem;color:#fde68a;margin:6px 0 0;"></p></div>
+                <div id="shopBoosters" class="shop-grid" style="display: none;">
                 <!-- EXTRA AUTO-VIDA -->
                 <div id="shop-pvp-evade-card" class="shop-item" style="grid-column: span 2; display:none; border-color:#22d3ee;"><h4>🌀 Campo de Interferencia PvP (Permanente)</h4><p style="font-size:0.8rem;">Rompe la fijación enemiga y evita que vuelvan a seleccionarte durante 2 s.</p><button class="shop-btn" id="btn-buy-pvp-evade" onclick="buyPvpEvade()">🪙 500,000</button></div>
                 <div id="shop-pvp-emergency-life-card" class="shop-item" style="grid-column: span 2; display:none; border-color:#fb7185;"><h4>❤️‍🩹 Reparación de Emergencia PvP (Permanente)</h4><p style="font-size:0.8rem;">Al quedar en 1 vida recupera +5 automáticamente. Enfriamiento: 20 s. Nunca supera la vida máxima de tu nave.</p><button class="shop-btn" id="btn-buy-pvp-emergency-life" onclick="buyPvpEmergencyLife()">🪙 20,000,000</button></div>
@@ -333,6 +334,7 @@
     <script src="js/entidades.js?v=christmas-hat-1"></script>
     <script src="js/main.js?v=revive-ad-test-1"></script>
     <script src="js/ads-test.js?v=1"></script>
+    <script src="js/billing.js?v=1"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=pvp-rank-reward-1"></script>
     <script src="js/pvp.js?v=queue-games-2"></script>
