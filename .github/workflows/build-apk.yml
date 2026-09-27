@@ -31,6 +31,7 @@ jobs:
           npm install @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8
           npm install @capacitor/splash-screen@8
           npm install @capacitor-community/admob@8
+          # Google Play Billing 9.1.0 se agrega al proyecto Android después de crear Capacitor.
           npm install --save-dev @capacitor/assets
 
       - name: Preparar juego
@@ -69,6 +70,27 @@ jobs:
         run: |
           npx cap init "Gallina Cosmica" "com.gallinacosmica.app" --web-dir www
           npx cap add android
+
+      - name: Configurar Google Play Billing
+        run: |
+          python3 - <<'PYBILLING'
+          from pathlib import Path
+
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          dep = '    implementation "com.android.billingclient:billing:9.1.0"\n'
+          if "com.android.billingclient:billing:" not in s:
+              marker = "dependencies {"
+              pos = s.find(marker)
+              if pos < 0:
+                  raise RuntimeError("No se encontro dependencies en android/app/build.gradle")
+              insert = pos + len(marker)
+              s = s[:insert] + "\n" + dep + s[insert:]
+          p.write_text(s)
+
+          if "com.android.billingclient:billing:9.1.0" not in p.read_text():
+              raise RuntimeError("Google Play Billing 9.1.0 no fue agregado")
+          PYBILLING
 
       - name: Configurar AdMob de prueba
         run: |
@@ -126,8 +148,8 @@ jobs:
           from pathlib import Path
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          s = s.replace("versionCode 1", "versionCode 61")
-          s = s.replace('versionName "1.0"', 'versionName "1.4.31"')
+          s = s.replace("versionCode 1", "versionCode 62")
+          s = s.replace('versionName "1.0"', 'versionName "1.4.32"')
           p.write_text(s)
           PY2
 
