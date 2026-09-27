@@ -14,7 +14,7 @@
         <canvas id="gameCanvas"></canvas>
         <div class="ui-layer">
             <div id="activeTutorialOverlay" style="display:none;"><div id="activeTutorialText"></div><button id="tutorialOkBtn" class="btn" style="display: none; position: relative; z-index: 101;" onclick="finishTutorial()">¡Entendido!</button></div>
-            <div class="header-score"><div class="header-left"><div>Pts: <span id="scoreVal">0</span></div><div>🪙 <span id="coinVal">0</span> <span id="trophiesVal"></span></div></div><div class="header-right"><button class="icon-btn" id="playGamesBtn" title="Conectar con Google Play Games" aria-label="Conectar con Google Play Games" style="display:none; font-size:1.2rem;">🎮</button><button class="icon-btn" id="pauseBtn" title="Pausar Juego">⏸️</button><div id="livesVal">❤️ x3</div></div></div>
+            <div class="header-score"><div class="header-left"><div>Pts: <span id="scoreVal">0</span></div><div>🪙 <span id="coinVal">0</span> <button id="coinShopPlusBtn" type="button" aria-label="Comprar monedas" title="Comprar monedas" style="margin-left:5px;width:25px;height:25px;border-radius:50%;border:1px solid #fbbf24;background:#92400e;color:#fff;font-weight:900;line-height:20px;padding:0;">+</button> <span id="trophiesVal"></span></div></div><div class="header-right"><button class="icon-btn" id="playGamesBtn" title="Conectar con Google Play Games" aria-label="Conectar con Google Play Games" style="display:none; font-size:1.2rem;">🎮</button><button class="icon-btn" id="pauseBtn" title="Pausar Juego">⏸️</button><div id="livesVal">❤️ x3</div></div></div>
             <div id="hud-bullets" class="draggable-btn" data-type="bullets" style="display: none;"><div class="hud-cost">🪙100</div><div class="hud-emoji">⚔️</div><div class="hud-lvl">Lv.0</div></div>
             <div id="hud-speed" class="draggable-btn" data-type="speed" style="display: none;"><div class="hud-cost">🪙100</div><div class="hud-emoji">⚡</div><div class="hud-lvl">Lv.1</div></div>
             <div id="hud-life-evolve" class="draggable-btn" data-type="btn3" style="display: none;"><div class="hud-cost">🪙150</div><div class="hud-emoji">❤️</div><div class="hud-lvl">+1</div></div>
@@ -31,6 +31,18 @@
             <div id="menuThemeOverlay" class="menu-theme-overlay" aria-hidden="true"></div>
             <div class="main-menu-content">
                 <img class="menu-logo" src="assets/logo-granja-espacial.png" alt="Granja Espacial Épica">
+                <div id="starterPackOffer" style="display:none;position:absolute;left:8px;top:84px;z-index:8;width:min(76vw,290px);padding:10px;border:1px solid #fbbf24;border-radius:14px;background:rgba(15,23,42,.97);box-shadow:0 8px 24px rgba(0,0,0,.45);text-align:left;">
+                    <button type="button" onclick="collapsePackOffer('initial')" aria-label="Plegar Pack Inicial" style="position:absolute;right:6px;top:5px;border:0;background:transparent;color:#fff;font-size:1rem;">✕</button>
+                    <b style="color:#fde68a;">🐣 Pack Inicial</b><div style="font-size:.72rem;color:#e2e8f0;margin:5px 20px 8px 0;">🪙 100.000 · 🐑 Oveja · ❤️ Auto-Vida · 🔥 +100% daño (1 partida)</div>
+                    <button class="btn" data-play-product="pack_inicial" onclick="GallinaBilling.buy('pack_inicial')" style="margin:0;padding:7px 10px;font-size:.74rem;background:#d97706;">Comprar · <span data-play-price="pack_inicial">Ver precio</span></button>
+                </div>
+                <button id="starterPackIcon" type="button" onclick="expandPackOffer('initial')" aria-label="Ver Pack Inicial" style="display:none;position:absolute;left:8px;top:92px;z-index:8;width:48px;height:48px;border-radius:14px;border:2px solid #fbbf24;background:#451a03;font-size:1.45rem;">🐣</button>
+                <div id="pvpPackOffer" style="display:none;position:absolute;left:8px;top:84px;z-index:9;width:min(76vw,290px);padding:10px;border:1px solid #22d3ee;border-radius:14px;background:rgba(15,23,42,.97);box-shadow:0 8px 24px rgba(0,0,0,.45);text-align:left;">
+                    <button type="button" onclick="collapsePackOffer('pvp')" aria-label="Plegar Pack PvP" style="position:absolute;right:6px;top:5px;border:0;background:transparent;color:#fff;font-size:1rem;">✕</button>
+                    <b style="color:#67e8f9;">⚔️ Pack PvP</b><div style="font-size:.72rem;color:#e2e8f0;margin:5px 20px 8px 0;">🪙 500.000 · 🐂 Toro Aniquilador · 🌀 Campo de Interferencia permanente</div>
+                    <button class="btn" data-play-product="pack_pvp" onclick="GallinaBilling.buy('pack_pvp')" style="margin:0;padding:7px 10px;font-size:.74rem;background:#0e7490;">Comprar · <span data-play-price="pack_pvp">Ver precio</span></button>
+                </div>
+                <button id="pvpPackIcon" type="button" onclick="expandPackOffer('pvp')" aria-label="Ver Pack PvP" style="display:none;position:absolute;left:8px;top:148px;z-index:8;width:48px;height:48px;border-radius:14px;border:2px solid #22d3ee;background:#083344;font-size:1.45rem;">⚔️</button>
                 <div id="menuShipWrap" class="menu-ship-wrap">
                     <img id="menuSelectedShip" class="menu-ship" src="assets/gallina_1.png" alt="Nave seleccionada">
                     <span id="menuSantaHat" class="menu-santa-hat" aria-hidden="true"><img src="assets/ship-santa-hat.svg?v=2" alt=""></span>
@@ -340,13 +352,13 @@
     <script src="js/player-identity-qa.js?v=14"></script>
     <script src="js/play-games-auth.js?v=6"></script>
     <script src="js/update-notice.js?v=1"></script>
-    <script src="js/estado.js?v=navidad-1"></script>
+    <script src="js/estado.js?v=packs-1"></script>
     <script src="js/assets.js?v=gallina-chile-1"></script>
-    <script src="js/ui.js?v=shop-tabs-3"></script>
+    <script src="js/ui.js?v=packs-1"></script>
     <script src="js/entidades.js?v=christmas-hat-1"></script>
     <script src="js/main.js?v=revive-ad-test-1"></script>
     <script src="js/ads-test.js?v=1"></script>
-    <script src="js/billing.js?v=2"></script>
+    <script src="js/billing.js?v=packs-1"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=pvp-rank-reward-1"></script>
     <script src="js/pvp.js?v=queue-games-2"></script>
