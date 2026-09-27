@@ -15,29 +15,33 @@ window.addEventListener('keyup', (e) => { if (e.code in keys) keys[e.code] = fal
 
 // El récord ahora se guarda automáticamente al terminar o abandonar la partida.
 
+function reviveCurrentGame() {
+    lives = 3;
+    if (typeof window.isSuperBossModeActive === 'undefined' || !window.isSuperBossModeActive) enemies.length = 0;
+    bossBullets.length = 0;
+    shieldActive = true; partialHit = false;
+    updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none';
+    document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; });
+    if (gameStats.controlMode === 'drag') document.getElementById('hud-joystick').style.display = 'none';
+    updateUpgradesHUD(); gameState = 'PLAYING'; previousState = 'PLAYING';
+    if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
+    if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
+    window.gameTimerInterval = setInterval(() => {
+        if (window.QA_MODE && typeof window.qaIsSimulationClockActive === 'function' && window.qaIsSimulationClockActive()) return;
+        if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); }
+    }, 1000);
+}
 document.getElementById('reviveBtn').addEventListener('click', () => {
-    if (coins >= 10000) {
-        coins -= 10000; gameStats.savedCoins = coins; saveStats(); lives = 3; 
-        if (typeof window.isSuperBossModeActive === 'undefined' || !window.isSuperBossModeActive) {
-            enemies.length = 0; 
-        }
-        bossBullets.length = 0; 
-        
-        shieldActive = true; partialHit = false; 
-        updateLivesUI(); updateUpgradesHUD(); document.getElementById('gameOverScreen').style.display = 'none'; 
-        document.querySelectorAll('.draggable-btn').forEach(b => { b.style.display = 'flex'; }); 
-        if (gameStats.controlMode === 'drag') { document.getElementById('hud-joystick').style.display = 'none'; }
-        updateUpgradesHUD();
-        gameState = 'PLAYING'; previousState = 'PLAYING'; 
-        if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e));
-        if (window.gameTimerInterval) clearInterval(window.gameTimerInterval);
-        window.gameTimerInterval = setInterval(() => { 
-            // Durante una serie QA el reloj avanza desde los pasos de simulación.
-            if (window.QA_MODE && typeof window.qaIsSimulationClockActive === 'function' && window.qaIsSimulationClockActive()) return;
-            if (gameState === 'PLAYING') { gameTime++; sessionTimeNoHit++; if (sessionTimeNoHit >= 100) unlockAchievement('a13'); if (gameTime >= 300) unlockAchievement('a14'); } 
-        }, 1000);
-    }
+    if (coins >= 10000) { coins -= 10000; gameStats.savedCoins = coins; saveStats(); reviveCurrentGame(); }
 });
+document.getElementById('reviveAdBtn')?.addEventListener('click', async () => {
+    const btn=document.getElementById('reviveAdBtn'),status=document.getElementById('reviveAdStatus');
+    if(btn.disabled)return;btn.disabled=true;btn.style.opacity=.65;
+    const setStatus=t=>{if(status)status.textContent=t;};
+    const ok=await window.GallinaAds?.showReviveAd(()=>reviveCurrentGame(),setStatus);
+    if(!ok||document.getElementById('gameOverScreen').style.display!=='none'){setTimeout(()=>{btn.disabled=false;btn.style.opacity=1;},800);}
+});
+
 
 window.startGame = function() {
     if (!bgMusic.muted) bgMusic.play().catch(e => console.log(e)); 
