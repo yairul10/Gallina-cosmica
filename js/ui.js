@@ -325,7 +325,7 @@ function updateShopUI() {
     let bEvade = document.getElementById('btn-buy-pvp-evade');
     if (bEvade) {
         if (gameStats.pvpEvade) { bEvade.textContent = 'Comprado'; bEvade.style.background = '#475569'; bEvade.disabled = true; }
-        else { bEvade.textContent = '🪙 500,000'; bEvade.style.background = '#10b981'; bEvade.disabled = (coins < 500000); }
+        else { bEvade.textContent = '🪙 5,000,000'; bEvade.style.background = '#10b981'; bEvade.disabled = (coins < 5000000); }
     }
 
     let bEmergency = document.getElementById('btn-buy-pvp-emergency-life');
@@ -366,7 +366,7 @@ window.buyPvpShip = function(id) {
     if(!gameStats.pvpShips?.[id]&&coins>=cost){coins-=cost;gameStats.savedCoins=coins;gameStats.pvpShips[id]=true;saveStats();updateShopUI();updateHangarUI();}
 }
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
-window.buyPvpEvade = function() { if (gameStats.pvpUnlocked && !gameStats.pvpEvade && coins >= 500000) { coins -= 500000; gameStats.savedCoins = coins; gameStats.pvpEvade = true; saveStats(); updateShopUI(); } }
+window.buyPvpEvade = function() { if (gameStats.pvpUnlocked && !gameStats.pvpEvade && coins >= 5000000) { coins -= 5000000; gameStats.savedCoins = coins; gameStats.pvpEvade = true; saveStats(); updateShopUI(); } }
 window.buyPvpEmergencyLife = function() { if (gameStats.pvpUnlocked && !gameStats.pvpEmergencyLife && coins >= 20000000) { coins -= 20000000; gameStats.savedCoins = coins; gameStats.pvpEmergencyLife = true; saveStats(); updateShopUI(); } }
 window.buyAutoLife = function() { if (!gameStats.extraModule && coins >= 250000) { coins -= 250000; gameStats.savedCoins = coins; gameStats.extraModule = true; gameStats.equipExtraModule = true; saveStats(); updateShopUI(); } }
 
