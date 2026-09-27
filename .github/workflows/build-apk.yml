@@ -171,17 +171,26 @@ jobs:
               }
           }
           JAVA
-          cat > android/app/src/main/java/com/gallinacosmica/app/MainActivity.java <<'JAVA'
-          package com.gallinacosmica.app;
-          import android.os.Bundle;
-          import com.getcapacitor.BridgeActivity;
-          public class MainActivity extends BridgeActivity {
-              @Override public void onCreate(Bundle savedInstanceState) {
-                  registerPlugin(GallinaBillingPlugin.class);
-                  super.onCreate(savedInstanceState);
-              }
-          }
-          JAVA
+          # Capacitor ya genera MainActivity.java y configure_play_games.py añade su
+          # propio onCreate. No reemplazamos la Activity: insertamos únicamente
+          # el registro del plugin dentro del onCreate existente.
+          python3 - <<'PYREGISTER'
+          from pathlib import Path
+          p = Path("android/app/src/main/java/com/gallinacosmica/app/MainActivity.java")
+          s = p.read_text()
+          line = "        registerPlugin(GallinaBillingPlugin.class);"
+          if "registerPlugin(GallinaBillingPlugin.class)" not in s:
+              marker = "super.onCreate(savedInstanceState);"
+              if marker in s:
+                  s = s.replace(marker, line + "\\n        " + marker, 1)
+              else:
+                  marker = "public class MainActivity extends BridgeActivity {"
+                  if marker not in s:
+                      raise RuntimeError("No se encontro MainActivity de Capacitor")
+                  method = "\\n    @Override\\n    public void onCreate(android.os.Bundle savedInstanceState) {\\n" + line + "\\n        super.onCreate(savedInstanceState);\\n    }\\n"
+                  s = s.replace(marker, marker + method, 1)
+          p.write_text(s)
+          PYREGISTER
 
       - name: Configurar AdMob de prueba
         run: |
