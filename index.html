@@ -286,7 +286,18 @@
                 <div id="shop-pvp-toro-maoma" class="shop-item" style="display:none;border-color:#22c55e;"><h4>Toro Maoma</h4><img src="assets/toro_maoma.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">💎 Diamante · ❤️ 26 vidas · 🔧 reparación rápida.</p><button class="shop-btn" id="btn-buy-pvp-toro-maoma" onclick="buyPvpShip('toro_maoma')">🔒 Diamante</button></div>
                 <div id="shop-pvp-toro-mayor" class="shop-item" style="display:none;border-color:#a855f7;"><h4>Toro Mayor</h4><img src="assets/toro_mayor.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🌌 Leyenda · 👑 vida + cadencia + recuperación.</p><button class="shop-btn" id="btn-buy-pvp-toro-mayor" onclick="buyPvpShip('toro_mayor')">🔒 Leyenda Galáctica</button></div>
             </div>
-            <div id="playCoinsPurchase" style="margin:10px 0;padding:12px;border:1px solid #fbbf24;border-radius:14px;background:rgba(120,53,15,.22);text-align:center;"><strong>🪙 Paquete de monedas</strong><p style="font-size:.8rem;margin:5px 0 8px;">500.000 monedas · El precio final lo muestra Google Play.</p><button class="shop-btn" id="buyPlayCoins500k" onclick="GallinaBilling.buy500k()">🛒 Comprar 500.000 🪙</button><p id="playCoinsStatus" style="min-height:18px;font-size:.72rem;color:#fde68a;margin:6px 0 0;"></p></div>
+            <div id="playCoinsPurchase" style="margin:10px 0;padding:12px;border:1px solid #fbbf24;border-radius:14px;background:rgba(120,53,15,.22);text-align:center;">
+                <strong>🪙 Monedas de Google Play</strong>
+                <p style="font-size:.72rem;margin:5px 0 9px;color:#fde68a;">El precio final se obtiene directamente de Google Play.</p>
+                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;">
+                    <button class="shop-btn" data-play-product="monedas_500000" onclick="GallinaBilling.buy('monedas_500000')">🪙 500.000<br><small data-play-price="monedas_500000">Ver precio</small></button>
+                    <button class="shop-btn" data-play-product="monedas_1000000" onclick="GallinaBilling.buy('monedas_1000000')">🪙 1.000.000<br><small data-play-price="monedas_1000000">Ver precio</small></button>
+                    <button class="shop-btn" data-play-product="monedas_5000000" onclick="GallinaBilling.buy('monedas_5000000')">🪙 5.000.000<br><small data-play-price="monedas_5000000">Ver precio</small></button>
+                    <button class="shop-btn" data-play-product="monedas_15000000" onclick="GallinaBilling.buy('monedas_15000000')">🪙 15.000.000<br><small data-play-price="monedas_15000000">Ver precio</small></button>
+                    <button class="shop-btn" data-play-product="pack_50000000_fantasma" onclick="GallinaBilling.buy('pack_50000000_fantasma')" style="grid-column:1/-1;border-color:#a78bfa;background:linear-gradient(135deg,#312e81,#6d28d9);">👻 50.000.000 + Diseño Fantasma<br><small data-play-price="pack_50000000_fantasma">Ver precio</small></button>
+                </div>
+                <p id="playCoinsStatus" style="min-height:18px;font-size:.72rem;color:#fde68a;margin:7px 0 0;"></p>
+            </div>
                 <div id="shopBoosters" class="shop-grid" style="display: none;">
                 <!-- EXTRA AUTO-VIDA -->
                 <div id="shop-pvp-evade-card" class="shop-item" style="grid-column: span 2; display:none; border-color:#22d3ee;"><h4>🌀 Campo de Interferencia PvP (Permanente)</h4><p style="font-size:0.8rem;">Rompe la fijación enemiga y evita que vuelvan a seleccionarte durante 2 s.</p><button class="shop-btn" id="btn-buy-pvp-evade" onclick="buyPvpEvade()">🪙 500,000</button></div>
@@ -334,7 +345,7 @@
     <script src="js/entidades.js?v=christmas-hat-1"></script>
     <script src="js/main.js?v=revive-ad-test-1"></script>
     <script src="js/ads-test.js?v=1"></script>
-    <script src="js/billing.js?v=1"></script>
+    <script src="js/billing.js?v=2"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=pvp-rank-reward-1"></script>
     <script src="js/pvp.js?v=queue-games-2"></script>
