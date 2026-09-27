@@ -265,10 +265,21 @@ window.setShipCosmetic = async function(cosmetic){
 window.equipExtra = function() { if (gameStats.extraModule) { gameStats.equipExtraModule = !gameStats.equipExtraModule; saveStats(); updateHangarUI(); } }
 
 window.switchShopTab = function(tab) {
-    document.getElementById('tabSkins').classList.remove('active'); document.getElementById('tabBoosters').classList.remove('active');
-    document.getElementById('shopSkins').style.display = 'none'; document.getElementById('shopBoosters').style.display = 'none';
-    if (tab === 'skins') { document.getElementById('tabSkins').classList.add('active'); document.getElementById('shopSkins').style.display = 'grid'; }
-    else { document.getElementById('tabBoosters').classList.add('active'); document.getElementById('shopBoosters').style.display = 'grid'; }
+    const tabs = {
+        skins: document.getElementById('tabSkins'),
+        boosters: document.getElementById('tabBoosters'),
+        playcoins: document.getElementById('tabPlayCoins')
+    };
+    const panes = {
+        skins: document.getElementById('shopSkins'),
+        boosters: document.getElementById('shopBoosters'),
+        playcoins: document.getElementById('playCoinsPurchase')
+    };
+    Object.values(tabs).forEach(el => el?.classList.remove('active'));
+    Object.values(panes).forEach(el => { if (el) el.style.display = 'none'; });
+    tabs[tab]?.classList.add('active');
+    if (panes[tab]) panes[tab].style.display = tab === 'playcoins' ? 'block' : 'grid';
+    if (tab === 'playcoins') window.GallinaBilling?.loadPrices?.();
 }
 
 function updateShopUI() {
