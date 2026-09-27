@@ -182,12 +182,12 @@ jobs:
           if "registerPlugin(GallinaBillingPlugin.class)" not in s:
               marker = "super.onCreate(savedInstanceState);"
               if marker in s:
-                  s = s.replace(marker, line + "\\n        " + marker, 1)
+                  s = s.replace(marker, line + "\n        " + marker, 1)
               else:
                   marker = "public class MainActivity extends BridgeActivity {"
                   if marker not in s:
                       raise RuntimeError("No se encontro MainActivity de Capacitor")
-                  method = "\\n    @Override\\n    public void onCreate(android.os.Bundle savedInstanceState) {\\n" + line + "\\n        super.onCreate(savedInstanceState);\\n    }\\n"
+                  method = "\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n" + line + "\n        super.onCreate(savedInstanceState);\n    }\n"
                   s = s.replace(marker, marker + method, 1)
           p.write_text(s)
           PYREGISTER
