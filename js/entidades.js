@@ -220,7 +220,10 @@ window.drawPlayerShip = function(x, y) {
             ctx.globalAlpha=.18;ctx.filter='brightness(0) saturate(100%) invert(88%) sepia(34%) saturate(920%) hue-rotate(140deg) brightness(105%)';
             [[-2,0],[2,0],[0,-2],[0,2]].forEach(([ox,oy])=>ctx.drawImage(currentImg,x+ox,y+oy,player.width,player.height));
             ctx.globalAlpha=.64;ctx.filter='grayscale(1) sepia(1) hue-rotate(128deg) saturate(3.2) brightness(1.48) contrast(.82)';ctx.drawImage(currentImg,x,y,player.width,player.height);
-            ctx.globalCompositeOperation='screen';ctx.globalAlpha=.17;ctx.fillStyle='#dffcff';ctx.fillRect(x,y,player.width,player.height);ctx.restore();
+            // El halo ya lo aporta el gradiente radial. Evitar un fillRect con
+            // composite "screen" aquí: pinta también los píxeles transparentes
+            // del rectángulo del sprite y hacía visible una caja celeste offline.
+            ctx.restore();
         }else if(cosmetic==='halloween'){
             ctx.save();ctx.filter='sepia(.48) hue-rotate(265deg) saturate(1.65) contrast(1.12)';ctx.drawImage(currentImg,x,y,player.width,player.height);ctx.restore();
         }else if(cosmetic==='navidad'){
