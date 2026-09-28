@@ -918,6 +918,13 @@ export class PvpRanking {
 
     if(request.method==='GET'){
       const ranking=this.sort(state.players).slice(0,100).map(p=>({...p,rank:this.rankFor(p.cups)}));
+      // El Toro de Rubí es un logro permanente: el servidor registra a quien
+      // haya ocupado el #1. Este chequeo también cubre al líder existente al
+      // desplegar por primera vez la función.
+      const currentTopId=safeText(ranking[0]?.playerId,'',128);
+      if(currentTopId && !(await this.ctx.storage.get('trophy:pvp-top1:'+currentTopId))){
+        await this.ctx.storage.put('trophy:pvp-top1:'+currentTopId,{unlocked:true,unlockedAt:Date.now()});
+      }
       const playerId=safeText(url.searchParams.get('playerId'),'',128);
       const record=playerId&&state.players[playerId]?{...state.players[playerId],rank:this.rankFor(state.players[playerId].cups)}:null;
       const pendingMonthly=playerId?Object.values(state.monthlyAwards).filter(r=>r.playerId===playerId&&!r.claimed):[];
@@ -925,7 +932,8 @@ export class PvpRanking {
       const matchId=safeText(url.searchParams.get('matchId'),'',80);
       const settlement=playerId&&matchId?(await this.ctx.storage.get('settlement:'+playerId+'|'+matchId))||null:null;
       const monthlyConfig=await this.monthlyPrizeConfig(state.activeMonth,Date.now());
-      return json({ok:true,month:state.activeMonth,ranking,record,settlement,pendingMonthly,claimedRankRewards,monthlyConfig,eventTheme:await this.eventThemeForPlayer(playerId),menuTheme:(await this.menuThemeConfig()).theme});
+      const top1Trophy=playerId?!!(await this.ctx.storage.get('trophy:pvp-top1:'+playerId)):false;
+      return json({ok:true,month:state.activeMonth,ranking,record,settlement,pendingMonthly,claimedRankRewards,top1Trophy,monthlyConfig,eventTheme:await this.eventThemeForPlayer(playerId),menuTheme:(await this.menuThemeConfig()).theme});
     }
 
     if(url.pathname==='/monthly-reward'){
@@ -1034,6 +1042,13 @@ export class PvpRanking {
     seen[dedupe]=Date.now();
     const keys=Object.keys(seen); if(keys.length>1000) keys.sort((x,y)=>seen[x]-seen[y]).slice(0,keys.length-1000).forEach(k=>delete seen[k]);
     await this.ctx.storage.put({players,seen});
+    // Si este resultado coloca al jugador en el #1, el logro queda guardado
+    // para siempre aunque posteriormente pierda la posición.
+    const topAfterSettlement=this.sort(players)[0];
+    if(String(topAfterSettlement?.playerId||'')===String(playerId)){
+      const trophyKey='trophy:pvp-top1:'+playerId;
+      if(!(await this.ctx.storage.get(trophyKey)))await this.ctx.storage.put(trophyKey,{unlocked:true,unlockedAt:Date.now()});
+    }
     const settlement={playerId,matchId,delta:appliedDelta,baseDelta,cups:newCups,mode,placement,botKills,humanKills,result,boostApplied,shieldUsed,createdAt:Date.now()};
     await this.ctx.storage.put('settlement:'+dedupe,settlement);
     return json({ok:true,delta:appliedDelta,settlement,record:{...record,rank:this.rankFor(record.cups)},month:state.activeMonth});
