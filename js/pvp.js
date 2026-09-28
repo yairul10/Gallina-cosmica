@@ -2190,7 +2190,7 @@
   const PVP_RANK_REWARDS=PVP_RANKS.map((rank,index)=>({
     ...rank,
     amount:[0,100000,200000,500000,1000000,3000000,10000000][index],
-    unlock:index===4?'🔓 Nuevas naves disponibles en la tienda':index===6?'🔓 Nueva nave disponible en la tienda':''
+    unlock:index===3?'🔓 Toro Oscuro, Toro Luz y Toro Maoma disponibles en la tienda':index===5?'🔓 Toro Mayor disponible en la tienda':''
   }));
   const formatCoins=n=>Number(n||0).toLocaleString('es-CL');
   async function claimPvpRankReward(floor){
@@ -2258,6 +2258,7 @@
       window.gallinaSetGlobalMenuTheme?.(data.menuTheme);
       const cups=Number(my?.cups||0),claimed=new Set((data.claimedRankRewards||[]).map(Number)),pendingMonthly=Array.isArray(data.pendingMonthly)?data.pendingMonthly:[];
       window.gallinaSetPvpRankUnlocks?.([...claimed]);
+      if(data.top1Trophy)window.gallinaUnlockPvpTop1Trophy?.();
       const season=document.createElement('div');
       season.style.cssText='margin:8px 0;padding:10px;border:1px solid rgba(168,85,247,.45);border-radius:11px;background:linear-gradient(135deg,rgba(76,29,149,.34),rgba(15,23,42,.65));text-align:center;cursor:pointer;';
       const seasonTitle=document.createElement('div');seasonTitle.style.cssText='font-weight:900;color:#e9d5ff;font-size:.92rem;';seasonTitle.textContent='🏆 Temporada '+seasonLabel(data.month);
