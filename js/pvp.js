@@ -1828,12 +1828,23 @@
   }
   function drawRankedPlayerName(state,player){
     const rank=pvpRankFromPlayer(player);
-    const prefix=pvpMode==='2v2'&&Number(player.team)===myTeam?'🤝 ':'⚔️ ';
-    const label=prefix+(player.name||('J'+player.slot));
+    // El rango ya identifica visualmente al jugador: evitamos espadas/manos para
+    // mantener limpio el nombre y reservamos una línea superior al TOP 1/2/3.
+    const label=player.name||('J'+player.slot);
     const iconSize=16,gap=3,baseline=state.y-34;
     arenaCtx.save();arenaCtx.font='bold 10px sans-serif';
     const width=arenaCtx.measureText(label).width+iconSize+gap;
     const left=state.x-width/2;
+    const topPosition=Math.max(0,Math.min(3,Number(player.topPosition)||0));
+    if(topPosition){
+      const topColors={1:'#fbbf24',2:'#d1d5db',3:'#b87333'};
+      arenaCtx.save();
+      arenaCtx.font='bold 11px sans-serif';arenaCtx.textAlign='center';arenaCtx.textBaseline='alphabetic';
+      arenaCtx.fillStyle=topColors[topPosition];
+      arenaCtx.shadowColor='rgba(0,0,0,.85)';arenaCtx.shadowBlur=3;
+      arenaCtx.fillText('TOP '+topPosition,state.x,baseline-15);
+      arenaCtx.restore();
+    }
     if(rank.icon){
       arenaCtx.save();arenaCtx.font='16px sans-serif';arenaCtx.textAlign='left';arenaCtx.textBaseline='alphabetic';
       arenaCtx.fillText(rank.icon,left,baseline);arenaCtx.restore();
