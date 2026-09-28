@@ -240,6 +240,8 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 .trophy-img { width: 40px; height: 40px; object-fit: contain; position: relative; z-index: 2; transition: filter 0.3s; }
 .trophy-locked { filter: grayscale(100%) opacity(30%); }
 .trophy-unlocked { filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.9)); }
+.trophy-ruby.trophy-locked { filter: grayscale(100%) opacity(30%); }
+.trophy-ruby.trophy-unlocked { filter: sepia(.35) hue-rotate(305deg) saturate(3.2) brightness(1.08) drop-shadow(0 0 7px rgba(239,68,68,.95)); }
 .trophy-emoji-fallback { position: absolute; font-size: 1.6rem; z-index: 1; opacity: 0.5; transition: filter 0.3s; }
 
 .achievements-list { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 300px; max-height: 250px; overflow-y: auto; padding-right: 4px; margin-bottom: 10px; }
