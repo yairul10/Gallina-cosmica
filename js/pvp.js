@@ -913,7 +913,8 @@
         const rankUp=rankChanged&&saved.cups>cupsBefore ? '\n🎉 ¡Subiste de rango a '+newRank+'!\n👾 Superjefes mejorado: ahora entrega '+reward.toLocaleString('es-CL')+' 🪙.' : '';
         const rankDown=rankChanged&&saved.cups<cupsBefore ? '\n📉 Bajaste de rango a '+newRank+'.\n👾 Superjefes ahora entrega '+reward.toLocaleString('es-CL')+' 🪙.' : '';
         recordPvpAchievements(result,matchKills,saved.cups);
-        resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'')+rankUp+rankDown;
+        const modifierNote=saved.settlement?.shieldUsed?'\n🛡️ Escudo de Copas usado · pérdida evitada.':saved.settlement?.boostApplied?'\n⚡ x2 Copas aplicado.':'';
+        resultEl.textContent=text+'\n☠️ Eliminaciones: '+matchKills+'\n🏆 Copas: '+saved.cups+(saved.delta?' ('+(saved.delta>0?'+':'')+saved.delta+')':'')+modifierNote+rankUp+rankDown;
       });
     }
   }
