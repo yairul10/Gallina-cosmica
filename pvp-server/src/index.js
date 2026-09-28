@@ -109,6 +109,12 @@ async function authorizePvpRequest(request, env) {
     const rankingResponse=await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/ranking?playerId="+encodeURIComponent(session.playerId));
     const rankingData=await rankingResponse.json();
     url.searchParams.set("cups",String(Math.max(0,Number(rankingData?.record?.cups||0))));
+    // Título competitivo derivado exclusivamente del ranking oficial. El cliente
+    // no puede autoproclamarse TOP: la posición se calcula aquí tras validar sesión.
+    const topIndex=Array.isArray(rankingData?.ranking)
+      ? rankingData.ranking.findIndex(p=>String(p?.playerId)===String(session.playerId))
+      : -1;
+    url.searchParams.set("topPosition",topIndex>=0&&topIndex<3?String(topIndex+1):"0");
   }catch{ url.searchParams.set("cups","0"); }
 
   return new Request(url.toString(),request);
@@ -263,6 +269,7 @@ export class PvpRoom {
     // activan a mitad de una partida ya iniciada.
     const cupBoost = this.ranked && url.searchParams.get("cupBoost") === "1";
     const cupShield = this.ranked && url.searchParams.get("cupShield") === "1";
+    const topPosition = this.ranked ? Math.max(0,Math.min(3,Number(url.searchParams.get("topPosition")||0))) : 0;
     // El rango administrador se decide únicamente en el Worker usando el playerId
     // verificado por la sesión de Play Games; nunca se confía en un parámetro del cliente.
     const session=await verifySessionToken(this.env,url.searchParams.get("session"));
@@ -305,7 +312,7 @@ export class PvpRoom {
       }
       this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
     }
-    this.players.set(server, { playerId, name, ship, slot, team, cups, partyCode, cupBoost, cupShield, ...(adminRank?{rank:adminRank}: {}) });
+    this.players.set(server, { playerId, name, ship, slot, team, cups, partyCode, cupBoost, cupShield, topPosition, ...(adminRank?{rank:adminRank}: {}) });
     if (wantsBot && this.players.size === 1 && !this.botPlayer && this.botPlayers.length === 0) {
       if (this.mode === "1v1") {
         const botSlot = slot === 1 ? 2 : 1;
@@ -546,8 +553,8 @@ export class PvpRoom {
     server.addEventListener("error", remove);
 
     server.send(JSON.stringify({ type: "joined", slot, team, mode: this.mode, capacity, players: this.playerList(), reconnected }));
-    if (reconnected) this.broadcast({ type: "player-reconnected", player: { playerId, name, ship, slot, team, ...(adminRank?{rank:adminRank}: {}) } }, server);
-    this.broadcast({ type: "player-joined", player: { playerId, name, ship, slot, team, ...(adminRank?{rank:adminRank}: {}) } }, server);
+    if (reconnected) this.broadcast({ type: "player-reconnected", player: { playerId, name, ship, slot, team, topPosition, ...(adminRank?{rank:adminRank}: {}) } }, server);
+    this.broadcast({ type: "player-joined", player: { playerId, name, ship, slot, team, topPosition, ...(adminRank?{rank:adminRank}: {}) } }, server);
     if (new Set(this.playerList().map(p=>Number(p.slot))).size === capacity) {
       this.started = true;
       this.broadcast({ type: "ready", mode: this.mode, players: this.playerList() });
