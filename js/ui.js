@@ -347,6 +347,29 @@ function updateShopUI() {
     const emergencyShopCard=document.getElementById('shop-pvp-emergency-life-card');
     if(evadeShopCard)evadeShopCard.style.display=pvpExtrasVisible?'flex':'none';
     if(emergencyShopCard)emergencyShopCard.style.display=pvpExtrasVisible?'flex':'none';
+    const cupBoostCard=document.getElementById('shop-pvp-cup-boost-card');
+    const cupShieldCard=document.getElementById('shop-pvp-cup-shield-card');
+    if(cupBoostCard)cupBoostCard.style.display=pvpExtrasVisible?'flex':'none';
+    if(cupShieldCard)cupShieldCard.style.display=pvpExtrasVisible?'flex':'none';
+
+    const boostBtn=document.getElementById('btn-buy-pvp-cup-boost');
+    if(boostBtn){
+        const remaining=Math.max(0,Number(gameStats.pvpCupBoostUntil||0)-Date.now());
+        if(remaining>0){
+            const mins=Math.ceil(remaining/60000);
+            boostBtn.textContent='🏆 x2 ACTIVO · '+mins+' min · +1 h por 🪙 10,000,000';
+            boostBtn.style.background='#3b82f6';
+        }else{
+            boostBtn.textContent='🪙 10,000,000 · Activar 1 hora';
+            boostBtn.style.background='#10b981';
+        }
+        boostBtn.disabled=!gameStats.pvpUnlocked||coins<10000000;
+    }
+    const shield1=document.getElementById('btn-buy-pvp-cup-shield-1'),shield3=document.getElementById('btn-buy-pvp-cup-shield-3');
+    if(shield1){shield1.disabled=!gameStats.pvpUnlocked||coins<500000;shield1.style.background='#10b981';}
+    if(shield3){shield3.disabled=!gameStats.pvpUnlocked||coins<1000000;shield3.style.background='#10b981';}
+    const shieldStatus=document.getElementById('pvpCupShieldStatus');
+    if(shieldStatus)shieldStatus.textContent='Cargas disponibles: '+Math.max(0,Math.floor(Number(gameStats.pvpCupShields)||0));
 
     let bEvade = document.getElementById('btn-buy-pvp-evade');
     if (bEvade) {
@@ -394,6 +417,20 @@ window.buyPvpShip = function(id) {
 window.buyBooster = function(mult, cost) { if (gameStats.pendingBooster === 1.0 && coins >= cost) { coins -= cost; gameStats.savedCoins = coins; gameStats.pendingBooster = mult; saveStats(); updateShopUI(); } }
 window.buyPvpEvade = function() { if (gameStats.pvpUnlocked && !gameStats.pvpEvade && coins >= 5000000) { coins -= 5000000; gameStats.savedCoins = coins; gameStats.pvpEvade = true; saveStats(); updateShopUI(); } }
 window.buyPvpEmergencyLife = function() { if (gameStats.pvpUnlocked && !gameStats.pvpEmergencyLife && coins >= 20000000) { coins -= 20000000; gameStats.savedCoins = coins; gameStats.pvpEmergencyLife = true; saveStats(); updateShopUI(); } }
+window.buyPvpCupBoost = function() {
+    const cost=10000000;
+    if(!gameStats.pvpUnlocked||coins<cost)return;
+    coins-=cost;gameStats.savedCoins=coins;
+    gameStats.pvpCupBoostUntil=Math.max(Date.now(),Number(gameStats.pvpCupBoostUntil)||0)+(60*60*1000);
+    saveStats();updateShopUI();
+};
+window.buyPvpCupShield = function(charges,cost) {
+    charges=Math.max(0,Math.floor(Number(charges)||0));cost=Math.max(0,Math.floor(Number(cost)||0));
+    if(!gameStats.pvpUnlocked||!charges||coins<cost)return;
+    coins-=cost;gameStats.savedCoins=coins;
+    gameStats.pvpCupShields=Math.max(0,Math.floor(Number(gameStats.pvpCupShields)||0))+charges;
+    saveStats();updateShopUI();
+};
 window.buyAutoLife = function() { if (!gameStats.extraModule && coins >= 250000) { coins -= 250000; gameStats.savedCoins = coins; gameStats.extraModule = true; gameStats.equipExtraModule = true; saveStats(); updateShopUI(); } }
 
 const trophyData = { '20k': { name: '🥉 Pollito de Bronce', lock: 'Consigue 20,000 pts', unlock: 'Lograste 20,000 pts.', key: 't20k' }, '50k': { name: '🥈 Lana de Plata', lock: 'Consigue 50,000 pts', unlock: 'Lograste 50,000 pts.', key: 't50k' }, '100k': { name: '🏅 Herradura de Oro', lock: 'Consigue 100,000 pts', unlock: 'Lograste 100,000 pts.', key: 't100k' }, '200k': { name: '🏆 Leche Legendaria', lock: 'Consigue 200,000 pts', unlock: 'Lograste 200,000 pts.', key: 't200k' }, '300k': { name: '💎 Gallina de Diamante', lock: 'Consigue 300,000 pts', unlock: 'Lograste 300,000 pts.', key: 't300k' } };
