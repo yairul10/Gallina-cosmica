@@ -328,9 +328,13 @@ function updateShopUI() {
     }
     
     ['toro_aniquilador','toro_blindado','toro_baliza'].forEach(id=>{
-        const btn=document.getElementById('btn-buy-pvp-'+id.replaceAll('_','-')); if(!btn)return;
-        if(gameStats.pvpShips?.[id]){btn.textContent='Comprado';btn.style.background='#475569';btn.disabled=true;}
-        else{btn.textContent='🪙 1,500,000';btn.style.background='#10b981';btn.disabled=coins<1500000;}
+        const slug=id.replaceAll('_','-'),btn=document.getElementById('btn-buy-pvp-'+slug),card=document.getElementById('shop-pvp-'+slug); if(!btn)return;
+        const owned=!!gameStats.pvpShips?.[id];
+        // Los toros básicos pertenecen al contenido PvP: no aparecen en la tienda
+        // hasta que el jugador haya desbloqueado PvP. Los ya comprados se conservan.
+        if(card)card.style.display=(owned||gameStats.pvpUnlocked)?'flex':'none';
+        if(owned){btn.textContent='Comprado';btn.style.background='#475569';btn.disabled=true;}
+        else{btn.textContent='🪙 1,500,000';btn.style.background='#10b981';btn.disabled=coins<1500000||!gameStats.pvpUnlocked;}
     });
 
     Object.entries(PVP_RANK_SHIP_RULES).forEach(([id,rule])=>{
