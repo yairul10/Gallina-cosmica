@@ -321,6 +321,21 @@
   });
 
   function getPvpCups(){const n=Number(localStorage.getItem(PVP_CUPS_KEY)||0);return Number.isFinite(n)?Math.max(0,Math.floor(n)):0;}
+  function cupBoostActive(){return Number(gameStats?.pvpCupBoostUntil||0)>Date.now();}
+  function cupShieldAvailable(){return Math.max(0,Math.floor(Number(gameStats?.pvpCupShields)||0))>0;}
+  function applyCupSettlementConsumables(settlement){
+    if(!settlement)return;
+    const matchId=String(settlement.matchId||'');
+    if(settlement.shieldUsed&&matchId){
+      if(!Array.isArray(gameStats.pvpCupShieldConsumedMatches))gameStats.pvpCupShieldConsumedMatches=[];
+      if(!gameStats.pvpCupShieldConsumedMatches.includes(matchId)){
+        gameStats.pvpCupShields=Math.max(0,Math.floor(Number(gameStats.pvpCupShields)||0)-1);
+        gameStats.pvpCupShieldConsumedMatches.push(matchId);
+        if(gameStats.pvpCupShieldConsumedMatches.length>100)gameStats.pvpCupShieldConsumedMatches=gameStats.pvpCupShieldConsumedMatches.slice(-100);
+        saveStats();
+      }
+    }
+  }
   function pvpRankFromCups(cups){
     const n=Math.max(0,Number(cups)||0);
     let level=0;
@@ -601,7 +616,11 @@
     }
     const me=identity();
     const params=new URLSearchParams({playerId:verified.playerId,name:me.name||'Jugador',ship:shipLabel(),mode:pvpMode,cups:String(qaBotCups()),session:verified.token});
-    if(isRanked)params.set('ranked','1');
+    if(isRanked){
+      params.set('ranked','1');
+      if(cupBoostActive())params.set('cupBoost','1');
+      if(cupShieldAvailable())params.set('cupShield','1');
+    }
     if(partyCode)params.set('partyCode',String(partyCode).replace(/\D/g,'').slice(0,6));
     const qaLevel=qaBotRankLevel();if(qaLevel!==null)params.set('qaBotRank',String(qaLevel));
     if(useBot&&(pvpMode==='1v1'||pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){params.set('bot','1');params.set('humanCount',String(Math.max(1,Number(humanCount||1))));}
@@ -810,6 +829,7 @@
         const data=await r.json();
         if(data?.ok&&data.record&&data.settlement){
           const cups=Number(data.record.cups||0), delta=Number(data.settlement.delta||0);
+          applyCupSettlementConsumables(data.settlement);
           localStorage.setItem(PVP_CUPS_KEY,String(cups));
           renderPvpRankSummary(cups,pvpRankFromPlayer(data.record));
           return {cups,delta,record:data.record,settlement:data.settlement,authoritative:true};
