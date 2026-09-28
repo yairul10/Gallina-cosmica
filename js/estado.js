@@ -27,6 +27,12 @@ if (gameStats.extraModule === undefined) gameStats.extraModule = false;
 if (gameStats.equipExtraModule === undefined) gameStats.equipExtraModule = false;
 if (gameStats.pvpEvade === undefined) gameStats.pvpEvade = false;
 if (gameStats.pvpEmergencyLife === undefined) gameStats.pvpEmergencyLife = false;
+// Potenciadores de copas PvP: el multiplicador usa tiempo real y los escudos
+// se consumen sólo cuando evitan una pérdida de copas en una partida clasificatoria.
+if (!Number.isFinite(Number(gameStats.pvpCupBoostUntil))) gameStats.pvpCupBoostUntil = 0;
+if (!Number.isFinite(Number(gameStats.pvpCupShields))) gameStats.pvpCupShields = 0;
+gameStats.pvpCupShields = Math.max(0, Math.floor(Number(gameStats.pvpCupShields) || 0));
+if (!Array.isArray(gameStats.pvpCupShieldConsumedMatches)) gameStats.pvpCupShieldConsumedMatches = [];
 window.gallinaSuperBossReward = () => {
     const cups = Math.max(0, Math.floor(Number(localStorage.getItem('gallina_pvp_cups_v1') || 0) || 0));
     const thresholds = [0, 100, 200, 500, 1000, 2000, 4000];
