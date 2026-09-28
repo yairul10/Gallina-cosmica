@@ -259,6 +259,10 @@ export class PvpRoom {
     const name = safeText(url.searchParams.get("name"), "Jugador", 40);
     const ship = safeText(url.searchParams.get("ship"), "Gallina", 40);
     const cups = Math.max(0, Math.min(9999999, Number(url.searchParams.get("cups") || 0)));
+    // Los modificadores se fijan al entrar a la sala clasificatoria; nunca se
+    // activan a mitad de una partida ya iniciada.
+    const cupBoost = this.ranked && url.searchParams.get("cupBoost") === "1";
+    const cupShield = this.ranked && url.searchParams.get("cupShield") === "1";
     // El rango administrador se decide únicamente en el Worker usando el playerId
     // verificado por la sesión de Play Games; nunca se confía en un parámetro del cliente.
     const session=await verifySessionToken(this.env,url.searchParams.get("session"));
@@ -301,7 +305,7 @@ export class PvpRoom {
       }
       this.rewardStatus.set(slot, { playerId, eligible: true, reason: null, team, pendingReconnect: false });
     }
-    this.players.set(server, { playerId, name, ship, slot, team, cups, partyCode, ...(adminRank?{rank:adminRank}: {}) });
+    this.players.set(server, { playerId, name, ship, slot, team, cups, partyCode, cupBoost, cupShield, ...(adminRank?{rank:adminRank}: {}) });
     if (wantsBot && this.players.size === 1 && !this.botPlayer && this.botPlayers.length === 0) {
       if (this.mode === "1v1") {
         const botSlot = slot === 1 ? 2 : 1;
@@ -657,7 +661,9 @@ export class PvpRoom {
         method:"POST",headers:{"content-type":"application/json","x-pvp-internal":"room"},
         body:JSON.stringify({official:true,playerId:p.playerId,name:this.playerList().find(x=>x.playerId===p.playerId)?.name||"Jugador",
           kills:Number(kills.botKills||0)+Number(kills.humanKills||0),botKills:Number(kills.botKills||0),humanKills:Number(kills.humanKills||0),
-          result,mode:this.mode,placement,matchId:"room-"+this.roomCode+"-"+this.mode})
+          result,mode:this.mode,placement,matchId:"room-"+this.roomCode+"-"+this.mode,
+          cupBoost:!!this.playerList().find(x=>x.playerId===p.playerId)?.cupBoost,
+          cupShield:!!this.playerList().find(x=>x.playerId===p.playerId)?.cupShield})
       }).catch(()=>null));
     }
     await Promise.all(tasks);
@@ -1008,13 +1014,20 @@ export class PvpRanking {
       const winCups=mode==='2v2'?8:5;
       delta=result==='win'?winCups:-legacyLossPenalty(oldCups);
     }
+    const baseDelta=delta;
+    const boostApplied=body.cupBoost===true && delta>0;
+    if(boostApplied)delta*=2;
+    // El escudo protege sólo pérdidas por derrota/posición. Abandonar sigue
+    // penalizando normalmente para evitar que se use como salida gratuita.
+    const shieldUsed=body.cupShield===true && result!=='forfeit' && delta<0;
+    if(shieldUsed)delta=0;
     const newCups=Math.max(0,oldCups+delta), appliedDelta=newCups-oldCups;
     const record={...prev,name,cups:newCups,kills:Number(prev.kills||0)+kills,wins:Number(prev.wins||0)+(result==='win'?1:0),losses:Number(prev.losses||0)+(result!=='win'?1:0),matches:Number(prev.matches||0)+1,monthMatches:Number(prev.monthMatches||0)+1};
     players[playerId]=record;
     seen[dedupe]=Date.now();
     const keys=Object.keys(seen); if(keys.length>1000) keys.sort((x,y)=>seen[x]-seen[y]).slice(0,keys.length-1000).forEach(k=>delete seen[k]);
     await this.ctx.storage.put({players,seen});
-    const settlement={playerId,matchId,delta:appliedDelta,cups:newCups,mode,placement,botKills,humanKills,result,createdAt:Date.now()};
+    const settlement={playerId,matchId,delta:appliedDelta,baseDelta,cups:newCups,mode,placement,botKills,humanKills,result,boostApplied,shieldUsed,createdAt:Date.now()};
     await this.ctx.storage.put('settlement:'+dedupe,settlement);
     return json({ok:true,delta:appliedDelta,settlement,record:{...record,rank:this.rankFor(record.cups)},month:state.activeMonth});
   }
