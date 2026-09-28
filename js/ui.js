@@ -66,7 +66,7 @@ document.getElementById('openRecordsBtn').addEventListener('click', () => {
     document.getElementById('recordsScreen').style.display = 'flex';
     renderWorldLeaderboard();
 });
-document.getElementById('openTrophiesBtn').addEventListener('click', () => { updateTrophyMenu(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'flex'; });
+document.getElementById('openTrophiesBtn').addEventListener('click', async () => { await refreshPvpSpecialShipAccess?.(); updateTrophyMenu(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('trophiesScreen').style.display = 'flex'; });
 document.getElementById('openAchievBtn').addEventListener('click', () => { renderAchievementsList(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('achievScreen').style.display = 'flex'; });
 document.getElementById('mainMenuBtn').addEventListener('click', () => { document.getElementById('gameOverScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; gameState = 'START'; previousState = 'START'; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); });
 
