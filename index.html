@@ -66,6 +66,7 @@
                     <button class="btn menu-mini-btn" id="openRecordsBtn" title="Récords"><span>🥇</span><small>Récords</small></button>
                     <button class="btn menu-mini-btn" id="openTrophiesBtn" title="Trofeos"><span>🏆</span><small>Trofeos</small></button>
                     <button class="btn menu-mini-btn" id="openAchievBtn" title="Logros"><span>🏅</span><small>Logros</small></button>
+                    <button class="btn menu-mini-btn" id="openInboxBtn" title="Mensajes" aria-label="Abrir mensajes"><span>✉️</span><small>Mensajes <b id="inboxUnreadBadge" style="display:none;color:#fbbf24;"></b></small></button>
                 </div>
                 <button class="menu-side-ranking" id="pvpRankingBtn" type="button" title="Ranking PvP" aria-label="Ranking PvP" onclick="window.openPvpRankingMenu?.()"><span>🏆</span><small>Ranking<br>PvP</small></button>
                 <div id="pvpRankingPanel" class="leaderboard-box" style="display:none; width:min(88%,340px); max-height:250px; overflow:auto; margin-top:8px; text-align:left;">
@@ -80,6 +81,16 @@
             </div>
         </div>
 
+        <div id="inboxScreen" class="screen-overlay" style="display:none;z-index:240;background:rgba(9,13,22,.98);overflow-y:auto;justify-content:flex-start;padding:24px 16px;">
+            <div style="width:min(100%,420px);margin:0 auto;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <h1 style="font-size:1.35rem;color:#fbbf24;margin:0;">✉️ Mensajes</h1>
+                    <button id="closeInboxBtn" class="btn btn-secondary" type="button" style="width:auto;margin:0;padding:7px 14px;">Cerrar</button>
+                </div>
+                <p id="inboxStatus" role="status" style="font-size:.8rem;color:#cbd5e1;margin:12px 0;">Cargando…</p>
+                <div id="inboxMessages" style="display:grid;gap:10px;text-align:left;"></div>
+            </div>
+        </div>
         <div id="pvpLobbyScreen" class="screen-overlay" style="display:none; background:rgba(9,13,22,.98); z-index:210;">
             <h1 style="color:#c4b5fd; margin-bottom:6px;">⚔️ Arena PvP</h1>
             <p style="font-size:.82rem; color:#94a3b8; margin-bottom:8px;">Prueba experimental · 1 vs 1</p>
@@ -364,6 +375,7 @@
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=pvp-rank-reward-1"></script>
     <script src="js/pvp.js?v=1.4.38"></script>
+    <script src="js/inbox.js?v=1"></script>
     <script src="js/qa-mode.js?v=qa-split-panels-12"></script>
     <script src="js/qa-pvp.js?v=qa-split-panels-3"></script>
     <script src="js/qa-admin.js?v=qa-scroll-hat-2"></script>
