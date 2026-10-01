@@ -36,10 +36,16 @@ document.getElementById('reviveBtn').addEventListener('click', () => {
 });
 document.getElementById('reviveAdBtn')?.addEventListener('click', async () => {
     const btn=document.getElementById('reviveAdBtn'),status=document.getElementById('reviveAdStatus');
-    if(btn.disabled)return;btn.disabled=true;btn.style.opacity=.65;
+    if(btn.disabled || gameState!=='GAMEOVER' || !window.GallinaAds?.canRevive())return;
+    btn.disabled=true;btn.style.opacity=.65;
+    const match = gameTime;
     const setStatus=t=>{if(status)status.textContent=t;};
-    const ok=await window.GallinaAds?.showReviveAd(()=>reviveCurrentGame(),setStatus);
-    if(!ok||document.getElementById('gameOverScreen').style.display!=='none'){setTimeout(()=>{btn.disabled=false;btn.style.opacity=1;},800);}
+    const ok=await window.GallinaAds.showReviveAd(()=>{
+        if(gameState!=='GAMEOVER' || gameTime!==match)return false;
+        reviveCurrentGame();
+        return true;
+    },setStatus);
+    if(!ok)window.GallinaAds.refreshUI();
 });
 
 
@@ -120,6 +126,7 @@ window.gameOver = function() {
     if (coins >= 10000) { reviveBtn.disabled = false; reviveBtn.style.opacity = 1; }
     else { reviveBtn.disabled = true; reviveBtn.style.opacity = 0.5; }
     document.getElementById('gameOverScreen').style.display = 'flex';
+    window.GallinaAds?.refreshUI?.();
     document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); 
 };
 
