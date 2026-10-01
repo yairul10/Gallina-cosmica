@@ -2244,6 +2244,8 @@
     return data;
   }
 
+  window.claimMonthlyPvpReward=claimMonthlyPvpReward;
+
   async function showPvpRanking(){
     const panel=$('pvpRankingPanel'),list=$('pvpRankingList'),mine=$('pvpMyRecord');
     if(!panel||!list||!mine)return;
