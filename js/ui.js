@@ -294,22 +294,26 @@ window.switchShopTab = function(tab) {
     const tabs = {
         skins: document.getElementById('tabSkins'),
         boosters: document.getElementById('tabBoosters'),
-        playcoins: document.getElementById('tabPlayCoins')
+        playcoins: document.getElementById('tabPlayCoins'),
+        ads: document.getElementById('tabAds')
     };
     const panes = {
         skins: document.getElementById('shopSkins'),
         boosters: document.getElementById('shopBoosters'),
-        playcoins: document.getElementById('playCoinsPurchase')
+        playcoins: document.getElementById('playCoinsPurchase'),
+        ads: document.getElementById('shopAds')
     };
     Object.values(tabs).forEach(el => el?.classList.remove('active'));
     Object.values(panes).forEach(el => { if (el) el.style.display = 'none'; });
     tabs[tab]?.classList.add('active');
     if (panes[tab]) panes[tab].style.display = tab === 'playcoins' ? 'block' : 'grid';
     if (tab === 'playcoins') window.GallinaBilling?.loadPrices?.();
+    if (tab === 'ads') window.GallinaAds?.refreshUI?.();
 }
 
 function updateShopUI() {
-    document.getElementById('shopCoinsVal').textContent = coins; 
+    document.getElementById('shopCoinsVal').textContent = coins;
+    window.GallinaAds?.refreshUI?.(); 
     let bCosts = [0, 10000, 20000, 40000]; let pCosts = [30000, 30000, 60000, 100000]; 
     for(let i=0; i<4; i++) { 
         let btnB = document.getElementById('btn-skin-base-'+i); let imgB = document.getElementById('shop-img-base-'+i);
