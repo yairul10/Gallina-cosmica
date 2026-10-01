@@ -936,6 +936,37 @@ export class PvpRanking {
       return json({ok:true,month:state.activeMonth,ranking,record,settlement,pendingMonthly,claimedRankRewards,top1Trophy,monthlyConfig,eventTheme:await this.eventThemeForPlayer(playerId),menuTheme:(await this.menuThemeConfig()).theme});
     }
 
+    if(url.pathname==='/inbox'){
+      if(request.method!=='GET')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
+      const playerId=safeText(url.searchParams.get('playerId'),'',128);
+      if(!playerId)return json({ok:false,error:'PLAYER_ID_REQUIRED'},400);
+      const read=(await this.ctx.storage.get('inboxRead:'+playerId))||{};
+      const messages=Object.values(state.monthlyAwards)
+        .filter(a=>a.playerId===playerId && a.period!==state.activeMonth)
+        .sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0))
+        .slice(0,40)
+        .map(a=>({
+          id:'season:'+a.period,type:'pvp-season',period:a.period,
+          position:a.position,totalParticipants:a.totalParticipants,
+          coins:a.coins,shipName:a.shipName,cosmeticName:a.cosmeticName,
+          claimed:!!a.claimed,createdAt:a.createdAt,read:!!read['season:'+a.period]
+        }));
+      return json({ok:true,messages,unread:messages.filter(m=>!m.read).length});
+    }
+    if(url.pathname==='/inbox/read'){
+      if(request.method!=='POST')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
+      let body;try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
+      const playerId=safeText(body?.playerId,'',128);
+      const periods=[...new Set((Array.isArray(body?.periods)?body.periods:[]).map(p=>safeText(p,'',16)))].slice(0,40);
+      if(!playerId||!periods.length||periods.some(p=>!/^\d{4}-\d{2}$/.test(p)))return json({ok:false,error:'BAD_MESSAGE'},400);
+      if(periods.some(p=>!state.monthlyAwards['month:'+p+':'+playerId]||p===state.activeMonth))return json({ok:false,error:'MESSAGE_NOT_FOUND'},404);
+      const key='inboxRead:'+playerId,read=(await this.ctx.storage.get(key))||{};
+      for(const period of periods)read['season:'+period]=Date.now();
+      const entries=Object.entries(read).sort((a,b)=>Number(b[1])-Number(a[1])).slice(0,60);
+      await this.ctx.storage.put(key,Object.fromEntries(entries));
+      return json({ok:true});
+    }
+
     if(url.pathname==='/monthly-reward'){
       if(request.method!=='POST')return json({ok:false,error:'METHOD_NOT_ALLOWED'},405);
       let body;try{body=await request.json();}catch{return json({ok:false,error:'BAD_JSON'},400);}
@@ -1290,6 +1321,26 @@ export default {
       return env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/qa-close-month",{
         method:"POST",headers:{"content-type":"application/json","x-pvp-internal":"qa-admin"},
         body:JSON.stringify({period:String(body?.period||"")})
+      });
+    }
+    if (url.pathname === "/inbox" || url.pathname === "/inbox/read") {
+      if(url.pathname==="/inbox" && request.method!=="GET")return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
+      if(url.pathname==="/inbox/read" && request.method!=="POST")return json({ok:false,error:"METHOD_NOT_ALLOWED"},405);
+      const session=await verifySessionToken(env,url.searchParams.get("session"));
+      if(!session)return json({ok:false,error:"PLAY_GAMES_AUTH_REQUIRED"},401);
+      const rankingId=env.PVP_RANKING.idFromName("global");
+      const active=await env.PVP_RANKING.get(rankingId).fetch("https://ranking.internal/active-session?playerId="+encodeURIComponent(session.playerId)+"&sessionId="+encodeURIComponent(session.sessionId||""),{headers:{[ACTIVE_SESSION_HEADER]:"1"}}).then(r=>r.json()).catch(()=>({}));
+      if(!active?.active)return json({ok:false,error:"SESSION_REPLACED"},401);
+      let periods=[];
+      if(request.method==="POST"){
+        let body;try{body=await request.json();}catch{return json({ok:false,error:"BAD_JSON"},400);}
+        periods=Array.isArray(body?.periods)?body.periods:[];
+      }
+      const path=url.pathname==="/inbox"?"/inbox":"/inbox/read";
+      const target="https://ranking.internal"+path+"?playerId="+encodeURIComponent(session.playerId);
+      return env.PVP_RANKING.get(rankingId).fetch(target,{
+        method:request.method,headers:{"content-type":"application/json"},
+        body:request.method==="POST"?JSON.stringify({playerId:session.playerId,periods}):undefined
       });
     }
     if (url.pathname === "/monthly-reward") {
