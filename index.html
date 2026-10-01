@@ -292,6 +292,7 @@
                 <button class="shop-tab active" id="tabSkins" onclick="switchShopTab('skins')">Naves y Diseños</button>
                 <button class="shop-tab" id="tabBoosters" onclick="switchShopTab('boosters')">Potenciadores y Extras</button>
                 <button class="shop-tab" id="tabPlayCoins" onclick="switchShopTab('playcoins')">🪙 Comprar Monedas</button>
+                <button class="shop-tab" id="tabAds" onclick="switchShopTab('ads')">📺 Anuncios</button>
             </div>
             <div id="shopSkins" class="shop-grid">
                 <div class="shop-item"><h4>Gallina Base</h4><img id="shop-img-base-0" src="assets/gallina_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+20% a Maíz.</p><button class="shop-btn" id="btn-skin-base-0" onclick="buyShip(0, false, 0)">Comprado</button></div>
@@ -309,6 +310,11 @@
                 <div id="shop-pvp-toro-luz" class="shop-item" style="display:none;border-color:#facc15;"><h4>Toro Luz</h4><img src="assets/toro_luz.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🥇 Oro · ⚔️ +25% cadencia · 🔧 reparación rápida.</p><button class="shop-btn" id="btn-buy-pvp-toro-luz" onclick="buyPvpShip('toro_luz')">🔒 Oro</button></div>
                 <div id="shop-pvp-toro-maoma" class="shop-item" style="display:none;border-color:#22c55e;"><h4>Toro Maoma</h4><img src="assets/toro_maoma.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🥇 Oro · ❤️ 26 vidas · 🔧 reparación rápida.</p><button class="shop-btn" id="btn-buy-pvp-toro-maoma" onclick="buyPvpShip('toro_maoma')">🔒 Oro</button></div>
                 <div id="shop-pvp-toro-mayor" class="shop-item" style="display:none;border-color:#a855f7;"><h4>Toro Mayor</h4><img src="assets/toro_mayor.png" class="shop-img" style="height:45px;object-fit:contain;"><p style="font-size:.75rem;margin-top:4px;">🚀 Maestro Cósmico · 👑 vida + cadencia + recuperación.</p><button class="shop-btn" id="btn-buy-pvp-toro-mayor" onclick="buyPvpShip('toro_mayor')">🔒 Maestro Cósmico</button></div>
+            </div>
+            <div id="shopAds" class="shop-grid" style="display:none;">
+                <div class="shop-item" style="grid-column:span 2;"><h4>🪙 Monedas por anuncio</h4><p>Recibe 5.000 monedas por cada anuncio completo. Máximo 3 al día.</p><button class="shop-btn" id="adCoinsBtn" onclick="GallinaAds.watchCoins()">📺 Ver anuncio</button><p id="adCoinsCount"></p></div>
+                <div class="shop-item" style="grid-column:span 2;"><h4>🐑 Oveja Base</h4><img src="assets/oveja_1.png" class="shop-img" style="height:45px;object-fit:contain;" alt="Oveja Base"><p>Desbloquéala tras completar 3 anuncios. También puedes conseguirla con monedas o en el Pack Inicial.</p><button class="shop-btn" id="adShipBtn" onclick="GallinaAds.watchShip()">📺 Ver anuncio</button><p id="adShipCount"></p></div>
+                <p id="adShopStatus" role="status" aria-live="polite" style="grid-column:span 2;min-height:18px;color:#93c5fd;font-size:.78rem;"></p>
             </div>
             <div id="playCoinsPurchase" style="display:none;margin:10px 0;padding:12px;border:1px solid #fbbf24;border-radius:14px;background:rgba(120,53,15,.22);text-align:center;">
                 <strong>🪙 Monedas de Google Play</strong>
@@ -369,8 +375,8 @@
     <script src="js/assets.js?v=gallina-chile-1"></script>
     <script src="js/ui.js?v=1.4.38-ruby3"></script>
     <script src="js/entidades.js?v=1.4.38"></script>
-    <script src="js/main.js?v=revive-ad-test-1"></script>
-    <script src="js/ads-test.js?v=1"></script>
+    <script src="js/main.js?v=rewarded-ads-2"></script>
+    <script src="js/ads-test.js?v=2"></script>
     <script src="js/billing.js?v=packs-1"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=pvp-rank-reward-1"></script>
