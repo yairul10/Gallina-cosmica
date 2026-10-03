@@ -83,6 +83,7 @@ if (!Array.isArray(gameStats.cloudRewardIds)) gameStats.cloudRewardIds = [];
 // Compras Google Play: el token evita acreditar dos veces la misma transacción.
 if (!Array.isArray(gameStats.playPurchaseTokens)) gameStats.playPurchaseTokens = [];
 if (!Number.isSafeInteger(gameStats.cloudPurchaseRevision) || gameStats.cloudPurchaseRevision < 0) gameStats.cloudPurchaseRevision = 0;
+if (typeof gameStats.cloudSyncedCoins !== 'number' || !Number.isFinite(gameStats.cloudSyncedCoins)) gameStats.cloudSyncedCoins = null;
 window.gallinaApplyPlayCoinPurchase = (purchaseToken, amount) => {
     const token = String(purchaseToken || '');
     const value = Math.max(0, Math.floor(Number(amount) || 0));
@@ -372,7 +373,11 @@ async function saveCloudProgressNow() {
         });
         const data = await response.json().catch(() => null);
         if (!response.ok || !data?.success) throw new Error(data?.error || ('HTTP ' + response.status));
-        clearCloudProgressPending();
+        gameStats.cloudSyncedCoins = Number(data.progress?.coins ?? payload.coins);
+        gameStats.cloudPurchaseRevision = Number(data.progress?.purchase_revision ?? gameStats.cloudPurchaseRevision);
+        localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats));
+        if (Number(gameStats.savedCoins || 0) === payload.coins) clearCloudProgressPending();
+        else markCloudProgressPending();
         return true;
     } catch (error) {
         markCloudProgressPending();
@@ -418,9 +423,15 @@ async function loadCloudProgress() {
         const progress = data.progress || {};
         gameStats.cloudPurchaseRevision = Math.max(0, Number(progress.purchase_revision || 0));
 
-        // Durante la migración QA conservamos el mayor saldo para no borrar
-        // monedas locales antiguas antes de que D1 haya sido inicializado.
-        gameStats.savedCoins = Math.max(Number(gameStats.savedCoins || 0), Number(progress.coins || 0));
+        // Preserve local offline earnings/spending since the last successful
+        // sync, while taking the server's newly credited purchase exactly once.
+        const serverCoins = Math.max(0, Number(progress.coins || 0));
+        const localDelta = gameStats.cloudSyncedCoins !== null && hasCloudProgressPending()
+            ? Number(gameStats.savedCoins || 0) - gameStats.cloudSyncedCoins : 0;
+        gameStats.savedCoins = gameStats.cloudSyncedCoins === null
+            ? Math.max(Number(gameStats.savedCoins || 0), serverCoins)
+            : Math.max(0, serverCoins + localDelta);
+        gameStats.cloudSyncedCoins = serverCoins;
         coins = gameStats.savedCoins;
         // Refrescar el HUD inmediatamente: al arrancar la app el HTML comienza
         // mostrando 0 y antes solo se actualizaba al iniciar la primera partida.
