@@ -2,6 +2,15 @@ name: Crear AAB de Gallina Cosmica
 
 on:
   workflow_dispatch:
+    inputs:
+      ads_mode:
+        description: "Anuncios de la AAB"
+        type: choice
+        options:
+          - test
+          - production
+        default: test
+        required: true
 
 permissions:
   contents: read
@@ -41,6 +50,43 @@ jobs:
           cp -r js www/
           cp style.css www/
           cp -r assets www/
+
+      - name: Seleccionar anuncios de prueba o reales
+        env:
+          ADS_MODE: ${{ inputs.ads_mode }}
+          ADMOB_ANDROID_APP_ID: ${{ secrets.ADMOB_ANDROID_APP_ID }}
+          ADMOB_REWARDED_AD_UNIT_ID: ${{ secrets.ADMOB_REWARDED_AD_UNIT_ID }}
+        run: |
+          python3 - <<'PYADS'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          mode = os.getenv("ADS_MODE") or "test"
+          if mode not in ("test", "production"):
+              raise RuntimeError("Modo de anuncios inválido")
+          if mode == "production":
+              app_id = os.getenv("ADMOB_ANDROID_APP_ID", "").strip()
+              rewarded_id = os.getenv("ADMOB_REWARDED_AD_UNIT_ID", "").strip()
+              if not re.fullmatch(r"ca-app-pub-\d{16}~\d{10}", app_id):
+                  raise RuntimeError("Falta ADMOB_ANDROID_APP_ID válido en Actions secrets")
+              if not re.fullmatch(r"ca-app-pub-\d{16}/\d{10}", rewarded_id):
+                  raise RuntimeError("Falta ADMOB_REWARDED_AD_UNIT_ID válido en Actions secrets")
+              if "3940256099942544" in (app_id + rewarded_id):
+                  raise RuntimeError("El modo production no acepta IDs de ejemplo")
+              if app_id.split("~")[0] != rewarded_id.split("/")[0]:
+                  raise RuntimeError("Los IDs de AdMob deben pertenecer al mismo editor")
+          else:
+              app_id = "ca-app-pub-3940256099942544~3347511713"
+              rewarded_id = "ca-app-pub-3940256099942544/5224354917"
+          Path("www/js/ad-config.js").write_text(
+              "window.GallinaAdConfig = Object.freeze(" +
+              json.dumps({"mode": mode, "rewardedId": rewarded_id}) + ");\n"
+          )
+          Path("admob-app-id.txt").write_text(app_id)
+          print("Modo de anuncios preparado:", mode)
+          PYADS
 
       - name: Preparar imágenes
         run: |
@@ -244,11 +290,11 @@ jobs:
           # MainActivity se configura después de Play Games, porque ese script
           # es quien crea el onCreate de la app. Aquí solo generamos el plugin Billing.
 
-      - name: Configurar AdMob de prueba
+      - name: Configurar AdMob Android
         run: |
           python3 - <<'PYADMOB'
           from pathlib import Path
-          import re
+          app_id = Path("admob-app-id.txt").read_text().strip()
 
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           s = manifest.read_text()
@@ -267,15 +313,15 @@ jobs:
           strings = Path("android/app/src/main/res/values/strings.xml")
           x = strings.read_text()
           if 'name="admob_app_id"' not in x:
-              x = x.replace("</resources>", '    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>\\n</resources>')
+              x = x.replace("</resources>", f'    <string name="admob_app_id">{app_id}</string>\n</resources>')
           strings.write_text(x)
 
           # Fallar el build antes de generar el AAB si el App ID no quedo realmente en el manifest.
           final_manifest = manifest.read_text()
           if "com.google.android.gms.ads.APPLICATION_ID" not in final_manifest:
               raise RuntimeError("AdMob APPLICATION_ID no fue insertado en AndroidManifest.xml")
-          if "ca-app-pub-3940256099942544~3347511713" not in strings.read_text():
-              raise RuntimeError("AdMob test App ID no fue insertado en strings.xml")
+          if app_id not in strings.read_text():
+              raise RuntimeError("AdMob App ID no fue insertado en strings.xml")
           PYADMOB
 
       - name: Generar icono
@@ -315,8 +361,8 @@ jobs:
           from pathlib import Path
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          s = s.replace("versionCode 1", "versionCode 69")
-          s = s.replace('versionName "1.0"', 'versionName "1.4.39"')
+          s = s.replace("versionCode 1", "versionCode 70")
+          s = s.replace('versionName "1.0"', 'versionName "1.4.40"')
           p.write_text(s)
           PY2
 
