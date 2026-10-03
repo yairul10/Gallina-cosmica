@@ -26,7 +26,7 @@ jobs:
         env:
           GALLINA_API_D1_DATABASE_ID: ${{ secrets.GALLINA_API_D1_DATABASE_ID }}
         run: |
-          node -e 'const fs=require("fs");const id=process.env.GALLINA_API_D1_DATABASE_ID||"";if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw Error("Falta GALLINA_API_D1_DATABASE_ID o no es un UUID");fs.writeFileSync("wrangler.deploy.json",JSON.stringify({name:"gallina-cosmica-api",main:"src/worker.js",compatibility_date:"2026-10-03",keep_vars:true,d1_databases:[{binding:"DB",database_name:"gallina-cosmica-api",database_id:id}]}));'
+          node -e 'const fs=require("fs");const id=process.env.GALLINA_API_D1_DATABASE_ID||"";if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw Error("Falta GALLINA_API_D1_DATABASE_ID o no es un UUID");fs.writeFileSync("wrangler.deploy.json",JSON.stringify({name:"gallina-cosmica-api",main:"src/worker.js",compatibility_date:"2026-10-03",keep_vars:true,d1_databases:[{binding:"DB",database_name:"gallina-cosmica-db",database_id:id}]}));'
 
       - name: Desplegar Worker API
         working-directory: api-server
