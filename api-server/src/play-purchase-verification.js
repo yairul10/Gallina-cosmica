@@ -81,3 +81,52 @@ export async function verifyGooglePurchase(purchaseToken, productId, env, reques
       Number(lines[0]?.productOfferDetails?.quantity || 1) !== 1) throw new Error('PURCHASE_PRODUCT_MISMATCH');
   return { productId, orderId: String(purchase.orderId || ''), test: !!purchase.testPurchaseContext };
 }
+
+const PURCHASE_REWARDS = Object.freeze({
+  monedas_500000: { coins: 500000 },
+  monedas_1000000: { coins: 1000000 },
+  monedas_5000000: { coins: 5000000 },
+  monedas_15000000: { coins: 15000000 },
+  monedas_50000000: { coins: 50000000, entitlement: 'fantasma' },
+  pack_inicial: { coins: 100000, entitlement: 'pack_inicial' },
+  pack_pvp: { coins: 500000, entitlement: 'pack_pvp' }
+});
+
+// One INSERT protected by a D1 UNIQUE key. The public API must call both Google
+// verification functions first; this helper must never be exposed on its own.
+export async function recordVerifiedPurchase(env, { playerId, purchaseToken, productId, orderId = '', test = false }) {
+  const reward = PURCHASE_REWARDS[productId];
+  if (!env.DB || !reward || typeof playerId !== 'string' || !playerId || playerId.length > 128 ||
+      typeof purchaseToken !== 'string' || !purchaseToken || purchaseToken.length > 4096) {
+    throw new Error('INVALID_GRANT');
+  }
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(purchaseToken));
+  const tokenHash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+  let insert;
+  try { insert = await env.DB.prepare(`
+    INSERT INTO play_purchase_grants
+      (token_hash, player_id, product_id, coins, entitlement, order_id, is_test)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(token_hash) DO NOTHING
+  `).bind(tokenHash, playerId, productId, reward.coins, reward.entitlement || null,
+    String(orderId).slice(0, 128), test ? 1 : 0).run(); }
+  catch (error) {
+    if (String(error).includes('UNIQUE constraint failed') && reward.entitlement?.startsWith('pack_')) {
+      throw new Error('PACK_ALREADY_CLAIMED');
+    }
+    throw error;
+  }
+  const row = await env.DB.prepare(`
+    SELECT player_id, product_id, coins, entitlement
+    FROM play_purchase_grants WHERE token_hash = ? LIMIT 1
+  `).bind(tokenHash).first();
+  if (!row || row.player_id !== playerId || row.product_id !== productId) {
+    throw new Error('PURCHASE_TOKEN_ALREADY_ASSIGNED');
+  }
+  return {
+    newlyRecorded: Number(insert?.meta?.changes || 0) === 1,
+    productId: row.product_id,
+    coins: Number(row.coins),
+    entitlement: row.entitlement || null
+  };
+}
