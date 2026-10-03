@@ -82,6 +82,7 @@ if (!Array.isArray(gameStats.cloudRewardIds)) gameStats.cloudRewardIds = [];
 
 // Compras Google Play: el token evita acreditar dos veces la misma transacción.
 if (!Array.isArray(gameStats.playPurchaseTokens)) gameStats.playPurchaseTokens = [];
+if (!Number.isSafeInteger(gameStats.cloudPurchaseRevision) || gameStats.cloudPurchaseRevision < 0) gameStats.cloudPurchaseRevision = 0;
 window.gallinaApplyPlayCoinPurchase = (purchaseToken, amount) => {
     const token = String(purchaseToken || '');
     const value = Math.max(0, Math.floor(Number(amount) || 0));
@@ -126,6 +127,20 @@ window.gallinaApplyPlayPackPurchase = (purchaseToken, productId) => {
     window.refreshGallinaEquipmentUI?.();
     window.updatePackOffers?.();
     return {success:true,applied:true,productId:product};
+};
+// Restore paid cosmetic/pack rights on another device without adding coins a
+// second time. The server purchase ledger and cloud balance own that decision.
+window.gallinaApplyVerifiedPlayEntitlement = (token, productId) => {
+    if (productId === 'pack_inicial' || productId === 'pack_pvp') {
+        if (!gameStats.playPurchaseTokens.includes(token)) {
+            gameStats.playPurchaseTokens.push(token);
+            gameStats.playPurchaseTokens = gameStats.playPurchaseTokens.slice(-200);
+        }
+        window.gallinaApplyPlayPackPurchase(token, productId);
+    }
+    if (productId === 'monedas_50000000') {
+        window.gallinaApplyPvpCosmeticReward?.(token + ':cosmetic', 'fantasma');
+    }
 };
 window.gallinaPackOwned = productId => !!gameStats.playOwnedPacks?.[productId];
 window.gallinaPackOfferCollapsed = key => !!gameStats.packOfferCollapsed?.[key];
@@ -329,6 +344,7 @@ function buildCloudProgressPayload() {
         player_id: identity.id,
         player_name: identity.name,
         coins: Number(gameStats.savedCoins || 0),
+        purchase_revision: gameStats.cloudPurchaseRevision,
         high_score: localBestScore(),
         owned_ships: getOwnedShipIds(),
         equipped_ship: getEquippedShipId(),
@@ -361,6 +377,7 @@ async function saveCloudProgressNow() {
     } catch (error) {
         markCloudProgressPending();
         console.warn('[Progreso] Guardado local; sincronización cloud pendiente.', error);
+        if (error?.message === 'PURCHASE_REVISION_STALE') setTimeout(loadCloudProgress, 0);
         return false;
     } finally {
         cloudProgressSaving = false;
@@ -399,6 +416,7 @@ async function loadCloudProgress() {
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.error || ('HTTP ' + response.status));
         const progress = data.progress || {};
+        gameStats.cloudPurchaseRevision = Math.max(0, Number(progress.purchase_revision || 0));
 
         // Durante la migración QA conservamos el mayor saldo para no borrar
         // monedas locales antiguas antes de que D1 haya sido inicializado.
@@ -436,13 +454,16 @@ async function loadCloudProgress() {
         window.dispatchEvent(new CustomEvent('gallina-cloud-progress-loaded'));
         // Tras mezclar nube + local, enviamos el estado final. Esto también
         // vacía cualquier sincronización que hubiese quedado pendiente offline.
-        await saveCloudProgressNow();
+        return await saveCloudProgressNow();
     } catch (error) {
         console.warn('[Progreso] No se pudo cargar desde D1; se mantiene el progreso local.', error);
         cloudProgressReady = true;
         markCloudProgressPending();
+        return false;
     }
 }
+window.gallinaRefreshCloudProgress = loadCloudProgress;
+window.gallinaFlushCloudProgressBeforePurchase = loadCloudProgress;
 
 window.addEventListener('load', loadCloudProgress, { once: true });
 // En Android la identidad de Play Games llega de forma asíncrona. Si el load
