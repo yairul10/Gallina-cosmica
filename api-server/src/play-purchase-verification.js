@@ -78,7 +78,7 @@ export async function verifyGooglePurchase(purchaseToken, productId, env, reques
   if (purchase.purchaseStateContext?.purchaseState !== 'PURCHASED') throw new Error('PURCHASE_NOT_COMPLETED');
   const lines = purchase.productLineItem;
   if (!Array.isArray(lines) || lines.length !== 1 || lines[0]?.productId !== productId ||
-      Number(lines[0]?.productOfferDetails?.quantity || 1) !== 1) throw new Error('PURCHASE_PRODUCT_MISMATCH');
+      Number(lines[0]?.productOfferDetails?.quantity ?? 1) !== 1) throw new Error('PURCHASE_PRODUCT_MISMATCH');
   return { productId, orderId: String(purchase.orderId || ''), test: !!purchase.testPurchaseContext };
 }
 
@@ -155,7 +155,8 @@ export async function creditVerifiedPurchase(env, { playerId, purchaseToken, pro
       VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(token_hash) DO NOTHING`)
       .bind(tokenHash, playerId, productId, reward.coins, reward.entitlement || null,
         String(orderId).slice(0, 128), test ? 1 : 0),
-    env.DB.prepare(`UPDATE player_progress SET coins = coins + ?, updated_at = CURRENT_TIMESTAMP
+    env.DB.prepare(`UPDATE player_progress SET coins = coins + ?,
+      purchase_revision = purchase_revision + 1, updated_at = CURRENT_TIMESTAMP
       WHERE player_id = ? AND EXISTS (
         SELECT 1 FROM play_purchase_grants
         WHERE token_hash = ? AND player_id = ? AND product_id = ? AND credited_at IS NULL
