@@ -48,6 +48,33 @@ export default {
         }
       }
 
+      // A purchase receipt is visible only to its verified Play Games owner.
+      // This reads existing credited grants, including purchases made before
+      // the inbox feature was added. Never return tokens or order IDs.
+      if (request.method === "POST" && url.pathname === "/api/purchases/receipts") {
+        if (env.PURCHASE_API_ENABLED !== "true") {
+          return json({ success: false, error: "PURCHASE_API_DISABLED" }, 503);
+        }
+        let body;
+        try { body = await request.json(); }
+        catch { return json({ success: false, error: "INVALID_JSON" }, 400); }
+        try {
+          const playerId = await verifyPlayGamesPlayer(body?.auth_code, env);
+          const result = await env.DB.prepare(`
+            SELECT token_hash AS id, product_id, coins, entitlement, is_test, credited_at
+            FROM play_purchase_grants
+            WHERE player_id = ? AND credited_at IS NOT NULL
+            ORDER BY credited_at DESC, created_at DESC
+            LIMIT 100
+          `).bind(playerId).all();
+          return json({ success: true, player_id: playerId, receipts: result.results || [] });
+        } catch (error) {
+          const code = String(error?.message || "RECEIPTS_LOOKUP_FAILED");
+          console.warn("[Purchase receipts]", code);
+          return json({ success: false, error: "RECEIPTS_LOOKUP_FAILED" }, 503);
+        }
+      }
+
       // ============================================================
       // PROGRESO EN LA NUBE
       // Monedas, récord, naves/diseños, extras, equipamiento
