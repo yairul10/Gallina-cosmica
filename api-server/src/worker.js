@@ -20,13 +20,8 @@ export default {
 
     try {
 
-      if (env.PURCHASE_API_ENABLED === "true" && request.method === "POST" &&
-          (url.pathname === "/api/progress" || url.pathname === "/api/rewards/claim")) {
-        return json({ success: false, error: "CLIENT_UPGRADE_REQUIRED" }, 426);
-      }
-
-      // Feature remains disabled until the old progress writer and app are
-      // migrated together. No secret is ever sent back to the device.
+      // Feature remains disabled until the migration and compatible app are
+      // tested together. No secret is ever sent back to the device.
       if (request.method === "POST" && url.pathname === "/api/purchases/verify") {
         if (env.PURCHASE_API_ENABLED !== "true") {
           return json({ success: false, error: "PURCHASE_API_DISABLED" }, 503);
@@ -85,6 +80,7 @@ export default {
             equipped_extra,
             login_streak,
             last_login_date,
+            purchase_revision,
             updated_at
           FROM player_progress
           WHERE player_id = ?
@@ -145,6 +141,7 @@ export default {
             equipped_extra: progress?.equipped_extra || null,
             login_streak: Number(progress?.login_streak || 0),
             last_login_date: progress?.last_login_date || null,
+            purchase_revision: Number(progress?.purchase_revision || 0),
             updated_at: progress?.updated_at || null
           }
         });
@@ -177,6 +174,10 @@ export default {
           0,
           Math.floor(Number(body.coins) || 0)
         );
+        const purchaseRevision = Number(body.purchase_revision ?? 0);
+        if (!Number.isSafeInteger(purchaseRevision) || purchaseRevision < 0) {
+          return json({ success: false, error: "purchase_revision inválida" }, 400);
+        }
 
         const highScore = Math.max(
           0,
@@ -299,7 +300,7 @@ export default {
 
 
         // Guardar progreso.
-        await env.DB.prepare(`
+        const write = await env.DB.prepare(`
           INSERT INTO player_progress (
             player_id,
             coins,
@@ -310,9 +311,10 @@ export default {
             equipped_extra,
             login_streak,
             last_login_date,
+            purchase_revision,
             updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
 
           ON CONFLICT(player_id) DO UPDATE SET
             coins = excluded.coins,
@@ -369,6 +371,7 @@ export default {
             END,
 
             updated_at = CURRENT_TIMESTAMP
+          WHERE player_progress.purchase_revision = ?
         `).bind(
           playerId,
           coins,
@@ -378,8 +381,12 @@ export default {
           JSON.stringify(ownedExtras),
           equippedExtra,
           loginStreak,
-          lastLoginDate
+          lastLoginDate,
+          purchaseRevision
         ).run();
+        if (Number(write?.meta?.changes || 0) === 0) {
+          return json({ success: false, error: "PURCHASE_REVISION_STALE" }, 409);
+        }
 
 
         const saved = await env.DB.prepare(`
@@ -393,6 +400,7 @@ export default {
             equipped_extra,
             login_streak,
             last_login_date,
+            purchase_revision,
             updated_at
           FROM player_progress
           WHERE player_id = ?
@@ -413,6 +421,7 @@ export default {
             equipped_extra: saved.equipped_extra || null,
             login_streak: Number(saved.login_streak || 0),
             last_login_date: saved.last_login_date || null,
+            purchase_revision: Number(saved.purchase_revision || 0),
             updated_at: saved.updated_at
           }
         });
