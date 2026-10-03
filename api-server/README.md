@@ -6,7 +6,7 @@ El archivo `src/worker.js` es la copia recibida del Worker `gallina-cosmica-api`
 
 El workflow de API solo se ejecuta manualmente. Antes de usarlo, configurar `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` en GitHub Actions Secrets. El token de Cloudflare debe tener permisos de edición del Worker correspondiente. El UUID de la base D1 confirmada está en el workflow, sin credenciales. Mantener los secretos de Google en las variables cifradas del Worker, jamás en GitHub ni en la app. Confirmar que la D1 asociada al nombre `DB` es la misma base usada por el Worker actual.
 
-Migración pendiente: añadir tabla de tokens verificados y desplegar cliente compatible antes de bloquear la ruta antigua. Revisar compras de prueba, packs, reconexión y progreso existente en una versión de prueba.
+La migración de tokens está escrita, pero no aplicada a D1. El registro por sí solo no acredita premios; la entrega tendrá que ser transaccional e idempotente junto al saldo administrado por el servidor. Definir cómo conservar los saldos anteriores y desplegar un cliente compatible antes de bloquear la ruta antigua. Revisar compras de prueba, packs, reconexión y progreso existente en una versión de prueba.
 
 ## Revisión del 3 de octubre de 2026
 
@@ -22,4 +22,4 @@ Flujo actual de `js/billing.js`: el cliente llama a `gallinaApplyPlayCoinPurchas
 4. La nueva app espera la respuesta del servidor antes de mostrar la recompensa. Reintenta tokens pendientes al reabrir y consume/acknowledge solo después de que el servidor confirme la entrega. No acreditar desde un token no verificado localmente.
 5. Probar en un entorno aislado los casos: compra aceptada, pendiente, cancelada, token/producto incorrecto, token repetido, dos dispositivos, cierre antes de consumir, cambio de perfil Play Games y progreso antiguo. Desplegar API y AAB compatibles como un conjunto; bloquear las rutas heredadas después de migrar clientes.
 
-**Estado:** auditoría hecha; implementación, migración D1, secretos del Worker y pruebas pendientes. No ejecutar el workflow de despliegue de API todavía.
+**Estado:** autenticación de Play Games, consulta de compra y registro único de tokens preparados en `src/play-purchase-verification.js`; migración SQL preparada en `migrations/001_play_purchase_grants.sql`, sin ejecutar. Pruebas simuladas en `test/purchase-verification.test.mjs` pasan. **Aún no hay ruta de compra conectada ni entrega de monedas desde el servidor.** Faltan migración de progreso, integración de app y Worker, pruebas con Google, secretos de Cloudflare y despliegue. No ejecutar el workflow de API todavía.
