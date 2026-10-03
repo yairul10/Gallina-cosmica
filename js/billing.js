@@ -27,8 +27,9 @@
     return applied;
   }
 
-  async function consumeAfterReward(token){
-    await plugin().consume({purchaseToken:token});
+  async function finishPurchase(item, token){
+    if(item.consumable===false) await plugin().acknowledge({purchaseToken:token});
+    else await plugin().consume({purchaseToken:token});
   }
 
   async function buy(productId){
@@ -44,9 +45,10 @@
       if(returned.length && !returned.includes(productId)) throw new Error('El producto devuelto no coincide');
       const applied=applyPurchase(productId,r.purchaseToken);
       if(!applied?.success) throw new Error('No se pudo guardar la recompensa');
-      status(applied.alreadyApplied?'Esta compra ya había sido acreditada.':(item.pack?'✅ '+item.label+' desbloqueado.':('✅ ¡'+item.label+' monedas recibidas!'+(item.cosmetic?' 👻 Diseño Fantasma desbloqueado.':''))));
-      if(item.consumable!==false) await consumeAfterReward(r.purchaseToken);
       window.updatePackOffers?.();
+      try { await finishPurchase(item,r.purchaseToken); }
+      catch(e) { console.warn('[Billing confirmation]',e); status('✅ Recompensa guardada. Google Play aún debe confirmar la compra; volveremos a intentarlo al abrir la app.'); return; }
+      status(applied.alreadyApplied?'Esta compra ya había sido acreditada.':(item.pack?'✅ '+item.label+' desbloqueado.':('✅ ¡'+item.label+' monedas recibidas!'+(item.cosmetic?' 👻 Diseño Fantasma desbloqueado.':''))));
     }catch(e){
       const msg=String(e?.message||e||'');
       status(/cancel/i.test(msg)?'Compra cancelada.':'No se completó la compra. Inténtalo nuevamente.');
@@ -75,7 +77,7 @@
         const productId=(p.products||[]).find(id=>PRODUCTS[id]);
         if(!productId || !p.purchaseToken)continue;
         const applied=applyPurchase(productId,p.purchaseToken);
-        if(applied?.success && PRODUCTS[productId]?.consumable!==false) await consumeAfterReward(p.purchaseToken);
+        if(applied?.success) await finishPurchase(PRODUCTS[productId],p.purchaseToken);
         if(applied?.success) window.updatePackOffers?.();
       }
     }catch(e){console.warn('[Billing recovery]',e);}
