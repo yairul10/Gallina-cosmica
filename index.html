@@ -314,6 +314,7 @@
             <div id="shopAds" class="shop-grid" style="display:none;">
                 <div class="shop-item" style="grid-column:span 2;"><h4>🪙 Monedas por anuncio</h4><p>Recibe 5.000 monedas por cada anuncio completo. Máximo 3 al día.</p><button class="shop-btn" id="adCoinsBtn" onclick="GallinaAds.watchCoins()">📺 Ver anuncio</button><p id="adCoinsCount"></p></div>
                 <div class="shop-item" style="grid-column:span 2;"><h4>🐑 Oveja Base</h4><img src="assets/oveja_1.png" class="shop-img" style="height:45px;object-fit:contain;" alt="Oveja Base"><p>Desbloquéala tras completar 3 anuncios. También puedes conseguirla con monedas o en el Pack Inicial.</p><button class="shop-btn" id="adShipBtn" onclick="GallinaAds.watchShip()">📺 Ver anuncio</button><p id="adShipCount"></p></div>
+                <button class="shop-btn" id="adPrivacyBtn" style="display:none;grid-column:span 2;" onclick="GallinaAds.openPrivacyOptions()">Privacidad de los anuncios</button>
                 <p id="adShopStatus" role="status" aria-live="polite" style="grid-column:span 2;min-height:18px;color:#93c5fd;font-size:.78rem;"></p>
             </div>
             <div id="playCoinsPurchase" style="display:none;margin:10px 0;padding:12px;border:1px solid #fbbf24;border-radius:14px;background:rgba(120,53,15,.22);text-align:center;">
@@ -365,18 +366,19 @@
             <button class="btn btn-secondary" id="muteMenuBtn">🔊 Silenciar Música</button>
             <button class="btn btn-secondary" id="quitMatchBtn" style="margin-top: 10px; background-color: #991b1b; color: #fecaca; border: 2px solid #7f1d1d;">🚪 Abandonar Partida</button>
         </div>
-        <div id="gameOverScreen" class="screen-overlay" style="display: none;"><h1 style="margin-bottom: 4px;">¡Nave Destruida!</h1><p style="margin-bottom: 15px;">Puntuación final: <strong id="finalScore" style="font-size:1.2rem; color:#38bdf8;">0</strong></p><p id="coinsStatus" style="color: #fbbf24; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Tienes: 🪙 0</p><button class="btn" id="reviveBtn" style="background-color: #f59e0b; color: #fff; margin-bottom: 8px; border: 2px solid #fbbf24;">❤️ Revivir (10,000 🪙)</button><button class="btn" id="reviveAdBtn" style="background-color:#2563eb;color:#fff;margin-bottom:6px;border:2px solid #60a5fa;">📺 Ver anuncio de prueba y revivir</button><p id="reviveAdStatus" style="min-height:18px;font-size:.72rem;color:#93c5fd;margin:0 0 10px;"></p><p id="autoSaveScoreStatus" style="font-size:0.8rem; color:#86efac; margin-bottom:10px;">☁️ Récord y progreso guardados automáticamente.</p><div class="leaderboard-box" style="margin-bottom: 10px;"><h3>🏆 Top Puntajes</h3><div id="endLeaderboardList"></div></div><button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button><button class="btn btn-secondary" id="mainMenuBtn">Menú Principal</button></div>
+        <div id="gameOverScreen" class="screen-overlay" style="display: none;"><h1 style="margin-bottom: 4px;">¡Nave Destruida!</h1><p style="margin-bottom: 15px;">Puntuación final: <strong id="finalScore" style="font-size:1.2rem; color:#38bdf8;">0</strong></p><p id="coinsStatus" style="color: #fbbf24; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Tienes: 🪙 0</p><button class="btn" id="reviveBtn" style="background-color: #f59e0b; color: #fff; margin-bottom: 8px; border: 2px solid #fbbf24;">❤️ Revivir (10,000 🪙)</button><button class="btn" id="reviveAdBtn" style="background-color:#2563eb;color:#fff;margin-bottom:6px;border:2px solid #60a5fa;">📺 Ver anuncio y revivir</button><p id="reviveAdStatus" style="min-height:18px;font-size:.72rem;color:#93c5fd;margin:0 0 10px;"></p><p id="autoSaveScoreStatus" style="font-size:0.8rem; color:#86efac; margin-bottom:10px;">☁️ Récord y progreso guardados automáticamente.</p><div class="leaderboard-box" style="margin-bottom: 10px;"><h3>🏆 Top Puntajes</h3><div id="endLeaderboardList"></div></div><button class="btn" id="restartBtn" style="margin-top: 4px;">Reintentar</button><button class="btn btn-secondary" id="mainMenuBtn">Menú Principal</button></div>
     </div>
 
     <script src="js/player-identity-qa.js?v=14"></script>
     <script src="js/play-games-auth.js?v=6"></script>
-    <script src="js/update-notice.js?v=2"></script>
+    <script src="js/update-notice.js?v=3"></script>
     <script src="js/estado.js?v=1.4.38"></script>
     <script src="js/assets.js?v=gallina-chile-1"></script>
     <script src="js/ui.js?v=1.4.38-ruby3"></script>
     <script src="js/entidades.js?v=1.4.38"></script>
     <script src="js/main.js?v=rewarded-ads-2"></script>
-    <script src="js/ads-test.js?v=2"></script>
+    <script src="js/ad-config.js?v=1"></script>
+    <script src="js/ads-test.js?v=3"></script>
     <script src="js/billing.js?v=packs-ack-2"></script>
     <script src="js/superjefe-maiz.js"></script>
     <script src="js/modo-superjefes.js?v=pvp-rank-reward-1"></script>
