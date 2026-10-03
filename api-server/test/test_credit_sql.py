@@ -4,7 +4,8 @@ import re
 import sqlite3
 from pathlib import Path
 
-source = Path('play-purchase-verification.js').read_text()
+root = Path(__file__).resolve().parent.parent
+source = (root / 'src/play-purchase-verification.js').read_text()
 fn = source.split('export async function creditVerifiedPurchase', 1)[1]
 statements = re.findall(r'env\.DB\.prepare\(`([^\`]+)`\)', fn)
 assert len(statements) == 6, len(statements)
@@ -17,7 +18,7 @@ CREATE TABLE player_progress (
  login_streak INTEGER, last_login_date TEXT, updated_at TEXT
 );
 """)
-db.executescript(Path('001_play_purchase_grants.sql').read_text())
+db.executescript((root / 'migrations/001_play_purchase_grants.sql').read_text())
 
 def credit(token, player='p1', product='monedas_500000', coins=500000, entitlement=None):
     h = hashlib.sha256(token.encode()).hexdigest()
