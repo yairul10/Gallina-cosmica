@@ -10,6 +10,7 @@
     pack_pvp:          { label:'Pack PvP', pack:true, consumable:false }
   };
   const plugin=()=>window.Capacitor?.Plugins?.GallinaBilling;
+  const PURCHASE_API='https://gallina-cosmica-api.jairog940.workers.dev/api/purchases/verify';
   const status=(t)=>{const e=document.getElementById('playCoinsStatus');if(e)e.textContent=t||'';};
   const button=(id)=>document.querySelector('[data-play-product="'+id+'"]');
   const setBusy=(id,busy)=>{const b=button(id);if(b){b.disabled=busy;b.style.opacity=busy?'.65':'1';}};
@@ -32,6 +33,32 @@
     else await plugin().consume({purchaseToken:token});
   }
 
+  async function verifyOnServer(productId, token){
+    const authCode=await window.requestPlayGamesServerAuthCode?.();
+    if(!authCode) throw new Error('PLAY_GAMES_AUTH_REQUIRED');
+    const response=await fetch(PURCHASE_API,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({auth_code:authCode,purchase_token:token,product_id:productId})
+    });
+    const result=await response.json().catch(()=>null);
+    if(!response.ok || !result?.success) throw new Error(result?.error||'PURCHASE_VERIFICATION_FAILED');
+    if(result.player_id!==window.GallinaPlayerIdentity?.getCurrent?.()?.id) throw new Error('PLAYER_ID_MISMATCH');
+    return result;
+  }
+
+  async function deliverPurchase(productId, token){
+    const grant=await verifyOnServer(productId,token);
+    if(grant.newlyCredited){
+      const applied=applyPurchase(productId,token);
+      if(!applied?.success) throw new Error('LOCAL_REWARD_PENDING');
+    }else{
+      window.gallinaApplyVerifiedPlayEntitlement?.(token,productId);
+    }
+    await window.gallinaRefreshCloudProgress?.();
+    window.updatePackOffers?.();
+    return grant;
+  }
+
   async function buy(productId){
     const item=PRODUCTS[productId];
     if(!item || button(productId)?.disabled)return;
@@ -39,19 +66,19 @@
     setBusy(productId,true);
     status('Conectando con Google Play…');
     try{
+      if(!await window.gallinaFlushCloudProgressBeforePurchase?.())
+        throw new Error('CLOUD_SYNC_REQUIRED');
       const r=await plugin().buy({productId});
       if(!r?.purchaseToken) throw new Error('Compra sin token');
       const returned=Array.isArray(r.products)?r.products:[];
       if(returned.length && !returned.includes(productId)) throw new Error('El producto devuelto no coincide');
-      const applied=applyPurchase(productId,r.purchaseToken);
-      if(!applied?.success) throw new Error('No se pudo guardar la recompensa');
-      window.updatePackOffers?.();
+      const grant=await deliverPurchase(productId,r.purchaseToken);
       try { await finishPurchase(item,r.purchaseToken); }
       catch(e) { console.warn('[Billing confirmation]',e); status('✅ Recompensa guardada. Google Play aún debe confirmar la compra; volveremos a intentarlo al abrir la app.'); return; }
-      status(applied.alreadyApplied?'Esta compra ya había sido acreditada.':(item.pack?'✅ '+item.label+' desbloqueado.':('✅ ¡'+item.label+' monedas recibidas!'+(item.cosmetic?' 👻 Diseño Fantasma desbloqueado.':''))));
+      status(!grant.newlyCredited?'Esta compra ya había sido acreditada.':(item.pack?'✅ '+item.label+' desbloqueado.':('✅ ¡'+item.label+' monedas recibidas!'+(item.cosmetic?' 👻 Diseño Fantasma desbloqueado.':''))));
     }catch(e){
       const msg=String(e?.message||e||'');
-      status(/cancel/i.test(msg)?'Compra cancelada.':'No se completó la compra. Inténtalo nuevamente.');
+      status(/cancel/i.test(msg)?'Compra cancelada.':(msg==='CLOUD_SYNC_REQUIRED'?'Conéctate y sincroniza tu progreso antes de comprar.':'No se pudo verificar la compra. Se reintentará al abrir el juego.'));
       console.warn('[Billing]',e);
     }finally{setBusy(productId,false);}
   }
@@ -76,9 +103,8 @@
       for(const p of (r?.purchases||[])){
         const productId=(p.products||[]).find(id=>PRODUCTS[id]);
         if(!productId || !p.purchaseToken)continue;
-        const applied=applyPurchase(productId,p.purchaseToken);
-        if(applied?.success) await finishPurchase(PRODUCTS[productId],p.purchaseToken);
-        if(applied?.success) window.updatePackOffers?.();
+        await deliverPurchase(productId,p.purchaseToken);
+        await finishPurchase(PRODUCTS[productId],p.purchaseToken);
       }
     }catch(e){console.warn('[Billing recovery]',e);}
   }
@@ -89,4 +115,5 @@
   }
   window.GallinaBilling={buy,loadPrices,recoverPurchases,init,products:PRODUCTS};
   window.addEventListener('load',()=>setTimeout(init,900),{once:true});
+  window.addEventListener('gallina-player-identity-ready',recoverPurchases);
 })();
