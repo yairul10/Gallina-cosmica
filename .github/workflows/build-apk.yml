@@ -207,6 +207,30 @@ jobs:
               }
 
               @PluginMethod
+              public void acknowledge(PluginCall call) {
+                  String token=call.getString("purchaseToken");
+                  if(token==null || token.isEmpty()){call.reject("Falta purchaseToken");return;}
+                  connect(() -> {
+                      QueryPurchasesParams q=QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build();
+                      client.queryPurchasesAsync(q,(r,purchases)->{
+                          if(r.getResponseCode()!=BillingClient.BillingResponseCode.OK){call.reject("No se pudo verificar la compra: "+r.getDebugMessage());return;}
+                          for(Purchase p:purchases){
+                              if(!token.equals(p.getPurchaseToken()))continue;
+                              if(p.getPurchaseState()!=Purchase.PurchaseState.PURCHASED){call.reject("Compra pendiente");return;}
+                              if(p.isAcknowledged()){call.resolve();return;}
+                              AcknowledgePurchaseParams params=AcknowledgePurchaseParams.newBuilder().setPurchaseToken(token).build();
+                              client.acknowledgePurchase(params,result->{
+                                  if(result.getResponseCode()==BillingClient.BillingResponseCode.OK)call.resolve();
+                                  else call.reject("No se pudo confirmar la compra: "+result.getDebugMessage());
+                              });
+                              return;
+                          }
+                          call.reject("Compra no encontrada en Google Play");
+                      });
+                  }, call);
+              }
+
+          @PluginMethod
               public void consume(PluginCall call) {
                   String token=call.getString("purchaseToken");
                   if(token==null){call.reject("Falta purchaseToken");return;}
@@ -291,8 +315,8 @@ jobs:
           from pathlib import Path
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          s = s.replace("versionCode 1", "versionCode 68")
-          s = s.replace('versionName "1.0"', 'versionName "1.4.38"')
+          s = s.replace("versionCode 1", "versionCode 69")
+          s = s.replace('versionName "1.0"', 'versionName "1.4.39"')
           p.write_text(s)
           PY2
 
