@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { webcrypto } from 'node:crypto';
 
-const source = readFileSync(new URL('./play-purchase-verification.js', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../src/play-purchase-verification.js', import.meta.url), 'utf8');
 const { recordVerifiedPurchase, verifyGooglePurchase } = await import(
   'data:text/javascript;base64,' + Buffer.from(source).toString('base64')
 );
