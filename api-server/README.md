@@ -7,3 +7,19 @@ El archivo `src/worker.js` es la copia recibida del Worker `gallina-cosmica-api`
 El workflow de API solo se ejecuta manualmente. Antes de usarlo, configurar `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` en GitHub Actions Secrets. El token de Cloudflare debe tener permisos de edición del Worker correspondiente. El UUID de la base D1 confirmada está en el workflow, sin credenciales. Mantener los secretos de Google en las variables cifradas del Worker, jamás en GitHub ni en la app. Confirmar que la D1 asociada al nombre `DB` es la misma base usada por el Worker actual.
 
 Migración pendiente: añadir tabla de tokens verificados y desplegar cliente compatible antes de bloquear la ruta antigua. Revisar compras de prueba, packs, reconexión y progreso existente en una versión de prueba.
+
+## Revisión del 3 de octubre de 2026
+
+Configuración confirmada por capturas: cuenta de servicio `gallina-compras-api@gallina-cosmica.iam.gserviceaccount.com` activa en Play Console para `com.gallinacosmica.app`, permisos de datos financieros y gestión de pedidos; Google Play Android Developer API habilitada en el proyecto `gallina-cosmica`. Esto configura el acceso, pero todavía no valida compras en el Worker.
+
+Flujo actual de `js/billing.js`: el cliente llama a `gallinaApplyPlayCoinPurchase` o `gallinaApplyPlayPackPurchase` antes de consumir o confirmar la compra. Solo deduplica tokens en `localStorage` (hasta 200), por lo que una reinstalación u otro dispositivo no comparte el registro. `js/estado.js` envía `coins`, `owned_ships` y `owned_extras` a `POST /api/progress`. El Worker acepta esos valores usando únicamente un `player_id` declarado por el cliente. También hay premios en `/api/rewards/claim` sin sesión.
+
+### Orden de implementación obligatorio
+
+1. Crear autenticación de Play Games en la API con código OAuth de un solo uso, obteniendo el ID de jugador desde Google; no confiar en `player_id` del cuerpo. La app ya expone `requestPlayGamesServerAuthCode()`; el Worker PvP muestra el intercambio y la verificación como referencia. El secreto OAuth queda solo en Cloudflare.
+2. Añadir a D1 un registro único por token de compra, vinculado a jugador y producto, con entrega idempotente. Consultar `purchases.productsv2.getproductpurchasev2` con la cuenta de servicio, exigir `PURCHASED` y verificar `productLineItem.productId`, paquete y cantidad antes de entregar. La credencial de Google se guarda solo como secreto del Worker.
+3. Convertir el saldo y los derechos de packs en datos administrados por el servidor. Ninguna ruta debe permitir que un `POST /api/progress` antiguo sobrescriba monedas o posesiones pagadas. Separar progreso de juego editable de créditos y derechos de compra; definir la migración de saldos existentes y las compras de prueba ya realizadas.
+4. La nueva app espera la respuesta del servidor antes de mostrar la recompensa. Reintenta tokens pendientes al reabrir y consume/acknowledge solo después de que el servidor confirme la entrega. No acreditar desde un token no verificado localmente.
+5. Probar en un entorno aislado los casos: compra aceptada, pendiente, cancelada, token/producto incorrecto, token repetido, dos dispositivos, cierre antes de consumir, cambio de perfil Play Games y progreso antiguo. Desplegar API y AAB compatibles como un conjunto; bloquear las rutas heredadas después de migrar clientes.
+
+**Estado:** auditoría hecha; implementación, migración D1, secretos del Worker y pruebas pendientes. No ejecutar el workflow de despliegue de API todavía.
