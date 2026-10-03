@@ -1,3 +1,5 @@
+import { verifyPlayGamesPlayer, verifyGooglePurchase, creditVerifiedPurchase } from "./play-purchase-verification.js";
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -17,6 +19,39 @@ export default {
       new Response(JSON.stringify(data), { status, headers });
 
     try {
+
+      if (env.PURCHASE_API_ENABLED === "true" && request.method === "POST" &&
+          (url.pathname === "/api/progress" || url.pathname === "/api/rewards/claim")) {
+        return json({ success: false, error: "CLIENT_UPGRADE_REQUIRED" }, 426);
+      }
+
+      // Feature remains disabled until the old progress writer and app are
+      // migrated together. No secret is ever sent back to the device.
+      if (request.method === "POST" && url.pathname === "/api/purchases/verify") {
+        if (env.PURCHASE_API_ENABLED !== "true") {
+          return json({ success: false, error: "PURCHASE_API_DISABLED" }, 503);
+        }
+        let body;
+        try { body = await request.json(); }
+        catch { return json({ success: false, error: "INVALID_JSON" }, 400); }
+        if (!body || typeof body !== "object") {
+          return json({ success: false, error: "INVALID_REQUEST" }, 400);
+        }
+        try {
+          const playerId = await verifyPlayGamesPlayer(body.auth_code, env);
+          const purchase = await verifyGooglePurchase(body.purchase_token, body.product_id, env);
+          const grant = await creditVerifiedPurchase(env, {
+            playerId, purchaseToken: body.purchase_token, productId: purchase.productId,
+            orderId: purchase.orderId, test: purchase.test
+          });
+          return json({ success: true, player_id: playerId, ...grant });
+        } catch (error) {
+          const code = String(error?.message || "PURCHASE_VERIFICATION_FAILED");
+          const invalid = /^(INVALID_|PURCHASE_NOT_COMPLETED|PURCHASE_PRODUCT_MISMATCH|PURCHASE_TOKEN_ALREADY_ASSIGNED|PACK_ALREADY_CLAIMED)/.test(code);
+          console.warn("[Purchase verification]", code);
+          return json({ success: false, error: invalid ? code : "PURCHASE_VERIFICATION_FAILED" }, invalid ? 400 : 503);
+        }
+      }
 
       // ============================================================
       // PROGRESO EN LA NUBE
