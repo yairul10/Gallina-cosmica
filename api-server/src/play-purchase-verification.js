@@ -130,3 +130,54 @@ export async function recordVerifiedPurchase(env, { playerId, purchaseToken, pro
     entitlement: row.entitlement || null
   };
 }
+
+// Atomic delivery: D1.batch rolls back all statements when one fails.
+// No public route may call this before verifying both Google identity and purchase.
+// The legacy /api/progress writer must be migrated before this is used in production.
+export async function creditVerifiedPurchase(env, { playerId, purchaseToken, productId, orderId = '', test = false }) {
+  const reward = PURCHASE_REWARDS[productId];
+  if (!env.DB?.batch || !reward || typeof playerId !== 'string' || !playerId || playerId.length > 128 ||
+      typeof purchaseToken !== 'string' || !purchaseToken || purchaseToken.length > 4096) {
+    throw new Error('INVALID_GRANT');
+  }
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(purchaseToken));
+  const tokenHash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+  const statements = [
+    env.DB.prepare(`INSERT INTO players (player_id, display_name, last_seen_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(player_id) DO NOTHING`).bind(playerId, playerId),
+    env.DB.prepare(`INSERT INTO player_progress
+      (player_id, coins, high_score, owned_ships, equipped_ship, owned_extras,
+       equipped_extra, login_streak, last_login_date, updated_at)
+      VALUES (?, 0, 0, '[]', NULL, '[]', NULL, 0, NULL, CURRENT_TIMESTAMP)
+      ON CONFLICT(player_id) DO NOTHING`).bind(playerId),
+    env.DB.prepare(`INSERT INTO play_purchase_grants
+      (token_hash, player_id, product_id, coins, entitlement, order_id, is_test)
+      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(token_hash) DO NOTHING`)
+      .bind(tokenHash, playerId, productId, reward.coins, reward.entitlement || null,
+        String(orderId).slice(0, 128), test ? 1 : 0),
+    env.DB.prepare(`UPDATE player_progress SET coins = coins + ?, updated_at = CURRENT_TIMESTAMP
+      WHERE player_id = ? AND EXISTS (
+        SELECT 1 FROM play_purchase_grants
+        WHERE token_hash = ? AND player_id = ? AND product_id = ? AND credited_at IS NULL
+      )`).bind(reward.coins, playerId, tokenHash, playerId, productId),
+    env.DB.prepare(`UPDATE play_purchase_grants SET credited_at = CURRENT_TIMESTAMP
+      WHERE token_hash = ? AND player_id = ? AND product_id = ? AND credited_at IS NULL`)
+      .bind(tokenHash, playerId, productId)
+  ];
+  try {
+    const results = await env.DB.batch(statements);
+    const row = await env.DB.prepare(`SELECT player_id, product_id, coins, entitlement, credited_at
+      FROM play_purchase_grants WHERE token_hash = ? LIMIT 1`).bind(tokenHash).first();
+    if (!row || row.player_id !== playerId || row.product_id !== productId) {
+      throw new Error('PURCHASE_TOKEN_ALREADY_ASSIGNED');
+    }
+    if (!row.credited_at) throw new Error('PURCHASE_NOT_CREDITED');
+    return { newlyCredited: Number(results[3]?.meta?.changes || 0) === 1,
+      productId: row.product_id, coins: Number(row.coins), entitlement: row.entitlement || null };
+  } catch (error) {
+    if (String(error).includes('UNIQUE constraint failed') && reward.entitlement?.startsWith('pack_')) {
+      throw new Error('PACK_ALREADY_CLAIMED');
+    }
+    throw error;
+  }
+}
