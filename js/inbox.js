@@ -126,8 +126,9 @@
     if(!screen)return;
     screen.style.display='flex';list.replaceChildren();status.textContent='Cargando…';
     const [pvp,purchases]=await Promise.allSettled([fetchInbox(),fetchReceipts()]);
-    if(pvp.status==='rejected')messages=[];
-    if(purchases.status==='rejected')receipts=[];
+    if(pvp.status==='rejected'){messages=[];pvpUnread=0;}
+    if(purchases.status==='rejected'){receipts=[];receiptPlayer='';}
+    updateBadge();
     if(pvp.status==='rejected'&&purchases.status==='rejected'){
       status.textContent='No se pudieron cargar los mensajes. Comprueba la conexión e inicia sesión en Play Games.';
       return;
