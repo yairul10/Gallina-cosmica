@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const source = readFileSync(new URL('../../js/billing.js', import.meta.url), 'utf8');
-let credited = 0, consumed = 0, verified = 0, newlyCredited = true;
+let credited = 0, consumed = 0, verified = 0, entitlements = 0, newlyCredited = true;
 const statusEl = { textContent: '' };
 const plugin = {
   async buy() { return { purchaseToken: 'token-a', products: ['monedas_500000'] }; },
@@ -19,13 +19,13 @@ const window = {
   gallinaFlushCloudProgressBeforePurchase: async () => true,
   gallinaRefreshCloudProgress: async () => true,
   gallinaApplyPlayCoinPurchase: () => { credited++; return { success: true }; },
-  gallinaApplyVerifiedPlayEntitlement: () => {},
+  gallinaApplyVerifiedPlayEntitlement: () => { entitlements++; },
   updatePackOffers() {}
 };
 const context = {
   window, document: { getElementById: () => statusEl, querySelector: () => null },
   fetch: async (_url, options) => {
-    assert.equal(credited, verified); // API call comes before local credit.
+    assert.equal(credited, 0); // The client never adds paid coins by itself.
     assert.equal(JSON.parse(options.body).auth_code, 'auth-code');
     verified++;
     return new Response(JSON.stringify({
@@ -36,10 +36,11 @@ const context = {
 };
 vm.runInNewContext(source, context);
 await window.GallinaBilling.buy('monedas_500000');
-assert.equal(credited, 1);
+assert.equal(credited, 0);
 assert.equal(consumed, 1);
 newlyCredited = false;
 await window.GallinaBilling.buy('monedas_500000');
-assert.equal(credited, 1);
+assert.equal(credited, 0);
 assert.equal(consumed, 2);
-console.log('Billing verifies before credit and avoids replay: OK');
+assert.equal(entitlements, 2);
+console.log('Billing verifies and refreshes server credit on replay: OK');
