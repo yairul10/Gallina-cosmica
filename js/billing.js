@@ -15,19 +15,6 @@
   const button=(id)=>document.querySelector('[data-play-product="'+id+'"]');
   const setBusy=(id,busy)=>{const b=button(id);if(b){b.disabled=busy;b.style.opacity=busy?'.65':'1';}};
 
-  function applyPurchase(productId, token){
-    const item=PRODUCTS[productId];
-    if(!item) return {success:false};
-    const applied=item.pack
-      ? window.gallinaApplyPlayPackPurchase?.(token,productId)
-      : window.gallinaApplyPlayCoinPurchase?.(token,item.amount);
-    if(!applied?.success) return applied;
-    if(item.cosmetic){
-      window.gallinaApplyPvpCosmeticReward?.(token+':cosmetic',item.cosmetic);
-    }
-    return applied;
-  }
-
   async function finishPurchase(item, token){
     if(item.consumable===false) await plugin().acknowledge({purchaseToken:token});
     else await plugin().consume({purchaseToken:token});
@@ -48,13 +35,8 @@
 
   async function deliverPurchase(productId, token){
     const grant=await verifyOnServer(productId,token);
-    if(grant.newlyCredited){
-      const applied=applyPurchase(productId,token);
-      if(!applied?.success) throw new Error('LOCAL_REWARD_PENDING');
-    }else{
-      window.gallinaApplyVerifiedPlayEntitlement?.(token,productId);
-    }
-    await window.gallinaRefreshCloudProgress?.();
+    window.gallinaApplyVerifiedPlayEntitlement?.(token,productId);
+    if(!await window.gallinaRefreshCloudProgress?.()) throw new Error('CLOUD_REFRESH_PENDING');
     window.updatePackOffers?.();
     return grant;
   }
