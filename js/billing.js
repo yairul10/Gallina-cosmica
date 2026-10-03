@@ -38,6 +38,7 @@
     window.gallinaApplyVerifiedPlayEntitlement?.(token,productId);
     if(!await window.gallinaRefreshCloudProgress?.()) throw new Error('CLOUD_REFRESH_PENDING');
     window.updatePackOffers?.();
+    window.gallinaRefreshInbox?.();
     return grant;
   }
 
