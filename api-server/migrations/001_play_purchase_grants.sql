@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS play_purchase_grants (
   entitlement TEXT,
   order_id TEXT NOT NULL DEFAULT '',
   is_test INTEGER NOT NULL DEFAULT 0 CHECK (is_test IN (0, 1)),
+  credited_at TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
