@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "gallina-cosmica-pvp-test",
+  "name": "gallina-cosmica-pvp",
   "main": "src/index.js",
   "compatibility_date": "2026-09-20",
   "keep_vars": true,
@@ -24,4 +24,4 @@
   ]
 }
 
-// Cloudflare TEST deploy verification: keep dashboard runtime variables.
+// Cloudflare production deployment: keep dashboard runtime variables.
