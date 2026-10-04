@@ -19,7 +19,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Desplegar gallina-cosmica-pvp-test
+    name: Desplegar gallina-cosmica-pvp
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
