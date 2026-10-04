@@ -88,6 +88,22 @@ jobs:
           print("Modo de anuncios preparado:", mode)
           PYADS
 
+      - name: Validar configuración de producción
+        if: ${{ inputs.ads_mode == 'production' }}
+        run: |
+          python3 - <<'PYPROD'
+          from pathlib import Path
+          files = [Path('www/js/pvp.js'), Path('www/js/play-games-auth.js')]
+          bad = 'gallina-cosmica-pvp-test.jairog940.workers.dev'
+          offenders = [str(p) for p in files if bad in p.read_text()]
+          if offenders:
+              raise RuntimeError('Build production contiene endpoint PvP de QA: ' + ', '.join(offenders))
+          expected = 'gallina-cosmica-pvp.jairog940.workers.dev'
+          if not all(expected in p.read_text() for p in files):
+              raise RuntimeError('Build production no apunta completamente al Worker PvP productivo')
+          print('OK: endpoints PvP de producción verificados')
+          PYPROD
+
       - name: Preparar imágenes
         run: |
           python3 -m pip install Pillow
