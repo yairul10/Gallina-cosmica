@@ -236,7 +236,6 @@
     // Consulta remota de QA. El servidor decide por Player ID verificado;
     // el cliente nunca contiene una lista de cuentas autorizadas.
     window.getRemoteQaAccess = async ({ forceSession = false } = {}) => {
-        if (window.GALLINA_PRODUCTION === true) return false;
         try {
             const session = await window.getPlayGamesPvpSession({ force: forceSession });
             const response = await fetch('https://gallina-cosmica-pvp.jairog940.workers.dev/qa/access?session=' + encodeURIComponent(session.token), { cache: 'no-store' });
@@ -248,7 +247,6 @@
     };
 
     window.getQaAdminStatus = async () => {
-        if (window.GALLINA_PRODUCTION === true) return {ok:false,isAdmin:false,qaEnabled:false};
         try {
             const session=await window.getPlayGamesPvpSession();
             const response=await fetch('https://gallina-cosmica-pvp.jairog940.workers.dev/qa/access?session='+encodeURIComponent(session.token),{cache:'no-store'});
@@ -257,7 +255,6 @@
         } catch (_) { return {ok:false,isAdmin:false,qaEnabled:false}; }
     };
     window.qaAdminRequest = async (action, playerId='') => {
-        if (window.GALLINA_PRODUCTION === true) throw new Error('QA_DISABLED_IN_PRODUCTION');
         const session=await window.getPlayGamesPvpSession();
         const base='https://gallina-cosmica-pvp.jairog940.workers.dev/qa/admin?session='+encodeURIComponent(session.token);
         const options=action==='list'?{cache:'no-store'}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action,playerId:String(playerId).trim()})};
