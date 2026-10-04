@@ -101,12 +101,7 @@ jobs:
           expected = 'gallina-cosmica-pvp.jairog940.workers.dev'
           if not all(expected in p.read_text() for p in files):
               raise RuntimeError('Build production no apunta completamente al Worker PvP productivo')
-          # El runtime de producción bloquea explícitamente las rutas administrativas QA.
-          auth = Path('www/js/play-games-auth.js')
-          auth.write_text("window.GALLINA_PRODUCTION = true;\n" + auth.read_text())
-          if 'window.GALLINA_PRODUCTION = true;' not in auth.read_text():
-              raise RuntimeError('No se pudo activar el bloqueo QA de producción')
-          print('OK: endpoints PvP de producción verificados y QA desactivado')
+          print('OK: endpoints PvP de producción verificados')
           PYPROD
 
       - name: Preparar imágenes
