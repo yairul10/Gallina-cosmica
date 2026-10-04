@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gallina-cosmica-pvp",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-20",
+  "keep_vars": true,
+  "durable_objects": {
+    "bindings": [
+      { "name": "PVP_ROOMS", "class_name": "PvpRoom" },
+      { "name": "PVP_MATCHMAKER", "class_name": "PvpMatchmaker" },
+      { "name": "PVP_RANKING", "class_name": "PvpRanking" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["PvpRoom"] },
+    { "tag": "v2", "new_sqlite_classes": ["Matchmaker"] },
+    {
+      "tag": "v3",
+      "renamed_classes": [
+        { "from": "Matchmaker", "to": "PvpMatchmaker" }
+      ]
+    },
+    { "tag": "v4", "new_sqlite_classes": ["PvpRanking"] }
+  ]
+}
+
+// Cloudflare production deployment: keep dashboard runtime variables.
