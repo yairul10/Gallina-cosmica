@@ -202,7 +202,7 @@
             const identity = await refreshPlayerIdentity();
             if (!identity?.id) throw new Error('No se pudo confirmar la identidad de Play Games');
             const authCode = await window.requestPlayGamesServerAuthCode();
-            const response = await fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/auth/play-games', {
+            const response = await fetch('https://gallina-cosmica-pvp.jairog940.workers.dev/auth/play-games', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ authCode })
@@ -238,7 +238,7 @@
     window.getRemoteQaAccess = async ({ forceSession = false } = {}) => {
         try {
             const session = await window.getPlayGamesPvpSession({ force: forceSession });
-            const response = await fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/qa/access?session=' + encodeURIComponent(session.token), { cache: 'no-store' });
+            const response = await fetch('https://gallina-cosmica-pvp.jairog940.workers.dev/qa/access?session=' + encodeURIComponent(session.token), { cache: 'no-store' });
             const data = await response.json().catch(() => ({}));
             return !!(response.ok && data?.ok && data?.qaEnabled);
         } catch (_) {
@@ -249,14 +249,14 @@
     window.getQaAdminStatus = async () => {
         try {
             const session=await window.getPlayGamesPvpSession();
-            const response=await fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/qa/access?session='+encodeURIComponent(session.token),{cache:'no-store'});
+            const response=await fetch('https://gallina-cosmica-pvp.jairog940.workers.dev/qa/access?session='+encodeURIComponent(session.token),{cache:'no-store'});
             const data=await response.json().catch(()=>({}));
             return {ok:response.ok&&!!data?.ok,isAdmin:!!data?.isAdmin,qaEnabled:!!data?.qaEnabled,playerId:session.playerId};
         } catch (_) { return {ok:false,isAdmin:false,qaEnabled:false}; }
     };
     window.qaAdminRequest = async (action, playerId='') => {
         const session=await window.getPlayGamesPvpSession();
-        const base='https://gallina-cosmica-pvp-test.jairog940.workers.dev/qa/admin?session='+encodeURIComponent(session.token);
+        const base='https://gallina-cosmica-pvp.jairog940.workers.dev/qa/admin?session='+encodeURIComponent(session.token);
         const options=action==='list'?{cache:'no-store'}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action,playerId:String(playerId).trim()})};
         const response=await fetch(base,options);
         const data=await response.json().catch(()=>({}));
