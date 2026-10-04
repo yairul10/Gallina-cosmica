@@ -8,6 +8,11 @@ on:
       - 'pvp-server/**'
       - '.github/workflows/deploy-pvp-worker.yml'
   workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: 'Escribe DEPLOY-PVP-PRODUCTION para confirmar el despliegue productivo'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -18,6 +23,8 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.confirm_production == 'DEPLOY-PVP-PRODUCTION'
+    environment: pvp-production
     runs-on: ubuntu-latest
     name: Desplegar gallina-cosmica-pvp
     steps:
