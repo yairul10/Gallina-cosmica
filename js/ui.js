@@ -59,6 +59,7 @@ document.getElementById('quitMatchBtn').addEventListener('click', (e) => {
 
 function closeScreen(id) { document.getElementById(id).style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; }
 document.getElementById('openTutorialBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('tutorialScreen').style.display = 'flex'; });
+document.getElementById('openCommunityBtn').addEventListener('click', () => { document.getElementById('startScreen').style.display = 'none'; document.getElementById('communityScreen').style.display = 'flex'; });
 document.getElementById('openHangarBtn').addEventListener('click', () => { refreshPvpSpecialShipAccess(); updateHangarUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('hangarScreen').style.display = 'flex'; });
 document.getElementById('openShopBtn').addEventListener('click', () => { refreshPvpSpecialShipAccess(); updateShopUI(); document.getElementById('startScreen').style.display = 'none'; document.getElementById('shopScreen').style.display = 'flex'; });
 document.getElementById('openRecordsBtn').addEventListener('click', () => {
