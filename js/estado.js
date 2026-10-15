@@ -65,6 +65,8 @@ if (gameStats.pvpUnlocked === undefined) gameStats.pvpUnlocked = false;
 if (gameStats.pvpGames === undefined) gameStats.pvpGames = 0;
 if (gameStats.pvpWins === undefined) gameStats.pvpWins = 0;
 if (gameStats.pvpKills === undefined) gameStats.pvpKills = 0;
+// Las partidas anteriores son prueba del acceso de este mismo perfil.
+if (Number(gameStats.pvpGames) > 0) gameStats.pvpUnlocked = true;
 if (!gameStats.playOwnedPacks || typeof gameStats.playOwnedPacks !== 'object') gameStats.playOwnedPacks = {};
 if (!gameStats.packOfferCollapsed || typeof gameStats.packOfferCollapsed !== 'object') gameStats.packOfferCollapsed = { initial:false, pvp:false };
 
@@ -258,6 +260,7 @@ function getOwnedExtraIds() {
     const ids = gameStats.extraModule ? ['auto_life'] : [];
     if (gameStats.pvpEvade) ids.push('pvp_evade');
     if (gameStats.pvpEmergencyLife) ids.push('pvp_emergency_life');
+    if (gameStats.pvpUnlocked) ids.push('pvp_unlocked');
     return ids;
 }
 
@@ -391,13 +394,23 @@ document.addEventListener('visibilitychange', () => {
     if (!document.hidden) syncPendingCloudProgress();
 });
 
-async function loadCloudProgress() {
+let cloudProgressLoadPromise = null;
+function loadCloudProgress() {
+    if (!cloudProgressLoadPromise) {
+        cloudProgressLoadPromise = loadCloudProgressForCurrentPlayer().finally(() => { cloudProgressLoadPromise = null; });
+    }
+    return cloudProgressLoadPromise;
+}
+window.gallinaLoadCloudProgress = loadCloudProgress;
+
+async function loadCloudProgressForCurrentPlayer() {
     const identity = window.GallinaPlayerIdentity?.getCurrent?.();
     if (!identity?.id) return;
     try {
         const response = await fetch(CLOUD_PROGRESS_API + '?player_id=' + encodeURIComponent(identity.id), { cache: 'no-store' });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.error || ('HTTP ' + response.status));
+        if (identity.id !== window.GallinaPlayerIdentity?.getCurrent?.()?.id) return;
         const progress = data.progress || {};
 
         // Durante la migración QA conservamos el mayor saldo para no borrar
@@ -417,6 +430,7 @@ async function loadCloudProgress() {
             if (id === 'auto_life') gameStats.extraModule = true;
             if (id === 'pvp_evade') gameStats.pvpEvade = true;
             if (id === 'pvp_emergency_life') gameStats.pvpEmergencyLife = true;
+            if (id === 'pvp_unlocked') gameStats.pvpUnlocked = true;
         });
 
         if (progress.equipped_ship) applyEquippedShipId(progress.equipped_ship);

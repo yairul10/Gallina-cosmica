@@ -127,7 +127,7 @@ async function refreshPvpSpecialShipAccess(){
     try{
         const identity=window.GallinaPlayerIdentity?.getCurrent?.();
         const jobs=[];
-        jobs.push(fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/ranking?playerId='+encodeURIComponent(identity?.id||''),{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d?.ok){if(identity?.id){window.gallinaSetPvpRankUnlocks(d.claimedRankRewards||[]);if(d.top1Trophy)window.gallinaUnlockPvpTop1Trophy?.();}window.gallinaSetGlobalEventTheme(d.eventTheme);window.gallinaSetGlobalMenuTheme(d.menuTheme);}}));
+        jobs.push(fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/ranking?playerId='+encodeURIComponent(identity?.id||''),{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d?.ok){if(identity?.id&&identity.id===window.GallinaPlayerIdentity?.getCurrent?.()?.id){if(!gameStats.pvpUnlocked&&Number(d.record?.matches)>0){gameStats.pvpUnlocked=true;saveStats();}window.gallinaSetPvpRankUnlocks(d.claimedRankRewards||[]);if(d.top1Trophy)window.gallinaUnlockPvpTop1Trophy?.();}window.gallinaSetGlobalEventTheme(d.eventTheme);window.gallinaSetGlobalMenuTheme(d.menuTheme);}}));
         if(window.getQaAdminStatus)jobs.push(window.getQaAdminStatus().then(d=>{
             // Un fallo transitorio de Play Games no debe ocultar el catálogo QA
             // después de que el servidor ya confirmó al administrador.
@@ -241,8 +241,14 @@ window.addEventListener('gallina-cloud-progress-loaded', window.refreshGallinaEq
 // Al restaurar la sesión de Play Games, confirmamos el permiso y volvemos a
 // pintar la nave del menú. Así un diseño ya equipado no aparece como normal
 // mientras el administrador espera abrir el Hangar.
-window.addEventListener('gallina-player-identity-ready', () => {
-    refreshPvpSpecialShipAccess().then(() => window.updateMenuShip?.());
+function refreshGlobalVisualEvents(){
+    return refreshPvpSpecialShipAccess().then(() => window.updateMenuShip?.());
+}
+window.addEventListener('gallina-player-identity-ready', refreshGlobalVisualEvents);
+window.addEventListener('load', refreshGlobalVisualEvents, {once:true});
+window.addEventListener('online', refreshGlobalVisualEvents);
+document.addEventListener('visibilitychange', () => {
+    if(!document.hidden)refreshGlobalVisualEvents();
 });
 
 window.equipShip = function(index, isPro) { if ((isPro && gameStats.proSkins[index]) || (!isPro && gameStats.skins[index])) { gameStats.selectedShip = index; gameStats.useProShip = isPro; gameStats.useGallinaChile = false; gameStats.selectedPvpShip=null; saveStats(); updateHangarUI(); window.updateMenuShip(); } }

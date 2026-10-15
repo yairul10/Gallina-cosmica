@@ -2156,6 +2156,8 @@
     // Los jugadores que ya desbloquearon PvP deben entrar de inmediato.
     // La consulta remota de administrador sólo es necesaria para saltar el bloqueo.
     if(!gameStats?.pvpUnlocked){
+      // Recuperar el desbloqueo de esta cuenta antes de mostrar el requisito.
+      try{await window.gallinaLoadCloudProgress?.();}catch{}
       try{admin=!!(await window.getQaAdminStatus?.())?.isAdmin;}catch{}
     }
     if(!gameStats?.pvpUnlocked&&!admin){
