@@ -61,6 +61,7 @@
                     <button class="btn menu-btn menu-btn-shop" id="openShopBtn"><span class="menu-btn-icon">🛒</span><span>Tienda</span><span class="menu-btn-arrow">›</span></button>
                 </div>
                 <button class="btn menu-btn menu-btn-tutorial" id="openTutorialBtn"><span class="menu-btn-icon">📖</span><span>Cómo Jugar</span><span class="menu-btn-arrow">›</span></button>
+                <button class="btn menu-btn" id="openCommunityBtn" type="button" style="border:2px solid #22d3ee;background:linear-gradient(135deg,#164e63,#155e75);"><span class="menu-btn-icon">🌐</span><span>Comunidad</span><span class="menu-btn-arrow">›</span></button>
 
                 <div class="menu-mini-actions">
                     <button class="btn menu-mini-btn" id="openRecordsBtn" title="Récords"><span>🥇</span><small>Récords</small></button>
@@ -203,6 +204,13 @@
             </div>
         </div>
         <div id="dailyRewardScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98); z-index: 200;"><h1 style="margin-bottom: 5px; color: #fbbf24;">🎁 Bono Diario</h1><p style="margin-bottom: 20px; font-size: 0.9rem;">¡Entra 7 días seguidos para el gran premio!</p><div id="dailyRewardsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 300px;"></div><button class="btn" id="claimRewardBtn" style="margin-top: 25px; background: #10b981; font-size: 1.1rem; border: 2px solid #34d399;">¡Reclamar Recompensa!</button></div>
+        <div id="communityScreen" class="screen-overlay" style="display:none;background:rgba(9,13,22,.98);overflow-y:auto;padding:20px;box-sizing:border-box;align-items:center;justify-content:center;flex-direction:column;text-align:center;">
+            <h1 style="color:#67e8f9;">🌐 Comunidad Cósmica</h1>
+            <p style="color:#e2e8f0;max-width:320px;">¡Únete a la comunidad de Gallina Cósmica!</p>
+            <a class="btn menu-btn" href="https://www.youtube.com/@gallinacosmicajuego" target="_blank" rel="noopener noreferrer external" style="display:flex;text-decoration:none;max-width:320px;width:100%;box-sizing:border-box;justify-content:center;gap:12px;background:#991b1b;">▶️ YouTube</a>
+            <a class="btn menu-btn" href="https://discord.gg/YHUbcjQJa" target="_blank" rel="noopener noreferrer external" style="display:flex;text-decoration:none;max-width:320px;width:100%;box-sizing:border-box;justify-content:center;gap:12px;background:#4338ca;">💬 Discord</a>
+            <button class="btn btn-secondary" type="button" onclick="closeScreen('communityScreen')" style="margin-top:18px;">🔙 Volver</button>
+        </div>
         <div id="tutorialScreen" class="screen-overlay" style="display: none; background: rgba(9, 13, 22, 0.98);"><h1 style="margin-bottom: 5px;">📖 Cómo Jugar</h1><div class="tutorial-content"><h3 style="color: #38bdf8;">🕹️ Movimiento</h3><p>• <b>Arrastrar / Joystick:</b> Configúralo en el menú de pausa.<br>• <b>PC:</b> Usa las flechas del teclado.</p><h3 style="color: #ef4444;">🚀 Combate</h3><p>• <b>Láser:</b> Toca el botón rojo. Sube de nivel para disparos múltiples.<br>• <b>Misil Rastreador:</b> Toca el botón amarillo (🎯).</p><h3 style="color: #10b981;">⚙️ Mejoras</h3><p>• Los botones de la izquierda <b>brillarán ✨</b> con monedas suficientes.</p></div><button class="btn btn-secondary" onclick="closeScreen('tutorialScreen')" style="margin-top: 15px;">🔙 Volver</button></div>
 
         <!-- HANGAR CON PESTAÑA EXTRA -->
