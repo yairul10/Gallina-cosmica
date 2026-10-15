@@ -126,7 +126,7 @@ async function refreshPvpSpecialShipAccess(){
     try{
         const identity=window.GallinaPlayerIdentity?.getCurrent?.();
         const jobs=[];
-        jobs.push(fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/ranking?playerId='+encodeURIComponent(identity?.id||''),{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d?.ok){if(identity?.id){window.gallinaSetPvpRankUnlocks(d.claimedRankRewards||[]);window.gallinaSetGlobalEventTheme(d.eventTheme);if(d.top1Trophy)window.gallinaUnlockPvpTop1Trophy?.();}window.gallinaSetGlobalMenuTheme(d.menuTheme);}}));
+        jobs.push(fetch('https://gallina-cosmica-pvp-test.jairog940.workers.dev/ranking?playerId='+encodeURIComponent(identity?.id||''),{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d?.ok){if(identity?.id){window.gallinaSetPvpRankUnlocks(d.claimedRankRewards||[]);if(d.top1Trophy)window.gallinaUnlockPvpTop1Trophy?.();}window.gallinaSetGlobalEventTheme(d.eventTheme);window.gallinaSetGlobalMenuTheme(d.menuTheme);}}));
         if(window.getQaAdminStatus)jobs.push(window.getQaAdminStatus().then(d=>{
             // Un fallo transitorio de Play Games no debe ocultar el catálogo QA
             // después de que el servidor ya confirmó al administrador.
