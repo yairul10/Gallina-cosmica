@@ -1,0 +1,154 @@
+name: Crear AAB de Gallina Cosmica
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar juego
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Instalar Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8
+          npm install @capacitor/splash-screen@8
+          npm install --save-dev @capacitor/assets
+
+      - name: Preparar juego
+        run: |
+          mkdir -p www
+          cp index.html www/
+          cp -r js www/
+          cp style.css www/
+          cp -r assets www/
+
+      - name: Preparar imágenes
+        run: |
+          mkdir -p resources
+          cp assets/icon.png resources/icon.png
+          cp assets/splash.png resources/splash.png
+
+      - name: Crear proyecto Android
+        run: |
+          npx cap init "Gallina Cosmica" "com.gallinacosmica.app" --web-dir www
+          npx cap add android
+
+      - name: Generar icono y splash
+        run: |
+          npx capacitor-assets generate \
+            --android \
+            --iconBackgroundColor "#000000" \
+            --iconBackgroundColorDark "#000000" \
+            --splashBackgroundColor "#000000" \
+            --splashBackgroundColorDark "#000000"
+
+      - name: Sincronizar Capacitor
+        run: |
+          npx cap sync android
+
+      - name: Configurar version de la app
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+
+          s = s.replace("versionCode 1", "versionCode 3")
+          s = s.replace('versionName "1.0"', 'versionName "1.2"')
+
+          p.write_text(s)
+          PY
+
+      - name: Configurar firma de Google Play
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/gallina-cosmica-upload.jks
+      - name: Mostrar huella de la clave de subida
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          keytool -list -v \
+            -keystore android/app/gallina-cosmica-upload.jks \
+            -alias "$KEY_ALIAS" \
+            -storepass "$KEYSTORE_PASSWORD" \
+            | grep "SHA256:"
+
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/build.gradle")
+          text = p.read_text()
+
+          signing = """
+          signingConfigs {
+              release {
+                  storeFile file("gallina-cosmica-upload.jks")
+                  storePassword System.getenv("KEYSTORE_PASSWORD")
+                  keyAlias System.getenv("KEY_ALIAS")
+                  keyPassword System.getenv("KEYSTORE_PASSWORD")
+              }
+          }
+          """
+
+          text = text.replace(
+              "buildTypes {",
+              signing + "\nbuildTypes {",
+              1
+          )
+
+          text = text.replace(
+              "buildTypes {\n    release {",
+              "buildTypes {\n    release {\n        signingConfig signingConfigs.release",
+              1
+          )
+
+          p.write_text(text)
+          PY
+
+      - name: Compilar AAB Release
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease
+
+      - name: Verificar que el AAB esté firmado
+        run: |
+          jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Guardar AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gallina-Cosmica-AAB
+          path: android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Guardar APK Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gallina-Cosmica-APK-Release
+          path: android/app/build/outputs/apk/release/app-release.apk

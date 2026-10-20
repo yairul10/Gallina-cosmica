@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Gallina Cosmica</string>
+    <string name="title_activity_main">Gallina Cosmica</string>
+    <string name="package_name">com.gallinacosmica.app</string>
+    <string name="custom_url_scheme">com.gallinacosmica.app</string>
+</resources>

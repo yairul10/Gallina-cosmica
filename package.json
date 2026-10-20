@@ -1,0 +1,30 @@
+{
+  "name": "gallina-cosmica",
+  "version": "1.0.0",
+  "description": "Juego de naves en forma de gallina",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yairul10/Gallina-cosmica.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/yairul10/Gallina-cosmica/issues"
+  },
+  "homepage": "https://github.com/yairul10/Gallina-cosmica#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/splash-screen": "^8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5"
+  }
+}
