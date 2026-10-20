@@ -1,0 +1,15 @@
+diff --git a/js/modo-superjefes.js b/js/modo-superjefes.js
+index adbc999..2754658 100644
+--- a/js/modo-superjefes.js
++++ b/js/modo-superjefes.js
+@@ -327,8 +327,8 @@
+         const style = document.createElement('style');
+         style.textContent = `
+             #game-container {
+-                width: min(100vw, calc(100dvh * 0.65625));
+-                height: min(100dvh, calc(100vw / 0.65625));
++                width: min(100vw, 65.625dvh);
++                height: min(100dvh, 152.38095vw);
+                 max-width: none;
+                 max-height: none;
+                 aspect-ratio: 420 / 640;

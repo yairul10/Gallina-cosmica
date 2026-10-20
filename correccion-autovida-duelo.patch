@@ -1,0 +1,24 @@
+diff --git a/js/modo-superjefes.js b/js/modo-superjefes.js
+index d3248d1..249055c 100644
+--- a/js/modo-superjefes.js
++++ b/js/modo-superjefes.js
+@@ -20,7 +20,19 @@
+         lives -= amount;
+         sessionKillsNoHit = 0;
+         sessionTimeNoHit = 0;
++        if (lives === 1 && gameStats.equipExtraModule && moduleActiveInMatch) {
++            if (coins >= 300) {
++                coins -= 300;
++                gameStats.savedCoins = coins;
++                saveStats();
++                lives += 2;
++                showTrophyToast('❤️', null, 'Auto-Vida: -300🪙');
++            } else {
++                showTrophyToast('💔', null, 'Sin monedas para Auto-Vida');
++            }
++        }
+         updateLivesUI();
++        updateUpgradesHUD();
+         if (lives <= 0) gameOver();
+     }
+ 

@@ -1,0 +1,36 @@
+diff --git a/js/modo-superjefes.js b/js/modo-superjefes.js
+index ecf3335..1c490ec 100644
+--- a/js/modo-superjefes.js
++++ b/js/modo-superjefes.js
+@@ -325,6 +325,14 @@
+     function installMobileFullscreenLayout() {
+         const style = document.createElement('style');
+         style.textContent = `
++            @media (min-width: 601px) {
++                #game-container {
++                    width: min(100vw, calc(100dvh * 0.65625));
++                    height: 100dvh;
++                    max-width: none;
++                    max-height: none;
++                }
++            }
+             @media (max-width: 600px) {
+                 body { width: 100vw; min-height: 100dvh; height: 100dvh; padding: 0; }
+                 #game-container {
+@@ -347,7 +355,15 @@
+         ctx.restore();
+     };
+ 
+-    document.getElementById('startBtn').addEventListener('click', requestGameFullscreen);
++    document.getElementById('startBtn').addEventListener('click', () => {
++        active = false;
++        player.autoAimAngle = 0;
++    }, true);
++    document.getElementById('restartBtn').addEventListener('click', (event) => {
++        if (!active) return;
++        event.stopImmediatePropagation();
++        window.startSuperBossMode();
++    }, true);
+     installMobileFullscreenLayout();
+ 
+     const button = document.createElement('button');

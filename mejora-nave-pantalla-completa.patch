@@ -1,0 +1,92 @@
+diff --git a/js/modo-superjefes.js b/js/modo-superjefes.js
+index 2465ca9..ecf3335 100644
+--- a/js/modo-superjefes.js
++++ b/js/modo-superjefes.js
+@@ -158,6 +158,21 @@
+         return true;
+     }
+ 
++    function updatePlayerAim() {
++        const target = closestTargetTo(player);
++        if (!target) return;
++        const desiredAngle = Math.atan2(
++            target.y + target.height / 2 - (player.y + player.height / 2),
++            target.x + target.width / 2 - (player.x + player.width / 2)
++        ) + Math.PI / 2;
++        const currentAngle = player.autoAimAngle || 0;
++        const difference = Math.atan2(
++            Math.sin(desiredAngle - currentAngle),
++            Math.cos(desiredAngle - currentAngle)
++        );
++        player.autoAimAngle = currentAngle + difference * 0.18;
++    }
++
+     function updatePlayerShots() {
+         for (let i = bullets.length - 1; i >= 0; i--) {
+             const bullet = bullets[i];
+@@ -250,6 +265,7 @@
+         }
+         movePlayer();
+         updateStrongCorns();
++        updatePlayerAim();
+         updatePlayerShots();
+         updateBossShots();
+         for (const boss of bosses) {
+@@ -268,6 +284,7 @@
+         enemies.length = bullets.length = homingMissiles.length = bossBullets.length = bosses.length = 0;
+         hitCooldown = 0;
+         phase = 1;
++        player.autoAimAngle = 0;
+         shieldActive = partialHit = false;
+         player.x = canvas.width / 2 - player.width / 2;
+         player.y = canvas.height - player.height - 20;
+@@ -298,10 +315,48 @@
+         event.stopImmediatePropagation();
+     }, true);
+ 
++    function requestGameFullscreen() {
++        const game = document.getElementById('game-container');
++        if (!document.fullscreenElement && game.requestFullscreen) {
++            game.requestFullscreen().catch(() => {});
++        }
++    }
++
++    function installMobileFullscreenLayout() {
++        const style = document.createElement('style');
++        style.textContent = `
++            @media (max-width: 600px) {
++                body { width: 100vw; min-height: 100dvh; height: 100dvh; padding: 0; }
++                #game-container {
++                    width: 100vw; height: 100dvh; max-width: none; max-height: none;
++                    aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none;
++                }
++            }
++        `;
++        document.head.appendChild(style);
++    }
++
++    const normalDrawPlayerShip = window.drawPlayerShip;
++    window.drawPlayerShip = function (x, y) {
++        if (!active || !player.autoAimAngle) return normalDrawPlayerShip(x, y);
++        ctx.save();
++        ctx.translate(x + player.width / 2, y + player.height / 2);
++        ctx.rotate(player.autoAimAngle);
++        ctx.translate(-x - player.width / 2, -y - player.height / 2);
++        normalDrawPlayerShip(x, y);
++        ctx.restore();
++    };
++
++    document.getElementById('startBtn').addEventListener('click', requestGameFullscreen);
++    installMobileFullscreenLayout();
++
+     const button = document.createElement('button');
+     button.className = 'btn btn-secondary';
+     button.id = 'superBossModeBtn';
+     button.textContent = '🌽⚡ Duelo: 2 Superjefes';
+-    button.addEventListener('click', window.startSuperBossMode);
++    button.addEventListener('click', () => {
++        requestGameFullscreen();
++        window.startSuperBossMode();
++    });
+     document.getElementById('startScreen').insertBefore(button, document.getElementById('openTutorialBtn'));
+ })();

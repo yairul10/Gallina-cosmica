@@ -1,0 +1,13 @@
+diff --git a/js/modo-superjefes.js b/js/modo-superjefes.js
+index 2754658..d3248d1 100644
+--- a/js/modo-superjefes.js
++++ b/js/modo-superjefes.js
+@@ -258,6 +258,8 @@
+ 
+     update = function () {
+         if (!active) return normalUpdate();
++        // La evolución usa la animación y el temporizador del modo normal.
++        if (gameState === 'EVOLVING') return normalUpdate();
+         if (gameState !== 'PLAYING') return;
+         if (hitCooldown) hitCooldown--;
+         for (const star of stars) {

@@ -1,0 +1,59 @@
+diff --git a/js/modo-superjefes.js b/js/modo-superjefes.js
+index 1c490ec..adbc999 100644
+--- a/js/modo-superjefes.js
++++ b/js/modo-superjefes.js
+@@ -153,6 +153,7 @@
+             target.x + target.width / 2 - originX
+         );
+         const speed = projectile.speed || 8;
++        projectile.angle = angle + Math.PI / 2;
+         projectile.x += Math.cos(angle) * speed;
+         projectile.y += Math.sin(angle) * speed;
+         return true;
+@@ -325,19 +326,17 @@
+     function installMobileFullscreenLayout() {
+         const style = document.createElement('style');
+         style.textContent = `
+-            @media (min-width: 601px) {
+-                #game-container {
+-                    width: min(100vw, calc(100dvh * 0.65625));
+-                    height: 100dvh;
+-                    max-width: none;
+-                    max-height: none;
+-                }
++            #game-container {
++                width: min(100vw, calc(100dvh * 0.65625));
++                height: min(100dvh, calc(100vw / 0.65625));
++                max-width: none;
++                max-height: none;
++                aspect-ratio: 420 / 640;
+             }
+             @media (max-width: 600px) {
+                 body { width: 100vw; min-height: 100dvh; height: 100dvh; padding: 0; }
+                 #game-container {
+-                    width: 100vw; height: 100dvh; max-width: none; max-height: none;
+-                    aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none;
++                    border: 0; border-radius: 0; box-shadow: none;
+                 }
+             }
+         `;
+diff --git a/js/main.js b/js/main.js
+--- a/js/main.js
++++ b/js/main.js
+@@ -290,9 +290,16 @@
+         ctx.fillStyle = innerColor; 
++        ctx.save();
++        if (Number.isFinite(b.angle)) {
++            ctx.translate(b.x + b.width / 2, b.y + b.height / 2);
++            ctx.rotate(b.angle);
++            ctx.translate(-b.x - b.width / 2, -b.y - b.height / 2);
++        }
+         ctx.shadowColor = outerColor; 
+         ctx.shadowBlur = 8; 
+         ctx.fillRect(b.x, b.y, b.width, b.height); 
+         ctx.strokeStyle = outerColor; 
+         ctx.lineWidth = 1.5; 
+         ctx.strokeRect(b.x, b.y, b.width, b.height); 
+         ctx.shadowBlur = 0; 
++        ctx.restore();
+     }
