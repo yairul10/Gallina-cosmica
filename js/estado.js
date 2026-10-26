@@ -73,6 +73,7 @@ if (!gameStats.packOfferCollapsed || typeof gameStats.packOfferCollapsed !== 'ob
 if (!gameStats.proMissiles) gameStats.proMissiles = [false, false, false, false];
 
 function saveStats() {
+    window.gallinaRefreshPvpMenuLock?.();
     localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats));
     scheduleCloudProgressSave();
 }
