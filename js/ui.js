@@ -808,3 +808,16 @@ setTimeout(checkDailyRewardAfterCloud, 5000);
 
 // Mantener la nave decorativa del menú alineada con el Hangar.
 window.updateMenuShip?.();
+
+// El PvP muestra claramente su estado sin impedir el mensaje explicativo
+// al tocarlo mientras está bloqueado.
+window.gallinaRefreshPvpMenuLock = function(){
+    const button = document.getElementById('openPvpBtn');
+    if (!button) return;
+    const unlocked = !!gameStats?.pvpUnlocked || Number(gameStats?.totalGames || 0) > 0;
+    button.classList.toggle('pvp-menu-locked', !unlocked);
+    button.setAttribute('aria-disabled', String(!unlocked));
+    button.title = unlocked ? 'Entrar a PvP' : 'Completa una partida Normal para desbloquear PvP';
+};
+window.addEventListener('load', window.gallinaRefreshPvpMenuLock);
+window.addEventListener('gallina-cloud-progress-loaded', window.gallinaRefreshPvpMenuLock);
