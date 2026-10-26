@@ -1050,6 +1050,7 @@
       }
       return;
     }
+    if(p.type==='bot-chat'&&botMatch){showQuickChatMessage(String(p.key||''),Number(p.slot));return;}
     if(p.type==='bot-state'&&botMatch&&(pvpMode==='2v2'||(pvpMode==='arena'||pvpMode==='arena10')||pvpMode==='arena10')){
       const slot=Number(p.slot||0), bp=players.find(x=>x.bot&&Number(x.slot)===slot);
       if(!bp)return;
@@ -1332,7 +1333,7 @@
         // Arena 10. El tamaño del mapa sigue definiendo cómo patrullan, pero 1v1,
         // 2v2 y Arena 5 ya no quedan limitados al antiguo radio corto de 390 px.
         const arena10Patrol=pvpMode==='arena10';
-        const searchRadius=Math.min(700,Math.hypot(worldWidth,worldHeight));
+        const searchRadius=Math.min(rankLevel<=1?290:rankLevel===2?390:rankLevel===3?500:700,Math.hypot(worldWidth,worldHeight));
         if(!ai.patrolX||!ai.patrolY||Math.hypot(ai.patrolX-bot.x,ai.patrolY-bot.y)<65||now>=Number(ai.nextPatrolAt||0)){
           if(arena10Patrol){
             // Arena 10: divide el mundo 5×5 en zonas. Cada bot explora primero
@@ -1362,7 +1363,10 @@
             ai.nextPatrolAt=now+2800+Math.random()*3200;
           }
         }
-        const chosen=nearestDist<=searchRadius?nearest:null;
+        const spotted=nearestDist<=searchRadius;
+        if(spotted&&ai.spottedSlot!==Number(nearest.p.slot)){ai.spottedSlot=Number(nearest.p.slot);ai.spottedAt=now;ai.reactionDelay=rankLevel<=1?850+Math.random()*1000:rankLevel<=3?400+Math.random()*500:120+Math.random()*220;}
+        if(!spotted)ai.spottedSlot=0;
+        const chosen=spotted&&now-Number(ai.spottedAt||now)>=Number(ai.reactionDelay||0)?nearest:null;
         // Arena 5 y Arena 10 comparten también la conciencia de Zona Cósmica.
         // 1v1/2v2 mantienen la misma IA de combate sin inventar una zona donde no existe.
         const botZone=(pvpMode==='arena'||pvpMode==='arena10')?cosmicZoneState(0):null;
@@ -1381,7 +1385,9 @@
           const error=[.22,.18,.14,.11,.075,.045,.025][rankLevel]||.22;
           return Math.atan2(chosen.state.y+targetVy*lead-bot.y,chosen.state.x+targetVx*lead-bot.x)+(Math.random()-.5)*2*error;
         };
-        bot.targetAngle=trueAim;bot.targetVisualAngle=trueAim;
+        const aimEase=rankLevel<=1?.065:rankLevel<=3?.12:.24;
+        const angleDelta=Math.atan2(Math.sin(trueAim-(bot.targetAngle||0)),Math.cos(trueAim-(bot.targetAngle||0)));
+        bot.targetAngle=(bot.targetAngle||0)+angleDelta*aimEase;bot.targetVisualAngle=bot.targetAngle;
 
         // Navegación táctica imperfecta: perseguir, orbitar, retirarse con
         // poca vida y hacer esquivas ocasionales. Mantiene oportunidades claras
@@ -1427,7 +1433,7 @@
           const side=Number(ai.dodgeSide||ai.orbitSide||((Number(botPlayer.slot)%2)?1:-1));
           desiredX=(-dx/dist)*1.18+(-dy/dist)*side*.58;
           desiredY=(-dy/dist)*1.18+( dx/dist)*side*.58;
-        }else if(dist<135){
+        }else if(chosen&&dist<135){
           desiredX=-dx/dist;desiredY=-dy/dist;
         }else if(rankLevel>=4&&chosen&&dist<=PVP_LOCK_RANGE){
           // Desde Diamante la persecución ya es una órbita continua: incluso cuando
@@ -1450,8 +1456,10 @@
             desiredX=(-dy/dist)*side*tangent+(dx/dist)*radial;
             desiredY=( dx/dist)*side*tangent+(dy/dist)*radial;
           }
-        }else if(dist<=250){
-          const side=(Number(botPlayer.slot)%2)?1:-1;
+        }else if(chosen&&dist<=250){
+          if(!ai.orbitSide)ai.orbitSide=Math.random()<.5?-1:1;
+          if(!ai.nextOrbitFlipAt||now>=ai.nextOrbitFlipAt){ai.nextOrbitFlipAt=now+1600+Math.random()*4200;if(Math.random()<.65)ai.orbitSide*=-1;}
+          const side=ai.orbitSide;
           desiredX=(-dy/dist)*side*.90+(dx/dist)*.12;
           desiredY=( dx/dist)*side*.90+(dy/dist)*.12;
         }
@@ -1502,6 +1510,8 @@
           }
         }
         const targetInAttackRange=!!chosen&&Math.hypot(chosen.state.x-bot.x,chosen.state.y-bot.y)<=PVP_ATTACK_RANGE;
+        if(!ai.nextChatAt)ai.nextChatAt=now+4500+Math.random()*8500;
+        if(now>=ai.nextChatAt){ai.nextChatAt=now+12000+Math.random()*20000;if(Math.random()<.65){const keys=['luck','go','careful','nice','gg'];const key=keys[Math.floor(Math.random()*keys.length)];showQuickChatMessage(key,Number(botPlayer.slot));if(!qaPvpActive&&pvpMode!=='1v1')send({type:'bot-chat',slot:Number(botPlayer.slot),key});}}
         // Cadencia base por rango. Todos los bots disparan un 15% menos veces
         // por unidad de tiempo para dar más margen de reacción sin alterar su IA.
         const BOT_LASER_RATE_FACTOR=1/0.85;
