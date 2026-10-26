@@ -234,7 +234,7 @@
                 </div>
                 <div id="hangar-ship-card-1" class="shop-item">
                     <h4>Oveja</h4>
-                    <img id="img-hs-1" src="assets/oveja_1.png" class="shop-img" style="height: 50px; object-fit: contain;">
+                    <img id="img-hs-1" src="assets/oveja.png" class="shop-img" style="height: 50px; object-fit: contain;">
                     <p id="desc-hs-1" style="font-size:0.75rem; color:#94a3b8; display: flex; flex-direction: column;">+20% a Jefes Maíz</p>
                     <div style="display:flex; gap:4px;">
                         <button class="shop-btn" id="btn-hs-1-norm" onclick="equipShip(1, false)">Normal</button>
@@ -304,8 +304,8 @@
             </div>
             <div id="shopSkins" class="shop-grid">
                 <div class="shop-item"><h4>Gallina Base</h4><img id="shop-img-base-0" src="assets/gallina_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+20% a Maíz.</p><button class="shop-btn" id="btn-skin-base-0" onclick="buyShip(0, false, 0)">Comprado</button></div>
-                <div class="shop-item"><h4>Gallina Pro</h4><img id="shop-img-pro-0" src="assets/gallina_pro_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+30% Daño<br>+20% a Maíz.</p><button class="shop-btn" id="btn-skin-pro-0" onclick="buyShip(0, true, 30000)">🪙 30,000</button></div>
-                <div class="shop-item"><h4>Oveja Base</h4><img id="shop-img-base-1" src="assets/oveja_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+20% a Jefes Maíz.</p><button class="shop-btn" id="btn-skin-base-1" onclick="buyShip(1, false, 10000)">🪙 10,000</button></div>
+                <div class="shop-item"><h4>Gallina Pro</h4><img id="shop-img-pro-0" src="assets/gallina_pro.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+30% Daño<br>+20% a Maíz.</p><button class="shop-btn" id="btn-skin-pro-0" onclick="buyShip(0, true, 30000)">🪙 30,000</button></div>
+                <div class="shop-item"><h4>Oveja Base</h4><img id="shop-img-base-1" src="assets/oveja.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+20% a Jefes Maíz.</p><button class="shop-btn" id="btn-skin-base-1" onclick="buyShip(1, false, 10000)">🪙 10,000</button></div>
                 <div class="shop-item"><h4>Oveja Pro</h4><img id="shop-img-pro-1" src="assets/oveja_pro_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+30% Daño<br>+20% a Jefes Maíz.</p><button class="shop-btn" id="btn-skin-pro-1" onclick="buyShip(1, true, 30000)">🪙 30,000</button></div>
                 <div class="shop-item"><h4>Caballo Base</h4><img id="shop-img-base-2" src="assets/caballo_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+20% a Lechuga.</p><button class="shop-btn" id="btn-skin-base-2" onclick="buyShip(2, false, 20000)">🪙 20,000</button></div>
                 <div class="shop-item"><h4>Caballo Pro</h4><img id="shop-img-pro-2" src="assets/caballo_pro_1.png" class="shop-img" style="height:45px; object-fit:contain;"><p style="font-size:0.75rem; margin-top:4px;">+30% Daño<br>+20% a Lechuga.</p><button class="shop-btn" id="btn-skin-pro-2" onclick="buyShip(2, true, 60000)">🪙 60,000</button></div>
@@ -321,7 +321,7 @@
             </div>
             <div id="shopAds" class="shop-grid" style="display:none;">
                 <div class="shop-item" style="grid-column:span 2;"><h4>🪙 Monedas por anuncio</h4><p>Recibe 5.000 monedas por cada anuncio completo. Máximo 3 al día.</p><button class="shop-btn" id="adCoinsBtn" onclick="GallinaAds.watchCoins()">📺 Ver anuncio</button><p id="adCoinsCount"></p></div>
-                <div class="shop-item" style="grid-column:span 2;"><h4>🐑 Oveja Base</h4><img src="assets/oveja_1.png" class="shop-img" style="height:45px;object-fit:contain;" alt="Oveja Base"><p>Desbloquéala tras completar 3 anuncios. También puedes conseguirla con monedas o en el Pack Inicial.</p><button class="shop-btn" id="adShipBtn" onclick="GallinaAds.watchShip()">📺 Ver anuncio</button><p id="adShipCount"></p></div>
+                <div class="shop-item" style="grid-column:span 2;"><h4>🐑 Oveja Base</h4><img src="assets/oveja.png" class="shop-img" style="height:45px;object-fit:contain;" alt="Oveja Base"><p>Desbloquéala tras completar 3 anuncios. También puedes conseguirla con monedas o en el Pack Inicial.</p><button class="shop-btn" id="adShipBtn" onclick="GallinaAds.watchShip()">📺 Ver anuncio</button><p id="adShipCount"></p></div>
                 <button class="shop-btn" id="adPrivacyBtn" style="display:none;grid-column:span 2;" onclick="GallinaAds.openPrivacyOptions()">Privacidad de los anuncios</button>
                 <p id="adShopStatus" role="status" aria-live="polite" style="grid-column:span 2;min-height:18px;color:#93c5fd;font-size:.78rem;"></p>
             </div>
