@@ -1,3 +1,5 @@
+const PVP_BOT_NICKNAMES = ["NexoSolar","LunaVeloz","AstroRider","NovaAzul","RayoNorte","KiraStar","PixelFuego","CosmoLince","TitaNova","ZenithX","Orion77","NebulaFox","RubiLaser","AstraWolf","TurboLuz","KaiMeteor","SombraNova","LoboEstelar","MikaOrbit","FenixAzul"];
+function randomPvpBotNickname(slot = 0) { return PVP_BOT_NICKNAMES[Math.floor(Math.random() * PVP_BOT_NICKNAMES.length)] + (slot ? "_" + Math.floor(100 + Math.random() * 900) : ""); }
 // Deployment trigger: Play Games verified PvP authentication enabled.
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -316,7 +318,7 @@ export class PvpRoom {
     if (wantsBot && this.players.size === 1 && !this.botPlayer && this.botPlayers.length === 0) {
       if (this.mode === "1v1") {
         const botSlot = slot === 1 ? 2 : 1;
-        this.botPlayer = { playerId:"bot-cosmico", name:"🤖 Bot Cósmico", ship:"Gallina", slot:botSlot, team:0, bot:true };
+        this.botPlayer = { playerId:"bot-cosmico", name:randomPvpBotNickname(botSlot), ship:"Gallina", slot:botSlot, team:0, bot:true };
       } else if (this.mode === "2v2") {
         // Los humanos de la cola ocupan primero sus slots; sólo los espacios
         // restantes se completan con bots.
@@ -324,7 +326,7 @@ export class PvpRoom {
         const botSlots=Array.from({length:capacity},(_,i)=>i+1).filter(s=>!plannedHumanSlots.includes(s));
         this.botPlayers = botSlots.map(botSlot=>({
           playerId:"bot-cosmico-"+botSlot,
-          name:botSlot<=2?"🤖 Bot Aliado":"🤖 Bot Cósmico "+botSlot,
+          name:randomPvpBotNickname(botSlot),
           ship:"Gallina", slot:botSlot, team:botSlot<=2?1:2, bot:true
         }));
       } else if (this.mode === "arena" || this.mode === "arena10") {
@@ -332,7 +334,7 @@ export class PvpRoom {
         const botSlots=Array.from({length:capacity},(_,i)=>i+1).filter(s=>!plannedHumanSlots.includes(s));
         this.botPlayers=botSlots.map(botSlot=>({
           playerId:"bot-arena-"+botSlot,
-          name:"🤖 Bot Cósmico "+botSlot,
+          name:randomPvpBotNickname(botSlot),
           ship:"Gallina",slot:botSlot,team:0,bot:true
         }));
       }
