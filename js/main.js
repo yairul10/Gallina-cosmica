@@ -220,7 +220,7 @@ function update() {
     }
     for (let i = bossBullets.length - 1; i >= 0; i--) { bossBullets[i].y += bossBullets[i].speed; if (bossBullets[i].dx) bossBullets[i].x += bossBullets[i].dx; if (bossBullets[i].y > canvas.height + 20 || bossBullets[i].x < -20 || bossBullets[i].x > canvas.width + 20) { bossBullets.splice(i, 1); continue; } if (player.x < bossBullets[i].x + bossBullets[i].width && player.x + player.width > bossBullets[i].x && player.y < bossBullets[i].y + bossBullets[i].height && player.y + player.height > bossBullets[i].y) { bossBullets.splice(i, 1); handleDamage(); } }
 
-    if (bosses.length === 0) { 
+    if (bosses.length === 0 && Date.now() >= (window.cornRespawnPauseUntil || 0)) { 
         enemySpawnInterval++; 
         let spawnRate = 40; 
         if (gameRound >= 4) { spawnRate = Math.max(15, 30 - Math.floor((score - 250000) / 10000)); } 
