@@ -166,6 +166,10 @@ window.damageBoss = function(bIndex, dmg) {
         if (boss.isSuperBoss && boss.type === 'corn' && gameRound === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 2; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); } 
         else if (boss.isSuperBoss && boss.type === 'lechuga' && gameRound === 2 && !doubleBossSpawned) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 3; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); }
         else if (boss.isSuperBoss && gameRound === 3 && doubleBossSpawned && bosses.length === 1) { gameState = 'TRANSITION'; previousState = 'TRANSITION'; goingToRound = 4; transitionTimer = 300; bgMusic.volume = 0.15; document.querySelectorAll('.draggable-btn').forEach(b => b.style.display = 'none'); updateUpgradesHUD(); doubleBossDefeated = true; unlockAchievement('a21'); }
+        // Breve descanso tras los dos primeros jefes de la primera ronda.
+        if (gameRound === 1 && !boss.isSuperBoss && nextBossScoreThreshold <= 15000) {
+            window.cornRespawnPauseUntil = Date.now() + 2000;
+        }
         bosses.splice(bIndex, 1); unlockAchievement('a10'); if (lives === 1) unlockAchievement('a12'); return true; 
     } return false;
 }
