@@ -1105,8 +1105,8 @@
     }
   }
 
-  function shoot(){
-    const now=qaPvpActive ? qaPvpStartedAt + qaPvpSimMs : performance.now(), myStats=pvpShipStats((players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship);if(!running||meEliminated||now-lastShot<myStats.shotCooldown)return;
+  function shoot(manualTap=false){
+    const now=qaPvpActive ? qaPvpStartedAt + qaPvpSimMs : performance.now(), myStats=pvpShipStats((players.find(p=>Number(p.slot)===mySlot)||{ship:shipLabel()}).ship);if(!running||meEliminated||(!manualTap&&now-lastShot<myStats.shotCooldown))return;
     const targetPlayer=players.find(p=>Number(p.slot)===selectedTargetSlot&&!eliminated.has(Number(p.slot))&&(pvpMode!=='2v2'||Number(p.team)!==myTeam)&&performance.now()>=Number(remoteEvadeUntil.get(Number(p.slot))||0));
     if(!targetPlayer){showStatus('🎯 Toca una nave enemiga para seleccionarla.');return;}
     const target=peerFor(targetPlayer.slot);
@@ -2112,7 +2112,33 @@
   loadPvpControlLayout();
   stickSetup($('pvpMoveStick'),moveStick,false);
   const fireBtn=$('pvpFireBtn');
-  if(fireBtn){fireBtn.style.touchAction='none';fireBtn.addEventListener('pointerdown',e=>{e.preventDefault();shoot();});}
+  if(fireBtn){
+    fireBtn.style.touchAction='none';
+    let firePointer=null,holdTimer=null,repeatTimer=null;
+    const stopFire=e=>{
+      if(e&&firePointer!==null&&e.pointerId!==firePointer)return;
+      if(holdTimer!==null){clearTimeout(holdTimer);holdTimer=null;}
+      if(repeatTimer!==null){clearInterval(repeatTimer);repeatTimer=null;}
+      firePointer=null;
+    };
+    fireBtn.addEventListener('pointerdown',e=>{
+      if(firePointer!==null||controlsEditing)return;
+      e.preventDefault();
+      firePointer=e.pointerId;
+      try{fireBtn.setPointerCapture(e.pointerId);}catch{}
+      shoot(true); // Cada toque dispara inmediatamente, sin limitar la rapidez de los toques.
+      holdTimer=setTimeout(()=>{
+        holdTimer=null;
+        if(firePointer===null)return;
+        // Mantener pulsado: 3,5 disparos por segundo. El primer toque ya disparó.
+        repeatTimer=setInterval(()=>{if(running&&!meEliminated)shoot(true);else stopFire();},285);
+      },285);
+    });
+    fireBtn.addEventListener('pointerup',stopFire);
+    fireBtn.addEventListener('pointercancel',stopFire);
+    fireBtn.addEventListener('lostpointercapture',()=>stopFire());
+    window.addEventListener('blur',()=>stopFire());
+  }
   arenaCanvas?.addEventListener('pointerdown',e=>{
     if(!running||meEliminated)return;
     const r=arenaCanvas.getBoundingClientRect(),cam=cameraPosition();
