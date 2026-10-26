@@ -168,9 +168,13 @@ function updateHangarUI() {
                 if(img) {
                     img.src = (i === 0 && gameStats.useGallinaChile)
                         ? 'assets/gallina_chile.png'
-                        : (isPro ? `assets/${animalDirs[i]}_pro_1.png` : `assets/${animalDirs[i]}_1.png`);
-                    // Respaldo automático si la imagen de la skin falla
-                    img.onerror = function() { this.src = `assets/${animalDirs[i]}_1.png`; };
+                        : (isPro ? `assets/${animalDirs[i]}${i === 0 ? '_pro' : '_pro_1'}.png` : `assets/${animalDirs[i]}${i === 1 ? '' : '_1'}.png`);
+                    // Respaldo válido, sin repetir la misma URL si falla.
+                    img.onerror = function() {
+                        this.onerror = null;
+                        const fallback = `assets/${animalDirs[i]}${i === 1 ? '' : '_1'}.png`;
+                        if (!this.src.endsWith(fallback)) this.src = fallback;
+                    };
                 }
                 
                 if(desc) {
