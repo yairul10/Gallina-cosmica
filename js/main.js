@@ -117,7 +117,7 @@ window.saveCurrentMatchRecord = function() {
 
 window.gameOver = function() { 
     gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++;
-    if (!window.isSuperBossModeActive && !gameStats.pvpUnlocked) { gameStats.pvpUnlocked = true; saveStats(); }
+    if (!window.isSuperBossModeActive && !gameStats.pvpUnlocked) { gameStats.pvpUnlocked = true; saveStats(); window.gallinaRefreshPvpMenuLock?.(); setTimeout(() => { if (typeof showTrophyToast === 'function') showTrophyToast('⚔️', null, '¡PvP desbloqueado!'); else alert('⚔️ ¡PvP desbloqueado!'); }, 450); }
     window.saveCurrentMatchRecord();
     if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
     document.getElementById('finalScore').textContent = score;
