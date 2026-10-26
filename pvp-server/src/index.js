@@ -214,7 +214,7 @@ function configureBotProfiles(list,humanPlayers){
     bot.rankLabel=rank.label;
     bot.ship=botShipForRank(rank.level);
     bot.pvpInterference=botInterferenceForRank(rank.level);
-    bot.name="🤖 "+rank.label+" · Bot "+bot.slot;
+    if(!bot.name || bot.name.startsWith("🤖"))bot.name=randomPvpBotNickname(bot.slot);
   }
 }
 
@@ -361,7 +361,18 @@ export class PvpRoom {
         return;
       }
 
-      if (message.type === "quick-chat") {
+      if (message.type === "bot-chat") {
+          const slotBot=Number(message.slot||0),key=safeText(message.key,"",16);
+          if(!["luck","go","careful","nice","gg"].includes(key))return;
+          const bot=this.playerList().find(p=>p.bot&&Number(p.slot)===slotBot);
+          if(!bot)return;
+          const now=Date.now(),last=Number(this.quickChatAt.get("bot:"+slotBot)||0);
+          if(now-last<10000)return;
+          this.quickChatAt.set("bot:"+slotBot,now);
+          this.broadcast({type:"bot-chat",slot:slotBot,key},server);
+          return;
+        }
+        if (message.type === "quick-chat") {
         const key=safeText(message.key,"",16);
         const allowed=new Set(["luck","go","careful","help","nice","gg"]);
         if(!allowed.has(key))return;
