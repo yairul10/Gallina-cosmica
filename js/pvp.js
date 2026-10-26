@@ -2153,19 +2153,7 @@
     // Actualiza la autorización de skins antes de crear la sala. Si la sesión
     // dejó de ser admin, la skin de prueba se desactiva visualmente.
     try{await window.refreshPvpSpecialShipAccess?.();}catch{}
-    // Los jugadores que ya desbloquearon PvP deben entrar de inmediato.
-    // La consulta remota de administrador sólo es necesaria para saltar el bloqueo.
-    if(!gameStats?.pvpUnlocked){
-      // Recuperar el desbloqueo de esta cuenta antes de mostrar el requisito.
-      try{await window.gallinaLoadCloudProgress?.();}catch{}
-      try{admin=!!(await window.getQaAdminStatus?.())?.isAdmin;}catch{}
-    }
-    if(!gameStats?.pvpUnlocked&&!admin){
-      showStatus('🔒 Arena PvP bloqueada · supera Superjefes y Hordas para desbloquearla.',true);
-      const msg=document.getElementById('superBossVictoryMessage');
-      if(msg){msg.textContent='🔒 Arena PvP: supera Superjefes y Hordas para desbloquearla.';msg.classList.add('show');setTimeout(()=>msg.classList.remove('show'),4500);}
-      return;
-    }
+    // PvP abierto para todos los jugadores, sin requisito de Superjefes.
     document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';setPartyPanelOpen(false);
     const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();refreshQaBotRankAccess();syncPvpRankSummary();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
   });
@@ -2407,7 +2395,7 @@
       currentRoom='QA-'+Date.now();mySlot=1;myTeam=pvpMode==='2v2'?1:0;botMatch=true;
       const capacity=pvpMode==='1v1'?2:pvpMode==='2v2'?4:pvpMode==='arena'?5:10;
       players=[{slot:1,team:myTeam,name:'QA Jugador',ship:shipLabel(),bot:false}];
-      for(let slot=2;slot<=capacity;slot++)players.push({slot,team:pvpMode==='2v2'?(slot<=2?1:2):0,name:'🤖 QA Bot '+slot,ship:'Gallina',bot:true});
+      for(let slot=2;slot<=capacity;slot++)players.push({slot,team:pvpMode==='2v2'?(slot<=2?1:2):0,name:'NovaQA_'+slot,ship:'Gallina',bot:true});
       lobby.style.display='none';arena.style.display='flex';loadPvpControlLayout();resetArena();startPvpMusic();
       const overlay=$('pvpCountdown');if(overlay)overlay.style.display='none';
       running=true;countdownActive=false;lastFrame=performance.now();raf=requestAnimationFrame(loop);
