@@ -262,6 +262,8 @@ function getOwnedExtraIds() {
     if (gameStats.pvpEvade) ids.push('pvp_evade');
     if (gameStats.pvpEmergencyLife) ids.push('pvp_emergency_life');
     if (gameStats.pvpUnlocked) ids.push('pvp_unlocked');
+    if (gameStats.playOwnedPacks?.pack_inicial) ids.push('pack_inicial');
+    if (gameStats.playOwnedPacks?.pack_pvp) ids.push('pack_pvp');
     return ids;
 }
 
@@ -432,6 +434,8 @@ async function loadCloudProgressForCurrentPlayer() {
             if (id === 'pvp_evade') gameStats.pvpEvade = true;
             if (id === 'pvp_emergency_life') gameStats.pvpEmergencyLife = true;
             if (id === 'pvp_unlocked') gameStats.pvpUnlocked = true;
+            if (id === 'pack_inicial') gameStats.playOwnedPacks.pack_inicial = true;
+            if (id === 'pack_pvp') gameStats.playOwnedPacks.pack_pvp = true;
         });
 
         if (progress.equipped_ship) applyEquippedShipId(progress.equipped_ship);
