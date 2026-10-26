@@ -2153,7 +2153,12 @@
     // Actualiza la autorización de skins antes de crear la sala. Si la sesión
     // dejó de ser admin, la skin de prueba se desactiva visualmente.
     try{await window.refreshPvpSpecialShipAccess?.();}catch{}
-    // PvP abierto para todos los jugadores, sin requisito de Superjefes.
+    // PvP se habilita después de completar la primera partida normal.
+    if (!gameStats?.pvpUnlocked && Number(gameStats?.totalGames || 0) < 1) {
+      showStatus('🔒 Juega una partida en modo Normal para desbloquear PvP.', true);
+      return;
+    }
+    if (!gameStats?.pvpUnlocked) { gameStats.pvpUnlocked = true; saveStats(); }
     document.querySelectorAll('.screen-overlay').forEach(el=>el.style.display='none');lobby.style.display='flex';setPartyPanelOpen(false);
     const me=identity();$('pvpPlayerName').textContent=me.name||'Jugador';$('pvpShipName').textContent=shipLabel();refreshQaBotRankAccess();syncPvpRankSummary();showStatus('Modo 2v2 seleccionado · se necesitan 4 jugadores.');
   });
