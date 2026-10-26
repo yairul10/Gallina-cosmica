@@ -117,6 +117,7 @@ window.saveCurrentMatchRecord = function() {
 
 window.gameOver = function() { 
     gameState = 'GAMEOVER'; bgMusic.pause(); clearInterval(window.gameTimerInterval); unlockAchievement('a2'); gameStats.totalGames++;
+    if (!window.isSuperBossModeActive && !gameStats.pvpUnlocked) { gameStats.pvpUnlocked = true; saveStats(); }
     window.saveCurrentMatchRecord();
     if (gameStats.totalGames >= 25) unlockAchievement('a18'); 
     document.getElementById('finalScore').textContent = score;
