@@ -69,16 +69,20 @@
 
   // Recupera compras PURCHASED que Google Play conserve sin consumir, por ejemplo
   // si la app se cerró entre la aprobación, la entrega y el consume().
+  // Las compras restauradas pertenecen a la cuenta de facturación de Google Play,
+  // que puede ser distinta del jugador activo de Play Games. No otorgamos
+  // automáticamente monedas ni packs al cambiar de perfil: eso permitiría
+  // reclamar los mismos productos en múltiples jugadores.
+  // Las compras nuevas siguen entregándose desde buy() tras su aprobación.
   async function recoverPurchases(){
     if(!plugin()?.getPurchases)return;
     try{
       const r=await plugin().getPurchases();
-      for(const p of (r?.purchases||[])){
-        const productId=(p.products||[]).find(id=>PRODUCTS[id]);
-        if(!productId || !p.purchaseToken)continue;
-        const applied=applyPurchase(productId,p.purchaseToken);
-        if(applied?.success) await finishPurchase(PRODUCTS[productId],p.purchaseToken);
-        if(applied?.success) window.updatePackOffers?.();
+      const pending=(r?.purchases||[]).filter(p=>
+        p?.purchaseToken && (p.products||[]).some(id=>PRODUCTS[id]));
+      if(pending.length){
+        console.warn('[Billing recovery] Compras pendientes detectadas; no se acreditan automáticamente a otro perfil de Play Games.');
+        status('Hay compras pendientes en Google Play. No se acreditarán automáticamente al cambiar de jugador.');
       }
     }catch(e){console.warn('[Billing recovery]',e);}
   }
