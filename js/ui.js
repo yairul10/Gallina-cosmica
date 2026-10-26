@@ -548,6 +548,30 @@ function completeTutorialStep(step) {
 window.finishTutorial = function() { document.getElementById('activeTutorialOverlay').style.display = 'none'; document.getElementById('activeTutorialOverlay').style.pointerEvents = 'auto'; tutorialStep = 0; gameStats.tutorialCompleted = true; saveStats(); gameState = 'PLAYING'; }
 
 let dragObj = null; let dragOffX = 0; let dragOffY = 0; let isDraggingAction = false;
+// Disparo táctil: cada toque es inmediato; al mantener, 3,5 ráfagas por segundo.
+let normalFirePointer = null, normalFireDelay = null, normalFireRepeat = null;
+function stopNormalFire(e) {
+    if (e && normalFirePointer !== null && e.pointerId !== normalFirePointer) return;
+    if (normalFireDelay !== null) clearTimeout(normalFireDelay);
+    if (normalFireRepeat !== null) clearInterval(normalFireRepeat);
+    normalFireDelay = normalFireRepeat = normalFirePointer = null;
+}
+function startNormalFire(e) {
+    if (normalFirePointer !== null) return;
+    normalFirePointer = e.pointerId;
+    normalFireDelay = setTimeout(() => {
+        normalFireDelay = null;
+        if (normalFirePointer === null) return;
+        normalFireRepeat = setInterval(() => {
+            if (gameState === 'PLAYING' || gameState === 'TRANSITION') shootBullet();
+            else stopNormalFire();
+        }, 285);
+    }, 285);
+}
+document.addEventListener('pointerup', stopNormalFire);
+document.addEventListener('pointercancel', stopNormalFire);
+window.addEventListener('blur', () => stopNormalFire());
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopNormalFire(); });
 
 document.querySelectorAll('.draggable-btn').forEach(btn => {
     btn.addEventListener('pointerdown', (e) => {
@@ -585,7 +609,7 @@ document.querySelectorAll('.draggable-btn').forEach(btn => {
                 return;
             }
 
-            if (type === 'fire') shootBullet(); 
+            if (type === 'fire') { shootBullet(); startNormalFire(e); } 
             else if (type === 'missile') shootMissile(); 
             else if (type === 'btn3') { 
                 (upgrades.bullets >= maxUpgradeLimit && upgrades.speed >= maxUpgradeLimit && evolutionStage < 3) ? buyUpgrade('evolve') : buyUpgrade('life'); 
