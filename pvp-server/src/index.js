@@ -1108,7 +1108,7 @@ export class PvpMatchmaker {
   }
 
   fallbackMsForRank(level){
-    return [10000,12000,15000,20000,25000,30000,37000][Math.max(0,Math.min(6,Number(level)||0))];
+    return [12000,15000,20000,30000,40000,50000,60000][Math.max(0,Math.min(6,Number(level)||0))];
   }
 
   allowedRankGap(waitMs, fallbackMs){
