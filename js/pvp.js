@@ -457,7 +457,7 @@
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
     const needed=pvpMode==='1v1'?2:pvpMode==='arena10'?10:pvpMode==='arena'?5:4;
     const searchLabel=pvpMode==='2v2'?'jugadores para 2v2':pvpMode==='arena10'?'jugadores para Arena 10':pvpMode==='arena'?'jugadores para Arena 5':'rival';
-    const maxWait=Math.max(1,Math.round((queueMaxWaitMs||([20,25,30,40,50,60,75][pvpRankFromCups(qaBotCups()).level]||20)*1000)/1000));
+    const maxWait=Math.max(1,Math.round((queueMaxWaitMs||([12,15,20,30,40,50,60][pvpRankFromCups(qaBotCups()).level]||12)*1000)/1000));
     const text='🔎 Buscando '+searchLabel+'… '+mm+':'+ss+' · 👥 '+Math.min(queueWaitingCount,needed)+'/'+needed+' conectados · ⏱️ Máx. '+maxWait+' s';
     if(queueGameStatus)queueGameStatus.textContent=text;
     const btn=$('pvpFindMatchBtn');
@@ -557,7 +557,7 @@
     queueSocket=ws;
     queueStartedAt=Date.now();
     queueWaitingCount=1;
-    queueMaxWaitMs=([20,25,30,40,50,60,75][pvpRankFromCups(qaBotCups()).level]||20)*1000;
+    queueMaxWaitMs=([12,15,20,30,40,50,60][pvpRankFromCups(qaBotCups()).level]||12)*1000;
     const findBtn=$('pvpFindMatchBtn'); if(findBtn)findBtn.textContent='✖️ Cancelar búsqueda';
     startQueueGame();
     updateQueueStatus(); queueTimer=setInterval(updateQueueStatus,1000);
