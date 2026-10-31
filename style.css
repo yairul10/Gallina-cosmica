@@ -458,8 +458,8 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 /* Menú compacto: cuatro filas con prioridad para Despegar. */
 #startScreen.main-menu { overflow-y:auto; padding-top:calc(env(safe-area-inset-top, 0px) + 70px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 24px); }
 #startScreen .main-menu-content { height:auto; min-height:100%; justify-content:flex-start; gap:12px; }
-#startScreen .menu-logo { width:min(54vw,200px); max-height:90px; flex-shrink:0; margin:0 0 6px; transform:none; }
-#startScreen .menu-ship-wrap { flex-shrink:0; margin:0 auto 8px; }
+#startScreen .menu-logo { width:min(65vw,240px); max-height:108px; flex-shrink:0; margin:0 0 6px; transform:none; }
+#startScreen .menu-ship-wrap { flex-shrink:0; margin:22px auto 8px; }
 #startScreen .menu-ship { max-height:140px; }
 #startScreen .menu-action-panel { width:100%; margin-top:auto; padding:12px; border-radius:20px; background:rgba(2,7,25,.72); display:grid; gap:12px; }
 #startScreen .menu-primary-actions { gap:12px; }
@@ -481,8 +481,8 @@ canvas { display: block; width: 100%; height: 100%; background: #090d16; touch-a
 #game-container:has(#startScreen:not([style*="display: none"]):not([style*="display:none"])) #trophiesVal { display:none; }
 @media(max-height:700px) {
  #startScreen .main-menu-content { gap:8px; }
- #startScreen .menu-logo { width:min(45vw,154px); max-height:68px; margin-bottom:4px; }
- #startScreen .menu-ship-wrap { width:min(42vw,175px); margin-bottom:4px; }
+ #startScreen .menu-logo { width:min(54vw,185px); max-height:82px; margin-bottom:4px; }
+ #startScreen .menu-ship-wrap { width:min(42vw,175px); margin-top:14px; margin-bottom:4px; }
  #startScreen .menu-ship { width:100%; max-height:104px; }
  #startScreen .menu-action-panel { padding:10px; gap:10px; }
  #startScreen .menu-primary-actions { gap:10px; }
