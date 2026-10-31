@@ -3,7 +3,7 @@
 const config = window.GallinaAdConfig || {};
 const isTestMode = config.mode !== 'production';
 const rewardedId = isTestMode ? 'ca-app-pub-3940256099942544/5224354917' : config.rewardedId;
-const DAILY_REVIVES = 3, DAILY_COINS = 3, COIN_REWARD = 5000, SHIP_ADS = 3;
+const DAILY_REVIVES = 3, DAILY_COINS = 3, COIN_REWARD = 25000, SHIP_ADS = 3;
 let initialized = false, busy = false;
 const plugin = () => window.Capacitor?.Plugins?.AdMob || null;
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
@@ -128,7 +128,7 @@ function watchCoins() {
         saveStats();
         document.getElementById('coinVal')?.replaceChildren(String(coins));
         window.refreshGallinaEquipmentUI?.();
-        status('✅ Recibiste 5.000 monedas.');
+        status('✅ Recibiste 25.000 monedas.');
     }, status);
 }
 function watchShip() {
