@@ -820,3 +820,22 @@ window.gallinaRefreshPvpMenuLock = function(){
 };
 window.addEventListener('load', window.gallinaRefreshPvpMenuLock);
 window.addEventListener('gallina-cloud-progress-loaded', window.gallinaRefreshPvpMenuLock);
+
+// Accesos secundarios del menú principal.
+(() => {
+    const button = document.getElementById('openMoreBtn');
+    const panel = document.getElementById('menuMorePanel');
+    const menu = document.getElementById('startScreen');
+    const close = () => { panel.hidden = true; button.setAttribute('aria-expanded', 'false'); };
+    button.addEventListener('click', () => {
+        panel.hidden = !panel.hidden;
+        button.setAttribute('aria-expanded', String(!panel.hidden));
+    });
+    document.addEventListener('click', event => {
+        if (!button.contains(event.target) && !panel.contains(event.target)) close();
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !panel.hidden) { close(); button.focus(); }
+    });
+    new MutationObserver(close).observe(menu, { attributes: true, attributeFilter: ['style'] });
+})();
