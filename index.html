@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nave Gallina vs Maíces y Lechugas</title>
-    <link rel="stylesheet" href="style.css?v=offer-labels-1">
+    <link rel="stylesheet" href="style.css?v=menu-images-1">
 </head>
 <body>
 
@@ -62,15 +62,15 @@
                 </div>
 
                 <div class="menu-mini-actions">
-                    <button class="btn menu-mini-btn" id="openRecordsBtn" title="Récords"><span>🥇</span><small>Récords</small></button>
-                    <button class="btn menu-mini-btn" id="openTrophiesBtn" title="Trofeos"><span>🏆</span><small>Trofeos</small></button>
-                    <button class="btn menu-mini-btn" id="openAchievBtn" title="Logros"><span>🏅</span><small>Logros</small></button>
+                    <button class="btn menu-mini-btn" id="openRecordsBtn" title="Récords"><span class="menu-art menu-art-records" aria-hidden="true"></span><small>Récords</small></button>
+                    <button class="btn menu-mini-btn" id="openTrophiesBtn" title="Trofeos"><span class="menu-art menu-art-trophies" aria-hidden="true"></span><small>Trofeos</small></button>
+                    <button class="btn menu-mini-btn" id="openAchievBtn" title="Logros"><span class="menu-art menu-art-achievements" aria-hidden="true"></span><small>Logros</small></button>
                     <button class="btn menu-mini-btn" id="openInboxBtn" title="Mensajes" aria-label="Abrir mensajes"><span>✉️</span><small>Mensajes <b id="inboxUnreadBadge" style="display:none;color:#fbbf24;"></b></small></button>
                     <button class="btn menu-mini-btn" id="openMoreBtn" type="button" aria-expanded="false" aria-controls="menuMorePanel"><span>•••</span><small>Más</small></button>
                 </div>
                 </div>
                 <div id="menuMorePanel" class="menu-more-panel" hidden><button class="btn menu-btn" id="openCommunityBtn" type="button" style="border:2px solid #22d3ee;background:linear-gradient(135deg,#164e63,#155e75);"><span class="menu-btn-icon">🌐</span><span>Comunidad</span><span class="menu-btn-arrow">›</span></button></div>
-                <button class="menu-side-ranking" id="pvpRankingBtn" type="button" title="Ranking PvP" aria-label="Ranking PvP" onclick="window.openPvpRankingMenu?.()"><span>🏆</span><small>Ranking<br>PvP</small></button>
+                <button class="menu-side-ranking" id="pvpRankingBtn" type="button" title="Ranking PvP" aria-label="Ranking PvP" onclick="window.openPvpRankingMenu?.()"><span class="menu-art menu-art-ranking" aria-hidden="true"></span><small>PvP</small></button>
                 <div id="pvpRankingPanel" class="leaderboard-box" style="display:none; width:min(88%,340px); max-height:250px; overflow:auto; margin-top:8px; text-align:left;">
                     <div style="display:flex; justify-content:space-between; align-items:center;"><b>🏆 Ranking PvP</b><button id="pvpRankingCloseBtn" style="border:0;background:transparent;color:#fff;font-size:1rem;">✕</button></div>
                     <div id="pvpMyRecord" style="margin:8px 0; padding:7px; border-radius:8px; background:rgba(124,58,237,.18); font-size:.78rem;">Cargando tu récord…</div>
