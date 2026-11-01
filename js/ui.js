@@ -783,27 +783,56 @@ window.buyUpgrade = function(type) {
 }
 
 const dailyRewards = [1000, 2500, 5000, 10000, 20000, 40000, 100000];
+let pendingDailyStreak = 0;
+function dailyRewardState(now = new Date()) {
+    const timestamp = window.gallinaDailyTimestamp(gameStats.lastLoginDate);
+    const calendarDay = date => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000;
+    const elapsed = timestamp ? calendarDay(now) - calendarDay(new Date(timestamp)) : Infinity;
+    const streak = Math.max(0, Math.min(7, Math.floor(Number(gameStats.loginStreak) || 0)));
+    return {
+        available: elapsed > 0,
+        streak: elapsed === 1 ? (streak % 7) + 1 : 1,
+        date: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    };
+}
 function checkDailyReward() {
-    let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); let lastLogin = gameStats.lastLoginDate || 0; let oneDay = 24 * 60 * 60 * 1000; let diffDays = Math.round((today - lastLogin) / oneDay);
-    if (diffDays > 0 || lastLogin === 0) { if (diffDays === 1) { gameStats.loginStreak++; if (gameStats.loginStreak > 7) gameStats.loginStreak = 1; } else { gameStats.loginStreak = 1; } showDailyRewardScreen(); }
+    const reward = dailyRewardState();
+    pendingDailyStreak = reward.available ? reward.streak : 0;
+    if (reward.available) showDailyRewardScreen();
+    else if (document.getElementById('dailyRewardScreen').style.display === 'flex') {
+        document.getElementById('dailyRewardScreen').style.display = 'none';
+        document.getElementById('startScreen').style.display = 'flex';
+    }
 }
 function showDailyRewardScreen() {
     document.getElementById('startScreen').style.display = 'none'; document.getElementById('dailyRewardScreen').style.display = 'flex'; let grid = document.getElementById('dailyRewardsGrid'); grid.innerHTML = '';
-    for (let i = 0; i < 7; i++) { let dayNum = i + 1; let reward = dailyRewards[i]; let isToday = (dayNum === gameStats.loginStreak); let isClaimed = (dayNum < gameStats.loginStreak); let boxColor = isToday ? '#f59e0b' : (isClaimed ? '#10b981' : '#1e293b'); let textColor = isToday ? '#000' : '#fff'; let opacity = isClaimed ? '0.6' : '1'; let icon = isClaimed ? '✅' : '🪙'; if (dayNum === 7 && !isClaimed) icon = '💎'; let extraStyle = (dayNum === 7) ? 'grid-column: span 3; font-size: 1.1rem; padding: 12px;' : 'padding: 8px;'; grid.innerHTML += `<div style="background: ${boxColor}; color: ${textColor}; ${extraStyle} border-radius: 8px; text-align: center; opacity: ${opacity}; box-shadow: ${isToday ? '0 0 12px #fbbf24' : 'none'}; border: 2px solid ${isToday ? '#fff' : 'transparent'};"><div style="font-size: 0.75rem; font-weight: bold; opacity: 0.9;">DÍA ${dayNum}</div><div style="font-size: ${dayNum===7 ? '1.8rem' : '1.3rem'}; margin: 2px 0;">${icon}</div><div style="font-size: 0.9rem; font-weight: 900;">+${reward.toLocaleString()}</div></div>`; }
+    for (let i = 0; i < 7; i++) { let dayNum = i + 1; let reward = dailyRewards[i]; let isToday = (dayNum === pendingDailyStreak); let isClaimed = (dayNum < pendingDailyStreak); let boxColor = isToday ? '#f59e0b' : (isClaimed ? '#10b981' : '#1e293b'); let textColor = isToday ? '#000' : '#fff'; let opacity = isClaimed ? '0.6' : '1'; let icon = isClaimed ? '✅' : '🪙'; if (dayNum === 7 && !isClaimed) icon = '💎'; let extraStyle = (dayNum === 7) ? 'grid-column: span 3; font-size: 1.1rem; padding: 12px;' : 'padding: 8px;'; grid.innerHTML += `<div style="background: ${boxColor}; color: ${textColor}; ${extraStyle} border-radius: 8px; text-align: center; opacity: ${opacity}; box-shadow: ${isToday ? '0 0 12px #fbbf24' : 'none'}; border: 2px solid ${isToday ? '#fff' : 'transparent'};"><div style="font-size: 0.75rem; font-weight: bold; opacity: 0.9;">DÍA ${dayNum}</div><div style="font-size: ${dayNum===7 ? '1.8rem' : '1.3rem'}; margin: 2px 0;">${icon}</div><div style="font-size: 0.9rem; font-weight: 900;">+${reward.toLocaleString()}</div></div>`; }
 }
-document.getElementById('claimRewardBtn').addEventListener('click', () => { let now = new Date(); let today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); let rewardIndex = gameStats.loginStreak - 1; let earned = dailyRewards[rewardIndex]; coins += earned; gameStats.savedCoins = coins; gameStats.totalCoins += earned; gameStats.lastLoginDate = today; saveStats(); document.getElementById('coinVal').textContent = coins; document.getElementById('dailyRewardScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex'; showTrophyToast("🎁", null, `¡+${earned.toLocaleString()} Monedas!`); });
+document.getElementById('claimRewardBtn').addEventListener('click', () => {
+    // Recalcular si llegó una respuesta cloud mientras el premio estaba abierto.
+    const reward = dailyRewardState();
+    if (!reward.available) { checkDailyReward(); return; }
+    const earned = dailyRewards[reward.streak - 1];
+    gameStats.loginStreak = reward.streak;
+    gameStats.lastLoginDate = reward.date;
+    coins += earned;
+    gameStats.savedCoins = coins;
+    gameStats.totalCoins = (Number(gameStats.totalCoins) || 0) + earned;
+    pendingDailyStreak = 0;
+    saveStats();
+    document.getElementById('coinVal').textContent = coins;
+    document.getElementById('dailyRewardScreen').style.display = 'none';
+    document.getElementById('startScreen').style.display = 'flex';
+    showTrophyToast("🎁", null, `¡+${earned.toLocaleString()} Monedas!`);
+});
 
-// Esperar el perfil cloud antes de decidir si corresponde el bono diario.
-// Así una sesión nueva/incógnita no puede ofrecer nuevamente el premio del día.
-let dailyRewardChecked = false;
-function checkDailyRewardAfterCloud() {
-    if (dailyRewardChecked) return;
-    dailyRewardChecked = true;
-    checkDailyReward();
-}
-window.addEventListener('gallina-cloud-progress-loaded', checkDailyRewardAfterCloud, { once: true });
-// Respaldo para jugar offline o si D1 no responde.
+// Revisar nuevamente al llegar la nube, incluso después del respaldo offline.
+function checkDailyRewardAfterCloud() { checkDailyReward(); }
+window.addEventListener('gallina-cloud-progress-loaded', checkDailyRewardAfterCloud);
 setTimeout(checkDailyRewardAfterCloud, 5000);
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && typeof gameState !== 'undefined' && gameState === 'START') checkDailyReward();
+});
 
 // Mantener la nave decorativa del menú alineada con el Hangar.
 window.updateMenuShip?.();
