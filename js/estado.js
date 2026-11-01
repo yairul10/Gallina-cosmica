@@ -328,6 +328,14 @@ function hasCloudProgressPending() {
     return localStorage.getItem(cloudPendingKey()) === '1';
 }
 
+// Aceptar fechas guardadas como milisegundos o como texto ISO.
+window.gallinaDailyTimestamp = value => {
+    if (!value) return 0;
+    const numeric = Number(value);
+    const timestamp = Number.isFinite(numeric) ? numeric : Date.parse(String(value));
+    return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : 0;
+};
+
 function buildCloudProgressPayload() {
     const identity = window.GallinaPlayerIdentity?.getCurrent?.();
     if (!identity?.id) return null;
@@ -441,13 +449,21 @@ async function loadCloudProgressForCurrentPlayer() {
         if (progress.equipped_ship) applyEquippedShipId(progress.equipped_ship);
         if (progress.equipped_extra === 'auto_life' && gameStats.extraModule) gameStats.equipExtraModule = true;
 
-        // La recompensa diaria pertenece al perfil cloud, no al navegador.
-        // Si D1 ya tiene progreso, su racha y fecha son la fuente de verdad.
+        // Un guardado cloud atrasado no debe borrar un premio reclamado localmente.
+        // Ambos registros pertenecen a la identidad activa (almacenamiento por jugador).
         if (data.exists) {
-            gameStats.loginStreak = Math.max(0, Number(progress.login_streak || 0));
-            const cloudLastLogin = Number(progress.last_login_date);
-            gameStats.lastLoginDate = Number.isFinite(cloudLastLogin) && cloudLastLogin > 0 ? cloudLastLogin : 0;
-            gameStats.tutorialCompleted = true; // Perfil cloud existente: no repetir tutorial local.
+            const localDate = window.gallinaDailyTimestamp(gameStats.lastLoginDate);
+            const cloudDate = window.gallinaDailyTimestamp(progress.last_login_date);
+            const localStreak = Math.max(0, Math.min(7, Math.floor(Number(gameStats.loginStreak) || 0)));
+            const cloudStreak = Math.max(0, Math.min(7, Math.floor(Number(progress.login_streak) || 0)));
+            if (cloudDate > localDate) {
+                gameStats.lastLoginDate = cloudDate;
+                gameStats.loginStreak = cloudStreak;
+            } else {
+                gameStats.lastLoginDate = localDate;
+                gameStats.loginStreak = cloudDate === localDate ? Math.max(localStreak, cloudStreak) : localStreak;
+            }
+            gameStats.tutorialCompleted = true;
         }
 
         localStorage.setItem((typeof window.gallinaPlayerStorageKey === 'function' ? window.gallinaPlayerStorageKey('farm_space_stats') : 'farm_space_stats'), JSON.stringify(gameStats));
