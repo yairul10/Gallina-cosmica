@@ -229,7 +229,10 @@ window.updateMenuShip = function() {
     const dir = dirs[gameStats.selectedShip] || 'gallina';
     img.src = gameStats.selectedPvpShip && gameStats.pvpShips?.[gameStats.selectedPvpShip]
         ? `assets/${gameStats.selectedPvpShip}.png`
-        : gameStats.useGallinaChile ? 'assets/gallina_chile.png' : `assets/${dir}${gameStats.useProShip ? '_pro' : ''}_1.png`;
+        : gameStats.useGallinaChile ? 'assets/gallina_chile.png'
+        : !gameStats.useProShip && dir === 'oveja' ? 'assets/oveja.png'
+        : gameStats.useProShip && dir === 'gallina' ? 'assets/gallina_pro.png'
+        : `assets/${dir}${gameStats.useProShip ? '_pro' : ''}_1.png`;
     applyShipCosmeticToImage(img,window.gallinaGetShipCosmetic());
     const wrap=document.getElementById('menuShipWrap');
     if(wrap)wrap.classList.toggle('navidad',window.gallinaGetShipCosmetic()==='navidad');
