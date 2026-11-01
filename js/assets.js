@@ -17,8 +17,8 @@ const animalDirs = ['gallina', 'oveja', 'caballo', 'vaca'];
 for(let i=0; i<4; i++) {
     let normalSkins = []; let proSkins = [];
     for(let j=1; j<=4; j++) {
-        let imgN = new Image(); imgN.src = `assets/${animalDirs[i]}_${j}.png`;
-        let imgP = new Image(); imgP.src = `assets/${animalDirs[i]}_pro_${j}.png`;
+        let imgN = new Image(); imgN.src = i === 1 && j === 1 ? 'assets/oveja.png' : `assets/${animalDirs[i]}_${j}.png`;
+        let imgP = new Image(); imgP.src = i === 0 && j === 1 ? 'assets/gallina_pro.png' : `assets/${animalDirs[i]}_pro_${j}.png`;
         normalSkins.push(imgN);
         proSkins.push(imgP);
     }
